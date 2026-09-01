@@ -356,17 +356,22 @@ SELECT IS_SRVROLEMEMBER('sysadmin') AS IsSysadmin
                 $triggerSchema = @{label = "Schema"; expression = { $_.Parent.Schema } }
 
                 # Loop through each of databases
-                foreach ($db in $databaseCollection) {
+                # Working through a Database object moves the connection into that database and never moves it
+                # back - the queries below run there, and so does every enumeration of a database level
+                # collection. The database of the caller is put back when the work is done. See #10555.
+                $callerDatabase = $server.ConnectionContext.CurrentDatabase
+                try {
+                    foreach ($db in $databaseCollection) {
 
-                    # Create array list to hold the results. This starts empty for every database, because the
-                    # objects of one database must not be looked up again in the next one.
-                    $objectCollection = @()
+                        # Create array list to hold the results. This starts empty for every database, because the
+                        # objects of one database must not be looked up again in the next one.
+                        $objectCollection = @()
 
-                    # A trigger's collection hangs off its parent table, so asking every table for its triggers
-                    # costs one round trip per table: on a database of a thousand tables that is a thousand
-                    # queries, run even when the object asked for is a stored procedure. The tables that own an
-                    # encrypted trigger are identified in one query first, and only those are asked. A database
-                    # with no encrypted triggers touches no tables at all.
+                        # A trigger's collection hangs off its parent table, so asking every table for its triggers
+                        # costs one round trip per table: on a database of a thousand tables that is a thousand
+                        # queries, run even when the object asked for is a stored procedure. The tables that own an
+                        # encrypted trigger are identified in one query first, and only those are asked. A database
+                        # with no encrypted triggers touches no tables at all.
                     $queryTriggerParent = @"
 SELECT DISTINCT SCHEMA_NAME(p.schema_id) AS ParentSchema, p.name AS ParentName
 FROM sys.sql_modules AS m
@@ -377,241 +382,241 @@ AND t.type = 'TR'
 AND p.is_ms_shipped = 0
 "@
 
-                    $triggers = @(
-                        foreach ($triggerParent in @($db.Query($queryTriggerParent))) {
-                            # A trigger's parent is a table or a view, and an INSTEAD OF trigger on a view is
-                            # just as encryptable as one on a table. Looking only at tables silently skipped
-                            # those, so both collections are asked.
-                            $parentObject = $db.Tables[$triggerParent.ParentName, $triggerParent.ParentSchema]
-                            if ($null -eq $parentObject) {
-                                $parentObject = $db.Views[$triggerParent.ParentName, $triggerParent.ParentSchema]
-                            }
-                            if ($null -ne $parentObject) {
-                                $parentObject.Triggers
-                            }
-                        }
-                    )
-
-                    # Get the objects
-                    if ($ObjectName) {
-                        $storedProcedures = @($db.StoredProcedures | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "StoredProcedure" } }, @{N = "SubType"; E = { "" } })
-                        $functions = @($db.UserDefinedFunctions | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "UserDefinedFunction" } }, @{N = "SubType"; E = { $_.FunctionType.ToString().Trim() } })
-                        $views = @($db.Views | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "View" } }, @{N = "SubType"; E = { "" } })
-                        $triggers = @($triggers | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, $triggerSchema, ID, Parent, @{N = "ObjectType"; E = { "Trigger" } }, @{N = "SubType"; E = { "" } })
-                    } else {
-                        # Get all encrypted objects
-                        $storedProcedures = @($db.StoredProcedures | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "StoredProcedure" } }, @{N = "SubType"; E = { "" } })
-                        $functions = @($db.UserDefinedFunctions | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "UserDefinedFunction" } }, @{N = "SubType"; E = { $_.FunctionType.ToString().Trim() } })
-                        $views = @($db.Views | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "View" } }, @{N = "SubType"; E = { "" } })
-                        $triggers = @($triggers | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, $triggerSchema, ID, Parent, @{N = "ObjectType"; E = { "Trigger" } }, @{N = "SubType"; E = { "" } })
-                    }
-
-                    # Check if there are any objects
-                    if ($storedProcedures.Count -ge 1) {
-                        $objectCollection += $storedProcedures
-                    }
-                    if ($functions.Count -ge 1) {
-                        $objectCollection += $functions
-                    }
-                    if ($views.Count -ge 1) {
-                        $objectCollection += $views
-                    }
-                    if ($triggers.Count -ge 1) {
-                        $objectCollection += $triggers
-                    }
-
-                    # Both methods identify an object by its id rather than by its name. The method that
-                    # reads the data pages needs the id to pick the rows out of sys.sysobjvalues, and the
-                    # method that uses the dedicated admin connection needs it because an object name is
-                    # allowed to contain a single quote: splicing the name into an OBJECT_ID('...') literal
-                    # would let a crafted name end the literal early and run whatever followed it as a
-                    # further statement in the same batch, as sysadmin over the dedicated admin connection.
-                    # An id is a number, so nothing a name contains can reach the query text.
-                    #
-                    # The id is SMO's own ID property on each object, fetched as part of the enumeration
-                    # above rather than looked up afterwards by schema and name. A lookup keyed by
-                    # "$schema.$name" cannot be unambiguous, because either half may itself contain a dot:
-                    # schema [a], object [b.c] and schema [a.b], object [c] both key as "a.b.c", so whichever
-                    # of the two is read last silently overwrites the other's id in the map, and the object
-                    # that lost the race is then decrypted with the wrong ciphertext. Reading the id SMO
-                    # already carries on the object needs no key at all, so two objects sharing a dotted name
-                    # can no longer collide.
-
-                    # Without a dedicated admin connection the ciphertext of every requested object is read in
-                    # a single pass over the data pages of sys.sysobjvalues, because reading those pages is by
-                    # far the most expensive part. The family GUID of the database and the object ids are the
-                    # only other inputs that rebuilding the keystream needs.
-                    if ($DataPages) {
-                        $familyGuid = $null
-                        $imageValueMap = @{ }
-
-                        try {
-                            $familyGuidRow = @($db.Query("DBCC DBINFO WITH TABLERESULTS") | Where-Object Field -eq "dbi_familyGUID")
-                        } catch {
-                            Stop-Function -Message "Couldn't read dbi_familyGUID of database $($db.Name) on $instance" -ErrorRecord $_ -Target $instance -Continue
-                        }
-
-                        if ($familyGuidRow.Count -eq 0) {
-                            Stop-Function -Message "Couldn't read dbi_familyGUID of database $($db.Name) on $instance" -Target $instance -Continue
-                        }
-                        $familyGuid = [guid]$familyGuidRow[0].VALUE
-
-                        $wantedObjectId = @($objectCollection.ID)
-
-                        if ($wantedObjectId.Count -ge 1) {
-                            try {
-                                foreach ($imageValue in (Get-EncryptedObjectImageValue -Database $db -ObjectId $wantedObjectId)) {
-                                    if (-not $imageValueMap.ContainsKey($imageValue.ObjectId)) {
-                                        $imageValueMap[$imageValue.ObjectId] = @()
-                                    }
-                                    $imageValueMap[$imageValue.ObjectId] += $imageValue
+                        $triggers = @(
+                            foreach ($triggerParent in @($db.Query($queryTriggerParent))) {
+                                # A trigger's parent is a table or a view, and an INSTEAD OF trigger on a view is
+                                # just as encryptable as one on a table. Looking only at tables silently skipped
+                                # those, so both collections are asked.
+                                $parentObject = $db.Tables[$triggerParent.ParentName, $triggerParent.ParentSchema]
+                                if ($null -eq $parentObject) {
+                                    $parentObject = $db.Views[$triggerParent.ParentName, $triggerParent.ParentSchema]
                                 }
-                            } catch {
-                                Stop-Function -Message "Couldn't read the encrypted definitions from the data pages of database $($db.Name) on $instance" -ErrorRecord $_ -Target $instance -Continue
+                                if ($null -ne $parentObject) {
+                                    $parentObject.Triggers
+                                }
                             }
+                        )
+
+                        # Get the objects
+                        if ($ObjectName) {
+                            $storedProcedures = @($db.StoredProcedures | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "StoredProcedure" } }, @{N = "SubType"; E = { "" } })
+                            $functions = @($db.UserDefinedFunctions | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "UserDefinedFunction" } }, @{N = "SubType"; E = { $_.FunctionType.ToString().Trim() } })
+                            $views = @($db.Views | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "View" } }, @{N = "SubType"; E = { "" } })
+                            $triggers = @($triggers | Where-Object { $_.Name -in $ObjectName -and $_.IsEncrypted -eq $true } | Select-Object Name, $triggerSchema, ID, Parent, @{N = "ObjectType"; E = { "Trigger" } }, @{N = "SubType"; E = { "" } })
+                        } else {
+                            # Get all encrypted objects
+                            $storedProcedures = @($db.StoredProcedures | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "StoredProcedure" } }, @{N = "SubType"; E = { "" } })
+                            $functions = @($db.UserDefinedFunctions | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "UserDefinedFunction" } }, @{N = "SubType"; E = { $_.FunctionType.ToString().Trim() } })
+                            $views = @($db.Views | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, Schema, ID, @{N = "ObjectType"; E = { "View" } }, @{N = "SubType"; E = { "" } })
+                            $triggers = @($triggers | Where-Object { $_.IsEncrypted -eq $true } | Select-Object Name, $triggerSchema, ID, Parent, @{N = "ObjectType"; E = { "Trigger" } }, @{N = "SubType"; E = { "" } })
                         }
-                    }
 
-                    # Loop through all the objects
-                    foreach ($object in $objectCollection) {
+                        # Check if there are any objects
+                        if ($storedProcedures.Count -ge 1) {
+                            $objectCollection += $storedProcedures
+                        }
+                        if ($functions.Count -ge 1) {
+                            $objectCollection += $functions
+                        }
+                        if ($views.Count -ge 1) {
+                            $objectCollection += $views
+                        }
+                        if ($triggers.Count -ge 1) {
+                            $objectCollection += $triggers
+                        }
 
-                        $result = $null
+                        # Both methods identify an object by its id rather than by its name. The method that
+                        # reads the data pages needs the id to pick the rows out of sys.sysobjvalues, and the
+                        # method that uses the dedicated admin connection needs it because an object name is
+                        # allowed to contain a single quote: splicing the name into an OBJECT_ID('...') literal
+                        # would let a crafted name end the literal early and run whatever followed it as a
+                        # further statement in the same batch, as sysadmin over the dedicated admin connection.
+                        # An id is a number, so nothing a name contains can reach the query text.
+                        #
+                        # The id is SMO's own ID property on each object, fetched as part of the enumeration
+                        # above rather than looked up afterwards by schema and name. A lookup keyed by
+                        # "$schema.$name" cannot be unambiguous, because either half may itself contain a dot:
+                        # schema [a], object [b.c] and schema [a.b], object [c] both key as "a.b.c", so whichever
+                        # of the two is read last silently overwrites the other's id in the map, and the object
+                        # that lost the race is then decrypted with the wrong ciphertext. Reading the id SMO
+                        # already carries on the object needs no key at all, so two objects sharing a dotted name
+                        # can no longer collide.
 
-                        # Both methods below select this object's rows by id, taken from SMO's own ID
-                        # property rather than looked up by schema and name.
-                        $decryptObjectId = [int]$object.ID
-
-                        # Without a dedicated admin connection the ciphertext that was collected for this object
-                        # is combined with the keystream that its own metadata produces.
+                        # Without a dedicated admin connection the ciphertext of every requested object is read in
+                        # a single pass over the data pages of sys.sysobjvalues, because reading those pages is by
+                        # far the most expensive part. The family GUID of the database and the object ids are the
+                        # only other inputs that rebuilding the keystream needs.
                         if ($DataPages) {
-                            # Asked for a key it does not hold, a hashtable answers with null, and wrapping
-                            # null in @() gives an array of one null rather than an empty one. That reads as
-                            # a chunk with no ciphertext, so an object the reader deliberately skipped - a
-                            # CLR module, say - would be reported as one whose body could not be recovered.
-                            $chunkCollection = @()
-                            if ($imageValueMap.ContainsKey($decryptObjectId)) {
-                                $chunkCollection = @($imageValueMap[$decryptObjectId])
+                            $familyGuid = $null
+                            $imageValueMap = @{ }
+
+                            try {
+                                $familyGuidRow = @($db.Query("DBCC DBINFO WITH TABLERESULTS") | Where-Object Field -eq "dbi_familyGUID")
+                            } catch {
+                                Stop-Function -Message "Couldn't read dbi_familyGUID of database $($db.Name) on $instance" -ErrorRecord $_ -Target $instance -Continue
                             }
 
-                            # A chunk without ciphertext means an off row body that could not be reassembled.
-                            # Decrypting the rest would return a definition built from a fragment, so this
-                            # object is reported and skipped while the others carry on.
-                            $unresolvedChunk = @($chunkCollection | Where-Object { $null -eq $PSItem.Cipher })
+                            if ($familyGuidRow.Count -eq 0) {
+                                Stop-Function -Message "Couldn't read dbi_familyGUID of database $($db.Name) on $instance" -Target $instance -Continue
+                            }
+                            $familyGuid = [guid]$familyGuidRow[0].VALUE
 
-                            if ($unresolvedChunk.Count -gt 0) {
-                                Write-Message -Level Warning -Message "Couldn't recover the off row body of $($object.Schema).$($object.Name) in database $($db.Name) on $instance, so it is not returned."
-                            } elseif ($chunkCollection.Count -ge 1) {
-                                $chunkParams = @{
-                                    FamilyGuid = $familyGuid
-                                    ObjectId   = $decryptObjectId
-                                    Chunk      = $chunkCollection
-                                }
+                            $wantedObjectId = @($objectCollection.ID)
 
-                                # Anything wrong with this object's ciphertext fails this object and lets the
-                                # rest of the run stand, rather than ending the command part way through.
+                            if ($wantedObjectId.Count -ge 1) {
                                 try {
-                                    $result = ConvertFrom-EncryptedObjectChunk @chunkParams
+                                    foreach ($imageValue in (Get-EncryptedObjectImageValue -Database $db -ObjectId $wantedObjectId)) {
+                                        if (-not $imageValueMap.ContainsKey($imageValue.ObjectId)) {
+                                            $imageValueMap[$imageValue.ObjectId] = @()
+                                        }
+                                        $imageValueMap[$imageValue.ObjectId] += $imageValue
+                                    }
                                 } catch {
-                                    Stop-Function -Message "Couldn't decrypt $($object.Schema).$($object.Name) in database $($db.Name) on $instance" -ErrorRecord $_ -Target $instance -Continue
+                                    Stop-Function -Message "Couldn't read the encrypted definitions from the data pages of database $($db.Name) on $instance" -ErrorRecord $_ -Target $instance -Continue
                                 }
                             }
                         }
 
-                        # Only the DAC can read imageval directly, so none of this runs for the method that reads
-                        # the data pages, and the block below is skipped with it.
-                        $secret = $null
-                        if (-not $DataPages) {
-                            # Setup the query to get the secret. Select by object id rather than by name. Exclude null values in sys.sysobjvalues for triggers.
+                        # Loop through all the objects
+                        foreach ($object in $objectCollection) {
+
+                            $result = $null
+
+                            # Both methods below select this object's rows by id, taken from SMO's own ID
+                            # property rather than looked up by schema and name.
+                            $decryptObjectId = [int]$object.ID
+
+                            # Without a dedicated admin connection the ciphertext that was collected for this object
+                            # is combined with the keystream that its own metadata produces.
+                            if ($DataPages) {
+                                # Asked for a key it does not hold, a hashtable answers with null, and wrapping
+                                # null in @() gives an array of one null rather than an empty one. That reads as
+                                # a chunk with no ciphertext, so an object the reader deliberately skipped - a
+                                # CLR module, say - would be reported as one whose body could not be recovered.
+                                $chunkCollection = @()
+                                if ($imageValueMap.ContainsKey($decryptObjectId)) {
+                                    $chunkCollection = @($imageValueMap[$decryptObjectId])
+                                }
+
+                                # A chunk without ciphertext means an off row body that could not be reassembled.
+                                # Decrypting the rest would return a definition built from a fragment, so this
+                                # object is reported and skipped while the others carry on.
+                                $unresolvedChunk = @($chunkCollection | Where-Object { $null -eq $PSItem.Cipher })
+
+                                if ($unresolvedChunk.Count -gt 0) {
+                                    Write-Message -Level Warning -Message "Couldn't recover the off row body of $($object.Schema).$($object.Name) in database $($db.Name) on $instance, so it is not returned."
+                                } elseif ($chunkCollection.Count -ge 1) {
+                                    $chunkParams = @{
+                                        FamilyGuid = $familyGuid
+                                        ObjectId   = $decryptObjectId
+                                        Chunk      = $chunkCollection
+                                    }
+
+                                    # Anything wrong with this object's ciphertext fails this object and lets the
+                                    # rest of the run stand, rather than ending the command part way through.
+                                    try {
+                                        $result = ConvertFrom-EncryptedObjectChunk @chunkParams
+                                    } catch {
+                                        Stop-Function -Message "Couldn't decrypt $($object.Schema).$($object.Name) in database $($db.Name) on $instance" -ErrorRecord $_ -Target $instance -Continue
+                                    }
+                                }
+                            }
+
+                            # Only the DAC can read imageval directly, so none of this runs for the method that reads
+                            # the data pages, and the block below is skipped with it.
+                            $secret = $null
+                            if (-not $DataPages) {
+                                # Setup the query to get the secret. Select by object id rather than by name. Exclude null values in sys.sysobjvalues for triggers.
                             $querySecret = @"
 SELECT imageval AS Value FROM sys.sysobjvalues WHERE objid = $decryptObjectId AND imageval IS NOT NULL
 "@
 
-                            # Get the result of the secret query
-                            try {
-                                $secret = $server.Databases[$db.Name].Query($querySecret)
-                            } catch {
-                                Stop-Function -Message "Couldn't retrieve secret from $instance" -ErrorRecord $_ -Target $instance -Continue
-                            }
-                        }
-
-                        # Check if at least a value came back
-                        if ($secret) {
-
-                            # A schema, object or parent name is allowed to contain a closing bracket, which
-                            # would end the identifier early and leave the rest of the name standing as
-                            # statement text. Doubling it keeps the whole name inside the brackets.
-                            $bracketedSchema = $object.Schema -replace "\]", "]]"
-                            $bracketedName = $object.Name -replace "\]", "]]"
-
-                            # Cleared per object, because it survives the loop otherwise and an object type
-                            # that matched no branch below would be altered with the previous object's
-                            # statement instead of reaching the check that says the known plain is missing.
-                            $queryKnownPlain = $null
-
-                            # Setup a known plain command and get the binary version of it
-                            switch ($object.ObjectType) {
-
-                                'StoredProcedure' {
-                                    $queryKnownPlain = (" " * $secret.Value.Length) + "ALTER PROCEDURE [$bracketedSchema].[$bracketedName] WITH ENCRYPTION AS RETURN 0;"
+                                # Get the result of the secret query
+                                try {
+                                    $secret = $server.Databases[$db.Name].Query($querySecret)
+                                } catch {
+                                    Stop-Function -Message "Couldn't retrieve secret from $instance" -ErrorRecord $_ -Target $instance -Continue
                                 }
-                                'UserDefinedFunction' {
+                            }
 
-                                    switch ($object.SubType) {
-                                        'Inline' {
-                                            $queryKnownPlain = (" " * $secret.value.length) + "ALTER FUNCTION [$bracketedSchema].[$bracketedName]() RETURNS TABLE WITH ENCRYPTION AS RETURN SELECT 0 i;"
-                                        }
-                                        'Scalar' {
-                                            $queryKnownPlain = (" " * $secret.value.length) + "ALTER FUNCTION [$bracketedSchema].[$bracketedName]() RETURNS INT WITH ENCRYPTION AS BEGIN RETURN 0 END;"
-                                        }
-                                        'Table' {
-                                            $queryKnownPlain = (" " * $secret.value.length) + "ALTER FUNCTION [$bracketedSchema].[$bracketedName]() RETURNS @r TABLE(i INT) WITH ENCRYPTION AS BEGIN RETURN END;"
+                            # Check if at least a value came back
+                            if ($secret) {
+
+                                # A schema, object or parent name is allowed to contain a closing bracket, which
+                                # would end the identifier early and leave the rest of the name standing as
+                                # statement text. Doubling it keeps the whole name inside the brackets.
+                                $bracketedSchema = $object.Schema -replace "\]", "]]"
+                                $bracketedName = $object.Name -replace "\]", "]]"
+
+                                # Cleared per object, because it survives the loop otherwise and an object type
+                                # that matched no branch below would be altered with the previous object's
+                                # statement instead of reaching the check that says the known plain is missing.
+                                $queryKnownPlain = $null
+
+                                # Setup a known plain command and get the binary version of it
+                                switch ($object.ObjectType) {
+
+                                    'StoredProcedure' {
+                                        $queryKnownPlain = (" " * $secret.Value.Length) + "ALTER PROCEDURE [$bracketedSchema].[$bracketedName] WITH ENCRYPTION AS RETURN 0;"
+                                    }
+                                    'UserDefinedFunction' {
+
+                                        switch ($object.SubType) {
+                                            'Inline' {
+                                                $queryKnownPlain = (" " * $secret.value.length) + "ALTER FUNCTION [$bracketedSchema].[$bracketedName]() RETURNS TABLE WITH ENCRYPTION AS RETURN SELECT 0 i;"
+                                            }
+                                            'Scalar' {
+                                                $queryKnownPlain = (" " * $secret.value.length) + "ALTER FUNCTION [$bracketedSchema].[$bracketedName]() RETURNS INT WITH ENCRYPTION AS BEGIN RETURN 0 END;"
+                                            }
+                                            'Table' {
+                                                $queryKnownPlain = (" " * $secret.value.length) + "ALTER FUNCTION [$bracketedSchema].[$bracketedName]() RETURNS @r TABLE(i INT) WITH ENCRYPTION AS BEGIN RETURN END;"
+                                            }
                                         }
                                     }
-                                }
-                                'View' {
-                                    $queryKnownPlain = (" " * $secret.Value.Length) + "ALTER VIEW [$bracketedSchema].[$bracketedName] WITH ENCRYPTION AS SELECT NULL AS [Value];"
-                                }
-                                'Trigger' {
-                                    # A trigger names its parent as well as itself, so the parent gets the same
-                                    # treatment: taken from the object rather than left to however the SMO
-                                    # object renders as a string, and bracketed like every other identifier.
-                                    $bracketedParentSchema = $object.Parent.Schema -replace "\]", "]]"
-                                    $bracketedParentName = $object.Parent.Name -replace "\]", "]]"
+                                    'View' {
+                                        $queryKnownPlain = (" " * $secret.Value.Length) + "ALTER VIEW [$bracketedSchema].[$bracketedName] WITH ENCRYPTION AS SELECT NULL AS [Value];"
+                                    }
+                                    'Trigger' {
+                                        # A trigger names its parent as well as itself, so the parent gets the same
+                                        # treatment: taken from the object rather than left to however the SMO
+                                        # object renders as a string, and bracketed like every other identifier.
+                                        $bracketedParentSchema = $object.Parent.Schema -replace "\]", "]]"
+                                        $bracketedParentName = $object.Parent.Name -replace "\]", "]]"
 
-                                    # The quotes around the message are single, not doubled. This statement is
-                                    # written as it should reach SQL Server, and the doubling that puts it
-                                    # inside the EXEC literal happens in one place below, so that a quote in
-                                    # an object name is escaped by the same pass rather than being missed.
+                                        # The quotes around the message are single, not doubled. This statement is
+                                        # written as it should reach SQL Server, and the doubling that puts it
+                                        # inside the EXEC literal happens in one place below, so that a quote in
+                                        # an object name is escaped by the same pass rather than being missed.
                                     $statementTrigger = @"
 ALTER TRIGGER [$bracketedSchema].[$bracketedName] ON [$bracketedParentSchema].[$bracketedParentName] WITH ENCRYPTION AFTER INSERT AS RAISERROR ('Invoke-DbaDbDecryptObject', 16, 10);
 "@
-                                    $queryKnownPlain = (" " * $secret.Value.Length) + $statementTrigger
+                                        $queryKnownPlain = (" " * $secret.Value.Length) + $statementTrigger
+                                    }
                                 }
-                            }
 
-                            # Convert the known plain into binary
-                            if ($queryKnownPlain) {
-                                try {
-                                    $knownPlain = $encoding.GetBytes(($queryKnownPlain))
-                                } catch {
-                                    Stop-Function -Message "Couldn't convert the known plain to binary" -ErrorRecord $_ -Target $instance -Continue
+                                # Convert the known plain into binary
+                                if ($queryKnownPlain) {
+                                    try {
+                                        $knownPlain = $encoding.GetBytes(($queryKnownPlain))
+                                    } catch {
+                                        Stop-Function -Message "Couldn't convert the known plain to binary" -ErrorRecord $_ -Target $instance -Continue
+                                    }
+                                } else {
+                                    Stop-Function -Message "Something went wrong setting up the known plain" -Target $instance -Continue
                                 }
-                            } else {
-                                Stop-Function -Message "Something went wrong setting up the known plain" -Target $instance -Continue
-                            }
 
-                            # Setup the query to change the object in SQL Server and roll it back getting the encrypted version
-                            # Exclude null values in sys.sysobjvalues for triggers and select the object by id.
-                            #
-                            # The whole statement goes inside the string literal that EXEC runs, so every
-                            # single quote in it has to be doubled or the literal ends early and whatever
-                            # follows runs as a further statement in the same batch - as sysadmin, over the
-                            # dedicated admin connection. An object name may contain a quote, so this is the
-                            # escape that has to be in place, not only the doubling of the quotes written
-                            # above. Character 39 is the quote itself, named so that this line does not
-                            # need one of its own.
-                            $quoteCharacter = [string][char]39
-                            $queryKnownPlainLiteral = $queryKnownPlain -replace $quoteCharacter, ($quoteCharacter * 2)
+                                # Setup the query to change the object in SQL Server and roll it back getting the encrypted version
+                                # Exclude null values in sys.sysobjvalues for triggers and select the object by id.
+                                #
+                                # The whole statement goes inside the string literal that EXEC runs, so every
+                                # single quote in it has to be doubled or the literal ends early and whatever
+                                # follows runs as a further statement in the same batch - as sysadmin, over the
+                                # dedicated admin connection. An object name may contain a quote, so this is the
+                                # escape that has to be in place, not only the doubling of the quotes written
+                                # above. Character 39 is the quote itself, named so that this line does not
+                                # need one of its own.
+                                $quoteCharacter = [string][char]39
+                                $queryKnownPlainLiteral = $queryKnownPlain -replace $quoteCharacter, ($quoteCharacter * 2)
 
                             $queryKnownSecret = @"
 BEGIN TRANSACTION;
@@ -623,74 +628,77 @@ BEGIN TRANSACTION;
 ROLLBACK;
 "@
 
-                            # Get the result for the known encrypted
-                            try {
-                                $knownSecret = $server.Databases[$db.Name].Query($queryKnownSecret)
-                            } catch {
-                                Stop-Function -Message "Couldn't retrieve known secret from $instance" -ErrorRecord $_ -Target $instance -Continue
-                            }
-
-                            # Get the result
-                            $result = Invoke-DecryptData -Secret $secret.value -KnownPlain $knownPlain -KnownSecret $knownSecret.value
-                        }
-
-                        # Both methods arrive at the decrypted script here, so exporting it and returning it is
-                        # shared between them.
-                        if ($null -ne $result) {
-                            # Check if the results need to be exported
-                            $filePath = $null
-                            if ($ExportDestination) {
-                                # make up the file name
-                                $filename = "$($object.Schema).$($object.Name).sql"
-
-                                # Check the export destination
-                                if ($ExportDestination.EndsWith("\")) {
-                                    $destinationFolder = "$ExportDestination$instance\$($db.Name)\$($object.ObjectType)\"
-                                } else {
-                                    $destinationFolder = "$ExportDestination\$instance\$($db.Name)\$($object.ObjectType)\"
-                                }
-
-                                # Check if the destination folder exists
-                                if (-not (Test-Path $destinationFolder)) {
-                                    try {
-                                        # Create the new destination
-                                        # Plain -Force, matching the call in begin. It must not be written as
-                                        # -Force:$Force: this command has no Force parameter, so that binds
-                                        # $null and silently turns the switch off, and under StrictMode it
-                                        # throws instead.
-                                        New-Item -Path $destinationFolder -ItemType Directory -Force | Out-Null
-                                    } catch {
-                                        Stop-Function -Message "Couldn't create destination folder $destinationFolder" -ErrorRecord $_ -Target $instance -Continue
-                                    }
-                                }
-
-                                # Combine the destination folder and the file name to get the path
-                                $filePath = $destinationFolder + $filename
-
-                                # Export the result
+                                # Get the result for the known encrypted
                                 try {
-                                    $result | Out-File -FilePath $filePath -Force
+                                    $knownSecret = $server.Databases[$db.Name].Query($queryKnownSecret)
                                 } catch {
-                                    Stop-Function -Message "Couldn't export the results of $($object.Name) to $filePath" -ErrorRecord $_ -Target $instance -Continue
+                                    Stop-Function -Message "Couldn't retrieve known secret from $instance" -ErrorRecord $_ -Target $instance -Continue
                                 }
 
+                                # Get the result
+                                $result = Invoke-DecryptData -Secret $secret.value -KnownPlain $knownPlain -KnownSecret $knownSecret.value
                             }
 
-                            # Add the results to the custom object
-                            [PSCustomObject]@{
-                                ComputerName = $instance.ComputerName
-                                InstanceName = $server.ServiceName
-                                SqlInstance  = $server.DomainInstanceName
-                                Database     = $db.Name
-                                Type         = $object.ObjectType
-                                Schema       = $object.Schema
-                                Name         = $object.Name
-                                FullName     = "$($object.Schema).$($object.Name)"
-                                Script       = $result
-                                OutputFile   = $filePath
+                            # Both methods arrive at the decrypted script here, so exporting it and returning it is
+                            # shared between them.
+                            if ($null -ne $result) {
+                                # Check if the results need to be exported
+                                $filePath = $null
+                                if ($ExportDestination) {
+                                    # make up the file name
+                                    $filename = "$($object.Schema).$($object.Name).sql"
+
+                                    # Check the export destination
+                                    if ($ExportDestination.EndsWith("\")) {
+                                        $destinationFolder = "$ExportDestination$instance\$($db.Name)\$($object.ObjectType)\"
+                                    } else {
+                                        $destinationFolder = "$ExportDestination\$instance\$($db.Name)\$($object.ObjectType)\"
+                                    }
+
+                                    # Check if the destination folder exists
+                                    if (-not (Test-Path $destinationFolder)) {
+                                        try {
+                                            # Create the new destination
+                                            # Plain -Force, matching the call in begin. It must not be written as
+                                            # -Force:$Force: this command has no Force parameter, so that binds
+                                            # $null and silently turns the switch off, and under StrictMode it
+                                            # throws instead.
+                                            New-Item -Path $destinationFolder -ItemType Directory -Force | Out-Null
+                                        } catch {
+                                            Stop-Function -Message "Couldn't create destination folder $destinationFolder" -ErrorRecord $_ -Target $instance -Continue
+                                        }
+                                    }
+
+                                    # Combine the destination folder and the file name to get the path
+                                    $filePath = $destinationFolder + $filename
+
+                                    # Export the result
+                                    try {
+                                        $result | Out-File -FilePath $filePath -Force
+                                    } catch {
+                                        Stop-Function -Message "Couldn't export the results of $($object.Name) to $filePath" -ErrorRecord $_ -Target $instance -Continue
+                                    }
+
+                                }
+
+                                # Add the results to the custom object
+                                [PSCustomObject]@{
+                                    ComputerName = $instance.ComputerName
+                                    InstanceName = $server.ServiceName
+                                    SqlInstance  = $server.DomainInstanceName
+                                    Database     = $db.Name
+                                    Type         = $object.ObjectType
+                                    Schema       = $object.Schema
+                                    Name         = $object.Name
+                                    FullName     = "$($object.Schema).$($object.Name)"
+                                    Script       = $result
+                                    OutputFile   = $filePath
+                                }
                             }
                         }
                     }
+                } finally {
+                    Restore-DatabaseContext -Server $server -Database $callerDatabase
                 }
             } finally {
                 # The init fields belong to the connection, not to this command, so they go back however

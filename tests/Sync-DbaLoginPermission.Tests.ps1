@@ -114,3 +114,83 @@ CREATE LOGIN [$stateTestLogin]
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "The connections of the caller are left in the database they were in (#10555)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $contextDbName = "dbatoolsci_ctx_syncperm_$(Get-Random)"
+            $contextLoginName = "dbatoolsci_ctx_login_$(Get-Random)"
+
+            # The login exists on both servers because the sync does not create logins. The database exists
+            # on both servers and the login has a user in it on the source, so the permission sync walks the
+            # database level collections of both servers - which is the leak this context guards against.
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $contextDbName
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti2 -Name $contextDbName
+            foreach ($contextInstance in $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2) {
+                $splatContextLogin = @{
+                    SqlInstance = $contextInstance
+                    Login       = $contextLoginName
+                    Password    = (ConvertTo-SecureString -String "dbatools.IO" -AsPlainText -Force)
+                }
+                $null = New-DbaLogin @splatContextLogin
+            }
+            $splatContextUser = @{
+                SqlInstance = $TestConfig.InstanceMulti1
+                Database    = $contextDbName
+                Login       = $contextLoginName
+                Username    = $contextLoginName
+            }
+            $null = New-DbaDbUser @splatContextUser
+
+            # Only a non-pooled connection can show this. A pooled connection that is closed between two
+            # calls reconnects at its default database, which puts the database back by accident.
+            $sourceCallerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -NonPooledConnection
+            $destCallerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2 -NonPooledConnection
+            $sourceContextBefore = $sourceCallerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()")
+            $destContextBefore = $destCallerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()")
+
+            $splatSyncPermission = @{
+                Source      = $sourceCallerServer
+                Destination = $destCallerServer
+                Login       = $contextLoginName
+            }
+            $contextResult = Sync-DbaLoginPermission @splatSyncPermission
+
+            $sourceContextAfter = $sourceCallerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()")
+            $destContextAfter = $destCallerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()")
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $sourceCallerServer | Disconnect-DbaInstance
+            $null = $destCallerServer | Disconnect-DbaInstance
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database $contextDbName -ErrorAction SilentlyContinue
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Login $contextLoginName -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "syncs the database user of the login" {
+            # Only a command that really did something can move the connections, so without this the
+            # assertions below would pass for the wrong reason.
+            $contextResult.Status | Should -Be "Successful"
+            (Get-DbaDbUser -SqlInstance $TestConfig.InstanceMulti2 -Database $contextDbName).Name | Should -Contain $contextLoginName
+        }
+
+        It "leaves the source connection in the database it was in" {
+            $sourceContextAfter | Should -Be $sourceContextBefore
+        }
+
+        It "leaves the destination connection in the database it was in" {
+            $destContextAfter | Should -Be $destContextBefore
+        }
+    }
+}
