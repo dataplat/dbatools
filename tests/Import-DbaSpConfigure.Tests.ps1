@@ -50,6 +50,21 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "A missing file does not eat an iteration of the caller's loop" {
+        It "Warns and completes every iteration" {
+            # The begin block guards used to run Stop-Function -Continue without an enclosing loop -
+            # the continue escaped the command and consumed an iteration of this very loop, so the
+            # counter fell short (#10638).
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = Import-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Path "$exportPath\does-not-exist.sql" -WarningAction SilentlyContinue
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*Not Found*"
+        }
+    }
+
     Context "The connection of the caller is left alone when importing from a file (#10554)" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -244,6 +259,62 @@ SELECT name, value, value_in_use FROM sys.configurations WHERE name IN ('cost th
 
         It "runs to the end and warns that a restart may be needed" {
             $WarnVar[-1] | Should -Match "Some configuration options will be updated once SQL Server is restarted"
+        }
+    }
+
+    Context "A guard interrupt still closes the connection the command opened (#10554)" {
+        BeforeAll {
+            # This pins the invariant that a guard interrupt leaves no session of the command
+            # behind. Probed while writing it: SMO's auto-disconnect returns the physical
+            # connection after every batch for every connection the command opens itself - the
+            # skipped end-block disconnect was therefore not observable on any reachable input
+            # shape, and this test also passes on the unfixed code. It stands guard for the day a
+            # connection is held open eagerly. The application name marks the session so the count
+            # below finds exactly this one; Pooling=False makes a survivor impossible to miss.
+            $guardAppName = "dbatoolsci_spconfigure_guard_$(Get-Random)"
+            $guardConnectionString = "Data Source=$($TestConfig.InstanceSingle);Integrated Security=True;Trust Server Certificate=True;Pooling=False;Application Name=$guardAppName"
+
+            # The missing file is the guard under test: the begin block has already opened the
+            # connection when it stops, so the end block cleanup must run despite the interrupt.
+            $splatGuardImport = @{
+                SqlInstance   = $guardConnectionString
+                Path          = "$exportPath\does-not-exist.sql"
+                WarningAction = "SilentlyContinue"
+            }
+            $null = Import-DbaSpConfigure @splatGuardImport
+            # Invoke-DbaQuery below writes to $WarnVar as well, so it has to be kept here.
+            $guardWarnings = $WarnVar
+
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $guardSessionQuery = @"
+SELECT COUNT(*) AS SessionCount FROM sys.dm_exec_sessions WHERE program_name = '$guardAppName'
+"@
+            $guardSessionCount = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $guardSessionQuery).SessionCount
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # On a defective command the non-pooled session survives - close the cached connection
+            # and kill any remaining marked session so nothing leaks into later tests.
+            $guardEntry = Get-DbaConnectedInstance | Where-Object ConnectionString -match $guardAppName
+            if ($guardEntry) {
+                $null = $guardEntry.ConnectionObject | Disconnect-DbaInstance
+            }
+            $null = Get-DbaProcess -SqlInstance $TestConfig.InstanceSingle -Program $guardAppName -WarningAction SilentlyContinue | Stop-DbaProcess -WarningAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "warns about the missing file" {
+            $guardWarnings | Should -BeLike "*Not Found*"
+        }
+
+        It "closes the non-pooled connection it opened although the guard interrupted the command" {
+            $guardSessionCount | Should -Be 0
         }
     }
 }
