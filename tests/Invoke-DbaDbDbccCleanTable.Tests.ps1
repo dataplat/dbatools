@@ -31,7 +31,7 @@ Describe $CommandName -Tag IntegrationTests {
         $db = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database tempdb
         $null = $db.Query("CREATE TABLE dbo.dbatoolct_example (object_id int, [definition] nvarchar(max),Document varchar(2000));
         INSERT INTO dbo.dbatoolct_example([object_id], [definition], Document) Select [object_id], [definition], REPLICATE('ab', 800) from master.sys.sql_modules;
-        ALTER TABLE dbo.dbatoolct_example DROP COLUMN Definition, Document;")
+        ALTER TABLE dbo.dbatoolct_example DROP COLUMN [definition], Document;")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")

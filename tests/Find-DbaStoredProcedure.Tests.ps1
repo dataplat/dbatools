@@ -40,7 +40,7 @@ FROM [master].[sys].[syslogins];
 "@
             $splatCreateProc = @{
                 SqlInstance = $TestConfig.InstanceSingle
-                Database    = "Master"
+                Database    = "master"
                 Query       = $ServerProcedure
             }
             $null = Invoke-DbaQuery @splatCreateProc
@@ -56,7 +56,7 @@ FROM [master].[sys].[syslogins];
             $DropProcedure = "DROP PROCEDURE dbo.cp_dbatoolsci_sysadmin;"
             $splatDropProc = @{
                 SqlInstance = $TestConfig.InstanceSingle
-                Database    = "Master"
+                Database    = "master"
                 Query       = $DropProcedure
             }
             $null = Invoke-DbaQuery @splatDropProc

@@ -35,12 +35,12 @@ AS
     SELECT [sid],[loginname],[sysadmin]
     FROM [master].[sys].[syslogins];
 "@
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database "Master" -Query $ServerView
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database "master" -Query $ServerView
         }
 
         AfterAll {
             $DropView = "DROP VIEW dbo.v_dbatoolsci_sysadmin;"
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database "Master" -Query $DropView
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database "master" -Query $DropView
         }
 
         BeforeEach {
@@ -51,9 +51,9 @@ AS
             $results.Name | Should -Be "v_dbatoolsci_sysadmin"
         }
 
-        It "Should find v_dbatoolsci_sysadmin in Master" {
-            $results.Database | Should -Be "Master"
-            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database Master).ID
+        It "Should find v_dbatoolsci_sysadmin in master" {
+            $results.Database | Should -Be "master"
+            $results.DatabaseId | Should -Be (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database master).ID
         }
     }
 

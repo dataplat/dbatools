@@ -771,17 +771,17 @@ insert #TmpIndex exec ('dbcc ind(PageRestore,testpage,-1)')
 dbcc ind(PageRestore,testpage,-1)
 
 declare @pageid int
-select top 1 @pageid=PagePid from #TmpIndex where IAMFID is not null and IAmPID is not null
+select top 1 @pageid=PagePid from #TmpIndex where IAMFID is not null and IAMPid is not null
 
 --select * from #TmpIndex
 --pageid = 256
-alter database pagerestore set single_user with rollback immediate
+alter database PageRestore set single_user with rollback immediate
 
-dbcc writepage(pagerestore,1,@pageid,0,1,0x41,1)
-dbcc writepage(pagerestore,1,@pageid,1,1,0x41,1)
-dbcc writepage(pagerestore,1,@pageid,2,1,0x41,1)
+dbcc writepage(PageRestore,1,@pageid,0,1,0x41,1)
+dbcc writepage(PageRestore,1,@pageid,1,1,0x41,1)
+dbcc writepage(PageRestore,1,@pageid,2,1,0x41,1)
 
-alter database pagerestore set multi_user
+alter database PageRestore set multi_user
 
 insert into testpage values (REPLICATE('e','8000'))
 
@@ -790,18 +790,18 @@ Backup log PageRestore to disk='$backupPath\PageRestore.trn'
 insert into testpage values (REPLICATE('f','8000'))
 use master
 "@
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $sql -Database Pagerestore
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $sql -Database PageRestore
         }
 
         It "Should have warned about corruption" {
-            $sqlResults2 = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database Master -Query "select * from pagerestore.dbo.testpage where filler like 'a%'" -WarningAction SilentlyContinue
+            $sqlResults2 = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "select * from PageRestore.dbo.testpage where filler like 'a%'" -WarningAction SilentlyContinue
             $WarnVar | Should -Match ([regex]::Escape("SQL Server detected a logical consistency-based I/O error: incorrect checksum (expected"))
             $sqlResults2 | Should -BeNullOrEmpty
         }
 
         It "Should work after page restore" {
-            $null = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database pagerestore -last | Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -PageRestore (Get-DbaSuspectPage -SqlInstance $TestConfig.InstanceSingle -Database PageRestore) -TrustDbBackupHistory -DatabaseName PageRestore -PageRestoreTailFolder $backupPath
-            $sqlResults3 = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "select * from pagerestore.dbo.testpage where filler like 'f%'"
+            $null = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database PageRestore -last | Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -PageRestore (Get-DbaSuspectPage -SqlInstance $TestConfig.InstanceSingle -Database PageRestore) -TrustDbBackupHistory -DatabaseName PageRestore -PageRestoreTailFolder $backupPath
+            $sqlResults3 = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "select * from PageRestore.dbo.testpage where filler like 'f%'"
             ($null -eq $sqlResults3) | Should -Be $false
         }
     }
@@ -811,7 +811,7 @@ use master
         It "Should backup and restore cleanly" {
             Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem | Remove-DbaDatabase
             $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName PipeTest -DestinationFilePrefix PipeTest
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database Pipetest -BackupDirectory $backupPath -CopyOnly | Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -DatabaseName restored -ReplaceDbNameInFile
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database PipeTest -BackupDirectory $backupPath -CopyOnly | Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -DatabaseName restored -ReplaceDbNameInFile
             $results.RestoreComplete | Should -Be $true
         }
     }

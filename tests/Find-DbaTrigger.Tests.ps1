@@ -48,7 +48,7 @@ AS
 DROP TRIGGER dbatoolsci_ddl_trig_database
 ON ALL SERVER;
 "@
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database "Master" -Query $DropTrigger
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database "master" -Query $DropTrigger
         }
 
         It "Should find a specific Trigger at the Server Level" {
@@ -113,18 +113,18 @@ GO
         }
 
         It "Should find a specific Trigger at the Object Level" {
-            $results = Find-DbaTrigger -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci* -Database "dbatoolsci_triggerdb" -ExcludeDatabase Master -TriggerLevel Object
+            $results = Find-DbaTrigger -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci* -Database "dbatoolsci_triggerdb" -ExcludeDatabase master -TriggerLevel Object
             $results.TriggerLevel | Should -Be "Object"
             $results.DatabaseId | Should -Be $dbatoolsci_triggerdb.ID
         }
 
         It "Should find a specific Trigger named dbatoolsci_reminder1" {
-            $results = Find-DbaTrigger -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci* -Database "dbatoolsci_triggerdb" -ExcludeDatabase Master -TriggerLevel Object
+            $results = Find-DbaTrigger -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci* -Database "dbatoolsci_triggerdb" -ExcludeDatabase master -TriggerLevel Object
             $results.Name | Should -Be "dbatoolsci_reminder1"
         }
 
         It "Should find a specific Trigger on the Table [dbo].[Customer]" {
-            $results = Find-DbaTrigger -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci* -Database "dbatoolsci_triggerdb" -ExcludeDatabase Master -TriggerLevel Object
+            $results = Find-DbaTrigger -SqlInstance $TestConfig.InstanceSingle -Pattern dbatoolsci* -Database "dbatoolsci_triggerdb" -ExcludeDatabase master -TriggerLevel Object
             $results.Object | Should -Be "[dbo].[Customer]"
         }
 

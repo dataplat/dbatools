@@ -120,7 +120,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         }
 
         It "Should execute with averagetime" {
-            $resultsAverageTime = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database Tempdb -GetAverageTime
+            $resultsAverageTime = Invoke-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database tempdb -GetAverageTime
             $WarnVar | Should -BeNullOrEmpty
             # No test for results as we don't expect any running queries
         }
