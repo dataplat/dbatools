@@ -23,10 +23,11 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $instanceName = "dbatoolsci_testinstance_$(Get-Random)"
+        $secondInstanceName = "dbatoolsci_testinstance2_$(Get-Random)"
     }
 
     AfterAll {
-        $null = Remove-DbaInstanceList -SqlInstance $instanceName -ErrorAction SilentlyContinue
+        $null = Remove-DbaInstanceList -SqlInstance $instanceName, $secondInstanceName -ErrorAction SilentlyContinue
     }
 
     Context "adds instances to the list" {
@@ -48,6 +49,18 @@ Describe $CommandName -Tag IntegrationTests {
             Add-DbaInstanceList -SqlInstance $instanceName
             $result = Get-DbaInstanceList
             ($result | Where-Object { $PSItem -eq $instanceName.ToLowerInvariant() }).Count | Should -Be 1
+        }
+
+        It "keeps the TEPP cache an array when more than one instance is known" {
+            # The cache starts as $null, and $null += "x" made it a string. Every further name was then
+            # concatenated onto that string and the completer offered one long blob instead of names.
+            Add-DbaInstanceList -SqlInstance $secondInstanceName
+            Add-DbaInstanceList -SqlInstance $instanceName
+            $cache = [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"]
+            $cache -is [array] | Should -BeTrue
+            $cache | Should -Contain $instanceName.ToLowerInvariant()
+            $cache | Should -Contain $secondInstanceName.ToLowerInvariant()
+            @($cache | Where-Object { $PSItem -eq $instanceName.ToLowerInvariant() }).Count | Should -Be 1
         }
     }
 }
