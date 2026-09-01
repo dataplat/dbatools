@@ -65,6 +65,28 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "When the file does not exist" {
+        It "Warns without eating an iteration of the caller's loop" {
+            # The FilePath guards used to run Stop-Function -Continue without an enclosing loop -
+            # the continue escaped the command and consumed an iteration of this very loop, so the
+            # counter fell short (#10638).
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $splatMissingFile = @{
+                    SqlInstance   = $TestConfig.InstanceSingle
+                    Database      = $dbName
+                    Table         = "BinaryFiles"
+                    FilePath      = "$importPath\does-not-exist.bin"
+                    WarningAction = "SilentlyContinue"
+                }
+                $null = Import-DbaBinaryFile @splatMissingFile
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*does not exist*"
+        }
+    }
+
     Context "Importing through a connection of the caller (#10554)" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
