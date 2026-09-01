@@ -70,14 +70,14 @@ CREATE LOGIN [$DBUserName]
         It "Should execute against active nodes" {
             # Creates the user on
             Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Query $CreateTestLogin
-            $results = Sync-DbaLoginPermission -Source $TestConfig.InstanceMulti1 -Destination $TestConfig.InstanceMulti2 -Login $DBUserName -ExcludeLogin 'NotaLogin' -WarningVariable warn
-            $results.Status | Should -Be 'Successful'
+            $results = Sync-DbaLoginPermission -Source $TestConfig.InstanceMulti1 -Destination $TestConfig.InstanceMulti2 -Login $DBUserName -ExcludeLogin "NotaLogin" -WarningVariable warn
+            $results.Status | Should -Be "Successful"
             $warn | Should -BeNullOrEmpty
         }
 
         # The copy failes on Appveyor with: Failed to create or use STIG schema on APPVYR-WIN\sql2017
         It "Should have copied the user permissions of $DBUserName" -Skip:$env:appveyor {
-            $permissionsAfter = Get-DbaUserPermission -SqlInstance $TestConfig.InstanceMulti2 -Database master | Where-Object { $_.member -eq $DBUserName -and $_.permission -eq 'VIEW ANY DEFINITION' }
+            $permissionsAfter = Get-DbaUserPermission -SqlInstance $TestConfig.InstanceMulti2 -Database master | Where-Object { $_.member -eq $DBUserName -and $_.permission -eq "VIEW ANY DEFINITION" }
             $permissionsAfter.member | Should -Be $DBUserName
         }
     }
