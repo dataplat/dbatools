@@ -90,6 +90,29 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Gets Db Mail Log using -Type under a Turkish culture" {
+        BeforeAll {
+            # ValidateSet accepts case-insensitive input, so INFORMATION reaches the command as
+            # typed. Its uppercase letters I are what a culture-sensitive lowercase turns into
+            # dotless i under Turkish rules - the command has to normalize invariantly. On this
+            # lane the test pins the invariant but has no red on the unfixed code: the instance
+            # collation is Latin1, where the varchar literal best-fits the dotless i back to a
+            # plain i. The failure needs a Turkish-collation target to reproduce end to end.
+            $cultureBefore = [System.Globalization.CultureInfo]::CurrentCulture
+            try {
+                [System.Globalization.CultureInfo]::CurrentCulture = "tr-TR"
+                $resultsTurkish = Get-DbaDbMailLog -SqlInstance $TestConfig.InstanceSingle -Type INFORMATION
+            } finally {
+                [System.Globalization.CultureInfo]::CurrentCulture = $cultureBefore
+            }
+        }
+
+        It "Finds the information events although the culture lowercases differently" {
+            $resultsTurkish | Should -Not -BeNullOrEmpty
+            $resultsTurkish.EventType | Select-Object -Unique | Should -Be "Information"
+        }
+    }
+
     Context "Gets Db Mail History using -Since" {
         BeforeAll {
             $results = Get-DbaDbMailLog -SqlInstance $TestConfig.InstanceSingle -Since "2018-01-01"
