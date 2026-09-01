@@ -244,7 +244,10 @@ function Get-DbaDatabase {
     begin {
 
         if ($ExcludeUser -and $ExcludeSystem) {
-            Stop-Function -Message "You cannot specify both ExcludeUser and ExcludeSystem." -Continue -EnableException $EnableException
+            # No -Continue here: the begin block has no enclosing loop, so the continue would escape
+            # the command and eat an iteration of whatever loop the caller runs in.
+            Stop-Function -Message "You cannot specify both ExcludeUser and ExcludeSystem." -EnableException $EnableException
+            return
         }
 
     }
