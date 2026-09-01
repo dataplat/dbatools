@@ -64,7 +64,24 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Command returns correct certificate information" {
         BeforeAll {
             $computerName = ([DbaInstanceParameter]$TestConfig.InstanceSingle).ComputerName
-            $certificate = New-DbaComputerCertificate -ComputerName $computerName -SelfSigned -KeyLength 2048 -HashAlgorithm Sha256 -EnableException
+
+            # On a failover cluster instance the certificate must carry the virtual network name of the
+            # instance, but New-DbaComputerCertificate resolves that name to the node it currently runs
+            # on and would issue the certificate for the node. So read the virtual server name first and
+            # pass it as ClusterInstanceName, which is the documented way to certify a cluster instance.
+            # On a stand-alone instance VSName is empty and the certificate is issued for the node.
+            $vsName = (Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -OutputType Certificate -EnableException).VSName
+            $splatCertificate = @{
+                ComputerName    = $computerName
+                SelfSigned      = $true
+                KeyLength       = 2048
+                HashAlgorithm   = "Sha256"
+                EnableException = $true
+            }
+            if ($vsName) {
+                $splatCertificate.ClusterInstanceName = $vsName
+            }
+            $certificate = New-DbaComputerCertificate @splatCertificate
             $results = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -EnableException
         }
 
