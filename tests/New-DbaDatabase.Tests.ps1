@@ -273,10 +273,10 @@ Describe $CommandName -Tag IntegrationTests {
             $serverMulti1.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].Growth | Should -Be 65536
             $serverMulti1.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].GrowthType | Should -Be "KB"
 
-            $serverMulti1.Databases[$newDbName].LogFiles["$($newDbName)_log"].Size | Should -Be 32768
-            $serverMulti1.Databases[$newDbName].LogFiles["$($newDbName)_log"].MaxSize | Should -Be 524288
-            $serverMulti1.Databases[$newDbName].LogFiles["$($newDbName)_log"].Growth | Should -Be 32768
-            $serverMulti1.Databases[$newDbName].LogFiles["$($newDbName)_log"].GrowthType | Should -Be "KB"
+            $serverMulti1.Databases[$newDbName].LogFiles["$($newDbName)_Log"].Size | Should -Be 32768
+            $serverMulti1.Databases[$newDbName].LogFiles["$($newDbName)_Log"].MaxSize | Should -Be 524288
+            $serverMulti1.Databases[$newDbName].LogFiles["$($newDbName)_Log"].Growth | Should -Be 32768
+            $serverMulti1.Databases[$newDbName].LogFiles["$($newDbName)_Log"].GrowthType | Should -Be "KB"
 
             $serverMulti1.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].Size | Should -Be 65536
             $serverMulti1.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].MaxSize | Should -Be 524288
@@ -288,10 +288,10 @@ Describe $CommandName -Tag IntegrationTests {
             $serverMulti2.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].Growth | Should -Be 65536
             $serverMulti2.Databases[$newDbName].FileGroups["PRIMARY"].Files["$($newDbName)_PRIMARY"].GrowthType | Should -Be "KB"
 
-            $serverMulti2.Databases[$newDbName].LogFiles["$($newDbName)_log"].Size | Should -Be 32768
-            $serverMulti2.Databases[$newDbName].LogFiles["$($newDbName)_log"].MaxSize | Should -Be 524288
-            $serverMulti2.Databases[$newDbName].LogFiles["$($newDbName)_log"].Growth | Should -Be 32768
-            $serverMulti2.Databases[$newDbName].LogFiles["$($newDbName)_log"].GrowthType | Should -Be "KB"
+            $serverMulti2.Databases[$newDbName].LogFiles["$($newDbName)_Log"].Size | Should -Be 32768
+            $serverMulti2.Databases[$newDbName].LogFiles["$($newDbName)_Log"].MaxSize | Should -Be 524288
+            $serverMulti2.Databases[$newDbName].LogFiles["$($newDbName)_Log"].Growth | Should -Be 32768
+            $serverMulti2.Databases[$newDbName].LogFiles["$($newDbName)_Log"].GrowthType | Should -Be "KB"
 
             $serverMulti2.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].Size | Should -Be 65536
             $serverMulti2.Databases[$newDbName].FileGroups["$($newDbName)_MainData"].Files[0].MaxSize | Should -Be 524288
@@ -313,8 +313,8 @@ Describe $CommandName -Tag IntegrationTests {
             $serverMulti1.Databases[$bug6780DbName].FileGroups["PRIMARY"].Files["$($bug6780DbName)_PRIMARY"].Growth | Should -Be $serverMulti1.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Growth
             $serverMulti1.Databases[$bug6780DbName].FileGroups["PRIMARY"].Files["$($bug6780DbName)_PRIMARY"].GrowthType | Should -Be $serverMulti1.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].GrowthType
 
-            $serverMulti1.Databases[$bug6780DbName].LogFiles["$($bug6780DbName)_log"].Growth | Should -Be $serverMulti1.Databases["model"].LogFiles["modellog"].Growth
-            $serverMulti1.Databases[$bug6780DbName].LogFiles["$($bug6780DbName)_log"].GrowthType | Should -Be $serverMulti1.Databases["model"].LogFiles["modellog"].GrowthType
+            $serverMulti1.Databases[$bug6780DbName].LogFiles["$($bug6780DbName)_Log"].Growth | Should -Be $serverMulti1.Databases["model"].LogFiles["modellog"].Growth
+            $serverMulti1.Databases[$bug6780DbName].LogFiles["$($bug6780DbName)_Log"].GrowthType | Should -Be $serverMulti1.Databases["model"].LogFiles["modellog"].GrowthType
 
             # also check the randomDb since it was created without any additional params
             $serverMulti1.Databases[$($randomDb.Name)].FileGroups["PRIMARY"].Files["$($randomDb.Name)"].Growth | Should -Be $serverMulti1.Databases["model"].FileGroups["PRIMARY"].Files["modeldev"].Growth
