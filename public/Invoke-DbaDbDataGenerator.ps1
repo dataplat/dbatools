@@ -138,7 +138,10 @@ function Invoke-DbaDbDataGenerator {
         try {
             $script:faker = New-Object Bogus.Faker($Locale)
         } catch {
-            Stop-Function -Message "Could not load randomizer class" -Continue
+            # No -Continue here: the begin block has no enclosing loop, so the continue would escape
+            # the command and eat an iteration of whatever loop the caller runs in.
+            Stop-Function -Message "Could not load randomizer class"
+            return
         }
 
         # This list has to match the one in Test-DbaDbDataGeneratorConfig, because a configuration is
