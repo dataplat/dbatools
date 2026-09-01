@@ -142,7 +142,13 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     # The context "RuleType Port (traditional port-based rules)" does not work with dynamic ports.
     # So we test at discovery time if dynamic ports are used and skip the tests if so.
-    $isUsingDynamicPort = (Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -OutputType TcpIpAddresses).TcpDynamicPorts -ne ''
+    # The Browser tests carry a -Skip as well: the command only creates a Browser rule for a named
+    # instance or a static port other than 1433, so a default instance on the default port gets no
+    # Browser rule and the negative test runs instead. Computed here because -Skip needs the values
+    # at discovery time.
+    $singleTcpIpAddresses = Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceSingle -OutputType TcpIpAddresses
+    $isUsingDynamicPort = $singleTcpIpAddresses.TcpDynamicPorts -ne ""
+    $browserExpected = ([DbaInstanceParameter]$TestConfig.InstanceSingle).InstanceName -ne "MSSQLSERVER" -or ($singleTcpIpAddresses.TcpPort -ne "" -and $singleTcpIpAddresses.TcpPort -ne "1433")
 
     Context "RuleType Program (default - executable-based rules)" {
         BeforeAll {
@@ -161,6 +167,18 @@ Describe $CommandName -Tag IntegrationTests {
             $resultsRemove = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -Type AllInstance
 
             $instanceName = ([DbaInstanceParameter]$TestConfig.InstanceSingle).InstanceName
+            # The command names the Engine rule of a default instance differently and only creates
+            # a Browser rule when one is needed, so the expectations depend on the instance.
+            if ($instanceName -eq "MSSQLSERVER") {
+                $expectedEngineRuleName = "SQL Server default instance"
+            } else {
+                $expectedEngineRuleName = "SQL Server instance $instanceName"
+            }
+            if ($browserExpected) {
+                $expectedMinimumRuleCount = 2
+            } else {
+                $expectedMinimumRuleCount = 1
+            }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -171,26 +189,32 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "creates at least two firewall rules" {
-            $resultsNew.Count | Should -BeGreaterOrEqual 2
+        It "creates at least the expected number of firewall rules" {
+            @($resultsNew).Count | Should -BeGreaterOrEqual $expectedMinimumRuleCount
         }
 
         It "creates first firewall rule for SQL Server instance" {
             $resultsNew[0].Successful | Should -Be $true
             $resultsNew[0].Type | Should -Be "Engine"
-            $resultsNew[0].DisplayName | Should -Be "SQL Server instance $instanceName"
+            $resultsNew[0].DisplayName | Should -Be $expectedEngineRuleName
             $resultsNew[0].Status | Should -Be "The rule was successfully created."
         }
 
-        It "creates second firewall rule for SQL Server Browser" {
+        It "creates second firewall rule for SQL Server Browser" -Skip:(-not $browserExpected) {
             $resultsNew[1].Successful | Should -Be $true
             $resultsNew[1].Type | Should -Be "Browser"
             $resultsNew[1].DisplayName | Should -Be "SQL Server Browser"
             $resultsNew[1].Status | Should -Be "The rule was successfully created."
         }
 
-        It "returns at least two firewall rules" {
-            $resultsGet.Count | Should -BeGreaterOrEqual 2
+        It "creates no firewall rule for SQL Server Browser" -Skip:$browserExpected {
+            # A default instance on the default port is reachable without the Browser, so the
+            # command must not create a rule for it.
+            $resultsNew.Type | Should -Not -Contain "Browser"
+        }
+
+        It "returns at least the expected number of firewall rules" {
+            @($resultsGet).Count | Should -BeGreaterOrEqual $expectedMinimumRuleCount
         }
 
         It "returns firewall rule for SQL Server instance with Program" {
@@ -199,7 +223,7 @@ Describe $CommandName -Tag IntegrationTests {
             $resultInstance.Program | Should -BeLike "*sqlservr.exe"
         }
 
-        It "returns firewall rule for SQL Server Browser with Program" {
+        It "returns firewall rule for SQL Server Browser with Program" -Skip:(-not $browserExpected) {
             $resultBrowser = $resultsGet | Where-Object Type -eq "Browser"
             # Browser in Program mode should have Protocol = Any and Program path
             if ($resultBrowser.Program) {
@@ -212,7 +236,7 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
 
-        It "removes firewall rule for Browser" {
+        It "removes firewall rule for Browser" -Skip:(-not $browserExpected) {
             $resultsRemoveBrowser.Type | Should -Be "Browser"
             $resultsRemoveBrowser.IsRemoved | Should -Be $true
             $resultsRemoveBrowser.Status | Should -Be "The rule was successfully removed."
@@ -238,6 +262,17 @@ Describe $CommandName -Tag IntegrationTests {
             $resultsRemovePort = Remove-DbaFirewallRule -SqlInstance $TestConfig.InstanceSingle -Type AllInstance
 
             $instanceName = ([DbaInstanceParameter]$TestConfig.InstanceSingle).InstanceName
+            # Same as above: the expectations depend on the instance.
+            if ($instanceName -eq "MSSQLSERVER") {
+                $expectedEngineRuleName = "SQL Server default instance"
+            } else {
+                $expectedEngineRuleName = "SQL Server instance $instanceName"
+            }
+            if ($browserExpected) {
+                $expectedMinimumRuleCount = 2
+            } else {
+                $expectedMinimumRuleCount = 1
+            }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -248,22 +283,28 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "creates at least two firewall rules" {
-            $resultsNewPort.Count | Should -BeGreaterOrEqual 2
+        It "creates at least the expected number of firewall rules" {
+            @($resultsNewPort).Count | Should -BeGreaterOrEqual $expectedMinimumRuleCount
         }
 
         It "creates first firewall rule for SQL Server instance" {
             $resultsNewPort[0].Successful | Should -Be $true
             $resultsNewPort[0].Type | Should -Be "Engine"
-            $resultsNewPort[0].DisplayName | Should -Be "SQL Server instance $instanceName"
+            $resultsNewPort[0].DisplayName | Should -Be $expectedEngineRuleName
             $resultsNewPort[0].Status | Should -Be "The rule was successfully created."
         }
 
-        It "creates second firewall rule for SQL Server Browser" {
+        It "creates second firewall rule for SQL Server Browser" -Skip:(-not $browserExpected) {
             $resultsNewPort[1].Successful | Should -Be $true
             $resultsNewPort[1].Type | Should -Be "Browser"
             $resultsNewPort[1].DisplayName | Should -Be "SQL Server Browser"
             $resultsNewPort[1].Status | Should -Be "The rule was successfully created."
+        }
+
+        It "creates no firewall rule for SQL Server Browser" -Skip:$browserExpected {
+            # A default instance on the default port is reachable without the Browser, so the
+            # command must not create a rule for it.
+            $resultsNewPort.Type | Should -Not -Contain "Browser"
         }
 
         It "returns firewall rule for SQL Server instance with LocalPort" {
@@ -272,7 +313,7 @@ Describe $CommandName -Tag IntegrationTests {
             $resultInstance.LocalPort | Should -Not -BeNullOrEmpty
         }
 
-        It "returns firewall rule for SQL Server Browser with port 1434" {
+        It "returns firewall rule for SQL Server Browser with port 1434" -Skip:(-not $browserExpected) {
             $resultBrowser = $resultsGetPort | Where-Object Type -eq "Browser"
             $resultBrowser.Protocol | Should -Be "UDP"
             $resultBrowser.LocalPort | Should -Be "1434"
