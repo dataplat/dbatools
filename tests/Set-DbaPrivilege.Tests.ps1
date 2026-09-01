@@ -90,6 +90,57 @@ InModuleScope dbatools {
             ($script:capturedPolicyContent | Where-Object { $PSItem -match "^SeCreateGlobalPrivilege" }) |
                 Should -Match "^SeCreateGlobalPrivilege = \*$([regex]::Escape($expectedSid))(,)?$"
         }
+
+        It "passes the credential to the remoting connectivity test and the service discovery for a remote computer" {
+            # Regression test: neither Test-PSRemoting nor Get-DbaService received the credential,
+            # so both authenticated with the implicit identity and failed although the credential
+            # would have worked - for example when the caller itself runs in a remoting session
+            # with a network logon token (double hop).
+            $script:mockServiceUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+            Mock Get-DbaService {
+                [PSCustomObject]@{
+                    StartName   = $script:mockServiceUser
+                    ServiceName = "MSSQLSERVER"
+                }
+            }
+            $testCredential = New-Object System.Management.Automation.PSCredential ("dbatoolsTestUser", (ConvertTo-SecureString -String "dummy" -AsPlainText -Force))
+
+            $splatSetPrivilege = @{
+                ComputerName = "dbatoolsTestRemote"
+                Type         = "ServiceLogon"
+                Credential   = $testCredential
+                Confirm      = $false
+            }
+            $null = Set-DbaPrivilege @splatSetPrivilege
+
+            Should -Invoke Test-PSRemoting -Times 1 -Exactly -ParameterFilter { $Credential -eq $testCredential }
+            Should -Invoke Get-DbaService -Times 1 -Exactly -ParameterFilter { $Credential -eq $testCredential }
+        }
+
+        It "does not pass the credential to the connectivity test and the service discovery for the local computer" {
+            # Invoke-Command2 runs locally under the process identity and ignores -Credential, so
+            # the pre-flight and the service discovery have to do the same - a credential that is
+            # valid remotely but not locally must not reject the local computer of a mixed list.
+            $script:mockServiceUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+            Mock Get-DbaService {
+                [PSCustomObject]@{
+                    StartName   = $script:mockServiceUser
+                    ServiceName = "MSSQLSERVER"
+                }
+            }
+            $testCredential = New-Object System.Management.Automation.PSCredential ("dbatoolsTestUser", (ConvertTo-SecureString -String "dummy" -AsPlainText -Force))
+
+            $splatSetPrivilegeLocal = @{
+                ComputerName = $env:COMPUTERNAME
+                Type         = "ServiceLogon"
+                Credential   = $testCredential
+                Confirm      = $false
+            }
+            $null = Set-DbaPrivilege @splatSetPrivilegeLocal
+
+            Should -Invoke Test-PSRemoting -Times 1 -Exactly -ParameterFilter { $null -eq $Credential }
+            Should -Invoke Get-DbaService -Times 1 -Exactly -ParameterFilter { $null -eq $Credential }
+        }
     }
 }
 
