@@ -107,40 +107,51 @@ function Get-DbaXESession {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            Write-Message -Level Verbose -Message "Getting XEvents Sessions on $instance."
-            $xesessions = $XEStore.sessions
+            # The finally makes sure the cloned store connection is also closed when a downstream
+            # command ends the pipeline early (... | Select-Object -First 1 stops this command in
+            # the middle of the emission loop) and when a terminating error unwinds.
+            try {
+                Write-Message -Level Verbose -Message "Getting XEvents Sessions on $instance."
+                $xesessions = $XEStore.sessions
 
-            if ($Session) {
-                $xesessions = $xesessions | Where-Object { $_.Name -in $Session }
-            }
-
-            foreach ($x in $xesessions) {
-                $status = switch ($x.IsRunning) { $true { "Running" } $false { "Stopped" } }
-                $files = $x.Targets.TargetFields | Where-Object Name -eq Filename | Select-Object -ExpandProperty Value
-
-                $filecollection = $remotefile = @()
-
-                if ($files) {
-                    foreach ($file in $files) {
-                        if ($file -notmatch ':\\' -and $file -notmatch '\\\\' -and $file -notmatch '\/') {
-                            $directory = $server.ErrorLogPath.TrimEnd("\/")
-                            $file = (Join-DbaPath -SqlInstance $server $directory $file)
-                        }
-                        $filecollection += $file
-                        $remotefile += Join-AdminUnc -servername $server.ComputerName -filepath $file
-                    }
+                if ($Session) {
+                    $xesessions = $xesessions | Where-Object { $_.Name -in $Session }
                 }
 
-                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
-                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
-                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
-                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Status -Value $status
-                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Session -Value $x.Name
-                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name TargetFile -Value $filecollection
-                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name RemoteTargetFile -Value $remotefile
-                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Parent -Value $server
-                Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Store -Value $XEStore
-                Select-DefaultView -InputObject $x -Property ComputerName, InstanceName, SqlInstance, Name, Status, StartTime, AutoStart, State, Targets, TargetFile, Events, MaxMemory, MaxEventSize
+                foreach ($x in $xesessions) {
+                    $status = switch ($x.IsRunning) { $true { "Running" } $false { "Stopped" } }
+                    $files = $x.Targets.TargetFields | Where-Object Name -eq Filename | Select-Object -ExpandProperty Value
+
+                    $filecollection = $remotefile = @()
+
+                    if ($files) {
+                        foreach ($file in $files) {
+                            if ($file -notmatch ':\\' -and $file -notmatch '\\\\' -and $file -notmatch '\/') {
+                                $directory = $server.ErrorLogPath.TrimEnd("\/")
+                                $file = (Join-DbaPath -SqlInstance $server $directory $file)
+                            }
+                            $filecollection += $file
+                            $remotefile += Join-AdminUnc -servername $server.ComputerName -filepath $file
+                        }
+                    }
+
+                    Add-Member -Force -InputObject $x -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
+                    Add-Member -Force -InputObject $x -MemberType NoteProperty -Name InstanceName -Value $server.ServiceName
+                    Add-Member -Force -InputObject $x -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
+                    Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Status -Value $status
+                    Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Session -Value $x.Name
+                    Add-Member -Force -InputObject $x -MemberType NoteProperty -Name TargetFile -Value $filecollection
+                    Add-Member -Force -InputObject $x -MemberType NoteProperty -Name RemoteTargetFile -Value $remotefile
+                    Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Parent -Value $server
+                    Add-Member -Force -InputObject $x -MemberType NoteProperty -Name Store -Value $XEStore
+                    Select-DefaultView -InputObject $x -Property ComputerName, InstanceName, SqlInstance, Name, Status, StartTime, AutoStart, State, Targets, TargetFile, Events, MaxMemory, MaxEventSize
+                }
+            } finally {
+                # The store rides a cloned connection that nothing ever closed, so every call parked
+                # one more session on the instance until the process ended. Close it here; when a
+                # consumer of the emitted objects uses the store again, SFC transparently reconnects
+                # from the pool.
+                $XEStore.SfcConnection.Disconnect()
             }
         }
     }
