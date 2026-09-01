@@ -25,6 +25,30 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Every masking type in columntypes.json is backed by a randomizer type" {
+        BeforeAll {
+            # The command assigns MaskingType and SubType from bin\datamasking\columntypes.json when a
+            # column name matches one of its synonyms. Nothing else ties that file to the randomizer
+            # types, so a pair that drifts apart from bin\randomizer\en.randomizertypes.csv produces
+            # configurations that Test-DbaDbDataGeneratorConfig rejects. The randomizer types are
+            # themselves guarded against Bogus in Get-DbaRandomizedType.Tests.ps1; this is the missing
+            # guard for columntypes.json.
+            $columnTypes = Get-Content -Path "$PSScriptRoot\..\bin\datamasking\columntypes.json" | ConvertFrom-Json
+            $randomizerTypes = Get-DbaRandomizedType
+
+            $missingCombinations = foreach ($columnType in $columnTypes) {
+                $randomizerCombination = $randomizerTypes | Where-Object { $PSItem.Type -eq $columnType.MaskingType -and $PSItem.SubType -eq $columnType.SubType }
+                if (-not $randomizerCombination) {
+                    "$($columnType.TypeName): $($columnType.MaskingType)/$($columnType.SubType)"
+                }
+            }
+        }
+
+        It "Has no combination that the randomizer types do not know" {
+            $missingCombinations | Should -BeNullOrEmpty
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
