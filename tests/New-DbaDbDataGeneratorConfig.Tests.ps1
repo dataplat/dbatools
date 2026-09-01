@@ -98,4 +98,41 @@ Describe $CommandName -Tag IntegrationTests {
             $configResults | Remove-Item -ErrorAction SilentlyContinue
         }
     }
+
+    Context "When the target file cannot be written" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Generate the config once so the target file exists, then make it read-only so that
+            # every following write fails inside the command.
+            $splatLockedConfig = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbNameGenerator
+                Path        = $tempConfigPath
+            }
+            $lockedConfigFile = New-DbaDbDataGeneratorConfig @splatLockedConfig
+            $lockedConfigFile.IsReadOnly = $true
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The write-failure guard used to run Stop-Function -Continue without an enclosing loop -
+            # the continue escaped the command and consumed an iteration of this very loop, so the
+            # counter fell short (#10638).
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = New-DbaDbDataGeneratorConfig @splatLockedConfig -WarningAction SilentlyContinue
+                $loopCount++
+            }
+        }
+
+        AfterAll {
+            $lockedConfigFile.IsReadOnly = $false
+            $lockedConfigFile | Remove-Item -ErrorAction SilentlyContinue
+        }
+
+        It "Warns without eating an iteration of the caller's loop" {
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*Something went wrong writing the results*"
+        }
+    }
 }
