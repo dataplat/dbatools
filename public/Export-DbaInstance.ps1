@@ -446,10 +446,10 @@ function Export-DbaInstance {
                         Get-ChildItem -ErrorAction Ignore -Path "$exportPath\endpoints.sql"
                     }
 
-                    if ($Exclude -notcontains 'PolicyManagement' -and $PSVersionTable.PSEdition -eq "Core") {
-                        Write-Message -Level Verbose -Message "Skipping Policy Management -- not supported by PowerShell Core"
+                    if ($Exclude -notcontains "PolicyManagement" -and ($IsLinux -or $IsMacOS)) {
+                        Write-Message -Level Verbose -Message "Skipping Policy Management -- not supported on Linux or macOS"
                     }
-                    if ($Exclude -notcontains 'PolicyManagement' -and $PSVersionTable.PSEdition -ne "Core") {
+                    if ($Exclude -notcontains "PolicyManagement" -and -not ($IsLinux -or $IsMacOS)) {
                         Write-Message -Level Verbose -Message "Exporting Policy Management"
                         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Policy Management"
 

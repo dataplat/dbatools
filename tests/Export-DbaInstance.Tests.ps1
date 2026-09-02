@@ -714,9 +714,7 @@ EXEC sp_dropmessage $leftoverCustomErrorId, 'all'
         $results.Length | Should -BeGreaterThan 0
     }
 
-    It "Export policies" -Skip:($PSVersionTable.PSVersion.Major -gt 5) {
-        # Skip It on pwsh because working with policies is not supported.
-
+    It "Export policies" {
         $results = Export-DbaInstance -SqlInstance $testServer -Path $exportDir -Exclude 'AgentServer', 'Audits', 'AvailabilityGroups', 'BackupDevices', 'CentralManagementServer', 'Credentials', 'CustomErrors', 'DatabaseMail', 'Databases', 'Endpoints', 'ExtendedEvents', 'LinkedServers', 'Logins', 'ReplicationSettings', 'ResourceGovernor', 'ServerAuditSpecifications', 'ServerRoles', 'SpConfigure', 'SysDbUserObjects', 'SystemTriggers', 'OleDbProvider'
 
         $results.FullName | Should -Exist
