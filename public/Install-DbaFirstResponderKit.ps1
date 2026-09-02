@@ -310,7 +310,7 @@ function Install-DbaFirstResponderKit {
                             CREATE CERTIFICATE FirstResponderKitCertificate
                                 FROM BINARY = ' + convert(varchar(MAX), @public_key, 1);
 
-                            EXEC(@SQL)
+                            EXEC(@sql)
                             "
                             Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $certClone -EnableException
                         }
