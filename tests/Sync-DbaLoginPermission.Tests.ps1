@@ -26,12 +26,15 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $tempguid = [guid]::newguid()
         $DBUserName = "dbatoolssci_$($tempguid.guid)"
         $CreateTestUser = @"
 CREATE LOGIN [$DBUserName]
     WITH PASSWORD = '$($tempguid.guid)';
-USE Master;
+USE master;
 CREATE USER [$DBUserName] FOR LOGIN [$DBUserName]
     WITH DEFAULT_SCHEMA = dbo;
 GRANT VIEW ANY DEFINITION to [$DBUserName];
@@ -43,10 +46,18 @@ GRANT VIEW ANY DEFINITION to [$DBUserName];
 CREATE LOGIN [$DBUserName]
     WITH PASSWORD = '$($tempguid.guid)';
 "@
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
     AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
         $DropTestUser = "DROP LOGIN [$DBUserName]"
         Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Query $DropTestUser -Database master
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Command execution and functionality" {
@@ -59,14 +70,14 @@ CREATE LOGIN [$DBUserName]
         It "Should execute against active nodes" {
             # Creates the user on
             Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Query $CreateTestLogin
-            $results = Sync-DbaLoginPermission -Source $TestConfig.InstanceMulti1 -Destination $TestConfig.InstanceMulti2 -Login $DBUserName -ExcludeLogin 'NotaLogin' -WarningVariable $warn
-            $results.Status | Should -Be 'Successful'
+            $results = Sync-DbaLoginPermission -Source $TestConfig.InstanceMulti1 -Destination $TestConfig.InstanceMulti2 -Login $DBUserName -ExcludeLogin "NotaLogin" -WarningVariable warn
+            $results.Status | Should -Be "Successful"
             $warn | Should -BeNullOrEmpty
         }
 
         # The copy failes on Appveyor with: Failed to create or use STIG schema on APPVYR-WIN\sql2017
         It "Should have copied the user permissions of $DBUserName" -Skip:$env:appveyor {
-            $permissionsAfter = Get-DbaUserPermission -SqlInstance $TestConfig.InstanceMulti2 -Database master | Where-Object { $_.member -eq $DBUserName -and $_.permission -eq 'VIEW ANY DEFINITION' }
+            $permissionsAfter = Get-DbaUserPermission -SqlInstance $TestConfig.InstanceMulti2 -Database master | Where-Object { $_.member -eq $DBUserName -and $_.permission -eq "VIEW ANY DEFINITION" }
             $permissionsAfter.member | Should -Be $DBUserName
         }
     }

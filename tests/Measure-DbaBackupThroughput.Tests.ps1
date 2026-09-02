@@ -51,8 +51,20 @@ Describe $CommandName -Tag IntegrationTests {
 
         $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDb
 
-        # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse
+        # Remove the backup directory. The backup was written seconds ago and the share can still hold the
+        # file open for a moment, which once made a single Remove-Item leave the whole folder behind.
+        # Retry a few times and let the last attempt report its error.
+        $attempts = 0
+        while ((Test-Path -Path $backupPath) -and $attempts -lt 5) {
+            $attempts++
+            Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
+            if (Test-Path -Path $backupPath) {
+                Start-Sleep -Seconds 1
+            }
+        }
+        if (Test-Path -Path $backupPath) {
+            Remove-Item -Path $backupPath -Recurse
+        }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -64,4 +76,4 @@ Describe $CommandName -Tag IntegrationTests {
             $testResults | Should -Not -BeNullOrEmpty
         }
     }
-}
+}
