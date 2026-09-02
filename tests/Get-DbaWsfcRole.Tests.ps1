@@ -42,7 +42,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Translates the state of every role" {
             # The state was read from $resource.State, a variable this command never assigns, so it
             # was empty for every role on every cluster.
-            $untranslatedRoles = ($wsfcRoles | Where-Object { $PSItem.State -notin "Unknown", "Online", "Offline", "Failed" }).Name
+            $untranslatedRoles = ($wsfcRoles | Where-Object { $PSItem.State -notin "Unknown", "Online", "Offline", "Failed", "PartialOnline", "Pending" }).Name
             $untranslatedRoles | Should -BeNullOrEmpty
         }
 

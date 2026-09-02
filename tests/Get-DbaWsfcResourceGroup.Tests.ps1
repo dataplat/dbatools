@@ -19,6 +19,21 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    InModuleScope dbatools {
+        Context "Translating resource group states" {
+            It "Names every state a resource group can report" {
+                # MSCluster_ResourceGroup.State: a group with one resource offline is PartialOnline (3), a group
+                # in transition is Pending (4). Both used to come back as the bare number.
+                Get-ResourceGroupState -1 | Should -Be "Unknown"
+                Get-ResourceGroupState 0 | Should -Be "Online"
+                Get-ResourceGroupState 1 | Should -Be "Offline"
+                Get-ResourceGroupState 2 | Should -Be "Failed"
+                Get-ResourceGroupState 3 | Should -Be "PartialOnline"
+                Get-ResourceGroupState 4 | Should -Be "Pending"
+            }
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
@@ -41,7 +56,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Translates the state of every resource group" {
-            $untranslatedGroups = ($wsfcResourceGroups | Where-Object { $PSItem.State -notin "Unknown", "Online", "Offline", "Failed" }).Name
+            $untranslatedGroups = ($wsfcResourceGroups | Where-Object { $PSItem.State -notin "Unknown", "Online", "Offline", "Failed", "PartialOnline", "Pending" }).Name
             $untranslatedGroups | Should -BeNullOrEmpty
         }
 
