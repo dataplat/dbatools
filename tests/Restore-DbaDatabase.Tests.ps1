@@ -873,54 +873,115 @@ use master
     }
 
 
-    <#
-    TODO:
-    The next tests are skipped because they don't work as expected.
-    In "$($TestConfig.appveyorlabrepo)\sql2008-backups\StopAt" the backup chain is maybe broken (is file StopAt_22.trn missing?)
-    Restore-DbaDatabase writes a warning: Microsoft.Data.SqlClient.SqlError: The log in this backup set begins at LSN 19000000021500001, which is too recent to apply to the database. An earlier log backup that includes LSN 19000000020400004 can be restored.
-    Pester does not like this warning, reason currently unknown. But the context and the complete test fail with "System.Management.Automation.ParameterBindingValidationException: Cannot bind argument to parameter 'ErrorRecord' because it is null".
-    Maybe it's because the warning is written to $error but has no ErrorRecord.
-    #>
-
-    Context -Skip "Test restoring with StopAt" {
+    Context "Test restoring with StopMark, StopBefore, StopAfterDate and StopAtLsn" {
         BeforeAll {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem -EnableException | Remove-DbaDatabase -EnableException
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The old static fixture in sql2008-backups\StopAt was broken from its first commit
+            # (StopAt_22.trn never made it into the repo), so these tests were skipped for years.
+            # The chain is generated here instead: two transactions carry the same mark name, with
+            # a timestamp captured between them so StopAfterDate can select the second one. The
+            # steps table records how far a restore came: 1 before the first mark, 2 inside it,
+            # 3 after it, 4 inside the second mark, 5 after that.
+            $stopMarkDbName = "dbatoolsci_stopmark_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $stopMarkDbName
+            $splatStopMarkQuery = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $stopMarkDbName
+            }
+            Invoke-DbaQuery @splatStopMarkQuery -Query "CREATE TABLE steps (step int NOT NULL)"
+            $splatStopMarkBackup = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $stopMarkDbName
+                Path        = $backupPath
+            }
+            # STOPATMARK references the transaction NAME - the string after WITH MARK is only a
+            # description - so the transactions themselves have to be named dbatoolstest.
+            $firstMarkQuery = @"
+BEGIN TRAN dbatoolstest WITH MARK 'first dbatools test mark';
+INSERT INTO steps VALUES (2);
+COMMIT TRAN dbatoolstest
+"@
+            $secondMarkQuery = @"
+BEGIN TRAN dbatoolstest WITH MARK 'second dbatools test mark';
+INSERT INTO steps VALUES (4);
+COMMIT TRAN dbatoolstest
+"@
+            $stopMarkFull = Backup-DbaDatabase @splatStopMarkBackup -Type Full -FilePath "stopmark_full.bak"
+            Invoke-DbaQuery @splatStopMarkQuery -Query "INSERT INTO steps VALUES (1)"
+            Invoke-DbaQuery @splatStopMarkQuery -Query $firstMarkQuery
+            Invoke-DbaQuery @splatStopMarkQuery -Query "INSERT INTO steps VALUES (3)"
+            $stopMarkLog1 = Backup-DbaDatabase @splatStopMarkBackup -Type Log -FilePath "stopmark_log1.trn"
+            # STOPATMARK ... AFTER selects the first mark after the given time, so the time has to
+            # sit strictly between the commits of the two marked transactions.
+            Start-Sleep -Seconds 2
+            $betweenMarksTime = Get-Date
+            Start-Sleep -Seconds 2
+            Invoke-DbaQuery @splatStopMarkQuery -Query $secondMarkQuery
+            Invoke-DbaQuery @splatStopMarkQuery -Query "INSERT INTO steps VALUES (5)"
+            $stopMarkLog2 = Backup-DbaDatabase @splatStopMarkBackup -Type Log -FilePath "stopmark_log2.trn"
+            $stopMarkBackupFiles = $stopMarkFull.BackupPath, $stopMarkLog1.BackupPath, $stopMarkLog2.BackupPath
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "Should have stoped at mark" {
-            $restoreOutput = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name StopAt2 -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\StopAt" -StopMark dbatoolstest -WarningAction SilentlyContinue -ErrorAction SilentlyContinue -ErrorVariable x
-            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name StopAt2 -Recover
-            $sqlOut = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database StopAt2 -Query "select max(step) as ms from steps"
-            $sqlOut.ms | Should -Be 9876
-        }
-    }
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $stopMarkDbName | Remove-DbaDatabase
 
-    Context -Skip "Test restoring with StopAtBefore" {
-        BeforeAll {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem -EnableException | Remove-DbaDatabase -EnableException
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "Should have stoped at mark" {
-            $restoreOutput = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name StopAt2 -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\StopAt" -StopMark dbatoolstest -StopBefore -WarningAction SilentlyContinue
-            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name StopAt2 -Recover
-            $sqlOut = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database StopAt2 -Query "select max(step) as ms from steps"
-            $sqlOut.ms | Should -Be 8764
+        It "Should have stopped at the first mark" {
+            $splatRestore = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Path          = $stopMarkBackupFiles
+                DatabaseName  = $stopMarkDbName
+                WithReplace   = $true
+                StopMark      = "dbatoolstest"
+                WarningAction = "SilentlyContinue"
+            }
+            $null = Restore-DbaDatabase @splatRestore
+            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -DatabaseName $stopMarkDbName -Recover
+            $maxStep = Invoke-DbaQuery @splatStopMarkQuery -Query "select max(step) as ms from steps" -As SingleValue
+            # The marked transaction itself is included, everything after it is not.
+            $maxStep | Should -Be 2
         }
-    }
 
-
-    Context -Skip "Test restoring with StopAt, StopAtLsn and StopAfterDate" {
-        BeforeAll {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem -EnableException | Remove-DbaDatabase -EnableException
+        It "Should have stopped before the first mark" {
+            $splatRestore = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Path          = $stopMarkBackupFiles
+                DatabaseName  = $stopMarkDbName
+                WithReplace   = $true
+                StopMark      = "dbatoolstest"
+                StopBefore    = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $null = Restore-DbaDatabase @splatRestore
+            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -DatabaseName $stopMarkDbName -Recover
+            $maxStep = Invoke-DbaQuery @splatStopMarkQuery -Query "select max(step) as ms from steps" -As SingleValue
+            # The marked transaction itself is excluded this time.
+            $maxStep | Should -Be 1
         }
 
-        It "Should have stoped at mark" {
-            $restoreOutput = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name StopAt2 -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\StopAt" -StopMark dbatoolstest -StopAfterDate (Get-Date "2020-05-12 13:33:35") -WarningAction SilentlyContinue
-            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name StopAt2 -Recover
-            $sqlOut = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database StopAt2 -Query "select max(step) as ms from steps"
-            $sqlOut.ms | Should -Be 29876
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database StopAt2
+        It "Should have stopped at the second mark with StopAfterDate" {
+            $splatRestore = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Path          = $stopMarkBackupFiles
+                DatabaseName  = $stopMarkDbName
+                WithReplace   = $true
+                StopMark      = "dbatoolstest"
+                StopAfterDate = $betweenMarksTime
+                WarningAction = "SilentlyContinue"
+            }
+            $null = Restore-DbaDatabase @splatRestore
+            # No -Recover here: the second mark sits in the last log file, so the restore stops at the
+            # mark and recovers the database in the same statement.
+            $maxStep = Invoke-DbaQuery @splatStopMarkQuery -Query "select max(step) as ms from steps" -As SingleValue
+            # The first mark before the timestamp is skipped, the second marked transaction is included.
+            $maxStep | Should -Be 4
         }
 
         It "Should have stoped at lsn" {
