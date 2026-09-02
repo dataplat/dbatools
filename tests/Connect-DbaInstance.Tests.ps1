@@ -1054,4 +1054,17 @@ SELECT SERVERPROPERTY('ProductVersion')
             $tsqlVersionMajor | Should -Be $smoVersionMajor
         }
     }
+
+    Context "tab completion cache of instance names" {
+        It "keeps every connected instance as its own entry" {
+            # The cache starts as $null, and $null += "x" made it a string. Every further name was then
+            # concatenated onto that string and the completer offered one long blob instead of names.
+            $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+            $cache = [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"]
+            $cache -is [array] | Should -BeTrue
+            $cache | Should -Contain $TestConfig.InstanceMulti1.ToLowerInvariant()
+            $cache | Should -Contain $TestConfig.InstanceMulti2.ToLowerInvariant()
+        }
+    }
 }

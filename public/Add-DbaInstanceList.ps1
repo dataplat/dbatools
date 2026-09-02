@@ -84,9 +84,7 @@ function Add-DbaInstanceList {
             }
 
             # Update the TEPP cache immediately for this session
-            if ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $lower) {
-                [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $lower
-            }
+            Add-DbaTeppInstanceName -Name $lower
         }
     }
 

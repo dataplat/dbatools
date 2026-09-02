@@ -1534,9 +1534,7 @@ SELECT SERVERPROPERTY('ProductVersion')
                     [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $teppConnectionContext, ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
 
                     # Update cache for instance names
-                    if ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLowerInvariant()) {
-                        [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
-                    }
+                    Add-DbaTeppInstanceName -Name $instance.FullSmoName
 
                     # Update lots of registered stuff
                     # Default for [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled is $true, so will not run by default
