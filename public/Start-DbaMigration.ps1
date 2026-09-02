@@ -36,6 +36,10 @@ function Start-DbaMigration {
 
         By default, databases will be migrated to the destination SQL Server's default data and log directories. You can override this by specifying -ReuseSourceFolderStructure. Filestreams and filegroups are also migrated. Safety is emphasized.
 
+        Migrating credentials, database mail accounts and linked servers includes their stored passwords. Decrypting those requires a dedicated admin connection (DAC) to the source instance and Windows administrator access to its host; when this command runs on a different machine than the source instance, that means remote admin connections enabled on the source instance, its DAC TCP port reachable, and PowerShell remoting to its host. As SQL Server only allows one DAC per instance, this command opens a single one and hands it to all three copy operations instead of letting each open its own. See Copy-DbaCredential, Copy-DbaDbMail and Copy-DbaLinkedServer for the details and prerequisites.
+
+        Use -ExcludePassword, or exclude all three of Credentials, DatabaseMail and LinkedServers, if no DAC should be opened at all.
+
     .PARAMETER Source
         Specifies the source SQL Server instance to migrate from. Accepts server name, server\instance, or connection string formats.
         This is the instance where all databases, logins, and server objects currently exist.
@@ -161,6 +165,7 @@ function Start-DbaMigration {
     .PARAMETER ExcludePassword
         Copies credentials, linked servers, and other objects without the actual password values.
         Use this in security-conscious environments where password decryption is restricted or when passwords should be manually reset after migration.
+        Also use it when the dedicated admin connection or PowerShell remoting described above is not available, because the migration then needs neither.
 
     .PARAMETER Force
         Overwrites existing objects on the destination server without prompting for confirmation.

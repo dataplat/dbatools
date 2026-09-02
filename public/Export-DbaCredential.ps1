@@ -6,9 +6,15 @@ function Export-DbaCredential {
     .DESCRIPTION
         Exports SQL Server credentials to T-SQL files containing CREATE CREDENTIAL statements that can recreate the credentials on another instance. By default, this includes decrypted passwords, making it perfect for migration scenarios where you need to move credentials between servers.
 
-        The function generates executable T-SQL scripts that DBAs can run to recreate credentials during migrations, disaster recovery, or when setting up new environments. When passwords are included, the function requires sysadmin privileges and remote Windows registry access to decrypt the stored secrets.
+        The function generates executable T-SQL scripts that DBAs can run to recreate credentials during migrations, disaster recovery, or when setting up new environments.
 
-        Use the ExcludePassword parameter to export credential definitions without sensitive data for documentation or security-conscious scenarios.
+        Decrypting the stored passwords requires sysadmin privileges, DAC access to the instance and Windows administrator access to its host. On SQL Server Express, the DAC is not available unless the instance is started with trace flag 7806.
+
+        The command opens or reuses the dedicated admin connection (DAC) from the machine it runs on. When that machine is different from the host of the instance, enable remote admin connections on the instance (Set-DbaSpConfigure -SqlInstance <instance> -Name RemoteDacConnectionsEnabled -Value 1) and make the DAC TCP listener reachable from that machine. SQL Server listens for the DAC on TCP port 1434 when that port is available; otherwise it assigns a port during startup. Check the SQL Server error log for the active DAC port.
+
+        The service master key is read and unprotected on the Windows host of the instance. When that host is remote, this uses PowerShell remoting. When the command runs directly on the host, everything runs locally, so remote admin connections and PowerShell remoting are not required.
+
+        Use the ExcludePassword parameter to export credential definitions without sensitive data for documentation or security-conscious scenarios; no DAC is opened and the Windows host is not accessed then.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -40,6 +46,7 @@ function Export-DbaCredential {
     .PARAMETER ExcludePassword
         Exports credential definitions without the actual password values, replacing them with placeholder text.
         Use this for documentation purposes or when you need credential structure without sensitive data for security reviews.
+        Also use it when the dedicated admin connection or PowerShell remoting described above is not available, because the export then needs neither.
 
     .PARAMETER Append
         Adds the exported credential scripts to an existing file instead of overwriting it.
@@ -61,6 +68,10 @@ function Export-DbaCredential {
         Website: https://dbatools.io
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
+
+        Requires:
+        - sysadmin access on SQL Server
+        - unless -ExcludePassword is used: DAC access to the instance, and Windows administrator access on its host
 
     .LINK
         https://dbatools.io/Export-DbaCredential

@@ -10,6 +10,14 @@ function Copy-DbaDbMail {
 
         The function preserves all SMTP authentication details including encrypted passwords, handles name conflicts with optional force replacement, and can enable Database Mail on the destination if it's enabled on the source. You can migrate specific component types or the entire configuration in one operation.
 
+        Decrypting the stored passwords requires DAC access to the source instance and Windows administrator access to the source host. On SQL Server Express, the DAC is not available unless the instance is started with trace flag 7806.
+
+        The command opens or reuses the dedicated admin connection (DAC) from the machine it runs on. When that machine is different from the source host, enable remote admin connections on the source instance (Set-DbaSpConfigure -SqlInstance <source instance> -Name RemoteDacConnectionsEnabled -Value 1) and make the DAC TCP listener reachable from that machine. SQL Server listens for the DAC on TCP port 1434 when that port is available; otherwise it assigns a port during startup. Check the SQL Server error log for the active DAC port.
+
+        The service master key is read and unprotected on the source Windows host. When the source host is remote, this uses PowerShell remoting. When the command runs directly on the source host, everything runs locally, so remote admin connections and PowerShell remoting are not required.
+
+        Use -ExcludePassword to skip password decryption entirely; no DAC is opened and the Windows host is not accessed then.
+
     .PARAMETER Source
         Specifies the source SQL Server instance containing the Database Mail configuration to copy. The function reads all mail profiles, accounts, mail servers, and configuration values from this instance.
         You must have sysadmin privileges to access the MSDB database where Database Mail settings are stored.
@@ -44,6 +52,7 @@ function Copy-DbaDbMail {
     .PARAMETER ExcludePassword
         Copies credential definitions without the actual password values.
         Use this in security-conscious environments where password decryption is restricted or when passwords should be manually reset after migration.
+        Also use it when the dedicated admin connection or PowerShell remoting described above is not available, because the copy then needs neither.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -68,7 +77,7 @@ function Copy-DbaDbMail {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
-        Requires: sysadmin access on SQL Servers
+        Requires: sysadmin access on SQL Servers, and unless -ExcludePassword is used DAC access to the source instance plus Windows administrator access on the source host
 
     .OUTPUTS
         PSCustomObject (MigrationObject)
