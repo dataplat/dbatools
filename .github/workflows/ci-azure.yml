@@ -74,6 +74,11 @@ env:
 
 jobs:
   authorize:
+    # Dependabot only ever bumps action pins, and its runs get no repository secrets.
+    # Every job below depends on authorize, so skipping it here keeps the whole matrix
+    # off the Azure runner pools. azure-migration-tests already skips the same way; the
+    # earlier attempts at this only patched that file, which is why it kept firing.
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 2
     outputs:
