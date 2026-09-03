@@ -108,12 +108,12 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Copy data using a query that relies on the default source database" {
-            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.InstanceCopy2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) Id FROM dbo.dbatoolsci_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
+            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.InstanceCopy2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) id FROM dbo.dbatoolsci_example4 ORDER BY id DESC" -DestinationTable dbatoolsci_example3 -Truncate
             $result.RowsCopied | Should -Be 1
         }
 
         It "Copy data using a query that uses a 3 part query" {
-            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.InstanceCopy2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
+            $result = Copy-DbaDbTableData -SqlInstance $TestConfig.InstanceCopy2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) id FROM tempdb.dbo.dbatoolsci_example4 ORDER BY id DESC" -DestinationTable dbatoolsci_example3 -Truncate
             $result.RowsCopied | Should -Be 1
         }
     }
@@ -213,6 +213,129 @@ Describe $CommandName -Tag IntegrationTests {
             $result.RowsCopied | Should -Be 2
             $destCount = $destinationDb.Query("SELECT * FROM dbo.dbatoolsci_computed_dest")
             $destCount.Count | Should -Be 2
+        }
+    }
+
+    Context "When using Query without ForceExplicitMapping and the destination has unwritable columns" {
+        BeforeDiscovery {
+            # GENERATED ALWAYS columns arrived with SQL Server 2016, so the temporal scenario below cannot
+            # be built before that. The value decides a Skip, which Pester needs while it discovers the
+            # tests, so it cannot be read in BeforeAll.
+            $discoveryDestServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
+            $destSupportsTemporal = $discoveryDestServer.VersionMajor -ge 13
+        }
+
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $sourceDb.Query("CREATE TABLE dbo.dbatoolsci_positional_source (Id INT, A INT, B INT, C INT)")
+            $null = $sourceDb.Query("INSERT dbo.dbatoolsci_positional_source (Id, A, B, C) VALUES (1, 11, 22, 33), (2, 111, 222, 333)")
+            # A computed and a rowversion column sit between the writable ones, so a positional mapping that
+            # counts them shifts every column behind them (#10661).
+            $null = $destinationDb.Query("CREATE TABLE dbo.dbatoolsci_positional_dest (Id INT, A INT, Computed AS (A * 10), RV ROWVERSION, B INT, C INT)")
+            $null = $destinationDb.Query("CREATE TABLE dbo.dbatoolsci_positional_identity (Id INT IDENTITY(1, 1), A INT, B INT, C INT)")
+            $null = $destinationDb.Query("CREATE TABLE dbo.dbatoolsci_positional_rowversion (Id INT, A INT, RV ROWVERSION, B INT, C INT)")
+            if ($destinationDb.Parent.VersionMajor -ge 13) {
+                # The period columns of a temporal table are GENERATED ALWAYS: not computed, not rowversion,
+                # but just as unwritable, and interleaved with the writable columns here on purpose.
+                $null = $destinationDb.Query("CREATE TABLE dbo.dbatoolsci_positional_temporal (Id INT PRIMARY KEY, A INT, ValidFrom DATETIME2 GENERATED ALWAYS AS ROW START NOT NULL, B INT, ValidTo DATETIME2 GENERATED ALWAYS AS ROW END NOT NULL, C INT, PERIOD FOR SYSTEM_TIME (ValidFrom, ValidTo)) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.dbatoolsci_positional_temporal_history))")
+            }
+
+            $splatPositional = @{
+                SqlInstance      = $TestConfig.InstanceCopy1
+                Destination      = $TestConfig.InstanceCopy2
+                Database         = "tempdb"
+                Table            = "dbatoolsci_positional_source"
+                Query            = "SELECT Id, A, B, C FROM dbo.dbatoolsci_positional_source"
+                DestinationTable = "dbatoolsci_positional_dest"
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $sourceDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_positional_source")
+            $null = $destinationDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_positional_dest")
+            $null = $destinationDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_positional_identity")
+            $null = $destinationDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_positional_rowversion")
+            $destinationDb.Tables.Refresh()
+            if ($destinationDb.Tables | Where-Object Name -eq "dbatoolsci_positional_temporal") {
+                # System versioning has to be turned off before the temporal table can be dropped.
+                $null = $destinationDb.Query("ALTER TABLE dbo.dbatoolsci_positional_temporal SET (SYSTEM_VERSIONING = OFF)")
+                $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_positional_temporal")
+                $null = $destinationDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_positional_temporal_history")
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Maps the query columns by position onto the writable destination columns only" {
+            $result = Copy-DbaDbTableData @splatPositional
+            $WarnVar | Should -BeNullOrEmpty
+            $result.RowsCopied | Should -Be 2
+
+            $destData = $destinationDb.Query("SELECT Id, A, Computed, B, C FROM dbo.dbatoolsci_positional_dest ORDER BY Id")
+            $destData.A | Should -Be @(11, 111)
+            $destData.Computed | Should -Be @(110, 1110)
+            $destData.B | Should -Be @(22, 222)
+            $destData.C | Should -Be @(33, 333)
+        }
+
+        It "Does not shift the columns behind a rowversion column" {
+            # This is the silent variant: SqlBulkCopy drops the source column that lands on the rowversion
+            # column and reports success, so the last column ends up empty and the ones before it are off by one.
+            $splatRowversion = $splatPositional.Clone()
+            $splatRowversion.DestinationTable = "dbatoolsci_positional_rowversion"
+            $result = Copy-DbaDbTableData @splatRowversion
+            $WarnVar | Should -BeNullOrEmpty
+            $result.RowsCopied | Should -Be 2
+
+            $destData = $destinationDb.Query("SELECT Id, A, B, C FROM dbo.dbatoolsci_positional_rowversion ORDER BY Id")
+            $destData.B | Should -Be @(22, 222)
+            $destData.C | Should -Be @(33, 333)
+        }
+
+        It "Does not count the generated always columns of a temporal destination" -Skip:(-not $destSupportsTemporal) {
+            # The period columns are GENERATED ALWAYS, so the server refuses explicit values for them.
+            # A positional mapping that counts them maps writable source columns onto them and fails.
+            $splatTemporal = $splatPositional.Clone()
+            $splatTemporal.DestinationTable = "dbatoolsci_positional_temporal"
+            $result = Copy-DbaDbTableData @splatTemporal
+            $WarnVar | Should -BeNullOrEmpty
+            $result.RowsCopied | Should -Be 2
+
+            $destData = $destinationDb.Query("SELECT Id, A, ValidFrom, B, ValidTo, C FROM dbo.dbatoolsci_positional_temporal ORDER BY Id")
+            $destData.A | Should -Be @(11, 111)
+            $destData.B | Should -Be @(22, 222)
+            $destData.C | Should -Be @(33, 333)
+            $destData.ValidFrom | Should -Not -BeNullOrEmpty
+        }
+
+        It "Still ignores the identity placeholder unless KeepIdentity is used" {
+            $splatIdentity = $splatPositional.Clone()
+            $splatIdentity.Query = "SELECT 0, A, B, C FROM dbo.dbatoolsci_positional_source ORDER BY Id"
+            $splatIdentity.DestinationTable = "dbatoolsci_positional_identity"
+            $result = Copy-DbaDbTableData @splatIdentity
+            $WarnVar | Should -BeNullOrEmpty
+            $result.RowsCopied | Should -Be 2
+
+            $destData = $destinationDb.Query("SELECT Id, A, B, C FROM dbo.dbatoolsci_positional_identity ORDER BY Id")
+            $destData.Id | Should -Be @(1, 2)
+            $destData.A | Should -Be @(11, 111)
+            $destData.C | Should -Be @(33, 333)
+        }
+
+        It "Refuses a query with more columns than the destination can take instead of dropping them" {
+            $splatTooMany = $splatPositional.Clone()
+            $splatTooMany.Query = "SELECT Id, A, B, C, C AS Extra FROM dbo.dbatoolsci_positional_source"
+            $splatTooMany.Truncate = $true
+            $result = Copy-DbaDbTableData @splatTooMany -WarningAction SilentlyContinue
+            $result | Should -BeNullOrEmpty
+            $WarnVar | Should -Match "5 columns"
+            $WarnVar | Should -Match "4 writable columns"
+            $destinationDb.Query("SELECT COUNT(*) AS RowCnt FROM dbo.dbatoolsci_positional_dest").RowCnt | Should -Be 0
         }
     }
 
