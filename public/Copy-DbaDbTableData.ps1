@@ -326,7 +326,12 @@ function Copy-DbaDbTableData {
 
     process {
         if ((Test-Bound -Not -ParameterName InputObject) -and ((Test-Bound -Not -ParameterName SqlInstance, Database -And) -or (Test-Bound -Not -ParameterName Table, View))) {
-            Stop-Function -Message "You must pipe in a table or specify SqlInstance, Database and [View|Table]."
+            if (Test-Bound -ParameterName Query) {
+                # Without the hint at Query the message reads as if SqlInstance or Database were missing (see #10676).
+                Stop-Function -Message "When using Query, you still have to specify SqlInstance, Database and [View|Table]. The query determines the data that is copied, but the command needs the table or view as the source object for its metadata."
+            } else {
+                Stop-Function -Message "You must pipe in a table or specify SqlInstance, Database and [View|Table]."
+            }
             return
         }
 
