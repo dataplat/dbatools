@@ -14,6 +14,7 @@ function Get-BulkRowsCopiedCount {
             - Copy-DbaDbTableData
             - Copy-DbaDbViewData
             - Import-DbaCsv
+            - Import-DbaParquet
 
         .EXAMPLE
             Get-BulkRowsCopied $bulkObject
@@ -27,14 +28,17 @@ function Get-BulkRowsCopiedCount {
         Copyright: (c) 2020 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
     #>
-    [OutputType([int])]
+    [OutputType([long])]
     param (
         [Microsoft.Data.SqlClient.SqlBulkCopy] $BulkCopy
     )
     $BindingFlags = [Reflection.BindingFlags] "NonPublic,GetField,Instance"
     $rowsCopiedField = [Microsoft.Data.SqlClient.SqlBulkCopy].GetField("_rowsCopied", $BindingFlags)
     try {
-        return [int]$rowsCopiedField.GetValue($BulkCopy)
+        # The field is an Int64 in current Microsoft.Data.SqlClient (an Int32 in the legacy library),
+        # so it must not be narrowed to [int]: above [int32]::MaxValue rows that cast throws, and the
+        # -1 then taken for the row count inflates the reported total by billions of rows (see #10675).
+        return [long]$rowsCopiedField.GetValue($BulkCopy)
     } catch {
         return -1;
     }

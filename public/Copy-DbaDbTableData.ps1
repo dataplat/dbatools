@@ -722,7 +722,13 @@ function Copy-DbaDbTableData {
                         $bulkCopy.WriteToServer($reader)
                         $finalRowCountReported = Get-BulkRowsCopiedCount $bulkCopy
 
-                        $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+                        # -1 signals that the reflection lookup failed, not a wrapped counter, so it must not
+                        # reach Get-AdjustedTotalRowsCopied: fed in as a row count it inflates the total by
+                        # billions of rows (see #10675). The running total from the notifications is then the
+                        # best number available.
+                        if ($finalRowCountReported -ge 0) {
+                            $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+                        }
 
                         $RowsTotal = $script:totalRowsCopied
                         $TotalTime = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
