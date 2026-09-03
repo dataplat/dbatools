@@ -217,6 +217,14 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When using Query without ForceExplicitMapping and the destination has unwritable columns" {
+        BeforeDiscovery {
+            # GENERATED ALWAYS columns arrived with SQL Server 2016, so the temporal scenario below cannot
+            # be built before that. The value decides a Skip, which Pester needs while it discovers the
+            # tests, so it cannot be read in BeforeAll.
+            $discoveryDestServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
+            $destSupportsTemporal = $discoveryDestServer.VersionMajor -ge 13
+        }
+
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
@@ -227,6 +235,11 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $destinationDb.Query("CREATE TABLE dbo.dbatoolsci_positional_dest (Id INT, A INT, Computed AS (A * 10), RV ROWVERSION, B INT, C INT)")
             $null = $destinationDb.Query("CREATE TABLE dbo.dbatoolsci_positional_identity (Id INT IDENTITY(1, 1), A INT, B INT, C INT)")
             $null = $destinationDb.Query("CREATE TABLE dbo.dbatoolsci_positional_rowversion (Id INT, A INT, RV ROWVERSION, B INT, C INT)")
+            if ($destinationDb.Parent.VersionMajor -ge 13) {
+                # The period columns of a temporal table are GENERATED ALWAYS: not computed, not rowversion,
+                # but just as unwritable, and interleaved with the writable columns here on purpose.
+                $null = $destinationDb.Query("CREATE TABLE dbo.dbatoolsci_positional_temporal (Id INT PRIMARY KEY, A INT, ValidFrom DATETIME2 GENERATED ALWAYS AS ROW START NOT NULL, B INT, ValidTo DATETIME2 GENERATED ALWAYS AS ROW END NOT NULL, C INT, PERIOD FOR SYSTEM_TIME (ValidFrom, ValidTo)) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.dbatoolsci_positional_temporal_history))")
+            }
 
             $splatPositional = @{
                 SqlInstance      = $TestConfig.InstanceCopy1
@@ -247,6 +260,13 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $destinationDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_positional_dest")
             $null = $destinationDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_positional_identity")
             $null = $destinationDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_positional_rowversion")
+            $destinationDb.Tables.Refresh()
+            if ($destinationDb.Tables | Where-Object Name -eq "dbatoolsci_positional_temporal") {
+                # System versioning has to be turned off before the temporal table can be dropped.
+                $null = $destinationDb.Query("ALTER TABLE dbo.dbatoolsci_positional_temporal SET (SYSTEM_VERSIONING = OFF)")
+                $null = $destinationDb.Query("DROP TABLE dbo.dbatoolsci_positional_temporal")
+                $null = $destinationDb.Query("DROP TABLE IF EXISTS dbo.dbatoolsci_positional_temporal_history")
+            }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -275,6 +295,22 @@ Describe $CommandName -Tag IntegrationTests {
             $destData = $destinationDb.Query("SELECT Id, A, B, C FROM dbo.dbatoolsci_positional_rowversion ORDER BY Id")
             $destData.B | Should -Be @(22, 222)
             $destData.C | Should -Be @(33, 333)
+        }
+
+        It "Does not count the generated always columns of a temporal destination" -Skip:(-not $destSupportsTemporal) {
+            # The period columns are GENERATED ALWAYS, so the server refuses explicit values for them.
+            # A positional mapping that counts them maps writable source columns onto them and fails.
+            $splatTemporal = $splatPositional.Clone()
+            $splatTemporal.DestinationTable = "dbatoolsci_positional_temporal"
+            $result = Copy-DbaDbTableData @splatTemporal
+            $WarnVar | Should -BeNullOrEmpty
+            $result.RowsCopied | Should -Be 2
+
+            $destData = $destinationDb.Query("SELECT Id, A, ValidFrom, B, ValidTo, C FROM dbo.dbatoolsci_positional_temporal ORDER BY Id")
+            $destData.A | Should -Be @(11, 111)
+            $destData.B | Should -Be @(22, 222)
+            $destData.C | Should -Be @(33, 333)
+            $destData.ValidFrom | Should -Not -BeNullOrEmpty
         }
 
         It "Still ignores the identity placeholder unless KeepIdentity is used" {

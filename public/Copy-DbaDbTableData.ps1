@@ -56,14 +56,14 @@ function Copy-DbaDbTableData {
         Custom SQL SELECT query to use as the data source instead of copying the entire table or view. Supports 3 or 4-part object names.
         Use this when you need to filter rows, join multiple tables, or transform data during the copy operation. Still requires specifying a Table or View parameter for metadata purposes.
 
-        Note: Columns are mapped by position onto the writable columns of the destination table, so computed and rowversion columns of the destination do not count and must not have a counterpart in the SELECT list.
+        Note: Columns are mapped by position onto the writable columns of the destination table, so computed, rowversion and generated always columns of the destination do not count and must not have a counterpart in the SELECT list.
         If the destination table has an identity column, include a placeholder value (e.g., 0) in your SELECT list at that position.
         The placeholder will be ignored and the identity value auto-generated unless -KeepIdentity is specified.
 
     .PARAMETER ForceExplicitMapping
         When used together with Query parameter, force the use of explicit column mapping (name-based) instead of switching over to ordinal position mapping. Use with care if query contains aliases.
         Default behaviour when using Query parameter is to use ordinal position mapping, due to the possibility of the query including aliases (SELECT x AS y) which could lead to column mismatching and data not copying.
-        Positional mapping skips the computed and rowversion columns of the destination table, so the SELECT list only has to match its writable columns.
+        Positional mapping skips the computed, rowversion and generated always columns of the destination table, so the SELECT list only has to match its writable columns.
 
     .PARAMETER AutoCreateTable
         Automatically creates the destination table if it doesn't exist, using the same structure as the source table.
@@ -673,13 +673,15 @@ function Copy-DbaDbTableData {
                         $bulkCopy.NotifyAfter = $NotifyAfter
                         $bulkCopy.BulkCopyTimeout = $BulkCopyTimeout
 
-                        # Get list of writable columns from destination table to avoid insert failures. Computed and rowversion
-                        # columns cannot be written, and they are also what breaks the implicit positional mapping of SqlBulkCopy:
-                        # it counts a computed column (the server then rejects the insert) and silently drops the source column
-                        # that lands on a rowversion column, shifting every column behind it by one (see #10661).
+                        # Get list of writable columns from destination table to avoid insert failures. Computed, rowversion
+                        # and generated always columns (temporal periods, ledger metadata) cannot be written, and they are also
+                        # what breaks the implicit positional mapping of SqlBulkCopy: it counts a computed column (the server
+                        # then rejects the insert) and silently drops the source column that lands on a rowversion column,
+                        # shifting every column behind it by one (see #10661). GeneratedAlwaysType is only supported by SMO on
+                        # SQL Server 2016 and later, so it has to be guarded by the version.
                         # Refresh the columns collection to ensure it's populated
                         $desttable.Columns.Refresh()
-                        $destColumns = @($desttable.Columns | Where-Object { -not $PSItem.Computed -and $PSItem.DataType.SqlDataType -ne "Timestamp" } | Select-Object -ExpandProperty Name)
+                        $destColumns = @($desttable.Columns | Where-Object { -not $PSItem.Computed -and $PSItem.DataType.SqlDataType -ne "Timestamp" -and -not ($destServer.VersionMajor -ge 13 -and $PSItem.GeneratedAlwaysType -ne "None") } | Select-Object -ExpandProperty Name)
                         Write-Message -Level Verbose -Message "Destination table has $($destColumns.Count) writable columns"
 
                         # The legacy bulk copy library uses a 4 byte integer to track the RowsCopied, so the only option is to use
@@ -712,7 +714,7 @@ function Copy-DbaDbTableData {
                         # Custom queries may have different column names/aliases, so they are mapped by position
                         # Appending -ForceExplicitMapping will override this behaviour and keep explicit column mapping
                         if (-not (Test-Bound -ParameterName Query) -or $ForceExplicitMapping) {
-                            # Map only columns that exist in both source and destination (excluding computed and rowversion columns)
+                            # Map only columns that exist in both source and destination (excluding computed, rowversion and generated always columns)
                             for ($i = 0; $i -lt $reader.FieldCount; $i++) {
                                 $sourceColumn = $reader.GetName($i)
                                 if ($destColumns -contains $sourceColumn) {
@@ -723,9 +725,9 @@ function Copy-DbaDbTableData {
                             }
                         } else {
                             # Map the query columns by position onto the writable destination columns. This is what SqlBulkCopy does
-                            # on its own, except that its list also contains the computed and rowversion columns (see above).
+                            # on its own, except that its list also contains the computed, rowversion and generated always columns (see above).
                             if ($reader.FieldCount -gt $destColumns.Count) {
-                                $columnCountMessage = "The query returns $($reader.FieldCount) columns but $fqtndest has only $($destColumns.Count) writable columns. Computed and rowversion columns cannot be written and do not count."
+                                $columnCountMessage = "The query returns $($reader.FieldCount) columns but $fqtndest has only $($destColumns.Count) writable columns. Computed, rowversion and generated always columns cannot be written and do not count."
                                 $reader.Close()
                                 throw $columnCountMessage
                             }
