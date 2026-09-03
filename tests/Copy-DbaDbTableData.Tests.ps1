@@ -116,6 +116,20 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Copy-DbaDbTableData -SqlInstance $TestConfig.InstanceCopy2 -Database tempdb -Table dbo.dbatoolsci_example4 -Query "SELECT TOP (1) Id FROM tempdb.dbo.dbatoolsci_example4 ORDER BY Id DESC" -DestinationTable dbatoolsci_example3 -Truncate
             $result.RowsCopied | Should -Be 1
         }
+
+        It "Points at the Query requirement when Query is used without a source table" {
+            # The generic message reads as if SqlInstance or Database were missing (#10676).
+            $splatQueryOnly = @{
+                SqlInstance      = $TestConfig.InstanceCopy2
+                Database         = "tempdb"
+                Query            = "SELECT TOP (1) Id FROM dbo.dbatoolsci_example4"
+                DestinationTable = "dbatoolsci_example3"
+                WarningAction    = "SilentlyContinue"
+            }
+            $result = Copy-DbaDbTableData @splatQueryOnly
+            $result | Should -BeNullOrEmpty
+            $WarnVar | Should -Match "When using Query"
+        }
     }
 
     Context "When testing pipeline functionality" {
