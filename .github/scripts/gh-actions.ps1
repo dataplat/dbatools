@@ -353,7 +353,11 @@ END
         $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
 
         $azureUrl = "https://dbatools.blob.core.windows.net/dbatools"
-        $dbName = "dbatoolsci_logship_azure"
+        # GITHUB_RUN_ID uniquely identifies this CI job; appending it to the database name keeps
+        # concurrent log-shipping tests from picking the same Azure blob name on the shared
+        # container. GITHUB_RUN_ATTEMPT is appended so a rerun still gets its own database.
+        # See https://github.com/dataplat/dbatools/issues/10667.
+        $dbName = "dbatoolsci_logship_azure_$($env:GITHUB_RUN_ID)_$($env:GITHUB_RUN_ATTEMPT)"
 
         # Create SAS token credential on both instances
         $primaryServer = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred
@@ -507,7 +511,10 @@ END
     It -Skip:(-not $env:azurepasswd) "adds a second live secondary without replacing the Azure primary configuration" {
         $PSDefaultParameterValues.Clear()
         $azureUrl = "https://dbatools.blob.core.windows.net/dbatools"
-        $dbName = "dbatoolsci_logship_addsecondary"
+        # GITHUB_RUN_ID uniquely identifies this CI job; the addsecondary test
+        # uploads to the same shared Azure container, so its database name also
+        # needs the per-run suffix. See https://github.com/dataplat/dbatools/issues/10667.
+        $dbName = "dbatoolsci_logship_addsecondary_$($env:GITHUB_RUN_ID)_$($env:GITHUB_RUN_ATTEMPT)"
         $secondDbName = "${dbName}_second"
         $missingPrimaryDbName = "${dbName}_missing"
         $sasToken = $env:azurepasswd.TrimStart("?")
