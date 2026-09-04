@@ -1660,7 +1660,7 @@ WHERE pd.primary_database = N'$escapedPrimaryDatabase'
                             Write-Message -Message "Backing up database $db to $DatabaseSharedPath" -Level Verbose
 
                             try {
-                                $Timestamp = Get-Date -format "yyyyMMddHHmmss"
+                                $Timestamp = Get-Date -Format "yyyyMMddHHmmssfff"
 
                                 if ($UseAzure) {
                                     # Backup to Azure blob storage - use container base URL only
