@@ -256,4 +256,55 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "When the bulk copy fails" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $sourceDb.Query("CREATE TABLE dbo.dbatoolsci_leak_source (id INT); INSERT dbo.dbatoolsci_leak_source (id) VALUES (1), (2), (3)")
+            $null = $destinationDb.Query("CREATE TABLE dbo.dbatoolsci_leak_dest (id INT)")
+
+            # The bulk copy fails on the first row, because the string cannot be converted to the INT column of the
+            # destination. The cross joins make sure that the source has far more rows to send than the client has
+            # read by then, so the SELECT is still running when the copy fails (#10685). The marker in the SELECT
+            # finds the request afterwards, its own session is excluded because the text of the check contains it too.
+            $leakQuery = "SELECT 'dbatoolsci_leak_marker' AS id FROM dbo.dbatoolsci_leak_source AS s CROSS JOIN sys.all_objects AS a CROSS JOIN sys.all_objects AS b"
+            $leakRequestQuery = "SELECT r.session_id FROM sys.dm_exec_requests AS r CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) AS t WHERE t.text LIKE '%dbatoolsci_leak_marker%' AND r.session_id <> @@SPID"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # A leaked request holds a lock on the source table, so the DROP TABLE would wait for it forever.
+            foreach ($leakedRequest in $sourceDb.Query($leakRequestQuery)) {
+                $null = $sourceDb.Query("KILL $($leakedRequest.session_id)")
+            }
+            $null = $sourceDb.Query("IF OBJECT_ID('dbo.dbatoolsci_leak_source', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_leak_source")
+            $null = $destinationDb.Query("IF OBJECT_ID('dbo.dbatoolsci_leak_dest', 'U') IS NOT NULL DROP TABLE dbo.dbatoolsci_leak_dest")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Stops the SELECT on the source when writing to the destination fails" {
+            $splatFailingCopy = @{
+                SqlInstance      = $TestConfig.InstanceCopy1
+                Destination      = $TestConfig.InstanceCopy2
+                Database         = "tempdb"
+                Table            = "dbatoolsci_leak_source"
+                Query            = $leakQuery
+                DestinationTable = "dbatoolsci_leak_dest"
+                WarningAction    = "SilentlyContinue"
+            }
+            $result = Copy-DbaDbTableData @splatFailingCopy
+            $result | Should -BeNullOrEmpty
+            $WarnVar | Should -Match "Something went wrong"
+
+            $leakedRequests = @($sourceDb.Query($leakRequestQuery))
+            $leakedRequests.Count | Should -Be 0
+            # The lock of a leaked request is what blocked the DDL on the source table for the reporter.
+            { $sourceDb.Query("SET LOCK_TIMEOUT 5000; ALTER TABLE dbo.dbatoolsci_leak_source ADD extra INT") } | Should -Not -Throw
+        }
+    }
 }

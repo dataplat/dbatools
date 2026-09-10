@@ -650,6 +650,9 @@ function Copy-DbaDbTableData {
                     $sourceLabel = "Query"
                 }
                 $bulkCopyConnection = $null
+                $cmd = $null
+                $reader = $null
+                $bulkCopy = $null
                 try {
                     if ($Truncate -eq $true) {
                         if ($Pscmdlet.ShouldProcess($destServer, "Truncating table $fqtndest")) {
@@ -754,6 +757,27 @@ function Copy-DbaDbTableData {
                 } catch {
                     Stop-Function -Message "Something went wrong" -ErrorRecord $_ -Target $server -continue
                 } finally {
+                    # The source side is only cleaned up inside the try after a successful WriteToServer. When the bulk
+                    # copy fails, the reader stays open, the SELECT keeps running on the source (waiting on ASYNC_NETWORK_IO
+                    # once the network buffers are full) and holds its schema stability lock on the source table until
+                    # someone kills the session (see #10685). So the leftovers are cleaned up here.
+                    if ($reader -and -not $reader.IsClosed) {
+                        try {
+                            # Cancel the command first: closing a reader with unread rows would otherwise drain the whole
+                            # remaining result set from the source before it returns.
+                            $cmd.Cancel()
+                            $reader.Close()
+                        } catch {
+                            Write-Message -Level Debug -Message "Failed to close the reader on the source: $PSItem"
+                        }
+                    }
+                    if ($bulkCopy) {
+                        $bulkCopy.Close()
+                        $bulkCopy.Dispose()
+                    }
+                    if ($reader -and $server.ConnectionContext.SqlConnectionObject.State -eq "Open") {
+                        $server.ConnectionContext.SqlConnectionObject.Close()
+                    }
                     if ($bulkCopyConnection) {
                         $bulkCopyConnection.Close()
                         $bulkCopyConnection.Dispose()
