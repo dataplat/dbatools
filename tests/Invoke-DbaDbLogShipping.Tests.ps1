@@ -143,6 +143,13 @@ Describe $CommandName -Tag IntegrationTests {
             # cannot answer.
             $copyDestinationFolder = Join-Path -Path $sharedPath -ChildPath "copy"
             $null = New-Item -Path $copyDestinationFolder -ItemType Directory
+            # The command accepts the shared path only in the form \\server\share. In the lab
+            # $TestConfig.Temp is a share already. On CI it is a local folder on the runner, which
+            # also hosts the instance, so the administrative share of the drive names the same
+            # folder. The instance never has to read through that share: IgnoreFileChecks skips the
+            # reachability test of the share, the full backup below is taken to the local path, and
+            # the per-database subfolder is created by this session when the instance cannot see it.
+            $sharedPathUnc = $sharedPath -replace "^(.):", "\\$env:COMPUTERNAME\`$1`$"
 
             $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Name $primaryDatabase -RecoveryModel Full
             # The full backup is taken here and passed via UseExistingFullBackup: letting the
@@ -177,7 +184,8 @@ Describe $CommandName -Tag IntegrationTests {
                 SourceSqlInstance       = $TestConfig.InstanceHadr
                 DestinationSqlInstance  = $TestConfig.InstanceHadr
                 Database                = $primaryDatabase
-                SharedPath              = $sharedPath
+                SharedPath              = $sharedPathUnc
+                IgnoreFileChecks        = $true
                 CopyDestinationFolder   = $copyDestinationFolder
                 UseExistingFullBackup   = $true
                 SecondaryDatabaseSuffix = "_ls"
