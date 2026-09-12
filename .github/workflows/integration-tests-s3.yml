@@ -126,7 +126,7 @@ jobs:
             -v $HOME/.minio/certs:/root/.minio/certs:ro \
             -e "MINIO_ROOT_USER=${{ env.MINIO_ROOT_USER }}" \
             -e "MINIO_ROOT_PASSWORD=${{ env.MINIO_ROOT_PASSWORD }}" \
-            minio/minio:latest server /data --console-address ":9001"
+            quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z server /data --console-address ":9001"
 
           # Wait for MinIO to be ready (now using HTTPS)
           echo "Waiting for MinIO to start with TLS..."
@@ -143,7 +143,7 @@ jobs:
         shell: bash
         run: |
           # Install MinIO client
-          curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o $HOME/mc
+          curl -sSL https://github.com/minio/mc/releases/download/RELEASE.2025-08-13T08-35-41Z/mc.linux-amd64.RELEASE.2025-08-13T08-35-41Z -o $HOME/mc
           chmod +x $HOME/mc
 
           # Configure MinIO client (with --insecure for self-signed cert)
