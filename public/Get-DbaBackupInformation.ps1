@@ -326,6 +326,10 @@ function Get-DbaBackupInformation {
                             $Files += Get-XpDirTreeRestoreFile -Path "$f$($separator)FULL" -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path "$f$($separator)DIFF" -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path "$f$($separator)LOG" -SqlInstance $server -NoRecurse
+                        } elseif ($f -match "^s3://" -and [System.IO.Path]::GetExtension("$f").Length -eq 0) {
+                            # An S3 folder: T-SQL cannot list S3 objects (see Get-XpDirTreeRestoreFile), and handing the
+                            # folder to Read-DbaBackupHeader would only get it rejected for not being a file.
+                            Stop-Function -Message "S3 paths cannot be enumerated using T-SQL. Use explicit file paths or PowerShell-based enumeration for S3 storage." -Target $f -Continue
                         } else {
                             Write-Message -Level VeryVerbose -Message "File"
                             $Files += $f

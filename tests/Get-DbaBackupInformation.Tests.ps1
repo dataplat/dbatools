@@ -292,4 +292,20 @@ Describe $CommandName -Tag IntegrationTests {
             ($WarnVar -join " ") | Should -BeLike "*Failure on*"
         }
     }
+
+    Context "When Path is an S3 folder" {
+        It "Warns that S3 folders cannot be enumerated and returns nothing" {
+            # An S3 URL skips xp_dirtree, and a folder then went to Read-DbaBackupHeader as if it were a file, which
+            # rejected it with a message about files and folders instead of the one about S3 enumeration. On top of
+            # that the escaping continue ended the CI test before its assertions, so nobody noticed.
+            $splatS3Folder = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Path          = "s3://dbatoolsci.invalid/bucket/folder/"
+                WarningAction = "SilentlyContinue"
+            }
+            $results = Get-DbaBackupInformation @splatS3Folder
+            $results | Should -BeNullOrEmpty
+            ($WarnVar -join " ") | Should -BeLike "*S3 paths cannot be enumerated using T-SQL*"
+        }
+    }
 }
