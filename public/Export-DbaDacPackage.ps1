@@ -165,7 +165,10 @@ function Export-DbaDacPackage {
 
         #check that at least one of the DB selection parameters was specified
         if (!$AllUserDatabases -and !$Database) {
-            Stop-Function -Message "Either -Database or -AllUserDatabases should be specified" -Continue
+            # No -Continue here: this block has no enclosing loop, so the continue would escape the command
+            # and eat an iteration of whatever loop the caller runs in (#10638).
+            Stop-Function -Message "Either -Database or -AllUserDatabases should be specified"
+            return
         }
         #Check Option object types - should have a specific type
         if ($Type -eq 'Dacpac') {
