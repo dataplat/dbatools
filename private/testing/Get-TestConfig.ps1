@@ -17,6 +17,23 @@ function Get-TestConfig {
         # When testing a remote SQL Server instance this must be a network share
         # where both the SQL Server instance and the test script can write to.
         Temp             = 'C:\Temp'
+        # The Windows failover clusters that the Get-DbaWsfc* tests need. No CI environment has a
+        # cluster, so these stay empty there and the cluster tests skip themselves. A local
+        # configuration whose lab has clusters sets them to the cluster names.
+        # ClusterStorage needs shared storage: one cluster shared volume, and one disk that every
+        # node can see but that is deliberately not part of the cluster.
+        ClusterStorage   = $null
+        # ClusterWitness needs a file share witness.
+        ClusterWitness   = $null
+        # The Azure SQL Database that the tests of the Azure code paths need. Azure SQL Database is the
+        # only engine that refuses to switch the database of an existing connection - it answers a USE
+        # with error 40508 - so a real one is the only place that branch can be covered. No CI
+        # environment has one, so these stay empty there and those tests skip themselves. A local
+        # configuration that has one sets all three: the server, a database on it, and a credential of a
+        # SQL Server login that can reach that database.
+        AzureSqlDbServer = $null
+        AzureSqlDbName   = $null
+        AzureSqlDbCred   = $null
     }
 
     if (Test-Path $LocalConfigPath) {

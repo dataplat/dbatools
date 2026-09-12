@@ -344,7 +344,13 @@ function Set-DbaDbQueryStoreOption {
                         $db.Refresh()
 
                         if ($query -ne "") {
-                            $db.Query($query, $dbName)
+                            $null = $server.Query($query)
+                            # These options are changed with T-SQL rather than through SMO, so the SMO
+                            # object knows nothing about it and still holds what it read before. Without
+                            # this the command reports the values from before its own change, and leaves
+                            # the object of the caller saying the same. It is the treatment the SMO path
+                            # above already gets after its Alter. See #10561.
+                            $db.QueryStoreOptions.Refresh()
                         }
                     } catch {
                         Stop-Function -Message "Could not modify configuration." -Category InvalidOperation -InnerErrorRecord $_ -Target $db -Continue

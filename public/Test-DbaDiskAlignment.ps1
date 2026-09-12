@@ -182,10 +182,45 @@ function Test-DbaDiskAlignment {
 
                     $instanceName = $instance.Replace("MSSQLSERVER", "Default")
                     Write-Message -Level Verbose -Message "Found instance $instanceName" -FunctionName $FunctionName
+
+                    # A failover cluster instance is reached through its virtual server name, not through
+                    # the name of the node it currently runs on. The virtual name is in the ClusterName
+                    # value of the Cluster key of the instance hive, which only exists for clustered instances.
+                    $connectionName = $ComputerName
+                    $splatRegistryHive = @{
+                        CimSession = $cimSession
+                        Namespace  = "root/default"
+                        ClassName  = "StdRegProv"
+                        MethodName = "GetStringValue"
+                        Arguments  = @{
+                            hDefKey     = [uint32]2147483650  # HKEY_LOCAL_MACHINE
+                            sSubKeyName = "SOFTWARE\Microsoft\Microsoft SQL Server\Instance Names\SQL"
+                            sValueName  = $instance
+                        }
+                    }
+                    $instanceHive = (Invoke-CimMethod @splatRegistryHive).sValue
+                    if ($instanceHive) {
+                        $splatClusterName = @{
+                            CimSession = $cimSession
+                            Namespace  = "root/default"
+                            ClassName  = "StdRegProv"
+                            MethodName = "GetStringValue"
+                            Arguments  = @{
+                                hDefKey     = [uint32]2147483650  # HKEY_LOCAL_MACHINE
+                                sSubKeyName = "SOFTWARE\Microsoft\Microsoft SQL Server\$instanceHive\Cluster"
+                                sValueName  = "ClusterName"
+                            }
+                        }
+                        $clusterName = (Invoke-CimMethod @splatClusterName).sValue
+                        if ($clusterName) {
+                            Write-Message -Level Verbose -Message "Instance $instanceName is clustered, using virtual server name $clusterName" -FunctionName $FunctionName
+                            $connectionName = $clusterName
+                        }
+                    }
                     if ($instance -eq 'MSSQLSERVER') {
-                        $SqlInstances += $ComputerName
+                        $SqlInstances += $connectionName
                     } else {
-                        $SqlInstances += "$ComputerName\$instance"
+                        $SqlInstances += "$connectionName\$instance"
                     }
                 }
                 $sqlcount = $SqlInstances.Count

@@ -55,8 +55,9 @@ Describe $CommandName -Tag IntegrationTests {
 
         # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
         # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
-        $NetworkPath = $TestConfig.Temp
         $random = Get-Random
+        $NetworkPath = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_copydatabase$random"
+        $null = New-Item -Path $NetworkPath -ItemType Directory -Force
         $backuprestoredb = "dbatoolsci_backuprestore$random"
         $backuprestoredb2 = "dbatoolsci_backuprestoreother$random"
         $detachattachdb = "dbatoolsci_detachattach$random"
@@ -105,6 +106,10 @@ Describe $CommandName -Tag IntegrationTests {
             Database    = $supportDbs
         }
         Remove-DbaDatabase @splatRemoveSupport -ErrorAction SilentlyContinue
+
+        # The backups taken during the tests stay behind otherwise, and every test file that runs
+        # afterwards then reports them as leftovers of its own.
+        Remove-Item -Path $NetworkPath -Recurse -Force -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -294,6 +299,9 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "UseLastBackup with -Continue" {
+        # The destination database is pre-staged here in Restoring state, so SMO caches it as not
+        # accessible. This is the context that showed the skipped owner update of #10555: without the
+        # object refresh after the restore, Set-DbaDbOwner saw the stale value, warned and skipped.
         BeforeAll {
             $splatStopProcess = @{
                 SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
@@ -354,7 +362,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Successful"
         }
 
-        It "retains its name, recovery model, and status." {
+        It "retains its name, recovery model, status, and owner." {
             $splatGetDbs = @{
                 SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
                 Database    = $backuprestoredb
@@ -365,6 +373,10 @@ Describe $CommandName -Tag IntegrationTests {
             $dbs[0].Name | Should -Be $dbs[1].Name
             $dbs[0].RecoveryModel | Should -Be $dbs[1].RecoveryModel
             $dbs[0].Status | Should -Be $dbs[1].Status
+            # The owner catches the skipped Set-DbaDbOwner: when the stale SMO object made it skip,
+            # the destination kept the login that ran the restore as the owner instead of the owner
+            # of the source database.
+            $dbs[0].Owner | Should -Be $dbs[1].Owner
         }
     }
 

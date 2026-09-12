@@ -676,7 +676,12 @@ function Restore-DbaDatabase {
 
         if ($RestoreInstance.VersionMajor -eq 8 -and $true -ne $TrustDbBackupHistory) {
             foreach ($file in $Path) {
-                $bh = Get-DbaBackupInformation -SqlInstance $RestoreInstance -Path $file
+                $splatBackupInformation = @{
+                    SqlInstance     = $RestoreInstance
+                    Path            = $file
+                    EnableException = $EnableException
+                }
+                $bh = Get-DbaBackupInformation @splatBackupInformation
                 $bound = $PSBoundParameters
                 $bound['TrustDbBackupHistory'] = $true
                 $bound['Path'] = $bh
@@ -752,6 +757,7 @@ function Restore-DbaDatabase {
                     IgnoreLogBackup     = $IgnoreLogBackup
                     StorageCredential   = $StorageCredential
                     NoXpDirRecurse      = $NoXpDirRecurse
+                    EnableException     = $EnableException
                 }
                 $BackupHistory += Get-DbaBackupInformation @parms
             }
@@ -815,7 +821,7 @@ function Restore-DbaDatabase {
         }
         if ($PSCmdlet.ParameterSetName -like "Restore*") {
             if ($BackupHistory.Count -eq 0 -and $RestoreInstance.VersionMajor -ne 8) {
-                Write-Message -Level Warning -Message "No backups passed through. `n This could mean the SQL instance cannot see the referenced files, the file's headers could not be read or some other issue"
+                Stop-Function -Message "No backups passed through. `n This could mean the SQL instance cannot see the referenced files, the file's headers could not be read or some other issue"
                 return
             }
             Write-Message -message "Processing DatabaseName - $DatabaseName" -Level Verbose
@@ -859,6 +865,7 @@ function Restore-DbaDatabase {
                     ContinuePoints  = $ContinuePoints
                     LastRestoreType = $LastRestoreType
                     DatabaseName    = $DatabaseName
+                    EnableException = $EnableException
                 }
                 $FilteredBackupHistory = $BackupHistory | Select-DbaBackupInformation @parms
             }
@@ -883,7 +890,10 @@ function Restore-DbaDatabase {
 
                 $null = $FilteredBackupHistory | Test-DbaBackupInformation @parms
             } catch {
-                Stop-Function -ErrorRecord $_ -Message "Failure" -Continue
+                # No -Continue here: this catch is in the end block outside of any loop, so the continue
+                # would escape the command and eat an iteration of whatever loop the caller runs in.
+                Stop-Function -ErrorRecord $_ -Message "Failure"
+                return
             }
             if (Test-Bound -ParameterName TestBackupInformation) {
                 Set-Variable -Name $TestBackupInformation -Value $FilteredBackupHistory -Scope Global
@@ -940,7 +950,12 @@ function Restore-DbaDatabase {
                 }
                 $FilteredBackupHistory | Where-Object { $_.IsVerified -eq $true } | Invoke-DbaAdvancedRestore @parms
             } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Continue -Target $RestoreInstance
+                # No -Continue here: this catch is in the end block outside of any loop, so the continue
+                # would escape the command and eat an iteration of whatever loop the caller runs in. Under
+                # Pester that corrupted the test runner - the failure surfaced as "Cannot bind argument to
+                # parameter 'ErrorRecord' because it is null" and kept the StopAt tests broken for years.
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $RestoreInstance
+                return
             }
             if ($PSCmdlet.ParameterSetName -eq "RestorePage") {
                 if ($RestoreInstance.Edition -like '*Enterprise*') {

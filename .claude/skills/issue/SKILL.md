@@ -13,8 +13,10 @@ The two failure modes this skill exists to prevent: **fixing something that `dev
 ## 1. Read the whole issue
 
 ```
-gh issue view <number> --comments
+gh issue view <number> --json number,title,state,author,body,labels,createdAt,comments
 ```
+
+Use the `--json` form, not `gh issue view <number> --comments`. Those two views are disjoint: the plain view prints the body and no comments, `--comments` prints the comments and no body. On an issue with no comments yet — which is most new reports — `--comments` prints nothing at all and looks like a broken `gh`. The `--json` form always returns both in one call.
 
 Also check whether someone is already on it:
 

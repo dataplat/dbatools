@@ -534,14 +534,16 @@ function New-DbaAvailabilityGroup {
         if (($SharedPath)) {
             if (-not (Test-DbaPath -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Path $SharedPath)) {
                 Write-Progress -Activity "Adding new availability group" -Completed
-                Stop-Function -Continue -Message "Cannot access $SharedPath from $Primary"
+                # No -Continue on these guards: no loop encloses them, so the continue escaped the
+                # command before the return below ever ran and ate an iteration of the caller's loop.
+                Stop-Function -Message "Cannot access $SharedPath from $Primary"
                 return
             }
         }
 
         if ($Database -and -not $UseLastBackup -and -not $SharedPath -and $Secondary -and $SeedingMode -ne 'Automatic') {
             Write-Progress -Activity "Adding new availability group" -Completed
-            Stop-Function -Continue -Message "You must specify a SharedPath when adding databases to a manually seeded availability group"
+            Stop-Function -Message "You must specify a SharedPath when adding databases to a manually seeded availability group"
             return
         }
 
@@ -549,13 +551,13 @@ function New-DbaAvailabilityGroup {
             # New to SQL Server 2017 (14.x) is the introduction of a cluster type for AGs. For Linux, there are two valid values: External and None.
             if ($ClusterType -notin "External", "None") {
                 Write-Progress -Activity "Adding new availability group" -Completed
-                Stop-Function -Continue -Message "Linux only supports ClusterType of External or None"
+                Stop-Function -Message "Linux only supports ClusterType of External or None"
                 return
             }
             # Microsoft Distributed Transaction Coordinator (DTC) is not supported under Linux in SQL Server 2017
             if ($DtcSupport) {
                 Write-Progress -Activity "Adding new availability group" -Completed
-                Stop-Function -Continue -Message "Microsoft Distributed Transaction Coordinator (DTC) is not supported under Linux"
+                Stop-Function -Message "Microsoft Distributed Transaction Coordinator (DTC) is not supported under Linux"
                 return
             }
         }

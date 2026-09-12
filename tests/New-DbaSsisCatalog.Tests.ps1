@@ -21,6 +21,16 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Running on PowerShell Core" {
+        # The SSIS object model is only shipped for Windows PowerShell, so the command has to refuse on pwsh -
+        # but it must say so, not claim the caller is on Linux or macOS (#10662).
+        It "Refuses with a message that names Windows PowerShell" -Skip:($PSVersionTable.PSEdition -ne "Core") {
+            $null = New-DbaSsisCatalog -SqlInstance dbatoolsci_notconnected -SecurePassword (ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force) -WarningAction SilentlyContinue
+            $WarnVar | Should -Match "Windows PowerShell"
+            $WarnVar | Should -Not -Match "Linux"
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {

@@ -90,11 +90,36 @@ function Convert-UserNameToSID ([string] `$Acc ) {
             if ($Pscmdlet.ShouldProcess($computer, "Setting Privilege for SQL Service Account")) {
                 try {
                     $null = Test-ElevationRequirement -ComputerName $Computer -Continue
-                    if (Test-PSRemoting -ComputerName $Computer) {
+                    # Invoke-Command2 executes on the local computer under the process identity and
+                    # ignores -Credential, so the connectivity test and the service discovery below
+                    # have to authenticate the same way: with the credential only for remote targets.
+                    # Otherwise a credential that is valid on the remote computers of a mixed list
+                    # but not locally would reject the local computer although the actual operation
+                    # would succeed. Without a credential the implicit identity is used, which fails
+                    # when it cannot authenticate to the target (double hop).
+                    $useCredentialForPreflight = $Credential -and -not ([DbaInstanceParameter]$computer).IsLocalHost
+                    if ($useCredentialForPreflight) {
+                        $remotingTestResult = Test-PSRemoting -ComputerName $Computer -Credential $Credential
+                    } else {
+                        $remotingTestResult = Test-PSRemoting -ComputerName $Computer
+                    }
+                    if ($remotingTestResult) {
                         Write-Message -Level Verbose -Message "Exporting Privileges on $Computer"
-                        Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
-                            $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools.cfg > $NULL;
+                        # A random token keeps this invocation's secedit cfg/db/jfm files from colliding with
+                        # (or being deleted by) another concurrent Set-DbaPrivilege run against the same computer.
+                        $seceditRunToken = Get-Random
+                        $exportPrivilegesScriptBlock = {
+                            param ($ExportRunToken)
+                            $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools-$ExportRunToken.cfg > $NULL;
                         }
+                        $splatExportPrivileges = @{
+                            Raw          = $true
+                            ComputerName = $computer
+                            Credential   = $Credential
+                            ArgumentList = $seceditRunToken
+                            ScriptBlock  = $exportPrivilegesScriptBlock
+                        }
+                        Invoke-Command2 @splatExportPrivileges
 
                         $SQLServiceAccounts = @()
                         $SQLPerServiceSIDs = @()
@@ -103,7 +128,11 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                             $SQLPerServiceSIDs += $User
                         } else {
                             Write-Message -Level Verbose -Message "Getting SQL Service Accounts on $computer"
-                            $services = Get-DbaService -ComputerName $computer -Type Engine
+                            if ($useCredentialForPreflight) {
+                                $services = Get-DbaService -ComputerName $computer -Credential $Credential -Type Engine
+                            } else {
+                                $services = Get-DbaService -ComputerName $computer -Type Engine
+                            }
                             $SQLServiceAccounts += $services.StartName
                             # Per-service SIDs (NT SERVICE\<ServiceName>) are added to the service token by Windows
                             # for all services on Vista/Server 2008 and later. SQL Server uses the per-service SID
@@ -112,16 +141,17 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                         }
                         if ($SQLServiceAccounts.count -ge 1) {
                             Write-Message -Level Verbose -Message "Setting Privileges on $Computer"
-                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -Verbose -ArgumentList $ResolveAccountToSID, $SQLServiceAccounts, $SQLPerServiceSIDs, $Type -ScriptBlock {
+                            $setPrivilegesScriptBlock = {
                                 [CmdletBinding()]
                                 param ($ResolveAccountToSID,
                                     $SQLServiceAccounts,
                                     $SQLPerServiceSIDs,
-                                    $Type
+                                    $Type,
+                                    $ConfigureRunToken
                                 )
                                 . ([ScriptBlock]::Create($ResolveAccountToSID))
                                 $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
-                                $tempfile = "$temp\secpolByDbatools.cfg"
+                                $tempfile = "$temp\secpolByDbatools-$ConfigureRunToken.cfg"
                                 if ('BatchLogon' -in $Type) {
                                     $BLline = Get-Content $tempfile | Where-Object { $_ -match "SeBatchLogonRight" }
                                     ForEach ($acc in $SQLServiceAccounts) {
@@ -254,15 +284,48 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                         }
                                     }
                                 }
-                                $null = secedit /configure /cfg $tempfile /db secedit.sdb /areas USER_RIGHTS /overwrite /quiet
+                                $null = secedit /configure /cfg $tempfile /db $temp\secedit-$ConfigureRunToken.sdb /areas USER_RIGHTS /overwrite /quiet
                             }
+                            $splatSetPrivileges = @{
+                                Raw          = $true
+                                ComputerName = $computer
+                                Credential   = $Credential
+                                Verbose      = $true
+                                ArgumentList = $ResolveAccountToSID, $SQLServiceAccounts, $SQLPerServiceSIDs, $Type, $seceditRunToken
+                                ScriptBlock  = $setPrivilegesScriptBlock
+                            }
+                            Invoke-Command2 @splatSetPrivileges
+
                             Write-Message -Level Verbose -Message "Removing secpol file on $computer"
-                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock { $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); Remove-Item $temp\secpolByDbatools.cfg -Force > $NULL }
+                            $removeSecpolScriptBlock = {
+                                param ($CleanupRunToken)
+                                $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("")
+                                # secedit's /configure /db creates a database file plus a matching .jfm journal
+                                # file next to it; both live in $temp now instead of leaking into the caller's cwd.
+                                $splatRemoveSeceditFiles = @{
+                                    Path        = "$temp\secpolByDbatools-$CleanupRunToken.cfg", "$temp\secedit-$CleanupRunToken.sdb", "$temp\secedit-$CleanupRunToken.jfm"
+                                    Force       = $true
+                                    ErrorAction = "SilentlyContinue"
+                                }
+                                Remove-Item @splatRemoveSeceditFiles > $NULL
+                            }
+                            $splatRemoveSecpolFile = @{
+                                Raw          = $true
+                                ComputerName = $computer
+                                Credential   = $Credential
+                                ArgumentList = $seceditRunToken
+                                ScriptBlock  = $removeSecpolScriptBlock
+                            }
+                            Invoke-Command2 @splatRemoveSecpolFile
                         } else {
                             Write-Message -Level Warning -Message "No SQL Service Accounts found on $Computer"
                         }
                     } else {
-                        Write-Message -Level Warning -Message "Failed to connect to $Computer"
+                        if ($Credential) {
+                            Write-Message -Level Warning -Message "Failed to connect to $Computer"
+                        } else {
+                            Write-Message -Level Warning -Message "Failed to connect to $Computer. If this session itself runs in a remote session (for example via WinRM or Ansible), its network logon cannot authenticate to $Computer (double hop). Pass -Credential or connect with an authentication that supports delegation, like CredSSP."
+                        }
                     }
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue

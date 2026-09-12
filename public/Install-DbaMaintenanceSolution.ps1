@@ -456,8 +456,17 @@ function Install-DbaMaintenanceSolution {
         }
 
         foreach ($instance in $SqlInstance) {
+            # Connect-DbaInstance tells us whether it opened a connection for us. We must only close what we opened
+            # ourselves, because closing a connection of the caller takes their session with it. See #10554.
+            $isNewConnection = $false
+            $splatConnect = @{
+                SqlInstance              = $instance
+                SqlCredential            = $SqlCredential
+                NonPooledConnection      = $true
+                IsNewConnectionReference = [ref]$isNewConnection
+            }
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooledConnection
+                $server = Connect-DbaInstance @splatConnect
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -558,7 +567,9 @@ function Install-DbaMaintenanceSolution {
 
                 if ($Pscmdlet.ShouldProcess($instance, "Dropping all objects created by Ola's Maintenance Solution")) {
                     Write-ProgressHelper -ExcludePercent -Message "Dropping objects created by Ola's Maintenance Solution"
-                    $null = $db.Invoke($cleanupQuery)
+                    # Invoke-DbaQuery names the database instead of running on the connection of the caller, which
+                    # $db.Invoke() would leave in that database. This is how the installation below runs as well.
+                    $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $cleanupQuery -EnableException
                 }
 
                 # Remove Ola's Jobs
@@ -891,8 +902,10 @@ function Install-DbaMaintenanceSolution {
                 }
             }
 
-            # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
-            $null = $server | Disconnect-DbaInstance
+            if ($isNewConnection) {
+                # Close non-pooled connection as this is not done automatically.
+                $null = $server | Disconnect-DbaInstance
+            }
         }
 
         Write-ProgressHelper -ExcludePercent -Message "Installation complete"

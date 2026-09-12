@@ -257,8 +257,17 @@ function Invoke-DbaAdvancedRestore {
         [switch]$EnableException
     )
     begin {
+        # Connect-DbaInstance tells us whether it opened a connection for us. We must only close what we opened
+        # ourselves, because closing a connection of the caller takes their session with it. Restore-DbaDatabase
+        # connects once and hands that server object down to here, so this is the connection of its caller. See #10554.
+        $isNewConnection = $false
+        $splatConnect = @{
+            SqlInstance              = $SqlInstance
+            SqlCredential            = $SqlCredential
+            IsNewConnectionReference = [ref]$isNewConnection
+        }
         try {
-            $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $server = Connect-DbaInstance @splatConnect
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
             return
@@ -531,7 +540,7 @@ function Invoke-DbaAdvancedRestore {
                             Write-Progress -id 1 -Activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete $outerProgress -status ([System.String]::Format("Progress: {0:N2} %", $outerProgress))
                         }
                     } catch {
-                        Write-Message -Level Verbose -Message "Failed, Closing Server connection"
+                        Write-Message -Level Verbose -Message "Failed to restore $database"
                         $restoreComplete = $False
                         $ExitError = $_.Exception.InnerException
                         Stop-Function -Message "Failed to restore db $database, stopping" -ErrorRecord $_ -Continue
@@ -598,17 +607,20 @@ function Invoke-DbaAdvancedRestore {
                         if ($restore.Devices.Count -gt 0) {
                             $restore.Devices.Clear()
                         }
-                        Write-Message -Level Verbose -Message "Closing Server connection"
-                        $server.ConnectionContext.Disconnect()
                     }
                 }
                 $BackupCnt++
             }
             Write-Progress -id 2 -Activity "Finished" -Completed
-            if ($server.ConnectionContext.exists) {
-                $server.ConnectionContext.Disconnect()
-            }
             Write-Progress -id 1 -Activity "Finished" -Completed
+        }
+
+        # This used to sit inside the loop above and be guarded by ConnectionContext.exists, which is not a
+        # property of a ServerConnection, so it was never reached. Now it runs once, and only for a connection
+        # that was opened here.
+        if ($isNewConnection) {
+            Write-Message -Level Verbose -Message "Closing the connection that was opened for the restore"
+            $server.ConnectionContext.Disconnect()
         }
     }
 }

@@ -108,4 +108,39 @@ Describe $CommandName -Tag IntegrationTests {
             $results.SqlInstance | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "The connection of the caller is left alone (#10572)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Only a non-pooled connection can show this. SMO silently reopens a pooled connection, so the test
+            # would pass even with the disconnect this is about.
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $null = $callerServer.ConnectionContext.ExecuteNonQuery("CREATE TABLE #dbatoolsci_marker (id INT)")
+
+            $callerGroupName = "dbatoolsci-caller-group"
+            $callerResult = Add-DbaRegServerGroup -SqlInstance $callerServer -Name $callerGroupName
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $callerServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "still adds the group" {
+            $callerResult.Name | Should -Be $callerGroupName
+        }
+
+        It "leaves the connection open, so the session survives" {
+            { $callerServer.ConnectionContext.ExecuteScalar("SELECT COUNT(*) FROM #dbatoolsci_marker") } | Should -Not -Throw
+        }
+    }
 }

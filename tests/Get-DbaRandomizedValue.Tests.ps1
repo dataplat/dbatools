@@ -83,6 +83,19 @@ Describe $CommandName -Tag IntegrationTests {
         It "Accepts the same sub type under the type it belongs to" {
             Get-DbaRandomizedValue -RandomizerType Address -RandomizerSubType ZipCode | Should -Not -BeNullOrEmpty
         }
+
+        It "Warns without eating an iteration of the caller's loop" {
+            # The validation guards used to run Stop-Function -Continue in the begin block, where no
+            # loop encloses it - the continue escaped the command and consumed an iteration of this
+            # very loop, so the counter fell short (#10638).
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = Get-DbaRandomizedValue -WarningAction SilentlyContinue
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*Please use one of the variables*"
+        }
     }
 
     Context "Every randomizer type" {
@@ -96,10 +109,12 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($randomizerType in (Get-DbaRandomizedType)) {
                 $typeKey = "$($randomizerType.Type)/$($randomizerType.SubType)"
 
-                # Stop-Function -Continue from the begin block skips the rest of this iteration, so this entry
-                # is written first and only overwritten when the call comes back. Landing on it means a message
-                # was given. A Stop-Function inside the switch is swallowed by the switch instead, and those
-                # calls do come back, so the warning is checked as well.
+                # Landing on "message" means the call warned instead of producing a value - the guard in
+                # the begin block returns nothing and sets the warning, and a Stop-Function inside the
+                # switch is swallowed by the switch. Both come back, so the warning is checked below; the
+                # pre-written entry stays as a safety net. (Before #10638 the begin block guards escaped
+                # the command via a loop-less -Continue and ate this very foreach iteration, which is why
+                # the entry is written first.)
                 $typeResults[$typeKey] = "message"
                 $typeWarning = $null
 
@@ -114,7 +129,13 @@ Describe $CommandName -Tag IntegrationTests {
                 # and Random/SByte can return 0, and both are a returned value rather than nothing at all.
                 $typeValue = @(Get-DbaRandomizedValue @splatRandomValue)
 
-                if ($typeValue.Count -gt 0 -and "$($typeValue[0])" -ne "") {
+                # Measure the string instead of comparing it to "". PowerShell compares strings culture
+                # sensitively, so a string of a single ignorable character - a soft hyphen, a zero width
+                # mark, one of the C0 controls - compares equal to the empty string. Random/Chars returns
+                # five characters out of the whole range and lands on such a character as the first one
+                # about once in five hundred calls, and the type was then reported as returning nothing
+                # at all. Measured on 2026-08-24 after the full suite failed on exactly that.
+                if ($typeValue.Count -gt 0 -and "$($typeValue[0])".Length -gt 0) {
                     $typeResults[$typeKey] = "value"
                 } elseif ($typeWarning) {
                     $typeResults[$typeKey] = "message"

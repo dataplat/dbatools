@@ -130,7 +130,9 @@ function Get-DbaDbDetachedFileInfo {
             $collationsql = "SELECT name FROM fn_helpcollations() WHERE COLLATIONPROPERTY(name, N'COLLATIONID')  = $collationid"
 
             try {
-                $dataset = $server.databases['master'].ExecuteWithResults($collationsql)
+                # fn_helpcollations is available in every database, so this runs on the connection. Going
+                # through the master database would leave the connection of the caller there. See #10555.
+                $dataset = $server.ConnectionContext.ExecuteWithResults($collationsql)
                 $collation = "$($dataset.Tables[0].Rows[0].Item(0))"
             } catch {
                 $collation = $collationid

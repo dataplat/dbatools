@@ -85,12 +85,16 @@ function New-DbaLogShippingPrimarySecondary {
 
     # Check if the database is present on the source sql server
     if ($serverPrimary.Databases.Name -notcontains $PrimaryDatabase) {
-        Stop-Function -Message "Database $PrimaryDatabase is not available on instance $SqlInstance" -Target $SqlInstance -Continue
+        # No -Continue on any stop in this function: no loop encloses them, so the continue would
+        # escape into the caller and bypass the catch that Invoke-DbaDbLogShipping wraps around it.
+        Stop-Function -Message "Database $PrimaryDatabase is not available on instance $SqlInstance" -Target $SqlInstance
+        return
     }
 
     # Check if the database is present on the destination sql server
     if ($serverSecondary.Databases.Name -notcontains $SecondaryDatabase) {
-        Stop-Function -Message "Database $SecondaryDatabase is not available on instance $SecondaryServer" -Target $SecondaryServer -Continue
+        Stop-Function -Message "Database $SecondaryDatabase is not available on instance $SecondaryServer" -Target $SecondaryServer
+        return
     }
 
     $Query = "SELECT primary_database FROM msdb.dbo.log_shipping_primary_databases WHERE primary_database = '$PrimaryDatabase'"
@@ -99,10 +103,12 @@ function New-DbaLogShippingPrimarySecondary {
         Write-Message -Message "Executing query:`n$Query" -Level Verbose
         $Result = $serverPrimary.Query($Query)
         if ($Result.Count -eq 0 -or $Result[0] -ne $PrimaryDatabase) {
-            Stop-Function -Message "Database $PrimaryDatabase does not exist as log shipping primary.`nPlease run New-DbaLogShippingPrimaryDatabase first."  -ErrorRecord $_ -Target $SqlInstance -Continue
+            Stop-Function -Message "Database $PrimaryDatabase does not exist as log shipping primary.`nPlease run New-DbaLogShippingPrimaryDatabase first."  -ErrorRecord $_ -Target $SqlInstance
+            return
         }
     } catch {
-        Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query" -ErrorRecord $_ -Target $SqlInstance -Continue
+        Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query" -ErrorRecord $_ -Target $SqlInstance
+        return
     }
 
     # Set the query for the log shipping primary and secondary
@@ -125,7 +131,8 @@ function New-DbaLogShippingPrimarySecondary {
             $serverPrimary.Query($Query)
         } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
-            Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query" -ErrorRecord $_ -Target $SqlInstance -Continue
+            Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query" -ErrorRecord $_ -Target $SqlInstance
+            return
         }
     }
 

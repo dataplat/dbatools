@@ -193,6 +193,43 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "The connection of the caller is left alone (#10554)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -NonPooledConnection
+            $null = $callerServer.ConnectionContext.ExecuteNonQuery("CREATE TABLE #dbatoolsci_marker (id INT)")
+
+            # ReplaceExisting takes the code path that drops the existing objects, jobs are left out so that no
+            # SQL Agent command touches the connection - those are separate commands, see #10555.
+            $splatInstall = @{
+                SqlInstance     = $callerServer
+                Database        = "tempdb"
+                BackupLocation  = "NUL"
+                ReplaceExisting = $true
+            }
+            $null = Install-DbaMaintenanceSolution @splatInstall
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $callerServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "leaves the connection open, so the session survives" {
+            { $callerServer.ConnectionContext.ExecuteScalar("SELECT COUNT(*) FROM #dbatoolsci_marker") } | Should -Not -Throw
+        }
+
+        It "leaves the connection in the database it was on" {
+            $callerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()") | Should -Be "master"
+        }
+    }
+
     Context "Additional backup parameters all enabled" {
         AfterEach {
             Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Query $jobStep.Command -NoExec -EnableException

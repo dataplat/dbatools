@@ -26,6 +26,7 @@ $lines = $content -split "`n"
 # Track state for multi-line constructs
 $inHereStringSingle = $false
 $inHereStringDouble = $false
+$inBlockComment = $false
 $inHashtable = $false
 $hashtableLines = @()
 $hashtableStart = 0
@@ -33,6 +34,8 @@ $misalignedHashtables = @()
 
 # Patterns (using double quotes with escaping)
 $patternComment = "^\s*#"
+$patternBlockCommentStart = "<#"
+$patternBlockCommentEnd = "#>"
 $patternHereStringSingleStart = "@'"
 $patternHereStringDoubleStart = "@`""
 $patternHereStringSingleEnd = "^'@"
@@ -55,7 +58,12 @@ $patternTrailingSpace = "\s+$"
 for ($i = 0; $i -lt $lines.Count; $i++) {
     $line = $lines[$i].TrimEnd("`r")
     $lineNum = $i + 1
-    $isComment = $line -match $patternComment
+
+    # Track block-comment state (<# ... #>), which $patternComment (line starting with #) does not cover
+    $lineIsBlockComment = $inBlockComment
+    if ($line -match $patternBlockCommentStart) { $inBlockComment = $true; $lineIsBlockComment = $true }
+    if ($line -match $patternBlockCommentEnd) { $inBlockComment = $false; $lineIsBlockComment = $true }
+    $isComment = ($line -match $patternComment) -or $lineIsBlockComment
 
     # Track here-string state
     if ($line -match $patternHereStringSingleStart) { $inHereStringSingle = $true }

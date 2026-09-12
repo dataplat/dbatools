@@ -383,6 +383,27 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Test -Path with an inaccessible DataDirectory" {
+        It "Warns without eating an iteration of the caller's loop" {
+            # The inaccessible-directory checks used to run Stop-Function -Continue without an
+            # enclosing loop - the continue escaped the command and consumed an iteration of this
+            # very loop, so the counter fell short (#10638).
+            $splatInaccessible = @{
+                Path          = $backupPath
+                Destination   = $TestConfig.InstanceSingle
+                DataDirectory = "Q:\dbatoolsci\does\not\exist"
+                WarningAction = "SilentlyContinue"
+            }
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = Test-DbaLastBackup @splatInaccessible
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*Can't access*"
+        }
+    }
+
     Context "Test a single database" {
         BeforeAll {
             $singleDbResults = Test-DbaLastBackup -SqlInstance $TestConfig.InstanceSingle -Database $testlastbackup

@@ -37,7 +37,6 @@ function Get-DbaWsfcAvailableDisk {
         All properties from the MSCluster_AvailableDisk WMI class are returned, including:
 
         Properties added via Add-Member:
-        - State: Current operational state of the disk
         - ClusterName: Name of the cluster
         - ClusterFqdn: Fully qualified domain name of the cluster
 
@@ -80,7 +79,6 @@ function Get-DbaWsfcAvailableDisk {
             $disk = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_AvailableDisk
 
             # I don't have an available disk, so I can't see how to clean this up: Passthru
-            $disk | Add-Member -Force -NotePropertyName State -NotePropertyValue (Get-ResourceState $resource.State)
             $disk | Add-Member -Force -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
             $disk | Add-Member -Force -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn -PassThru
         }
