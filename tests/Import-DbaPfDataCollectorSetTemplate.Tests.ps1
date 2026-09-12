@@ -73,4 +73,18 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ComputerName | Should -Be $computerName
         }
     }
+
+    Context "When a subdirectory is given" {
+        It "Imports the collector set with that subdirectory" {
+            # -Subdirectory was declared and documented but never written into the template (#10607).
+            $splatImport = @{
+                ComputerName = $computerName
+                Template     = $collectorSetName
+                Subdirectory = "dbatoolsci_sub"
+            }
+            $results = Import-DbaPfDataCollectorSetTemplate @splatImport
+            $results.Name | Should -Be $collectorSetName
+            $results.Subdirectory | Should -Be "dbatoolsci_sub"
+        }
+    }
 }

@@ -17,7 +17,7 @@ Describe $CommandName -Tag UnitTests {
                 "DestinationSqlCredential",
                 "CategoryType",
                 "JobCategory",
-                "AgentCategory",
+                "AlertCategory",
                 "OperatorCategory",
                 "Force",
                 "EnableException"
@@ -34,6 +34,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Set up test category for the integration tests
         $null = New-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceCopy1 -Category "dbatoolsci test category"
+        $alertCategoryNames = "dbatoolsci alert category", "dbatoolsci other alert category"
+        $null = New-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceCopy1 -Category $alertCategoryNames
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -46,6 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Cleanup all created categories
         $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceCopy1 -Category "dbatoolsci test category"
         $null = Remove-DbaAgentJobCategory -SqlInstance $TestConfig.InstanceCopy2 -Category "dbatoolsci test category"
+        $null = Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Category $alertCategoryNames | Remove-DbaAgentAlertCategory
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -61,7 +64,7 @@ Describe $CommandName -Tag IntegrationTests {
                 "DestinationSqlCredential",
                 "CategoryType",
                 "JobCategory",
-                "AgentCategory",
+                "AlertCategory",
                 "OperatorCategory",
                 "Force",
                 "EnableException"
@@ -94,6 +97,23 @@ Describe $CommandName -Tag IntegrationTests {
             $secondCopyResults = Copy-DbaAgentJobCategory @splatSecondCopy
             $secondCopyResults.Name | Should -Be "dbatoolsci test category"
             $secondCopyResults.Status | Should -Be "Skipped"
+        }
+    }
+
+    Context "When copying alert categories" {
+        It "Copies only the requested alert category" {
+            # The parameter was declared as -AgentCategory while the code filtered on $AlertCategory, so the filter
+            # was never applied and every alert category was copied (#10607). It is now -AlertCategory with the old
+            # name as an alias.
+            $splatCopyAlertCategory = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                AlertCategory = "dbatoolsci alert category"
+            }
+            $results = Copy-DbaAgentJobCategory @splatCopyAlertCategory
+            $results.Name | Should -Be "dbatoolsci alert category"
+            $results.Status | Should -Be "Successful"
+            (Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceCopy2 -Category $alertCategoryNames).Name | Should -Be "dbatoolsci alert category"
         }
     }
 }

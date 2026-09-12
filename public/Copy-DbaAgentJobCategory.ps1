@@ -36,9 +36,9 @@ function Copy-DbaAgentJobCategory {
         Specific operator category names to copy from the source server. Use this for selective migration when you only need certain operator categories.
         Supports tab completion from the source server's existing operator categories for convenience.
 
-    .PARAMETER AgentCategory
+    .PARAMETER AlertCategory
         Specific alert category names to copy from the source server. Use this for selective migration when you only need certain alert categories.
-        Note: This parameter is currently not implemented in the function code and will be ignored if used.
+        AgentCategory is kept as an alias of this parameter; under that name the filter was never applied and every alert category was copied.
 
     .PARAMETER JobCategory
         Specific job category names to copy from the source server. Use this for selective migration when you only need certain job categories.
@@ -116,7 +116,8 @@ function Copy-DbaAgentJobCategory {
         [ValidateSet('Job', 'Alert', 'Operator')]
         [string[]]$CategoryType,
         [string[]]$JobCategory,
-        [string[]]$AgentCategory,
+        [Alias("AgentCategory")]
+        [string[]]$AlertCategory,
         [string[]]$OperatorCategory,
         [switch]$Force,
         [switch]$EnableException

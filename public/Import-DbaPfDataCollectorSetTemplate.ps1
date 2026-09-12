@@ -259,7 +259,7 @@ function Import-DbaPfDataCollectorSetTemplate {
                 Write-Message -Level Verbose -Message "Processing $file for $computer"
 
                 if ((Test-Bound -ParameterName RootPath -Not)) {
-                    Set-Variable -Name RootName -Value "%systemdrive%\PerfLogs\Admin\$Name"
+                    Set-Variable -Name RootPath -Value "%systemdrive%\PerfLogs\Admin\$Name"
                 }
 
                 # Perform replace
@@ -289,6 +289,12 @@ function Import-DbaPfDataCollectorSetTemplate {
                     # Set content
                     $null = Set-Content -Path $tempfile -Value $contents -Encoding Unicode
                     $xml = [xml](Get-Content $tempfile -ErrorAction Stop)
+                    if ($Subdirectory) {
+                        # The templates spread the empty Subdirectory element over two lines, so the line-based
+                        # replacement above never sees it. Set it on the document and save that back.
+                        $xml.DataCollectorSet.Subdirectory = $Subdirectory
+                        $xml.Save($tempfile)
+                    }
                     $plainxml = Get-Content $tempfile -ErrorAction Stop -Raw
                     $file = $tempfile
                 } catch {
