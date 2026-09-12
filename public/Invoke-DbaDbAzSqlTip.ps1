@@ -186,6 +186,9 @@ function Invoke-DbaDbAzSqlTip {
     }
 
     process {
+        # Without this guard the command connected to every instance after the begin block had already refused to run (#10655).
+        if (Test-FunctionInterrupt) { return }
+
         foreach ($instance in $SqlInstance) {
             try {
                 Write-Message -Message ('Connecting to {0}' -f $instance)

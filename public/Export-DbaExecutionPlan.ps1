@@ -187,7 +187,7 @@ function Export-DbaExecutionPlan {
 
     process {
 
-        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
+        if ((Test-Bound -ParameterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
             if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
                 $null = New-Item -ItemType Directory -Path $Path
             } else {

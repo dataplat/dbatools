@@ -425,3 +425,52 @@ ORDER BY c.column_id
     }
 
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "When Parquet.NET is not installed" {
+        BeforeAll {
+            # Parquet.NET stays loaded once any test has used it, so the missing-assembly path is only reachable in a
+            # fresh process whose search paths point at an empty folder.
+            $emptyRoot = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_noparquet_$(Get-Random)"
+            $null = New-Item -Path $emptyRoot -ItemType Directory
+            $notAParquetFile = Join-Path -Path $emptyRoot -ChildPath "dbatoolsci.parquet"
+            Set-Content -Path $notAParquetFile -Value "dbatoolsci"
+            $childScript = {
+                param($ModulePath, $EmptyRoot, $NotAParquetFile)
+                Import-Module -Name $ModulePath -Force
+                $null = Set-DbatoolsConfig -FullName Path.DbatoolsParquet -Value $EmptyRoot
+                $null = Set-DbatoolsConfig -FullName Path.DbatoolsData -Value $EmptyRoot
+                $splatImport = @{
+                    Path            = $NotAParquetFile
+                    SqlInstance     = "dbatoolsci-nohost"
+                    Database        = "tempdb"
+                    Table           = "dbatoolsci"
+                    WarningAction   = "SilentlyContinue"
+                    WarningVariable = "childWarnings"
+                }
+                $null = Import-DbaParquet @splatImport
+                foreach ($warning in $childWarnings) {
+                    "WARNING: $warning"
+                }
+            }
+            $childScriptPath = Join-Path -Path $emptyRoot -ChildPath "dbatoolsci_child.ps1"
+            Set-Content -Path $childScriptPath -Value $childScript.ToString()
+            $modulePath = Join-Path -Path (Get-Module -Name dbatools).ModuleBase -ChildPath "dbatools.psd1"
+            $hostPath = (Get-Process -Id $PID).Path
+            $childOutput = & $hostPath -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $childScriptPath -ModulePath $modulePath -EmptyRoot $emptyRoot -NotAParquetFile $notAParquetFile 2>&1
+            $childWarnings = @($childOutput | Where-Object { "$PSItem" -like "WARNING: *" })
+        }
+
+        AfterAll {
+            Remove-Item -Path $emptyRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Says how to install Parquet.NET and does nothing else" {
+            # The child prints the multi-line warning line by line and only its first line carries the prefix. Before
+            # the guard the process block still ran, connected to the instance and warned once more per file
+            # that it could not be opened (#10655).
+            $childWarnings.Count | Should -Be 1
+            $childWarnings[0] | Should -BeLike "*Could not find Parquet.NET*"
+        }
+    }
+}
