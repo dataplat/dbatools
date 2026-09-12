@@ -36,7 +36,9 @@ Describe $CommandName -Tag IntegrationTests {
             $badCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "dbatoolsci", $badPassword
         }
 
-        It "Warns without eating an iteration of the caller's loop" {
+        # The ServicePrincipal path is the one that reaches the catch: it refuses to run on Core before any
+        # request is made, so the test runs on Windows PowerShell only, which is what CI runs anyway.
+        It "Warns without eating an iteration of the caller's loop" -Skip:($PSVersionTable.PSEdition -eq "Core") {
             # The catch used to run Stop-Function -Continue at the end of the process block, where no loop
             # encloses it - the continue escaped the command and consumed an iteration of this very loop, so
             # the counter stayed at zero (#10638). A tenant that does not exist makes the token request fail.
