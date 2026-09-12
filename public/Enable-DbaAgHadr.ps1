@@ -131,10 +131,23 @@ function Enable-DbaAgHadr {
             if (Test-Bound -ParameterName Force) {
                 if ($PSCmdlet.ShouldProcess($instance, "Force provided, restarting Engine and Agent service for $instance on $computerFullName")) {
                     try {
-                        $null = Stop-DbaService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
-                        $null = Start-DbaService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
+                        # A refused stop or start only shows as Status "Failed" on the returned objects, so they have to
+                        # be checked. Without that, an Agent that was slow to stop left the engine restart refused and
+                        # the Agent stopped, while the command still reported success.
+                        $splatRestart = @{
+                            ComputerName    = $computerFullName
+                            InstanceName    = $instanceName
+                            Type            = "Agent", "Engine"
+                            EnableException = $true
+                        }
+                        $restartResults = @(Stop-DbaService @splatRestart)
+                        $restartResults += Start-DbaService @splatRestart
+                        $restartFailures = @($restartResults | Where-Object Status -notlike "Successful*")
+                        if ($restartFailures.Count -gt 0) {
+                            throw (($restartFailures | ForEach-Object { "$($PSItem.ServiceName): $($PSItem.Message)" }) -join " | ")
+                        }
                     } catch {
-                        Stop-Function -Message "Issue restarting $instance" -Target $instance -Continue
+                        Stop-Function -Message "Issue restarting $instance" -ErrorRecord $_ -Target $instance -Continue
                     }
                 }
             }
