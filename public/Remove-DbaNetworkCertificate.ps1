@@ -116,10 +116,10 @@ function Remove-DbaNetworkCertificate {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Regroot: $regRoot" -Target $instance
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "ServiceAcct: $serviceAccount" -Target $instance
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instanceName" -Target $instance
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "VSNAME: $vsname" -Target $instance
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Regroot: $regRoot"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "ServiceAcct: $serviceAccount"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instanceName"
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "VSNAME: $vsname"
 
             $scriptblock = {
                 $regRoot = $args[0]
@@ -147,6 +147,7 @@ function Remove-DbaNetworkCertificate {
                     Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
                 }
             }
+            Write-ProgressHelper -Completed
         }
     }
 }

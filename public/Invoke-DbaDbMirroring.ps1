@@ -426,5 +426,6 @@ function Invoke-DbaDbMirroring {
                 }
             }
         }
+        Write-ProgressHelper -Completed
     }
 }

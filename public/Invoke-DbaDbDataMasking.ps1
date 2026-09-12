@@ -1374,6 +1374,7 @@ function Invoke-DbaDbDataMasking {
                     }
                 }
             } # End foreach database
+            Write-ProgressHelper -Completed
 
             # Do some cleanup
             $null = $server.Databases['tempdb'].Tables.Refresh()

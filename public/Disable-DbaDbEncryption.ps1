@@ -126,6 +126,7 @@ function Disable-DbaDbEncryption {
                         Write-Message -Level Verbose -Message "Database state for $($db.Name) on $($server.Name): $($db.DatabaseEncryptionKey.EncryptionState)"
                     }
                     while ($db.DatabaseEncryptionKey.EncryptionState -notin "Unencrypted", "None")
+                    Write-ProgressHelper -Completed
 
                     if (-not $NoEncryptionKeyDrop) {
                         # https://www.sqlservercentral.com/steps/stairway-to-tde-removing-tde-from-a-database

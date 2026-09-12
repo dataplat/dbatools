@@ -877,6 +877,14 @@ function Restore-DbaDatabase {
             if ($StopAfterSelectBackupInformation) {
                 return
             }
+            if (-not $FilteredBackupHistory) {
+                # Without -EnableException, Select-DbaBackupInformation only warns when nothing restorable is left - no
+                # full backup anchors the chain, or nothing is newer than the continue point - and used to hand an empty
+                # selection on to the restore, which then returned nothing and looked like success (#10657). Say plainly
+                # that nothing was restored; the warning before this one names the reason.
+                Stop-Function -Message "Nothing to restore: the backup information selected no restorable backups for $($BackupHistory.Database | Sort-Object -Unique) on $RestoreInstance. A full backup has to anchor the chain (or -Continue has to point at a database restored with -NoRecovery), see the warning above for what was missing."
+                return
+            }
             try {
                 Write-Message -Level Verbose -Message "VerifyOnly = $VerifyOnly"
                 $parms = @{

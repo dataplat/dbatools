@@ -539,25 +539,33 @@ function Invoke-DbaQuery {
             }
             $conncontext = $server.ConnectionContext
             try {
-                if ($File -or $SqlObject) {
-                    foreach ($item in $files) {
-                        if ($null -eq $item) { continue }
-                        $filePath = $(Resolve-Path -LiteralPath $item).ProviderPath
-                        $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
-                        Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile
+                try {
+                    if ($File -or $SqlObject) {
+                        foreach ($item in $files) {
+                            if ($null -eq $item) { continue }
+                            $filePath = $(Resolve-Path -LiteralPath $item).ProviderPath
+                            $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
+                            Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile
+                        }
+                    } else {
+                        Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync
                     }
-                } else {
-                    Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync
+                } catch {
+                    Stop-Function -Message "[$instance] Failed during execution" -ErrorRecord $_ -Target $instance -Continue
                 }
-            } catch {
-                Stop-Function -Message "[$instance] Failed during execution" -ErrorRecord $_ -Target $instance -Continue
-            }
-            # Only close the connection if Connect-DbaInstance opened a new one for us. Connect-DbaInstance returns the
-            # object that was passed in whenever nothing about it has to change, so testing our own parameters is not
-            # enough - see #10554.
-            if ($isNewConnection) {
-                # Close non-pooled connection as this is not done automatically.
-                $null = $server | Disconnect-DbaInstance -Verbose:$false
+            } finally {
+                # Only close the connection if Connect-DbaInstance opened a new one for us. Connect-DbaInstance returns the
+                # object that was passed in whenever nothing about it has to change, so testing our own parameters is not
+                # enough - see #10554.
+                # The disconnect sits in a finally, because a failed execution leaves this block through the -Continue of
+                # the catch or through the exception it throws under -EnableException, and both used to skip the disconnect
+                # and leave the non-pooled session behind (#10659). Non-pooled connections are the ones nothing else cleans up.
+                if ($isNewConnection) {
+                    # Close non-pooled connection as this is not done automatically.
+                    # -WhatIf:$false because this is ownership bookkeeping, not the user's operation: Disconnect-DbaInstance
+                    # supports ShouldProcess, so a propagated $WhatIfPreference would skip the actual disconnect.
+                    $null = $server | Disconnect-DbaInstance -Verbose:$false -WhatIf:$false -Confirm:$false
+                }
             }
         }
     }

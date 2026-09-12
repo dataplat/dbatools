@@ -258,6 +258,7 @@ function New-DbaComputerCertificateSigningRequest {
                 }
                 Get-ChildItem $certCfg, $certCsr
             }
+            Write-ProgressHelper -Completed
         }
     }
 }

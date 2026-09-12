@@ -225,8 +225,14 @@ Describe $CommandName -Tag IntegrationTests {
                 WarningAction = "SilentlyContinue"
             }
             $results = Restore-DbaDatabase @splatRestore
-            $WarnVar | Should -BeLike "*Fullname property not found*"
             $results | Should -BeNullOrEmpty
+            # Two warnings: the selection names what is missing, and the command says that nothing was
+            # restored because of it (#10657). Before, the second one did not exist and the empty result
+            # looked like a successful restore.
+            $warnings = @($WarnVar) -join " "
+            $warnings | Should -BeLike "*Fullname property not found*"
+            $warnings | Should -BeLike "*Nothing to restore*"
+            $warnings | Should -BeLike "*$chainDbName*"
         }
 
         It "Throws when the path holds no backups at all with EnableException" {
@@ -238,6 +244,19 @@ Describe $CommandName -Tag IntegrationTests {
                 EnableException = $true
             }
             { Restore-DbaDatabase @splatRestore } | Should -Throw "*No backups passed through*"
+        }
+
+        It "Warns that no backups passed through and returns nothing without EnableException" {
+            $splatRestore = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Path          = $emptyBackupDir
+                DatabaseName  = $chainDbName
+                WithReplace   = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $results = Restore-DbaDatabase @splatRestore
+            $results | Should -BeNullOrEmpty
+            @($WarnVar) -join " " | Should -BeLike "*No backups passed through*"
         }
     }
 
