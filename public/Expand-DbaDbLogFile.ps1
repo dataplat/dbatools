@@ -369,13 +369,13 @@ function Expand-DbaDbLogFile {
             # We don't have windows credentials here, so Resolve-DbaNetworkName has to respect that and work like Resolve-NetBiosName did before.
             $resolvedComputerName = Resolve-DbaComputerName -ComputerName $SqlInstance
 
-            $databases = $server.Databases | Where-Object IsAccessible
+            $databases = @($server.Databases | Where-Object IsAccessible)
             Write-Message -Level Verbose -Message "Number of databases found: $($databases.Count)."
             if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
+                $databases = @($databases | Where-Object Name -In $Database)
             }
             if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
+                $databases = @($databases | Where-Object Name -NotIn $ExcludeDatabase)
             }
 
             #go through all databases

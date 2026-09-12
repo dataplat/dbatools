@@ -75,7 +75,8 @@ Describe $CommandName -Tag UnitTests {
                 function Select-DefaultView {
                     param(
                         [Parameter(ValueFromPipeline)]
-                        $InputObject
+                        $InputObject,
+                        $ExcludeProperty
                     )
 
                     process {
@@ -92,7 +93,9 @@ Describe $CommandName -Tag UnitTests {
                 Mock Connect-DbaInstance {
                     $script:mockServer
                 }
-                Mock Measure-DbaDbVirtualLogFile {
+                function Measure-DbaDbVirtualLogFile {
+                    param($SqlInstance, $Database)
+
                     $script:measureCallCount += 1
 
                     if ($script:measureCallCount -eq 1) {
