@@ -238,6 +238,7 @@ function Restore-DbaDatabase {
 
     .PARAMETER StopMark
         Marked point in the transaction log to stop the restore at (Mark is created via BEGIN TRANSACTION (https://docs.microsoft.com/en-us/sql/t-sql/language-elements/begin-transaction-transact-sql?view=sql-server-ver15)).
+        Once the mark is reached, the remaining backups of the chain are skipped and the database is recovered, unless -NoRecovery is used. A mark in a later backup than the one restored is reported by SQL Server, so nothing is skipped by guesswork.
 
     .PARAMETER StopBefore
         Switch to indicate the restore should stop before StopMark or StopAtLsn occurs, default is to stop when mark/LSN is reached.

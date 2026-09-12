@@ -1024,15 +1024,22 @@ COMMIT TRAN dbatoolstest
 
         It "Should have stopped at the first mark" {
             $splatRestore = @{
-                SqlInstance   = $TestConfig.InstanceSingle
-                Path          = $stopMarkBackupFiles
-                DatabaseName  = $stopMarkDbName
-                WithReplace   = $true
-                StopMark      = "dbatoolstest"
-                WarningAction = "SilentlyContinue"
+                SqlInstance  = $TestConfig.InstanceSingle
+                Path         = $stopMarkBackupFiles
+                DatabaseName = $stopMarkDbName
+                WithReplace  = $true
+                StopMark     = "dbatoolstest"
             }
-            $null = Restore-DbaDatabase @splatRestore
-            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -DatabaseName $stopMarkDbName -Recover
+            $results = @(Restore-DbaDatabase @splatRestore)
+            # The mark sits in the first of two log files. The command used to apply the second one anyway, which
+            # SQL Server refuses after a reached stop point, and left the database restoring behind a warning
+            # (#10656). Now the second log is skipped, no warning is written, and the database is recovered by
+            # the command itself, so no -Recover is needed here.
+            $WarnVar | Should -BeNullOrEmpty
+            $results.Count | Should -Be 2
+            $results[-1].BackupFile | Should -BeLike "*stopmark_log1.trn"
+            $results[-1].NoRecovery | Should -BeFalse
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $stopMarkDbName).Status | Should -Be "Normal"
             $maxStep = Invoke-DbaQuery @splatStopMarkQuery -Query "select max(step) as ms from steps" -As SingleValue
             # The marked transaction itself is included, everything after it is not.
             $maxStep | Should -Be 2
@@ -1040,19 +1047,56 @@ COMMIT TRAN dbatoolstest
 
         It "Should have stopped before the first mark" {
             $splatRestore = @{
-                SqlInstance   = $TestConfig.InstanceSingle
-                Path          = $stopMarkBackupFiles
-                DatabaseName  = $stopMarkDbName
-                WithReplace   = $true
-                StopMark      = "dbatoolstest"
-                StopBefore    = $true
-                WarningAction = "SilentlyContinue"
+                SqlInstance  = $TestConfig.InstanceSingle
+                Path         = $stopMarkBackupFiles
+                DatabaseName = $stopMarkDbName
+                WithReplace  = $true
+                StopMark     = "dbatoolstest"
+                StopBefore   = $true
             }
-            $null = Restore-DbaDatabase @splatRestore
-            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -DatabaseName $stopMarkDbName -Recover
+            $results = @(Restore-DbaDatabase @splatRestore)
+            $WarnVar | Should -BeNullOrEmpty
+            $results.Count | Should -Be 2
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $stopMarkDbName).Status | Should -Be "Normal"
             $maxStep = Invoke-DbaQuery @splatStopMarkQuery -Query "select max(step) as ms from steps" -As SingleValue
             # The marked transaction itself is excluded this time.
             $maxStep | Should -Be 1
+        }
+
+        It "Does not throw under EnableException when the stop point is not in the last log file" {
+            # This was the visible half of #10656: a successful stop-at-mark restore threw on the log after the mark.
+            $splatRestore = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Path            = $stopMarkBackupFiles
+                DatabaseName    = $stopMarkDbName
+                WithReplace     = $true
+                StopMark        = "dbatoolstest"
+                EnableException = $true
+            }
+            { $script:stopMarkThrowResults = @(Restore-DbaDatabase @splatRestore) } | Should -Not -Throw
+            $script:stopMarkThrowResults.Count | Should -Be 2
+            $maxStep = Invoke-DbaQuery @splatStopMarkQuery -Query "select max(step) as ms from steps" -As SingleValue
+            $maxStep | Should -Be 2
+        }
+
+        It "Leaves the database restoring after the stop point with NoRecovery and still skips the rest" {
+            $splatRestore = @{
+                SqlInstance  = $TestConfig.InstanceSingle
+                Path         = $stopMarkBackupFiles
+                DatabaseName = $stopMarkDbName
+                WithReplace  = $true
+                StopMark     = "dbatoolstest"
+                NoRecovery   = $true
+            }
+            $results = @(Restore-DbaDatabase @splatRestore)
+            $WarnVar | Should -BeNullOrEmpty
+            $results.Count | Should -Be 2
+            $results[-1].NoRecovery | Should -BeTrue
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $stopMarkDbName).Status | Should -Be "Restoring"
+            # The caller asked for it, so the recovery is the caller's, as before.
+            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -DatabaseName $stopMarkDbName -Recover
+            $maxStep = Invoke-DbaQuery @splatStopMarkQuery -Query "select max(step) as ms from steps" -As SingleValue
+            $maxStep | Should -Be 2
         }
 
         It "Should have stopped at the second mark with StopAfterDate" {
