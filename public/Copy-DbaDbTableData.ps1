@@ -678,10 +678,12 @@ function Copy-DbaDbTableData {
                         # what breaks the implicit positional mapping of SqlBulkCopy: it counts a computed column (the server
                         # then rejects the insert) and silently drops the source column that lands on a rowversion column,
                         # shifting every column behind it by one (see #10661). GeneratedAlwaysType is only supported by SMO on
-                        # SQL Server 2016 and later, so it has to be guarded by the version.
+                        # SQL Server 2016 and later and on Azure SQL Database, so it has to be guarded the same way. Azure SQL
+                        # Database is named on its own because its product version says 12 no matter what it supports.
+                        $destSupportsGeneratedAlways = $destServer.VersionMajor -ge 13 -or $destServer.DatabaseEngineType -eq "SqlAzureDatabase"
                         # Refresh the columns collection to ensure it's populated
                         $desttable.Columns.Refresh()
-                        $destColumns = @($desttable.Columns | Where-Object { -not $PSItem.Computed -and $PSItem.DataType.SqlDataType -ne "Timestamp" -and -not ($destServer.VersionMajor -ge 13 -and $PSItem.GeneratedAlwaysType -ne "None") } | Select-Object -ExpandProperty Name)
+                        $destColumns = @($desttable.Columns | Where-Object { -not $PSItem.Computed -and $PSItem.DataType.SqlDataType -ne "Timestamp" -and -not ($destSupportsGeneratedAlways -and $PSItem.GeneratedAlwaysType -ne "None") } | Select-Object -ExpandProperty Name)
                         Write-Message -Level Verbose -Message "Destination table has $($destColumns.Count) writable columns"
 
                         # The legacy bulk copy library uses a 4 byte integer to track the RowsCopied, so the only option is to use
