@@ -198,19 +198,19 @@ function Copy-DbaDatabase {
         Migrates a single user database TestDB using Backup and restore from instance sql2014a to sql2014b. Backup files are stored in \\fileshare\sql\migration.
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2012 -Destination sql2014, sql2016 -DetachAttach -Reattach
+        PS C:\> Copy-DbaDatabase -Source sql2012 -Destination sql2014, sql2016 -AllDatabases -DetachAttach -Reattach
 
         Databases will be migrated from sql2012 to both sql2014 and sql2016 using the detach/copy files/attach method. The following will be performed: kick all users out of the database, detach all data/log files, files copied to the admin share (\\SqlSERVER\M$\MSSql...) of destination server, attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackup -Force
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -AllDatabases -BackupRestore -UseLastBackup -Force
 
-        Migrates all user databases to sqlcluster and sql2016 using the last Full, Diff and Log backups from sql204a. If the databases exist on the destinations, they will be dropped prior to attach.
+        Migrates all user databases to sqlcluster and sql2016 using the last Full, Diff and Log backups from sql2014a. If the databases exist on the destinations, they will be dropped prior to attach.
 
         Note that the backups must exist in a location accessible by all destination servers, such a network share.
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -SharedPath \\fileshare\sql\migration
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -AllDatabases -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -SharedPath \\fileshare\sql\migration
 
         Migrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\fileshare\sql\migration. If the database exists on the destination, it will be dropped prior to attach.
 
@@ -226,7 +226,7 @@ function Copy-DbaDatabase {
         Migrates Mydb from instance sql2014 to AzureDb on the specified Azure SQL Manage Instance, replacing the existing AzureDb if it exists, using the blob storage account https://someblob.blob.core.windows.net/sql using the Sql Server Credential AzBlobCredential
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -BackupRestore -SharedPath \\FS\Backup -AdvancedBackupParams @{ CompressBackup = $true }
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -AllDatabases -BackupRestore -SharedPath \\FS\Backup -AdvancedBackupParams @{ CompressBackup = $true }
 
         Migrates all user databases to sqlcluster. Uses the parameter CompressBackup with the backup command to save some space on the shared path.
 
