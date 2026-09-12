@@ -141,4 +141,21 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase $dbname).Name | Should -Not -Contain $tablename
         }
     }
+
+    Context "System database handling" {
+        It "Does not return tables from system databases by default" {
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle
+            $results.Database | Should -Not -Contain "msdb"
+        }
+
+        It "Returns tables from system databases with -IncludeSystemDBs" {
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -IncludeSystemDBs
+            $results.Database | Should -Contain "msdb"
+        }
+
+        It "Returns tables from a system database that is requested explicitly" {
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb
+            $results.Database | Should -Contain "msdb"
+        }
+    }
 }

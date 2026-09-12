@@ -123,7 +123,10 @@ function Get-DbaRandomizedDataset {
 
         # Check variables
         if (-not $InputObject -and -not $Template -and -not $TemplateFile) {
-            Stop-Function -Message "Please enter a template or assign a template file" -Continue
+            # No -Continue on these guards: no loop encloses them, so the continue would escape the
+            # command and eat an iteration of whatever loop the caller runs in.
+            Stop-Function -Message "Please enter a template or assign a template file"
+            return
         }
 
         $templates = @()
@@ -133,7 +136,8 @@ function Get-DbaRandomizedDataset {
             $templates += Get-DbaRandomizedDatasetTemplate -Template $Template
 
             if ($templates.Count -lt 1) {
-                Stop-Function -Message "Could not find any templates" -Continue
+                Stop-Function -Message "Could not find any templates"
+                return
             }
 
             $InputObject += $templates

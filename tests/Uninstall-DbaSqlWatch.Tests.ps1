@@ -24,6 +24,19 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Major -gt 5 -or $env:appveyor) {
     # Skip IntegrationTests on AppVeyor because they take too long and skip on pwsh because the command is not supported.
 
+    # The SqlWatch dacpac contains a case insensitive model and DacFx refuses to deploy that to a case sensitive
+    # target (error SQL72030), so there is nothing to uninstall there and the Context below skips, which also keeps
+    # the BeforeAll from installing. We ask the instance for the behaviour instead of matching the collation name,
+    # because _BIN and _BIN2 collations are case sensitive too and carry no _CS_. A failed probe leaves the skip off
+    # so a real connection problem still fails the tests loudly.
+    $sqlWatchInstanceIsCaseSensitive = $false
+    try {
+        $sqlWatchCaseQuery = "SELECT CASE WHEN EXISTS (SELECT 1 FROM sys.databases WHERE name = UPPER(DB_NAME(1))) THEN 0 ELSE 1 END AS IsCaseSensitive"
+        $sqlWatchInstanceIsCaseSensitive = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $sqlWatchCaseQuery -EnableException).IsCaseSensitive -eq 1
+    } catch {
+        $sqlWatchInstanceIsCaseSensitive = $false
+    }
+
     BeforeAll {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -46,7 +59,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
-    Context "Testing SqlWatch uninstaller" {
+    Context "Testing SqlWatch uninstaller" -Skip:$sqlWatchInstanceIsCaseSensitive {
         BeforeAll {
             $null = Uninstall-DbaSqlWatch -SqlInstance $TestConfig.InstanceSingle -Database $database
         }

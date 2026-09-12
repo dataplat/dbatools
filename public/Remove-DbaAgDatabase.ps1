@@ -98,7 +98,7 @@ function Remove-DbaAgDatabase {
 
         if ((Test-Bound -ParameterName SqlInstance)) {
             if ((Test-Bound -Not -ParameterName Database)) {
-                Stop-Function -Message "You must specify one or more databases and one or more Availability Groups when using the SqlInstance parameter."
+                Stop-Function -Message "You must specify one or more databases when using the SqlInstance parameter."
                 return
             }
         }
@@ -110,7 +110,13 @@ function Remove-DbaAgDatabase {
         }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaAgDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
+            $splatGetAgDatabase = @{
+                SqlInstance       = $SqlInstance
+                SqlCredential     = $SqlCredential
+                Database          = $Database
+                AvailabilityGroup = $AvailabilityGroup
+            }
+            $InputObject += Get-DbaAgDatabase @splatGetAgDatabase
         }
 
         foreach ($db in $InputObject) {

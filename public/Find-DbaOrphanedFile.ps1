@@ -294,12 +294,20 @@ function Find-DbaOrphanedFile {
             $dbfiletable.Tables[0].TableName = "data"
 
             # Add support for Full Text Catalogs in Sql Server 2005 and below
-            if ($server.VersionMajor -lt 10) {
+            # The version is read from the server this function was given and not from the $server of the
+            # caller, which it used to reach into from here.
+            if ($smoserver.VersionMajor -lt 10) {
                 $databaselist = $smoserver.Databases | Select-Object -Property Name, IsFullTextEnabled
                 foreach ($db in $databaselist | Where-Object IsFullTextEnabled) {
                     $database = $db.Name
-                    $fttable = $null = $smoserver.Databases[$database].ExecuteWithResults('sp_help_fulltext_catalogs')
-                    foreach ($ftc in $fttable.Tables[0].Rows) {
+                    # This used to read "$fttable = $null = ...", which assigns $null to $fttable and threw
+                    # the catalogs away, so no full text catalog path was ever added below.
+                    # The Query script method is used instead of ExecuteWithResults of SMO because both run
+                    # the procedure in that database by issuing a USE on the connection context of the parent
+                    # server, which belongs to the caller, and only ours puts the previous database back.
+                    # It returns the rows, so there is no table to unwrap. See #10555.
+                    $fttable = $smoserver.Databases[$database].Query("sp_help_fulltext_catalogs")
+                    foreach ($ftc in $fttable) {
                         $null = $ftfiletable.Rows.Add($ftc.Path)
                     }
                 }
@@ -360,7 +368,8 @@ function Find-DbaOrphanedFile {
                 $userpaths = $Path | ForEach-Object { $_.TrimEnd("\") } | Sort-Object -Unique
             }
             $sql = Get-SQLDirTreeQuery -SqlPathList $sqlpaths -UserPathList $userpaths -FileTypes $fileTypeComparison -SystemFiles $systemfiles -Recurse:$Recurse -ServerMajorVersion $server.VersionMajor
-            $dirtreefiles = $server.Databases['master'].ExecuteWithResults($sql).Tables[0] | ForEach-Object {
+            # Through the Query script method, which puts the database of the caller back afterwards. See #10555.
+            $dirtreefiles = $server.Databases["master"].Query($sql) | ForEach-Object {
                 [PSCustomObject]@{
                     FullPath   = $_.Fullpath
                     Comparison = [IO.Path]::GetFullPath($(Format-Path $_.Fullpath))

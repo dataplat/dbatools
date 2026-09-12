@@ -94,7 +94,10 @@ function Test-DbaDbDataGeneratorConfig {
             return
         }
 
-        $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'money', 'nchar', 'ntext', 'nvarchar', 'smalldatetime', 'text', 'time', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
+        # This list has to match the one in Invoke-DbaDbDataGenerator, because that command stops on
+        # every finding reported here. A type missing here but supported there rejects a valid
+        # configuration - float, guid, numeric, real, smallint and tinyint were missing that way.
+        $supportedDataTypes = "bigint", "bit", "bool", "char", "date", "datetime", "datetime2", "decimal", "int", "float", "guid", "money", "numeric", "nchar", "ntext", "nvarchar", "real", "smalldatetime", "smallint", "text", "time", "tinyint", "uniqueidentifier", "userdefineddatatype", "varchar"
 
         $randomizerTypes = Get-DbaRandomizedType
 

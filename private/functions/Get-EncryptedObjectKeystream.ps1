@@ -22,8 +22,8 @@ function Get-EncryptedObjectKeystream {
         - Invoke-DbaDbDecryptObject
 
     .PARAMETER FamilyGuid
-        The family GUID of the database that holds the object, as reported by dbi_familyGUID of DBCC DBINFO.
-        One value per database, stable for the life of the database.
+        The family GUID of the database that holds the object, as reported by family_guid of the catalog view
+        sys.database_recovery_status. One value per database, stable for the life of the database.
 
     .PARAMETER ObjectId
         The object id of the encrypted object.

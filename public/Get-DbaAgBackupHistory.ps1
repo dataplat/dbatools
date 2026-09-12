@@ -260,7 +260,9 @@ function Get-DbaAgBackupHistory {
             $replicaNames = ($server.AvailabilityGroups | Where-Object { $_.Name -in $AvailabilityGroup } ).AvailabilityReplicas.Name
             Write-Message -Level Verbose -Message "We have found these replicas: $replicaNames"
 
-            $serverList = $replicaNames
+            # With a single replica, Name returns a scalar string and indexing it with [0] below
+            # would yield its first character instead of the replica name, so force an array.
+            $serverList = @($replicaNames)
         }
 
         Write-Message -Level Verbose -Message "We have more than one server, so query them all and aggregate"
@@ -279,7 +281,7 @@ function Get-DbaAgBackupHistory {
 
         if ($Last) {
             Write-Message -Level Verbose -Message "Filtering Ag backups for Last"
-            $AgResults | Select-DbaBackupInformation -ServerName $AvailabilityGroup
+            $AgResults | Select-DbaBackupInformation -ServerName $AvailabilityGroup -EnableException:$EnableException
         } elseif ($LastFull) {
             Write-Message -Level Verbose -Message "Filtering Ag backups for LastFull"
             Foreach ($AgDb in ( $AgResults.Database | Select-Object -Unique)) {

@@ -228,7 +228,11 @@ function Get-TestsForBuildScenario {
             $AllScenarioTests = Get-TestsForScenario -scenario $env:SCENARIO -AllTests $AllTests -Silent:$Silent
         } else {
             $AllTestsToExclude = @()
-            $validScenarios = $TestsRunGroups.Keys | Where-Object { $_ -notin @('disabled', 'appveyor_disabled') }
+            # Version groups (named like the 20* they support, e.g. 2008R2SP2Express) are additive: they say what
+            # ALSO runs on an old-version lane. The autodetect path already skips them when computing tied functions
+            # (see the '20*' filter above); skip them here too, or their members are removed from the leftover lane
+            # and - when they match no autodetect scenario either - run in no lane at all.
+            $validScenarios = $TestsRunGroups.Keys | Where-Object { $_ -notin @('disabled', 'appveyor_disabled') -and $_ -notlike '20*' }
             foreach ($k in $validScenarios) {
                 $AllTestsToExclude += Get-TestsForScenario -scenario $k -AllTests $AllTests
             }

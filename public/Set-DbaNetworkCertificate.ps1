@@ -316,7 +316,20 @@ function Set-DbaNetworkCertificate {
                     if (-not $detailedCertTest.CertificateFound) { $failedChecks += "CertificateNotFound" }
                     if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.KeyUsagesValid) { $failedChecks += "KeyUsagesInvalid" }
                     if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.DnsNamesValid) { $failedChecks += "DnsNamesInvalid" }
-                    if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.PrivateKeyValid) { $failedChecks += "PrivateKeyInvalid" }
+                    if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.PrivateKeyValid) {
+                        # SQL Server can only use a private key from a legacy Cryptographic Service Provider with KeySpec
+                        # AT_KEYEXCHANGE; a Key Storage Provider (CNG) key - what New-SelfSignedCertificate creates by
+                        # default - is refused by SQL Server itself. Say so, because "invalid" alone sends people looking
+                        # at permissions.
+                        $privateKeyDescription = "not accessible or a CNG (Key Storage Provider) key"
+                        if ($detailedCertTest.PrivateKeyType) {
+                            $privateKeyDescription = $detailedCertTest.PrivateKeyType
+                            if ($null -ne $detailedCertTest.PrivateKeyNumber) {
+                                $privateKeyDescription += " with KeyNumber $($detailedCertTest.PrivateKeyNumber)"
+                            }
+                        }
+                        $failedChecks += "PrivateKeyInvalid (SQL Server needs a legacy CSP key with KeySpec AT_KEYEXCHANGE; this private key is $privateKeyDescription)"
+                    }
                     if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.PublicKeyValid) { $failedChecks += "PublicKeyInvalid" }
                     if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.SignatureAlgorithmValid) { $failedChecks += "SignatureAlgorithmInvalid" }
                     if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.EnhancedKeyUsageValid) { $failedChecks += "EnhancedKeyUsageInvalid" }

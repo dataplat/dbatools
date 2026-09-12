@@ -135,7 +135,11 @@ function Import-DbaSpConfigure {
             }
 
             if (-not (Test-SqlSa -SqlInstance $sourceserver -SqlCredential $SourceSqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $sourceserver. Quitting." -Category PermissionDenied -Target $sourceserver -Continue
+                # No -Continue on these guards: the begin block has no enclosing loop, so the continue
+                # would escape the command, eat an iteration of whatever loop the caller runs in, and
+                # skip the connection cleanup in the end block.
+                Stop-Function -Message "Not a sysadmin on $sourceserver. Quitting." -Category PermissionDenied -Target $sourceserver
+                return
             }
 
             try {
@@ -151,7 +155,8 @@ function Import-DbaSpConfigure {
             }
 
             if (-not (Test-SqlSa -SqlInstance $destserver -SqlCredential $DestinationSqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $destserver. Quitting." -Category PermissionDenied -Target $destserver -Continue
+                Stop-Function -Message "Not a sysadmin on $destserver. Quitting." -Category PermissionDenied -Target $destserver
+                return
             }
 
             $source = $sourceserver.DomainInstanceName
@@ -170,11 +175,13 @@ function Import-DbaSpConfigure {
             }
 
             if (!(Test-SqlSa -SqlInstance $server -SqlCredential $SqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $server. Quitting." -Category PermissionDenied -Target $server -Continue
+                Stop-Function -Message "Not a sysadmin on $server. Quitting." -Category PermissionDenied -Target $server
+                return
             }
 
             if (-not (Test-Path $Path)) {
-                Stop-Function -Message "File $Path Not Found" -Category InvalidArgument -Target $Path -Continue
+                Stop-Function -Message "File $Path Not Found" -Category InvalidArgument -Target $Path
+                return
             }
         }
 
@@ -294,9 +301,10 @@ function Import-DbaSpConfigure {
         }
     }
     end {
-        if (Test-FunctionInterrupt) { return }
-
-        # Only close the connections that were opened here. See #10554.
+        # Only close the connections that were opened here, and close them before the interrupt
+        # return below: a begin-block guard sets the interrupt after a connection was already
+        # opened (a missing -Path, a failed sysadmin check), and returning first would leak it
+        # on every guard path. See #10554.
         if ($isNewServerConnection) {
             $server.ConnectionContext.Disconnect()
         }
@@ -306,6 +314,9 @@ function Import-DbaSpConfigure {
         if ($isNewDestinationConnection) {
             $destserver.ConnectionContext.Disconnect()
         }
+
+        # Only the finished message stays suppressed when the command was interrupted.
+        if (Test-FunctionInterrupt) { return }
 
         If ($Pscmdlet.ShouldProcess("console", "Showing finished message")) {
             Write-Message -Level Output -Message "SQL Server configuration options migration finished."

@@ -929,16 +929,33 @@ Describe $CommandName -Tag IntegrationTests {
             # runs against a path that does not exist on the machine running the tests and silently does
             # nothing. The backup was then left behind on every remote instance, and because this file
             # runs early in the suite, every later test file reported it as a leftover of its own.
-            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -Path $TestConfig.Temp
+            # Each backup gets its own file name, because two backups within the same minute share the
+            # default name and the second one appends to the first.
+            $backupFiles = @()
+            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -Path $TestConfig.Temp -FilePath "msdb_$(Get-Random).bak"
             if ($results.FullName) {
-                Remove-Item -Path $results.FullName -ErrorAction SilentlyContinue
+                $backupFiles += $results.FullName
             }
 
-            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -Path $TestConfig.Temp -WarningVariable warn
+            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -Path $TestConfig.Temp -FilePath "msdb_$(Get-Random).bak" -WarningVariable warn
             $warn | Should -BeNullOrEmpty
 
             if ($results.FullName) {
-                Remove-Item -Path $results.FullName -ErrorAction SilentlyContinue
+                $backupFiles += $results.FullName
+            }
+
+            # Right after the backup the share can still hold the file open for a moment, and a silently
+            # failed removal left it behind once. Retry a few times and then insist that it is gone.
+            foreach ($backupFile in $backupFiles) {
+                $attempts = 0
+                while ((Test-Path -Path $backupFile) -and $attempts -lt 5) {
+                    $attempts++
+                    Remove-Item -Path $backupFile -ErrorAction SilentlyContinue
+                    if (Test-Path -Path $backupFile) {
+                        Start-Sleep -Seconds 1
+                    }
+                }
+                Test-Path -Path $backupFile | Should -BeFalse
             }
         }
     }
@@ -1035,6 +1052,19 @@ SELECT SERVERPROPERTY('ProductVersion')
             # properties above come back empty. Guarded here for the same reason: the versions it
             # exists to refuse are not in the matrix, but its source is readable everywhere.
             $tsqlVersionMajor | Should -Be $smoVersionMajor
+        }
+    }
+
+    Context "tab completion cache of instance names" {
+        It "keeps every connected instance as its own entry" {
+            # The cache starts as $null, and $null += "x" made it a string. Every further name was then
+            # concatenated onto that string and the completer offered one long blob instead of names.
+            $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+            $cache = [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"]
+            $cache -is [array] | Should -BeTrue
+            $cache | Should -Contain $TestConfig.InstanceMulti1.ToLowerInvariant()
+            $cache | Should -Contain $TestConfig.InstanceMulti2.ToLowerInvariant()
         }
     }
 }

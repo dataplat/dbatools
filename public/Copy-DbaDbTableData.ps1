@@ -327,7 +327,12 @@ function Copy-DbaDbTableData {
 
     process {
         if ((Test-Bound -Not -ParameterName InputObject) -and ((Test-Bound -Not -ParameterName SqlInstance, Database -And) -or (Test-Bound -Not -ParameterName Table, View))) {
-            Stop-Function -Message "You must pipe in a table or specify SqlInstance, Database and [View|Table]."
+            if (Test-Bound -ParameterName Query) {
+                # Without the hint at Query the message reads as if SqlInstance or Database were missing (see #10676).
+                Stop-Function -Message "When using Query, you still have to specify SqlInstance, Database and [View|Table]. The query determines the data that is copied, but the command needs the table or view as the source object for its metadata."
+            } else {
+                Stop-Function -Message "You must pipe in a table or specify SqlInstance, Database and [View|Table]."
+            }
             return
         }
 
@@ -651,6 +656,9 @@ function Copy-DbaDbTableData {
                     $sourceLabel = "Query"
                 }
                 $bulkCopyConnection = $null
+                $cmd = $null
+                $reader = $null
+                $bulkCopy = $null
                 try {
                     if ($Truncate -eq $true) {
                         if ($Pscmdlet.ShouldProcess($destServer, "Truncating table $fqtndest")) {
@@ -742,7 +750,13 @@ function Copy-DbaDbTableData {
                         $bulkCopy.WriteToServer($reader)
                         $finalRowCountReported = Get-BulkRowsCopiedCount $bulkCopy
 
-                        $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+                        # -1 signals that the reflection lookup failed, not a wrapped counter, so it must not
+                        # reach Get-AdjustedTotalRowsCopied: fed in as a row count it inflates the total by
+                        # billions of rows (see #10675). The running total from the notifications is then the
+                        # best number available.
+                        if ($finalRowCountReported -ge 0) {
+                            $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+                        }
 
                         $RowsTotal = $script:totalRowsCopied
                         $TotalTime = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
@@ -774,6 +788,27 @@ function Copy-DbaDbTableData {
                 } catch {
                     Stop-Function -Message "Something went wrong" -ErrorRecord $_ -Target $server -continue
                 } finally {
+                    # The source side is only cleaned up inside the try after a successful WriteToServer. When the bulk
+                    # copy fails, the reader stays open, the SELECT keeps running on the source (waiting on ASYNC_NETWORK_IO
+                    # once the network buffers are full) and holds its schema stability lock on the source table until
+                    # someone kills the session (see #10685). So the leftovers are cleaned up here.
+                    if ($reader -and -not $reader.IsClosed) {
+                        try {
+                            # Cancel the command first: closing a reader with unread rows would otherwise drain the whole
+                            # remaining result set from the source before it returns.
+                            $cmd.Cancel()
+                            $reader.Close()
+                        } catch {
+                            Write-Message -Level Debug -Message "Failed to close the reader on the source: $PSItem"
+                        }
+                    }
+                    if ($bulkCopy) {
+                        $bulkCopy.Close()
+                        $bulkCopy.Dispose()
+                    }
+                    if ($reader -and $server.ConnectionContext.SqlConnectionObject.State -eq "Open") {
+                        $server.ConnectionContext.SqlConnectionObject.Close()
+                    }
                     if ($bulkCopyConnection) {
                         $bulkCopyConnection.Close()
                         $bulkCopyConnection.Dispose()

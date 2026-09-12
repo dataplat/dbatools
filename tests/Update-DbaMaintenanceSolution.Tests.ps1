@@ -142,7 +142,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "downloads the current GitHub source before checking installed procedures" {
-        $results = Update-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceSingle -Database $databaseName -Solution CommandExecute -Force -EnableException
+        $results = Update-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceSingle -Database $databaseName -Solution CommandExecute -Force -EnableException -WarningAction SilentlyContinue
 
         $results | Should -HaveCount 1
         $results.Procedure | Should -Be "CommandExecute"

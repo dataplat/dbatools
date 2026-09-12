@@ -44,6 +44,18 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $agListener = $ag | Add-DbaAgListener @splatListener
 
+        # A second availability group without a listener, to prove that a removal scoped
+        # to this group does not touch listeners of other availability groups.
+        $agName2 = "dbatoolsci_ag_removelistener2"
+        $splatAg2 = @{
+            Primary      = $TestConfig.InstanceHadr
+            Name         = $agName2
+            ClusterType  = "None"
+            FailoverMode = "Manual"
+            Certificate  = "dbatoolsci_AGCert"
+        }
+        $null = New-DbaAvailabilityGroup @splatAg2
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -52,10 +64,21 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $TestConfig.InstanceHadr -AvailabilityGroup $agName, $agName2
         $null = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "honors the AvailabilityGroup filter" {
+        It "does not remove the listener when the removal is scoped to another availability group" {
+            $results = Remove-DbaAgListener -SqlInstance $TestConfig.InstanceHadr -Listener $agListener.Name -AvailabilityGroup $agName2
+            $results | Should -BeNullOrEmpty
+            $WarnVar | Should -BeNullOrEmpty
+
+            $listener = Get-DbaAgListener -SqlInstance $TestConfig.InstanceHadr -Listener $agListener.Name
+            $listener.AvailabilityGroup | Should -Be $agName
+        }
     }
 
     Context "When removing a listener" {

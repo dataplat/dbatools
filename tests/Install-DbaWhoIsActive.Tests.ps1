@@ -50,7 +50,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         It "Should output correct results" {
             $installResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database $dbName
             $installResults.Database | Should -Be $dbName
-            $installResults.Name | Should -Be "sp_WhoisActive"
+            $installResults.Name | Should -Be "sp_WhoIsActive"
             $installResults.Status | Should -Be "Installed"
         }
     }
@@ -59,8 +59,37 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         It "Should output correct results" {
             $updateResults = Install-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database $dbName
             $updateResults.Database | Should -Be $dbName
-            $updateResults.Name | Should -Be "sp_WhoisActive"
+            $updateResults.Name | Should -Be "sp_WhoIsActive"
             $updateResults.Status | Should -Be "Updated"
+        }
+    }
+
+    Context "Should update sp_WhoIsActive on a Turkish collation database" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Turkish_CS_AS is the collation where LOWER() turns the I of sp_WhoIsActive into a
+            # dotless i, so a lowercase LIKE detection misses the installed procedure and reports
+            # Installed on every reinstall.
+            $dbNameTurkish = "WhoIsActive-Turkish-$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $dbNameTurkish -Collation Turkish_CS_AS
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $null = Install-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database $dbNameTurkish
+            $updateResultsTurkish = Install-DbaWhoIsActive -SqlInstance $TestConfig.InstanceSingle -Database $dbNameTurkish
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbNameTurkish
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Reports Updated on the second install" {
+            $updateResultsTurkish.Status | Should -Be "Updated"
         }
     }
 }

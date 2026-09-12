@@ -94,7 +94,7 @@ jobs:
             -v $HOME/.minio/certs:/root/.minio/certs:ro \
             -e MINIO_ROOT_USER=minioadmin \
             -e MINIO_ROOT_PASSWORD=minioadmin \
-            minio/minio:latest server /data
+            quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z server /data
 
           minio_ready=false
           for i in {1..30}; do
@@ -109,7 +109,7 @@ jobs:
             exit 1
           fi
 
-          curl -sSL https://dl.min.io/client/mc/release/linux-amd64/mc -o $HOME/mc
+          curl -sSL https://github.com/minio/mc/releases/download/RELEASE.2025-08-13T08-35-41Z/mc.linux-amd64.RELEASE.2025-08-13T08-35-41Z -o $HOME/mc
           chmod +x $HOME/mc
           $HOME/mc alias set dbatoolsci https://localhost:9000 minioadmin minioadmin --insecure
           $HOME/mc mb dbatoolsci/sqlbackups --insecure

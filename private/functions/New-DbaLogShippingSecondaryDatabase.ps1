@@ -156,12 +156,16 @@ function New-DbaLogShippingSecondaryDatabase {
 
     # Check if the database is present on the primary sql server
     if ($ServerPrimary.Databases.Name -notcontains $PrimaryDatabase) {
-        Stop-Function -Message "Database $PrimaryDatabase is not available on instance $PrimaryServer" -Target $PrimaryServer -Continue
+        # No -Continue on any stop in this function: no loop encloses them, so the continue would
+        # escape into the caller and bypass the catch that Invoke-DbaDbLogShipping wraps around it.
+        Stop-Function -Message "Database $PrimaryDatabase is not available on instance $PrimaryServer" -Target $PrimaryServer
+        return
     }
 
     # Check if the database is present on the primary sql server
     if ($ServerSecondary.Databases.Name -notcontains $SecondaryDatabase) {
-        Stop-Function -Message "Database $SecondaryDatabase is not available on instance $ServerSecondary" -Target $SqlInstance -Continue
+        Stop-Function -Message "Database $SecondaryDatabase is not available on instance $ServerSecondary" -Target $SqlInstance
+        return
     }
 
     # Check the restore mode
@@ -194,7 +198,8 @@ function New-DbaLogShippingSecondaryDatabase {
             [int]$DisconnectUsers = 0
             Write-Message -Message "Illegal combination of database restore mode $RestoreMode and disconnect users $DisconnectUsers. Setting it to $DisconnectUsers." -Level Warning
         } else {
-            Stop-Function -Message "Illegal combination of database restore mode $RestoreMode and disconnect users $DisconnectUsers." -Target $SqlInstance -Continue
+            Stop-Function -Message "Illegal combination of database restore mode $RestoreMode and disconnect users $DisconnectUsers." -Target $SqlInstance
+            return
         }
     }
 
@@ -311,7 +316,8 @@ function New-DbaLogShippingSecondaryDatabase {
             }
         } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
-            Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query"  -ErrorRecord $_ -Target $SqlInstance -Continue
+            Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)`n$Query"  -ErrorRecord $_ -Target $SqlInstance
+            return
         }
     }
 

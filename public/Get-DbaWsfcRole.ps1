@@ -40,7 +40,7 @@ function Get-DbaWsfcRole {
         - ClusterFqdn: Fully qualified domain name of the cluster
         - Name: Name of the resource group (key property), typically the cluster role name (e.g., SQL Server instance name)
         - OwnerNode: Name of the node currently hosting this resource group
-        - State: Current state of the resource group translated to readable format (Online, Offline, Failed, or Unknown)
+        - State: Current state of the resource group translated to readable format (Online, Offline, Failed, PartialOnline, Pending, or Unknown)
 
         Additional properties available (from WMI MSCluster_ResourceGroup object):
         - Caption: Short textual description of the resource group

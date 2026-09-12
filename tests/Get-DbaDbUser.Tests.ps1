@@ -35,12 +35,12 @@ Describe $CommandName -Tag IntegrationTests {
         $CreateTestUser = @"
 CREATE LOGIN [$DBUserName]
     WITH PASSWORD = '$($tempguid.guid)';
-USE Master;
+USE master;
 CREATE USER [$dbUserName] FOR LOGIN [$dbUserName]
     WITH DEFAULT_SCHEMA = dbo;
 CREATE LOGIN [$dbUserName2]
     WITH PASSWORD = '$($tempguid.guid)';
-USE Master;
+USE master;
 CREATE USER [$dbUserName2] FOR LOGIN [$dbUserName2]
     WITH DEFAULT_SCHEMA = dbo;
 "@

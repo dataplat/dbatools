@@ -281,7 +281,11 @@ function Invoke-DbaPfRelog {
         $allpaths = $allpaths | Where-Object { $_ -match '.blg' } | Select-Object -Unique
 
         if (-not $allpaths) {
-            Stop-Function -Message "Could not find matching .blg files" -Target $file -Continue
+            # No -Continue here: the end block has no enclosing loop, so the continue escaped the
+            # command before the return below ever ran and ate an iteration of the caller's loop.
+            # The -Continue calls inside the script block below are different: they are caught by the
+            # per-file foreach that invokes the script block and skip to the next file as intended.
+            Stop-Function -Message "Could not find matching .blg files" -Target $file
             return
         }
 
