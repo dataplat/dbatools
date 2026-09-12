@@ -38,21 +38,25 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    # TODO: Fix later
-    Context -Skip "???" {
-        BeforeAll {
+    Context "Parameter validation" {
+        BeforeDiscovery {
+            # -TestCases is read while Pester discovers the tests. Built in the BeforeAll below, as it
+            # was before, this list was still empty at discovery, so neither of the role tests existed
+            # at all - and with Pester 6 the empty list fails the whole file during discovery.
             $systemRoles = @(
-                @{role = 'bulkadmin' },
-                @{role = 'dbcreator' },
-                @{role = 'diskadmin' },
-                @{role = 'processadmin' },
-                @{role = 'public' },
-                @{role = 'securityadmin' },
-                @{role = 'serveradmin' },
-                @{role = 'setupadmin' },
-                @{role = 'sysadmin' }
+                @{role = "bulkadmin" },
+                @{role = "dbcreator" },
+                @{role = "diskadmin" },
+                @{role = "processadmin" },
+                @{role = "public" },
+                @{role = "securityadmin" },
+                @{role = "serveradmin" },
+                @{role = "setupadmin" },
+                @{role = "sysadmin" }
             )
+        }
 
+        BeforeAll {
             $command = Get-Command $CommandName
         }
 
@@ -252,8 +256,9 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $result.PasswordPolicyEnforced | Should -Be $false
         }
 
-        # TODO: The 'locked' test makes assumptions the password policy configuration is enabled for the Windows OS.
-        It -Skip "Unlock" {
+        # A login can only be locked out when the host running the instance has an account lockout
+        # threshold, so this test needs one that is not higher than the number of failed logons below.
+        It "unlocks a login that was locked out" {
             $results = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
             $results.PasswordPolicyEnforced | Should -Be $true
 
@@ -264,10 +269,14 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             # exceed the lockout count
             for (($i = 0); $i -le 4; $i++) {
                 try {
-                    Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -SqlCredential $invalidSqlCredential
+                    # NonPooledConnection, because after a failed logon SqlClient blocks the pool for a
+                    # growing number of seconds and answers the following attempts itself. Those never
+                    # reach the instance, so the bad password count stops climbing before it reaches the
+                    # lockout threshold and the login is never locked.
+                    $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -SqlCredential $invalidSqlCredential -NonPooledConnection
                 } catch {
-                    Write-Message -Level Warning -Message "invalid login credentials used on purpose to lock out account"
-                    Start-Sleep -s 5
+                    # Verbose, not a warning: the failed logon is on purpose and a test run must not print warnings.
+                    Write-Verbose -Message "invalid login credentials used on purpose to lock out account"
                 }
             }
 
@@ -275,8 +284,9 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $results.IsLocked | Should -Be $true
 
             # this will generate a warning since neither the password or the -force param is specified
-            $results = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -Unlock
+            $results = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -Unlock -WarningAction SilentlyContinue
             $results | Should -BeNullOrEmpty
+            ($WarnVar -join " ") | Should -Match "Force"
 
             # this will use the workaround solution to turn off/on the check_policy
             $results = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -Unlock -Force
@@ -285,10 +295,14 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             # exceed the lockout count again
             for (($i = 0); $i -le 4; $i++) {
                 try {
-                    Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -SqlCredential $invalidSqlCredential
+                    # NonPooledConnection, because after a failed logon SqlClient blocks the pool for a
+                    # growing number of seconds and answers the following attempts itself. Those never
+                    # reach the instance, so the bad password count stops climbing before it reaches the
+                    # lockout threshold and the login is never locked.
+                    $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -SqlCredential $invalidSqlCredential -NonPooledConnection
                 } catch {
-                    Write-Message -Level Warning -Message "invalid login credentials used on purpose to lock out account"
-                    Start-Sleep -s 5
+                    # Verbose, not a warning: the failed logon is on purpose and a test run must not print warnings.
+                    Write-Verbose -Message "invalid login credentials used on purpose to lock out account"
                 }
             }
 
