@@ -1184,13 +1184,10 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When the export destination cannot be created" {
         BeforeAll {
-            # A file where the destination folder should go, so the folder cannot be created underneath it.
-            $blockingFile = Join-Path -Path $env:TEMP -ChildPath "dbatoolsci_blocking_$(Get-Random).txt"
-            Set-Content -Path $blockingFile -Value "dbatoolsci"
-        }
-
-        AfterAll {
-            Remove-Item -Path $blockingFile -Force -ErrorAction SilentlyContinue
+            # A destination on a drive that does not exist: New-Item -Force on a folder under a file returns
+            # quietly, a missing drive is what makes it throw on both editions.
+            $freeDriveLetter = [char[]](90..65) | Where-Object { -not (Test-Path -Path "$([char]$PSItem):\") } | Select-Object -First 1
+            $badDestination = "$([char]$freeDriveLetter):\dbatoolsci_nodrive\export"
         }
 
         It "Warns without eating an iteration of the caller's loop" {
@@ -1204,14 +1201,14 @@ Describe $CommandName -Tag IntegrationTests {
                     SqlInstance       = $TestConfig.InstanceMulti1
                     Database          = "dbatoolsci_none"
                     ObjectName        = "dbatoolsci_none"
-                    ExportDestination = "$blockingFile\dbatoolsci_sub"
+                    ExportDestination = $badDestination
                     WarningAction     = "SilentlyContinue"
                 }
                 $null = Invoke-DbaDbDecryptObject @splatBadFolder
                 $loopCount++
             }
             $loopCount | Should -Be 3
-            ($WarnVar -join " ") | Should -BeLike "*Couldn't create destination folder*"
+            ($WarnVar -join " ") | Should -BeLike "*create destination folder $badDestination*"
         }
     }
 }
