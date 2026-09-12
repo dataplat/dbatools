@@ -686,7 +686,9 @@ function Expand-DbaDbLogFile {
                 } | Select-DefaultView -ExcludeProperty LogFileCount
             } #foreach database
         } catch {
-            Stop-Function -Message "Logfile $logfile on database $dbName not processed. Error: $($_.Exception.Message). Line Number:  $($_InvocationInfo.ScriptLineNumber)" -Continue
+            # No -Continue here: this block has no enclosing loop, so the continue would escape the command
+            # and eat an iteration of whatever loop the caller runs in (#10638).
+            Stop-Function -Message "Logfile $logfile on database $dbName not processed. Error: $($_.Exception.Message). Line Number:  $($_.InvocationInfo.ScriptLineNumber)"
         }
     }
 
