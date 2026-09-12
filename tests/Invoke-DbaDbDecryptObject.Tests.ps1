@@ -1181,4 +1181,37 @@ Describe $CommandName -Tag IntegrationTests {
             $contextAfter | Should -Be $contextBefore
         }
     }
+
+    Context "When the export destination cannot be created" {
+        BeforeAll {
+            # A file where the destination folder should go, so the folder cannot be created underneath it.
+            $blockingFile = Join-Path -Path $env:TEMP -ChildPath "dbatoolsci_blocking_$(Get-Random).txt"
+            Set-Content -Path $blockingFile -Value "dbatoolsci"
+        }
+
+        AfterAll {
+            Remove-Item -Path $blockingFile -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Warns without eating an iteration of the caller's loop" {
+            # The folder check used to run Stop-Function -Continue in the begin block, where no loop encloses
+            # it - the continue escaped the command and consumed an iteration of this very loop (#10638). It
+            # also never fired, because the failing New-Item was not a terminating error, so a folder that could
+            # not be created was silently ignored. The check fires before any connection is made.
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $splatBadFolder = @{
+                    SqlInstance       = $TestConfig.InstanceMulti1
+                    Database          = "dbatoolsci_none"
+                    ObjectName        = "dbatoolsci_none"
+                    ExportDestination = "$blockingFile\dbatoolsci_sub"
+                    WarningAction     = "SilentlyContinue"
+                }
+                $null = Invoke-DbaDbDecryptObject @splatBadFolder
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            ($WarnVar -join " ") | Should -BeLike "*Couldn't create destination folder*"
+        }
+    }
 }
