@@ -267,4 +267,29 @@ Describe $CommandName -Tag IntegrationTests {
             $resultsSanLog.Count | Should -BeExactly 3
         }
     }
+
+    Context "When a file is not a backup" {
+        BeforeAll {
+            # A text file where the instance can read it, so the header read fails on the content, not on access.
+            $notABackup = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_notabackup_$(Get-Random).txt"
+            Set-Content -Path $notABackup -Value "dbatoolsci"
+        }
+
+        AfterAll {
+            Remove-Item -Path $notABackup -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Warns without eating an iteration of the caller's loop" {
+            # The header-read catch used to run Stop-Function -Continue in the process block, where no loop
+            # encloses it - the continue escaped the command and consumed an iteration of this very loop, so
+            # the counter stayed at zero (#10638).
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = Get-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -Path $notABackup -WarningAction SilentlyContinue
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            ($WarnVar -join " ") | Should -BeLike "*Failure on*"
+        }
+    }
 }

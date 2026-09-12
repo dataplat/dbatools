@@ -349,7 +349,10 @@ function Get-DbaBackupInformation {
                 try {
                     $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -StorageCredential $StorageCredential -EnableException
                 } catch {
-                    Stop-Function -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name -Continue
+                    # No -Continue here: no loop encloses this catch, so the continue would escape the command
+                    # and eat an iteration of whatever loop the caller runs in (#10638).
+                    Stop-Function -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name
+                    return
                 }
             }
 
