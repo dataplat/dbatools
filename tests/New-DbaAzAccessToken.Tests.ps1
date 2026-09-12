@@ -29,3 +29,30 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+Describe $CommandName -Tag IntegrationTests {
+    Context "When the service principal cannot be authenticated" {
+        BeforeAll {
+            $badPassword = ConvertTo-SecureString -String "dbatoolsci" -AsPlainText -Force
+            $badCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "dbatoolsci", $badPassword
+        }
+
+        It "Warns without eating an iteration of the caller's loop" {
+            # The catch used to run Stop-Function -Continue at the end of the process block, where no loop
+            # encloses it - the continue escaped the command and consumed an iteration of this very loop, so
+            # the counter stayed at zero (#10638). A tenant that does not exist makes the token request fail.
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $splatBadTenant = @{
+                    Type          = "ServicePrincipal"
+                    Tenant        = "dbatoolsci.invalid"
+                    Credential    = $badCredential
+                    WarningAction = "SilentlyContinue"
+                }
+                $null = New-DbaAzAccessToken @splatBadTenant
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            ($WarnVar -join " ") | Should -BeLike "*Failure*"
+        }
+    }
+}
