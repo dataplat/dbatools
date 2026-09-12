@@ -212,4 +212,19 @@ CREATE TRIGGER $triggerviewname
             $results.Parent.GetType().Name | Should -Be "View"
         }
     }
+
+    Context "When something other than a table or view is piped in" {
+        It "Warns without eating an iteration of the caller's loop" {
+            # The type check used to run Stop-Function -Continue inside a ForEach-Object scriptblock, where no
+            # loop of the command encloses it - the continue escaped the command and consumed an iteration of
+            # this very loop, so the counter stayed at zero (#10638). No connection is made for a bad object.
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = "dbatoolsci_not_a_table" | Get-DbaDbObjectTrigger -WarningAction SilentlyContinue
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            ($WarnVar -join " ") | Should -BeLike "*is not of type Table or View*"
+        }
+    }
 }
