@@ -872,4 +872,27 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "When a system database is requested" {
+        It "Warns without eating an iteration of the caller's loop" {
+            # The system database check used to run Stop-Function -Continue in the process block, where no
+            # loop encloses it - the continue escaped the command and consumed an iteration of this very
+            # loop, so the counter stayed at zero (#10638). The check fires before any connection is made.
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $splatSystemDb = @{
+                    Source        = $TestConfig.InstanceCopy1
+                    Destination   = $TestConfig.InstanceCopy2
+                    Database      = "master"
+                    BackupRestore = $true
+                    SharedPath    = $TestConfig.Temp
+                    WarningAction = "SilentlyContinue"
+                }
+                $null = Copy-DbaDatabase @splatSystemDb
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*Migrating system databases is not currently supported*"
+        }
+    }
 }

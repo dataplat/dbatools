@@ -774,7 +774,10 @@ function Copy-DbaDatabase {
         }
 
         if ($Database -contains "master" -or $Database -contains "msdb" -or $Database -contains "tempdb") {
-            Stop-Function -Message "Migrating system databases is not currently supported." -Continue
+            # No -Continue here: the process block has no enclosing loop, so the continue would escape
+            # the command and eat an iteration of whatever loop the caller runs in (#10638).
+            Stop-Function -Message "Migrating system databases is not currently supported."
+            return
         }
 
         try {
