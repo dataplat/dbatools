@@ -187,8 +187,13 @@ function Export-DbaExecutionPlan {
 
     process {
 
-        if ((Test-Bound -ParameterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
-            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+        # The default of -Path is not in $PSBoundParameters, so gating this on Test-Bound skipped the bootstrap
+        # exactly when it was needed: with -Path omitted on a profile where the configured export directory does
+        # not exist yet, the Save() calls in Export-Plan wrote into a missing directory and exported nothing. Validate the
+        # resolved path whether or not the caller bound it: the configured directory is created, anything else
+        # has to be an existing directory (#10655).
+        if ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo]) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName "Path.DbatoolsExport")) {
                 $null = New-Item -ItemType Directory -Path $Path
             } else {
                 Stop-Function -Message "Path ($Path) must be a directory"

@@ -56,4 +56,43 @@ Describe $CommandName -Tag IntegrationTests {
             ($WarnVar -join " ") | Should -BeLike "*must be a directory*"
         }
     }
+
+    Context "When Path is omitted and the configured export directory does not exist" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $exportPathBefore = Get-DbatoolsConfigValue -FullName "Path.DbatoolsExport"
+            $missingExportPath = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_export_$(Get-Random)"
+            Set-DbatoolsConfig -FullName "Path.DbatoolsExport" -Value $missingExportPath
+            # A cached plan in tempdb to export: the plan of an ad hoc statement carries the database it was compiled
+            # in, and the second run makes sure a full plan is cached even with optimize for ad hoc workloads on.
+            foreach ($i in 1..2) {
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query "SELECT 1 AS dbatoolsci_plan_probe"
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Set-DbatoolsConfig -FullName "Path.DbatoolsExport" -Value $exportPathBefore
+            Remove-Item -Path $missingExportPath -Recurse -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Creates the directory and exports into it" {
+            # Test-Bound does not see a default, so the bootstrap never ran for an omitted -Path and the plans were
+            # saved into a directory that did not exist.
+            $results = Export-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+            Test-Path -Path $missingExportPath -PathType Container | Should -BeTrue
+            ($results | Measure-Object).Count | Should -BeGreaterThan 0
+            $results.OutputFile | Should -BeLike "$missingExportPath\*"
+            Get-ChildItem -Path $missingExportPath -Filter "*.sqlplan" | Should -Not -BeNullOrEmpty
+        }
+    }
 }
