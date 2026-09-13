@@ -291,8 +291,20 @@ function Import-DbaPfDataCollectorSetTemplate {
                     $xml = [xml](Get-Content $tempfile -ErrorAction Stop)
                     if ($Subdirectory) {
                         # The templates spread the empty Subdirectory element over two lines, so the line-based
-                        # replacement above never sees it. Set it on the document and save that back.
-                        $xml.DataCollectorSet.Subdirectory = $Subdirectory
+                        # replacement above never sees it, and the four PAL templates have no such element at all.
+                        # Set it on the document, creating the element where the schema keeps it (before
+                        # SubdirectoryFormat) when it is missing, and save that back.
+                        $subdirectoryNode = $xml.DataCollectorSet.SelectSingleNode("Subdirectory")
+                        if (-not $subdirectoryNode) {
+                            $subdirectoryNode = $xml.CreateElement("Subdirectory")
+                            $subdirectoryFormatNode = $xml.DataCollectorSet.SelectSingleNode("SubdirectoryFormat")
+                            if ($subdirectoryFormatNode) {
+                                $null = $xml.DataCollectorSet.InsertBefore($subdirectoryNode, $subdirectoryFormatNode)
+                            } else {
+                                $null = $xml.DataCollectorSet.AppendChild($subdirectoryNode)
+                            }
+                        }
+                        $subdirectoryNode.InnerText = $Subdirectory
                         $xml.Save($tempfile)
                     }
                     $plainxml = Get-Content $tempfile -ErrorAction Stop -Raw
