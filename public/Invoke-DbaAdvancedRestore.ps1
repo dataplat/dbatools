@@ -585,6 +585,19 @@ function Invoke-DbaAdvancedRestore {
                                 } else {
                                     $recoverSql = "RESTORE DATABASE [$database] WITH RECOVERY"
                                 }
+                                # This statement is now the one that recovers, so it carries the recovery-only options
+                                # the last backup would have carried: the branch above appends them only to a restore
+                                # that recovers, and the marked log was restored with NORECOVERY.
+                                $recoverOptions = @()
+                                if ($KeepCDC) {
+                                    $recoverOptions += "KEEP_CDC"
+                                }
+                                if ($ErrorBrokerConversations) {
+                                    $recoverOptions += "ERROR_BROKER_CONVERSATIONS"
+                                }
+                                if ($recoverOptions) {
+                                    $recoverSql = $recoverSql + " , " + ($recoverOptions -join " , ")
+                                }
                                 Write-Message -Level Verbose -Message "Recovering $database after the stop point: $recoverSql"
                                 $null = $server.ConnectionContext.ExecuteNonQuery($recoverSql)
                                 $restore.NoRecovery = $false

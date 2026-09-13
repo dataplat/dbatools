@@ -979,6 +979,11 @@ use master
                 Database    = $stopMarkDbName
             }
             Invoke-DbaQuery @splatStopMarkQuery -Query "CREATE TABLE steps (step int NOT NULL)"
+            # Change data capture on the database and the table, so the chain carries CDC metadata: a restore under
+            # another name drops it unless KEEP_CDC reaches the statement that recovers.
+            Invoke-DbaQuery @splatStopMarkQuery -Query "EXEC sys.sp_cdc_enable_db"
+            Invoke-DbaQuery @splatStopMarkQuery -Query "EXEC sys.sp_cdc_enable_table @source_schema = N'dbo', @source_name = N'steps', @role_name = NULL, @supports_net_changes = 0"
+            $stopMarkCopyName = "$($stopMarkDbName)_copy"
             $splatStopMarkBackup = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Database    = $stopMarkDbName
@@ -1017,7 +1022,16 @@ COMMIT TRAN dbatoolstest
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $stopMarkDbName | Remove-DbaDatabase
+            # Disabling CDC first removes the capture and cleanup jobs that dropping the database would leave behind.
+            foreach ($cdcDbName in $stopMarkDbName, $stopMarkCopyName) {
+                $cdcDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $cdcDbName
+                if ($cdcDb) {
+                    if ($cdcDb.Status -eq "Normal") {
+                        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $cdcDbName -Query "EXEC sys.sp_cdc_disable_db"
+                    }
+                    $null = $cdcDb | Remove-DbaDatabase
+                }
+            }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -1076,6 +1090,34 @@ COMMIT TRAN dbatoolstest
             { $script:stopMarkThrowResults = @(Restore-DbaDatabase @splatRestore) } | Should -Not -Throw
             $script:stopMarkThrowResults.Count | Should -Be 2
             $maxStep = Invoke-DbaQuery @splatStopMarkQuery -Query "select max(step) as ms from steps" -As SingleValue
+            $maxStep | Should -Be 2
+        }
+
+        It "Carries KeepCDC and ErrorBrokerConversations into the recovery after an early stop mark" {
+            # The recovery after a reached mark is a statement of its own, and it dropped the recovery-only options
+            # the last backup would have carried: a restore under another name lost the CDC metadata and came up
+            # with the broker disabled despite the switches.
+            $splatRestore = @{
+                SqlInstance              = $TestConfig.InstanceSingle
+                Path                     = $stopMarkBackupFiles
+                DatabaseName             = $stopMarkCopyName
+                DestinationFilePrefix    = $stopMarkCopyName
+                StopMark                 = "dbatoolstest"
+                KeepCDC                  = $true
+                ErrorBrokerConversations = $true
+            }
+            $results = @(Restore-DbaDatabase @splatRestore)
+            $WarnVar | Should -BeNullOrEmpty
+            $results.Count | Should -Be 2
+            $copyState = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "SELECT is_cdc_enabled, is_broker_enabled FROM sys.databases WHERE name = N'$stopMarkCopyName'"
+            $copyState.is_cdc_enabled | Should -BeTrue
+            $copyState.is_broker_enabled | Should -BeTrue
+            $splatCopyQuery = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $stopMarkCopyName
+            }
+            Invoke-DbaQuery @splatCopyQuery -Query "SELECT COUNT(*) FROM cdc.change_tables" -As SingleValue | Should -Be 1
+            $maxStep = Invoke-DbaQuery @splatCopyQuery -Query "select max(step) as ms from steps" -As SingleValue
             $maxStep | Should -Be 2
         }
 
