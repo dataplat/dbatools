@@ -88,7 +88,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Creates the directory and exports into it" {
             # Test-Bound does not see a default, so the bootstrap never ran for an omitted -Path and the plans were
             # saved into a directory that did not exist.
-            $results = Export-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database tempdb -ExcludeEmptyQueryPlan -WarningAction SilentlyContinue
+            $results = Export-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database tempdb -WarningAction SilentlyContinue
             Test-Path -Path $missingExportPath -PathType Container | Should -BeTrue
             ($results | Measure-Object).Count | Should -BeGreaterThan 0
             $results.OutputFile | Should -BeLike "$missingExportPath\*"
