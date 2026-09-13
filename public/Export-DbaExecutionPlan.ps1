@@ -147,7 +147,9 @@ function Export-DbaExecutionPlan {
             param(
                 [object]$object
             )
-            $instanceName = $object.SqlInstance
+            # The instance name is part of the file name, so a named instance has to lose its backslash: with it
+            # every Save() below failed with "Could not find a part of the path" and nothing was exported.
+            $instanceName = $object.SqlInstance -replace "[\/:*?`"<>|]", "-"
             $dbName = $object.DatabaseName
             $queryPosition = $object.QueryPosition
             $sqlHandle = "0x"; $object.SqlHandle | ForEach-Object { $sqlHandle += ("{0:X}" -f $_).PadLeft(2, "0") }
