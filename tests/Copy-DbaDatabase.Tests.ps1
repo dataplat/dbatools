@@ -921,7 +921,9 @@ Describe $CommandName -Tag IntegrationTests {
                 SharedPath      = $NetworkPath
                 EnableException = $true
             }
-            { Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master | Copy-DbaDatabase @splatThrow } | Should -Throw "*Migrating system databases is not currently supported*"
+            # The parameter form: a throw inside the process block of a piped call surfaces in the upstream command,
+            # whose own output loop catches it (Get-DbaDatabase warns about a modified collection instead).
+            { Copy-DbaDatabase @splatThrow -Database master } | Should -Throw "*Migrating system databases is not currently supported*"
         }
 
         It "Warns without eating an iteration of the caller's loop" {
