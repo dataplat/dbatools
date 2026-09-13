@@ -915,6 +915,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Throws for a system database under -EnableException" {
             $splatThrow = @{
+                Source          = $TestConfig.InstanceCopy1
                 Destination     = $TestConfig.InstanceCopy2
                 BackupRestore   = $true
                 SharedPath      = $NetworkPath
