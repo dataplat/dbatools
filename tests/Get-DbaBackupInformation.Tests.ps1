@@ -291,6 +291,20 @@ Describe $CommandName -Tag IntegrationTests {
             $loopCount | Should -Be 3
             ($WarnVar -join " ") | Should -BeLike "*Failure on*"
         }
+
+        It "Still reads the backup piped in after the file that is not one" {
+            # A plain Stop-Function used to set the command-wide interrupt flag for the unreadable file, and
+            # Test-FunctionInterrupt then dropped every path piped in after it.
+            $validBackup = (Get-ChildItem -Path $DestBackupDir -Filter "$dbname*.bak" | Select-Object -First 1).FullName
+            $results = $notABackup, $validBackup | Get-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
+            ($results | Measure-Object).Count | Should -Be 1
+            $results.Database | Should -Be $dbname
+            ($WarnVar -join " ") | Should -BeLike "*Failure on*"
+        }
+
+        It "Throws for the file that is not a backup under -EnableException" {
+            { Get-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -Path $notABackup -EnableException } | Should -Throw "*Failure on*"
+        }
     }
 
     Context "When Path is an S3 folder" {

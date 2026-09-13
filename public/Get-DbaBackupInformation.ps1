@@ -353,9 +353,15 @@ function Get-DbaBackupInformation {
                 try {
                     $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -StorageCredential $StorageCredential -EnableException
                 } catch {
-                    # No -Continue here: no loop encloses this catch, so the continue would escape the command
-                    # and eat an iteration of whatever loop the caller runs in (#10638).
-                    Stop-Function -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name
+                    # This gives up on the paths of this process invocation, not on the command: a plain
+                    # Stop-Function sets the interrupt flag that Test-FunctionInterrupt reads at the top of this
+                    # block, which would drop every path piped in after these, and -Continue has no loop to
+                    # continue here (#10638). So throw under -EnableException, otherwise warn, and return from
+                    # this process invocation only.
+                    if ($EnableException) {
+                        Stop-Function -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name -EnableException $true
+                    }
+                    Write-Message -Level Warning -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name
                     return
                 }
             }
