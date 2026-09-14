@@ -257,8 +257,13 @@ function Import-DbaParquet {
         }
 
         # Load Parquet.NET assembly
+        # The process block only runs when this is true. Get-DbaParquetPath warns (or throws) in its own scope
+        # when Parquet.NET is missing, so the interrupt flag that Test-FunctionInterrupt reads is never set here.
+        $parquetLoaded = $false
         $parquetAssembly = [System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq "Parquet" }
-        if (-not $parquetAssembly) {
+        if ($parquetAssembly) {
+            $parquetLoaded = $true
+        } else {
             $parquetDllPath = Get-DbaParquetPath -EnableException:$EnableException
             if (-not $parquetDllPath) {
                 return
@@ -294,6 +299,7 @@ function Import-DbaParquet {
                 }
 
                 Add-Type -Path $parquetDllPath -ErrorAction Stop
+                $parquetLoaded = $true
             } catch {
                 # A type load failure only says "Unable to find type" or "Unable to load one or more of
                 # the requested types" and keeps the reason in LoaderExceptions. Without those the
@@ -700,6 +706,11 @@ WHERE c.object_id = OBJECT_ID(@tableName)
         Write-Message -Level Verbose -Message "Started at $(Get-Date)"
     }
     process {
+        # Without these guards a missing or unloadable Parquet.NET was followed by one "Failed to open Parquet file"
+        # warning per file, after a connection to the instance had already been made (#10655).
+        if (Test-FunctionInterrupt) { return }
+        if (-not $parquetLoaded) { return }
+
         foreach ($filename in $Path) {
             if (-not $PSBoundParameters.ColumnMap) {
                 $ColumnMap = $null
