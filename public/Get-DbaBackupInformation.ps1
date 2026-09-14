@@ -326,6 +326,10 @@ function Get-DbaBackupInformation {
                             $Files += Get-XpDirTreeRestoreFile -Path "$f$($separator)FULL" -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path "$f$($separator)DIFF" -SqlInstance $server -NoRecurse
                             $Files += Get-XpDirTreeRestoreFile -Path "$f$($separator)LOG" -SqlInstance $server -NoRecurse
+                        } elseif ($f -match "^s3://" -and [System.IO.Path]::GetExtension("$f").Length -eq 0) {
+                            # An S3 folder: T-SQL cannot list S3 objects (see Get-XpDirTreeRestoreFile), and handing the
+                            # folder to Read-DbaBackupHeader would only get it rejected for not being a file.
+                            Stop-Function -Message "S3 paths cannot be enumerated using T-SQL. Use explicit file paths or PowerShell-based enumeration for S3 storage." -Target $f -Continue
                         } else {
                             Write-Message -Level VeryVerbose -Message "File"
                             $Files += $f
@@ -349,7 +353,17 @@ function Get-DbaBackupInformation {
                 try {
                     $FileDetails = Read-DbaBackupHeader -SqlInstance $server -Path $Files -StorageCredential $StorageCredential -EnableException
                 } catch {
-                    Stop-Function -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name -Continue
+                    # This gives up on the paths of this process invocation, not on the command: a plain
+                    # Stop-Function sets the interrupt flag that Test-FunctionInterrupt reads at the top of this
+                    # block, which would drop every path piped in after these, and -Continue has no loop to
+                    # continue here (#10638). So throw under -EnableException, otherwise warn, and return from
+                    # this process invocation only.
+                    if ($EnableException) {
+                        Stop-Function -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name -EnableException $true
+                    } else {
+                        Write-Message -Level Warning -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name
+                    }
+                    return
                 }
             }
 
