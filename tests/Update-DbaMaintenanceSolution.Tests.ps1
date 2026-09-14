@@ -151,5 +151,67 @@ Describe $CommandName -Tag IntegrationTests {
         Get-ChildItem -Path $localCachedCopy -Recurse -Filter "CommandExecute.sql" | Should -Not -BeNullOrEmpty
         $WarnVar | Should -Match "Force still suppresses confirmation prompts"
     }
+
+    Context "Connections it opens are closed when it skips an instance (#10659)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The command opens a non-pooled connection per instance and used to close it only at the end of
+            # the loop body: skipping the instance because the database does not exist left the session behind,
+            # both when the skip was a warning and when it was thrown. Count the sessions through a server
+            # object opened once, and only the sessions of this process.
+            $countServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $countQuery = @"
+SELECT COUNT(*)
+FROM sys.dm_exec_sessions
+WHERE program_name LIKE N'dbatools%'
+  AND host_process_id = $PID
+  AND status = N'sleeping'
+  AND session_id <> @@spid
+"@
+            $missingDbName = "dbatoolsci_missing_$(Get-Random)"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # One warm-up call so the background connections of the tab expansion exist before the baseline.
+            $null = Update-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceSingle -Database $missingDbName -WarningAction SilentlyContinue
+            $sleepingBefore = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            foreach ($i in 1..3) {
+                $null = Update-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceSingle -Database $missingDbName -WarningAction SilentlyContinue
+            }
+            $warningsAfterWarn = $WarnVar
+            $sleepingAfterWarn = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            foreach ($i in 1..3) {
+                try {
+                    $null = Update-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceSingle -Database $missingDbName -EnableException
+                } catch {
+                    $null = $PSItem
+                }
+            }
+            $sleepingAfterThrow = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $countServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "warns that the database was not found" {
+            @($warningsAfterWarn) -join " " | Should -BeLike "*$missingDbName not found*"
+        }
+
+        It "leaves no sleeping session behind when the skip is a warning" {
+            $sleepingAfterWarn | Should -Be $sleepingBefore
+        }
+
+        It "leaves no sleeping session behind when the skip is thrown" {
+            $sleepingAfterThrow | Should -Be $sleepingBefore
+        }
+    }
 }
 

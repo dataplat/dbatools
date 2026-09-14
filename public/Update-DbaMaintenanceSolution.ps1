@@ -142,65 +142,74 @@ function Update-DbaMaintenanceSolution {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+            try {
 
-            $db = $server.Databases | Where-Object Name -eq $Database
-            if ($null -eq $db) {
-                Stop-Function -Message "Database $Database not found on $instance. Skipping." -Target $instance -Continue
-            }
-
-            # The names are read with a query that names the database. Get-DbaModule would run on the connection of
-            # the caller and leave it in that database, and this command used to rely on exactly that to find the
-            # right database further down. See #10555.
-            $splatInstalledProcedures = @{
-                SqlInstance = $server
-                Database    = $Database
-                Query       = "SELECT name FROM sys.procedures"
-            }
-            $installedProcedures = (Invoke-DbaQuery @splatInstalledProcedures).name | Where-Object { $PSItem -in "CommandExecute", "DatabaseBackup", "DatabaseIntegrityCheck", "IndexOptimize" }
-
-            foreach ($solutionName in $Solution) {
-                if ($solutionName -in 'Backup', 'IntegrityCheck') {
-                    $procedureName = 'Database' + $solutionName
-                } else {
-                    $procedureName = $solutionName
+                $db = $server.Databases | Where-Object Name -eq $Database
+                if ($null -eq $db) {
+                    Stop-Function -Message "Database $Database not found on $instance. Skipping." -Target $instance -Continue
                 }
 
-                if ($PSCmdlet.ShouldProcess($instance, "Update $solutionName with script $procedureName.sql")) {
-                    $output = [PSCustomObject]@{
-                        ComputerName = $server.ComputerName
-                        InstanceName = $server.ServiceName
-                        SqlInstance  = $server.DomainInstanceName
-                        Solution     = $solutionName
-                        Procedure    = $procedureName
-                        IsUpdated    = $false
-                        Results      = $null
+                # The names are read with a query that names the database. Get-DbaModule would run on the connection of
+                # the caller and leave it in that database, and this command used to rely on exactly that to find the
+                # right database further down. See #10555.
+                $splatInstalledProcedures = @{
+                    SqlInstance = $server
+                    Database    = $Database
+                    Query       = "SELECT name FROM sys.procedures"
+                }
+                $installedProcedures = (Invoke-DbaQuery @splatInstalledProcedures).name | Where-Object { $PSItem -in "CommandExecute", "DatabaseBackup", "DatabaseIntegrityCheck", "IndexOptimize" }
+
+                foreach ($solutionName in $Solution) {
+                    if ($solutionName -in 'Backup', 'IntegrityCheck') {
+                        $procedureName = 'Database' + $solutionName
+                    } else {
+                        $procedureName = $solutionName
                     }
 
-                    if ($procedureName -notin $installedProcedures) {
-                        $output.Results = 'Procedure not installed'
-                    } else {
-                        $file = Get-ChildItem -Path $localCachedCopy -Recurse -File "$procedureName.sql"
-                        if ($null -eq $file) {
-                            $output.Results = 'File not found'
+                    if ($PSCmdlet.ShouldProcess($instance, "Update $solutionName with script $procedureName.sql")) {
+                        $output = [PSCustomObject]@{
+                            ComputerName = $server.ComputerName
+                            InstanceName = $server.ServiceName
+                            SqlInstance  = $server.DomainInstanceName
+                            Solution     = $solutionName
+                            Procedure    = $procedureName
+                            IsUpdated    = $false
+                            Results      = $null
+                        }
+
+                        if ($procedureName -notin $installedProcedures) {
+                            $output.Results = 'Procedure not installed'
                         } else {
-                            Write-Message -Level Verbose -Message "Updating $procedureName from $($file.FullName)."
-                            try {
-                                $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -File $file
-                                $output.IsUpdated = $true
-                                $output.Results = 'Updated'
-                            } catch {
-                                $output.Results = $_
+                            $file = Get-ChildItem -Path $localCachedCopy -Recurse -File "$procedureName.sql"
+                            if ($null -eq $file) {
+                                $output.Results = 'File not found'
+                            } else {
+                                Write-Message -Level Verbose -Message "Updating $procedureName from $($file.FullName)."
+                                try {
+                                    $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -File $file
+                                    $output.IsUpdated = $true
+                                    $output.Results = 'Updated'
+                                } catch {
+                                    $output.Results = $_
+                                }
                             }
                         }
+
+                        $output
                     }
-
-                    $output
                 }
-            }
 
-            if ($isNewConnection) {
-                # Close non-pooled connection as this is not done automatically.
-                $null = $server | Disconnect-DbaInstance
+            } finally {
+                # Only close the connection if Connect-DbaInstance opened a new one for us. The disconnect sits in a
+                # finally, because the -Continue exits after the connection is opened, and any exception thrown under
+                # -EnableException, used to skip it and leave the non-pooled session behind (#10659). Non-pooled
+                # connections are the ones nothing else cleans up.
+                if ($isNewConnection) {
+                    # Close non-pooled connection as this is not done automatically.
+                    # -WhatIf:$false because this is ownership bookkeeping, not the user's operation: Disconnect-DbaInstance
+                    # supports ShouldProcess, so a propagated $WhatIfPreference would skip the actual disconnect.
+                    $null = $server | Disconnect-DbaInstance -WhatIf:$false -Confirm:$false
+                }
             }
         }
     }
