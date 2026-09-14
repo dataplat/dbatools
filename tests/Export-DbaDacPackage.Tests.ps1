@@ -240,4 +240,19 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "When only ExcludeDatabase is given" {
+        It "Warns without eating an iteration of the caller's loop" {
+            # The database selection check used to run Stop-Function -Continue in the process block, where no
+            # loop encloses it - the continue escaped the command and consumed an iteration of this very loop,
+            # so the counter stayed at zero (#10638). The check fires before any connection is made.
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase dbatoolsci_none -WarningAction SilentlyContinue
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            ($WarnVar -join " ") | Should -BeLike "*Either -Database or -AllUserDatabases should be specified*"
+        }
+    }
 }
