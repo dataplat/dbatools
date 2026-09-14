@@ -205,6 +205,10 @@ DROP TABLE #DatabaseID;"
                     $results = $results | Where-Object { $_.DatabaseName -in $Database }
                 }
 
+                if ($ExcludeDatabase) {
+                    $results = $results | Where-Object { $_.DatabaseName -notin $ExcludeDatabase }
+                }
+
                 if ($Action) {
                     $results = $results | Where-Object { $_.Action -in $Action }
                 }

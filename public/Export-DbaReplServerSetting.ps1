@@ -124,6 +124,10 @@ function Export-DbaReplServerSetting {
         foreach ($repserver in $InputObject) {
             $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $repserver.SqlServerName
 
+            if ((Test-Path -Path $FilePath) -and $NoClobber -and -not $Passthru) {
+                Stop-Function -Message "File $FilePath already exists. Remove -NoClobber to overwrite it, or use -Append to add to it." -Target $FilePath -Continue
+            }
+
             try {
                 if (-not $ScriptOption) {
                     $out = $repserver.Script([Microsoft.SqlServer.Replication.ScriptOptions]::Creation `

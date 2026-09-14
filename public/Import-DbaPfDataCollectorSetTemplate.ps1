@@ -259,7 +259,7 @@ function Import-DbaPfDataCollectorSetTemplate {
                 Write-Message -Level Verbose -Message "Processing $file for $computer"
 
                 if ((Test-Bound -ParameterName RootPath -Not)) {
-                    Set-Variable -Name RootName -Value "%systemdrive%\PerfLogs\Admin\$Name"
+                    Set-Variable -Name RootPath -Value "%systemdrive%\PerfLogs\Admin\$Name"
                 }
 
                 # Perform replace
@@ -289,6 +289,24 @@ function Import-DbaPfDataCollectorSetTemplate {
                     # Set content
                     $null = Set-Content -Path $tempfile -Value $contents -Encoding Unicode
                     $xml = [xml](Get-Content $tempfile -ErrorAction Stop)
+                    if ($Subdirectory) {
+                        # The templates spread the empty Subdirectory element over two lines, so the line-based
+                        # replacement above never sees it, and the four PAL templates have no such element at all.
+                        # Set it on the document, creating the element where the schema keeps it (before
+                        # SubdirectoryFormat) when it is missing, and save that back.
+                        $subdirectoryNode = $xml.DataCollectorSet.SelectSingleNode("Subdirectory")
+                        if (-not $subdirectoryNode) {
+                            $subdirectoryNode = $xml.CreateElement("Subdirectory")
+                            $subdirectoryFormatNode = $xml.DataCollectorSet.SelectSingleNode("SubdirectoryFormat")
+                            if ($subdirectoryFormatNode) {
+                                $null = $xml.DataCollectorSet.InsertBefore($subdirectoryNode, $subdirectoryFormatNode)
+                            } else {
+                                $null = $xml.DataCollectorSet.AppendChild($subdirectoryNode)
+                            }
+                        }
+                        $subdirectoryNode.InnerText = $Subdirectory
+                        $xml.Save($tempfile)
+                    }
                     $plainxml = Get-Content $tempfile -ErrorAction Stop -Raw
                     $file = $tempfile
                 } catch {

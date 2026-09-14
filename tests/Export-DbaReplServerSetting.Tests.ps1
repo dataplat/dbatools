@@ -32,3 +32,30 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "When the file exists and NoClobber is set" {
+        BeforeAll {
+            $existingFile = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_replsetting_$(Get-Random).sql"
+            Set-Content -Path $existingFile -Value "dbatoolsci"
+        }
+
+        AfterAll {
+            Remove-Item -Path $existingFile -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Warns and leaves the file alone" {
+            # -NoClobber was declared and documented but never checked, so an existing file was appended to (#10607).
+            # The check runs before the replication settings are scripted, so no distributor is needed.
+            $splatExport = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                FilePath      = $existingFile
+                NoClobber     = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $null = Export-DbaReplServerSetting @splatExport
+            ($WarnVar -join " ") | Should -BeLike "*already exists*"
+            Get-Content -Path $existingFile | Should -Be "dbatoolsci"
+        }
+    }
+}
