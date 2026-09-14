@@ -872,4 +872,91 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "When a system database is requested" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $afterSystemDb = "dbatoolsci_aftersystem_$(Get-Random)"
+            $serverAfterSystem = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
+            $serverAfterSystem.Query("CREATE DATABASE $afterSystemDb; ALTER DATABASE $afterSystemDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $afterSystemDb -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Copies the database piped in after a system database" {
+            # A plain Stop-Function used to set the command-wide interrupt flag for the system database, and
+            # Test-FunctionInterrupt then dropped every database piped in after it.
+            $splatAfterSystem = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+                WarningAction = "SilentlyContinue"
+            }
+            $pipedDatabases = @(Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master) + @(Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $afterSystemDb)
+            $results = $pipedDatabases | Copy-DbaDatabase @splatAfterSystem
+            ($results | Measure-Object).Count | Should -Be 1
+            $results.Name | Should -Be $afterSystemDb
+            $results.Status | Should -Be "Successful"
+            ($WarnVar -join " ") | Should -BeLike "*Migrating system databases is not currently supported*"
+        }
+
+        It "Throws for a system database under -EnableException" {
+            $splatThrow = @{
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
+                BackupRestore   = $true
+                SharedPath      = $NetworkPath
+                EnableException = $true
+            }
+            # The parameter form: a throw inside the process block of a piped call surfaces in the upstream command,
+            # whose own output loop catches it (Get-DbaDatabase warns about a modified collection instead).
+            $systemDbException = $null
+            $systemDbWarnings = $null
+            try {
+                Copy-DbaDatabase @splatThrow -Database master -WarningVariable systemDbWarnings
+            } catch {
+                $systemDbException = $PSItem
+            }
+            $systemDbException.Exception.Message | Should -BeLike "*Migrating system databases is not currently supported*"
+            # Stop-Function writes its warning before it throws, as it does for every throw in dbatools; the message is
+            # not written a second time.
+            @($systemDbWarnings).Count | Should -Be 1
+        }
+
+        It "Warns without eating an iteration of the caller's loop" {
+            # The system database check used to run Stop-Function -Continue in the process block, where no
+            # loop encloses it - the continue escaped the command and consumed an iteration of this very
+            # loop, so the counter stayed at zero (#10638). The check fires before any connection is made.
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $splatSystemDb = @{
+                    Source        = $TestConfig.InstanceCopy1
+                    Destination   = $TestConfig.InstanceCopy2
+                    Database      = "master"
+                    BackupRestore = $true
+                    SharedPath    = $TestConfig.Temp
+                    WarningAction = "SilentlyContinue"
+                }
+                $null = Copy-DbaDatabase @splatSystemDb
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            # The last call warned once, not twice.
+            @($WarnVar).Count | Should -Be 1
+            $WarnVar | Should -BeLike "*Migrating system databases is not currently supported*"
+        }
+    }
 }
