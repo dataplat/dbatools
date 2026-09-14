@@ -290,6 +290,8 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $loopCount | Should -Be 3
             ($WarnVar -join " ") | Should -BeLike "*Failure on*"
+            # The last call carried the message once, not twice.
+            @($WarnVar | Where-Object { $PSItem -like "*Failure on*" }).Count | Should -Be 1
         }
 
         It "Still reads the backup piped in after the file that is not one" {
@@ -304,7 +306,18 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Throws for the file that is not a backup under -EnableException" {
-            { Get-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -Path $notABackup -EnableException } | Should -Throw
+            $headerException = $null
+            $headerWarnings = $null
+            try {
+                Get-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -Path $notABackup -EnableException -WarningVariable headerWarnings
+            } catch {
+                $headerException = $PSItem
+            }
+            # Stop-Function rethrows the inner RESTORE HEADERONLY error, so the exception text is the SQL error, not the message.
+            $headerException | Should -Not -BeNullOrEmpty
+            # Stop-Function writes the message once before it throws, as it does for every throw in dbatools; it is not
+            # written a second time.
+            @($headerWarnings | Where-Object { $PSItem -like "*Failure on*" }).Count | Should -Be 1
         }
     }
 

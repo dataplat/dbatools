@@ -360,8 +360,9 @@ function Get-DbaBackupInformation {
                     # this process invocation only.
                     if ($EnableException) {
                         Stop-Function -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name -EnableException $true
+                    } else {
+                        Write-Message -Level Warning -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name
                     }
-                    Write-Message -Level Warning -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name
                     return
                 }
             }
