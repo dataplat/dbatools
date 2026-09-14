@@ -42,6 +42,11 @@ Describe $CommandName -Tag IntegrationTests {
         $dbatoolsciValid = Get-DbaXESession -SqlInstance $server -Session dbatoolsci_session_valid
         # Record the Status of all sessions
         $allSessions = Get-DbaXESession -SqlInstance $server
+        # The -StartAt and -StopAt tests schedule an Agent job this many seconds ahead, and then wait up to this long
+        # past that time for the Agent to have run it. A fixed ten seconds ahead and eleven seconds of sleep failed on a
+        # freshly started instance: when the Agent picked the job up late, the assertions came before the job had run.
+        $agentLeadSeconds = 20
+        $agentWaitSeconds = 60
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -75,6 +80,8 @@ Describe $CommandName -Tag IntegrationTests {
         # Drop created objects
         $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_invalid') DROP EVENT SESSION [dbatoolsci_session_invalid] ON SERVER;")
         $conn.ExecuteNonQuery("IF EXISTS(SELECT * FROM sys.server_event_sessions WHERE name = 'dbatoolsci_session_valid') DROP EVENT SESSION [dbatoolsci_session_valid] ON SERVER;")
+        # A job that has not run yet is still there, it deletes itself only after it ran.
+        Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "XE Session START - dbatoolsci_session_valid", "XE Session STOP - dbatoolsci_session_valid" | Remove-DbaAgentJob
         Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceSingle -Schedule "XE Session START - dbatoolsci_session_valid", "XE Session STOP - dbatoolsci_session_valid" | Remove-DbaAgentSchedule -Force
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -114,7 +121,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "works when -StopAt is passed" {
-            $StopAt = (Get-Date).AddSeconds(10)
+            $StopAt = (Get-Date).AddSeconds($agentLeadSeconds)
             Start-DbaXESession $server -Session $dbatoolsciValid.Name -StopAt $StopAt -WarningAction SilentlyContinue
             $dbatoolsciValid.Refresh()
             $dbatoolsciValid.IsRunning | Should -Be $true
@@ -122,7 +129,19 @@ Describe $CommandName -Tag IntegrationTests {
             $stopSchedule = Get-DbaAgentSchedule -SqlInstance $server -Schedule "XE Session STOP - dbatoolsci_session_valid"
             $stopSchedule.ActiveStartTimeOfDay.ToString("hhmmss") | Should -Be $StopAt.TimeOfDay.ToString("hhmmss")
             $stopSchedule.ActiveStartDate | Should -Be $StopAt.Date
-            Start-Sleep -Seconds 11
+            # The job deletes itself after it ran, so its disappearance is the signal that the Agent has acted. The
+            # count comes from msdb rather than Get-DbaAgentJob: enumerating the SMO job collection while the Agent
+            # deletes the job throws an invalid cast.
+            $splatStopJobCount = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "msdb"
+                Query       = "SELECT COUNT(*) FROM dbo.sysjobs WHERE name = N'XE Session STOP - dbatoolsci_session_valid'"
+                As          = "SingleValue"
+            }
+            $deadline = $StopAt.AddSeconds($agentWaitSeconds)
+            while ((Invoke-DbaQuery @splatStopJobCount) -gt 0 -and (Get-Date) -lt $deadline) {
+                Start-Sleep -Seconds 1
+            }
             $dbatoolsciValid.Refresh()
             $dbatoolsciValid.IsRunning | Should -Be $false
             # Using $TestConfig.InstanceSingle because the SMO $server is not updated after the job is removed
@@ -131,7 +150,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "works when -StartAt is passed" {
             $null = Stop-DbaXESession -SqlInstance $server -Session $dbatoolsciValid.Name -WarningAction SilentlyContinue
-            $StartAt = (Get-Date).AddSeconds(10)
+            $StartAt = (Get-Date).AddSeconds($agentLeadSeconds)
             $null = Start-DbaXESession $server -Session $dbatoolsciValid.Name -StartAt $StartAt
             $dbatoolsciValid.Refresh()
             $dbatoolsciValid.IsRunning | Should -Be $false
@@ -139,11 +158,20 @@ Describe $CommandName -Tag IntegrationTests {
             $startSchedule = Get-DbaAgentSchedule -SqlInstance $server -Schedule "XE Session START - dbatoolsci_session_valid"
             $startSchedule.ActiveStartTimeOfDay.ToString("hhmmss") | Should -Be $StartAt.TimeOfDay.ToString("hhmmss")
             $startSchedule.ActiveStartDate | Should -Be $StartAt.Date
-            Start-Sleep -Seconds 11
+            $splatStartJobCount = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "msdb"
+                Query       = "SELECT COUNT(*) FROM dbo.sysjobs WHERE name = N'XE Session START - dbatoolsci_session_valid'"
+                As          = "SingleValue"
+            }
+            $deadline = $StartAt.AddSeconds($agentWaitSeconds)
+            while ((Invoke-DbaQuery @splatStartJobCount) -gt 0 -and (Get-Date) -lt $deadline) {
+                Start-Sleep -Seconds 1
+            }
             $dbatoolsciValid.Refresh()
             $dbatoolsciValid.IsRunning | Should -Be $true
             # Using $TestConfig.InstanceSingle because the SMO $server is not updated after the job is removed
-            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "XE Session STOP - dbatoolsci_session_valid").Count | Should -Be 0
+            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job "XE Session START - dbatoolsci_session_valid").Count | Should -Be 0
         }
     }
 }
