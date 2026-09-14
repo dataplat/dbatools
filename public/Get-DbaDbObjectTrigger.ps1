@@ -114,10 +114,11 @@ function Get-DbaDbObjectTrigger {
     )
     process {
         if ($InputObject.Count -gt 0) {
-            $InputObject | ForEach-Object {
-                if (-not ($_ -is [Microsoft.SqlServer.Management.Smo.TableViewBase])) {
-                    Stop-Function -Message "InputObject $_ is not of type Table or View." -Continue
-                    return
+            # A foreach loop instead of ForEach-Object: inside the scriptblock no loop enclosed the Stop-Function -Continue,
+            # so the continue escaped the command and ate an iteration of the loop of the caller (#10638).
+            foreach ($object in $InputObject) {
+                if (-not ($object -is [Microsoft.SqlServer.Management.Smo.TableViewBase])) {
+                    Stop-Function -Message "InputObject $object is not of type Table or View." -Continue
                 }
             }
         }
