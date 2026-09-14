@@ -37,6 +37,13 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        # The Agent test stops the Agent, so make sure it is running again whatever happened in between. Collected first,
+        # because Start-DbaService with nothing piped in falls back to the local machine.
+        $stoppedAgent = Get-DbaService -SqlInstance $TestConfig.InstanceHadr -Type Agent | Where-Object State -ne "Running"
+        if ($stoppedAgent) {
+            $null = $stoppedAgent | Start-DbaService
+        }
+
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
@@ -44,6 +51,15 @@ Describe $CommandName -Tag IntegrationTests {
         It "Successfully enables HADR" {
             $results = Enable-DbaAgHadr -SqlInstance $TestConfig.InstanceHadr -Force
             $results.IsHadrEnabled | Should -BeTrue
+        }
+
+        It "Leaves a stopped Agent stopped when -Force restarts the engine" {
+            # The forced restart used to start the Agent with the engine whether it had been running before or not.
+            $null = Get-DbaService -SqlInstance $TestConfig.InstanceHadr -Type Agent | Stop-DbaService
+            $results = Enable-DbaAgHadr -SqlInstance $TestConfig.InstanceHadr -Force
+            $results.IsHadrEnabled | Should -BeTrue
+            (Get-DbaService -SqlInstance $TestConfig.InstanceHadr -Type Agent).State | Should -Be "Stopped"
+            $null = Get-DbaService -SqlInstance $TestConfig.InstanceHadr -Type Agent | Start-DbaService
         }
     }
 }
