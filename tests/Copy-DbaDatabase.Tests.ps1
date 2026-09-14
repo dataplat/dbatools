@@ -923,7 +923,17 @@ Describe $CommandName -Tag IntegrationTests {
             }
             # The parameter form: a throw inside the process block of a piped call surfaces in the upstream command,
             # whose own output loop catches it (Get-DbaDatabase warns about a modified collection instead).
-            { Copy-DbaDatabase @splatThrow -Database master } | Should -Throw "*Migrating system databases is not currently supported*"
+            $systemDbException = $null
+            $systemDbWarnings = $null
+            try {
+                Copy-DbaDatabase @splatThrow -Database master -WarningVariable systemDbWarnings
+            } catch {
+                $systemDbException = $PSItem
+            }
+            $systemDbException.Exception.Message | Should -BeLike "*Migrating system databases is not currently supported*"
+            # Stop-Function writes its warning before it throws, as it does for every throw in dbatools; the message is
+            # not written a second time.
+            @($systemDbWarnings).Count | Should -Be 1
         }
 
         It "Warns without eating an iteration of the caller's loop" {
@@ -944,6 +954,8 @@ Describe $CommandName -Tag IntegrationTests {
                 $loopCount++
             }
             $loopCount | Should -Be 3
+            # The last call warned once, not twice.
+            @($WarnVar).Count | Should -Be 1
             $WarnVar | Should -BeLike "*Migrating system databases is not currently supported*"
         }
     }

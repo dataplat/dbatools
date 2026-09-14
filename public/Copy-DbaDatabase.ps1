@@ -781,8 +781,9 @@ function Copy-DbaDatabase {
             $systemDbMessage = "Migrating system databases is not currently supported."
             if ($EnableException) {
                 Stop-Function -Message $systemDbMessage -EnableException $true
+            } else {
+                Write-Message -Level Warning -Message $systemDbMessage
             }
-            Write-Message -Level Warning -Message $systemDbMessage
             return
         }
 
