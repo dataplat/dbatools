@@ -209,9 +209,12 @@ function Invoke-DbaDbDecryptObject {
         if ($ExportDestination -and -not (Test-Path $ExportDestination)) {
             try {
                 # Create the new destination
-                New-Item -Path $ExportDestination -ItemType Directory -Force | Out-Null
+                New-Item -Path $ExportDestination -ItemType Directory -Force -ErrorAction Stop | Out-Null
             } catch {
-                Stop-Function -Message "Couldn't create destination folder $ExportDestination" -ErrorRecord $_ -Target $instance -Continue
+                # No -Continue here: the begin block has no enclosing loop, so the continue would escape the command
+                # and eat an iteration of whatever loop the caller runs in (#10638). The process block is guarded.
+                Stop-Function -Message "Couldn't create destination folder $ExportDestination" -ErrorRecord $_ -Target $instance
+                return
             }
         }
 
