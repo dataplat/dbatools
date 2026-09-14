@@ -984,6 +984,7 @@ use master
             Invoke-DbaQuery @splatStopMarkQuery -Query "EXEC sys.sp_cdc_enable_db"
             Invoke-DbaQuery @splatStopMarkQuery -Query "EXEC sys.sp_cdc_enable_table @source_schema = N'dbo', @source_name = N'steps', @role_name = NULL, @supports_net_changes = 0"
             $stopMarkCopyName = "$($stopMarkDbName)_copy"
+            $stopMarkBracketName = "$($stopMarkDbName)]copy"
             $splatStopMarkBackup = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Database    = $stopMarkDbName
@@ -1023,10 +1024,12 @@ COMMIT TRAN dbatoolstest
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             # Disabling CDC first removes the capture and cleanup jobs that dropping the database would leave behind.
-            foreach ($cdcDbName in $stopMarkDbName, $stopMarkCopyName) {
+            foreach ($cdcDbName in $stopMarkDbName, $stopMarkCopyName, $stopMarkBracketName) {
                 $cdcDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $cdcDbName
                 if ($cdcDb) {
-                    if ($cdcDb.Status -eq "Normal") {
+                    # The copy restored without KeepCDC came up without CDC, and sp_cdc_disable_db fails on such a database.
+                    $cdcEnabled = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "SELECT is_cdc_enabled FROM sys.databases WHERE name = N'$cdcDbName'" -As SingleValue
+                    if ($cdcDb.Status -eq "Normal" -and $cdcEnabled) {
                         Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $cdcDbName -Query "EXEC sys.sp_cdc_disable_db"
                     }
                     $null = $cdcDb | Remove-DbaDatabase
@@ -1118,6 +1121,26 @@ COMMIT TRAN dbatoolstest
             }
             Invoke-DbaQuery @splatCopyQuery -Query "SELECT COUNT(*) FROM cdc.change_tables" -As SingleValue | Should -Be 1
             $maxStep = Invoke-DbaQuery @splatCopyQuery -Query "select max(step) as ms from steps" -As SingleValue
+            $maxStep | Should -Be 2
+        }
+
+        It "Recovers after an early stop mark when the database name contains a closing bracket" {
+            # The recovery after a reached mark is a statement the command builds itself, not one scripted by SMO, and it
+            # put the name between brackets as it was. A closing bracket in the name broke that statement, so the command
+            # warned and left the database restoring, the very failure this fix is about.
+            $splatRestore = @{
+                SqlInstance           = $TestConfig.InstanceSingle
+                Path                  = $stopMarkBackupFiles
+                DatabaseName          = $stopMarkBracketName
+                DestinationFilePrefix = $stopMarkBracketName
+                StopMark              = "dbatoolstest"
+            }
+            $results = @(Restore-DbaDatabase @splatRestore)
+            $WarnVar | Should -BeNullOrEmpty
+            $results.Count | Should -Be 2
+            $results[-1].NoRecovery | Should -BeFalse
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $stopMarkBracketName).Status | Should -Be "Normal"
+            $maxStep = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $stopMarkBracketName -Query "select max(step) as ms from steps" -As SingleValue
             $maxStep | Should -Be 2
         }
 

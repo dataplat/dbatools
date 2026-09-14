@@ -579,11 +579,13 @@ function Invoke-DbaAdvancedRestore {
                             if ($backup -ne $backups[-1] -and $restore.NoRecovery -and -not $NoRecovery) {
                                 # The backups after this one are skipped, so the recovery the last one would have done
                                 # happens here, with the standby file the last one would have used.
+                                # The name goes between brackets, so a closing bracket in it is doubled, as SMO does for the restores above.
+                                $escapedDatabase = $database.Replace("]", "]]")
                                 if ("" -ne $StandbyDirectory) {
                                     $standbyFile = $StandbyDirectory + "\" + $database + (Get-Date -Format yyyyMMddHHmmss) + ".bak"
-                                    $recoverSql = "RESTORE DATABASE [$database] WITH STANDBY = N'$($standbyFile.Replace("'", "''"))'"
+                                    $recoverSql = "RESTORE DATABASE [$escapedDatabase] WITH STANDBY = N'$($standbyFile.Replace("'", "''"))'"
                                 } else {
-                                    $recoverSql = "RESTORE DATABASE [$database] WITH RECOVERY"
+                                    $recoverSql = "RESTORE DATABASE [$escapedDatabase] WITH RECOVERY"
                                 }
                                 # This statement is now the one that recovers, so it carries the recovery-only options
                                 # the last backup would have carried: the branch above appends them only to a restore
