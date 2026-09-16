@@ -48,9 +48,18 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "When enabling HADR" {
-        It "Successfully enables HADR" {
+        It "Successfully enables HADR and keeps a running Agent running" {
+            # The forced restart starts the Agent again only if it was running before, so a running Agent must
+            # come back running. Collected first, because Start-DbaService with nothing piped in falls back to
+            # the local machine.
+            $stoppedAgent = Get-DbaService -SqlInstance $TestConfig.InstanceHadr -Type Agent | Where-Object State -ne "Running"
+            if ($stoppedAgent) {
+                $null = $stoppedAgent | Start-DbaService
+            }
+            (Get-DbaService -SqlInstance $TestConfig.InstanceHadr -Type Agent).State | Should -Be "Running"
             $results = Enable-DbaAgHadr -SqlInstance $TestConfig.InstanceHadr -Force
             $results.IsHadrEnabled | Should -BeTrue
+            (Get-DbaService -SqlInstance $TestConfig.InstanceHadr -Type Agent).State | Should -Be "Running"
         }
 
         It "Leaves a stopped Agent stopped when -Force restarts the engine" {
