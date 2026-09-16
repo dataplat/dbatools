@@ -11,7 +11,7 @@
     RootModule         = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion      = '2.8.4'
+    ModuleVersion      = '2.9.0'
 
     # ID used to uniquely identify this module
     GUID               = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -31,7 +31,7 @@
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules    = @{
         ModuleName    = 'dbatools.library';
-        ModuleVersion = '2026.5.3'
+        ModuleVersion = '2026.9.14'
     }
 
     # Assemblies that must be loaded prior to importing this module
