@@ -267,4 +267,73 @@ Describe $CommandName -Tag IntegrationTests {
             $resultsSanLog.Count | Should -BeExactly 3
         }
     }
+
+    Context "When a file is not a backup" {
+        BeforeAll {
+            # A text file where the instance can read it, so the header read fails on the content, not on access.
+            $notABackup = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_notabackup_$(Get-Random).txt"
+            Set-Content -Path $notABackup -Value "dbatoolsci"
+        }
+
+        AfterAll {
+            Remove-Item -Path $notABackup -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Warns without eating an iteration of the caller's loop" {
+            # The header-read catch used to run Stop-Function -Continue in the process block, where no loop
+            # encloses it - the continue escaped the command and consumed an iteration of this very loop, so
+            # the counter stayed at zero (#10638).
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = Get-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -Path $notABackup -WarningAction SilentlyContinue
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            ($WarnVar -join " ") | Should -BeLike "*Failure on*"
+            # The last call carried the message once, not twice.
+            @($WarnVar | Where-Object { $PSItem -like "*Failure on*" }).Count | Should -Be 1
+        }
+
+        It "Still reads the backup piped in after the file that is not one" {
+            # A plain Stop-Function used to set the command-wide interrupt flag for the unreadable file, and
+            # Test-FunctionInterrupt then dropped every path piped in after it.
+            $validBackup = (Get-ChildItem -Path $DestBackupDir -Filter "$dbname*.bak" | Select-Object -First 1).FullName
+            $results = $notABackup, $validBackup | Get-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
+            # The full and the differential of the fixture can share one file, so the file may hold two backup sets.
+            ($results | Measure-Object).Count | Should -BeGreaterThan 0
+            $results.Database | Select-Object -Unique | Should -Be $dbname
+            ($WarnVar -join " ") | Should -BeLike "*Failure on*"
+        }
+
+        It "Throws for the file that is not a backup under -EnableException" {
+            $headerException = $null
+            $headerWarnings = $null
+            try {
+                Get-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -Path $notABackup -EnableException -WarningVariable headerWarnings
+            } catch {
+                $headerException = $PSItem
+            }
+            # Stop-Function rethrows the inner RESTORE HEADERONLY error, so the exception text is the SQL error, not the message.
+            $headerException | Should -Not -BeNullOrEmpty
+            # Stop-Function writes the message once before it throws, as it does for every throw in dbatools; it is not
+            # written a second time.
+            @($headerWarnings | Where-Object { $PSItem -like "*Failure on*" }).Count | Should -Be 1
+        }
+    }
+
+    Context "When Path is an S3 folder" {
+        It "Warns that S3 folders cannot be enumerated and returns nothing" {
+            # An S3 URL skips xp_dirtree, and a folder then went to Read-DbaBackupHeader as if it were a file, which
+            # rejected it with a message about files and folders instead of the one about S3 enumeration. On top of
+            # that the escaping continue ended the CI test before its assertions, so nobody noticed.
+            $splatS3Folder = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Path          = "s3://dbatoolsci.invalid/bucket/folder/"
+                WarningAction = "SilentlyContinue"
+            }
+            $results = Get-DbaBackupInformation @splatS3Folder
+            $results | Should -BeNullOrEmpty
+            ($WarnVar -join " ") | Should -BeLike "*S3 paths cannot be enumerated using T-SQL*"
+        }
+    }
 }

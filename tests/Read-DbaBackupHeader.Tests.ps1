@@ -28,3 +28,20 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "When Path is a folder" {
+        It "Warns that it needs a file and returns nothing" {
+            # The message used to be built from a broken string literal, "Path ("$p") should be a file, not a folder",
+            # which handed $p to Stop-Function as a positional argument and turned the warning into a binding error.
+            $splatFolder = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Path          = $TestConfig.Temp
+                WarningAction = "SilentlyContinue"
+            }
+            $results = Read-DbaBackupHeader @splatFolder
+            $results | Should -BeNullOrEmpty
+            ($WarnVar -join " ") | Should -BeLike "*should be a file, not a folder*"
+        }
+    }
+}
