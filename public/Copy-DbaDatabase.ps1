@@ -774,7 +774,17 @@ function Copy-DbaDatabase {
         }
 
         if ($Database -contains "master" -or $Database -contains "msdb" -or $Database -contains "tempdb") {
-            Stop-Function -Message "Migrating system databases is not currently supported." -Continue
+            # This rejects one input, not the command: a plain Stop-Function sets the interrupt flag that
+            # Test-FunctionInterrupt reads at the top of this block, which would drop every database piped in
+            # after this one, and -Continue has no loop to continue here (#10638). So throw under
+            # -EnableException, otherwise warn, and return from this process invocation only.
+            $systemDbMessage = "Migrating system databases is not currently supported."
+            if ($EnableException) {
+                Stop-Function -Message $systemDbMessage -EnableException $true
+            } else {
+                Write-Message -Level Warning -Message $systemDbMessage
+            }
+            return
         }
 
         try {
