@@ -59,7 +59,7 @@ function Get-DbaNetworkConfiguration {
         - TcpIpProperties: Nested object containing Enabled, KeepAlive, and ListenAll properties for TCP/IP configuration
         - TcpIpAddresses: Array of objects representing IP address configurations with properties like Name, Active, Enabled, IpAddress, TcpDynamicPorts, and TcpPort
         - Certificate: Nested object containing SSL certificate information (FriendlyName, DnsNameList, Thumbprint, Generated, Expires, IssuedTo, IssuedBy, Certificate object)
-        - SuitableCertificate: Array of certificates from the local machine store that are suitable for SQL Server encryption based on key usage, signature algorithm, validity, and DNS names
+        - SuitableCertificate: Array of certificates from the local machine store that are suitable for SQL Server encryption based on key usage, private key (a legacy CSP key with KeySpec AT_KEYEXCHANGE or a Key Storage Provider key), public key, signature algorithm, validity, and DNS names
         - Advanced: Nested object containing advanced settings (ForceEncryption, HideInstance, AcceptedSPNs, ExtendedProtection)
 
         When -OutputType ServerProtocols is specified:
@@ -142,6 +142,58 @@ function Get-DbaNetworkConfiguration {
             # so normally a DbaInstanceParameter.
             $instance = $args[0]
             $verbose = @( )
+
+            # This function is kept aligned in Get-DbaNetworkConfiguration, Test-DbaNetworkCertificate and Set-DbaNetworkCertificate.
+            # It opens the private key through the CNG API, which works for a legacy CSP key and for a Key Storage Provider (CNG) key
+            # in both PowerShell editions. $cert.PrivateKey does not: it is $null for a Key Storage Provider key in Windows PowerShell
+            # and always an RSACng in PowerShell 7, where CspKeyContainerInfo does not exist.
+            # SQL Server loads both key types (verified with SQL Server 2019, 2022 and 2025 and their Configuration Managers), so a
+            # Key Storage Provider key is not rejected. The Microsoft certificate requirements ask for KeySpec AT_KEYEXCHANGE, and a
+            # legacy CSP key created with AT_SIGNATURE reports a key usage of Signing only when opened through CNG, so the key has
+            # to allow decryption to be valid.
+            function Get-PrivateKeyInfo {
+                param ($Certificate)
+                $info = [PSCustomObject]@{
+                    Type      = $null
+                    Provider  = $null
+                    KeyNumber = $null
+                    FileName  = $null
+                    Valid     = $false
+                }
+                $rsa = $null
+                try {
+                    $rsa = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($Certificate)
+                } catch {
+                    # RSACertificateExtensions needs .NET Framework 4.6, older hosts only have the legacy property.
+                    try {
+                        $rsa = $Certificate.PrivateKey
+                    } catch {
+                        $rsa = $null
+                    }
+                }
+                if ($null -ne $rsa) {
+                    $info.Type = $rsa.GetType().FullName
+                }
+                if ($info.Type -eq "System.Security.Cryptography.RSACng") {
+                    $info.Provider = $rsa.Key.Provider.Provider
+                    $info.FileName = $rsa.Key.UniqueName
+                    $info.Valid = ($rsa.Key.KeyUsage -band [System.Security.Cryptography.CngKeyUsages]::Decryption) -ne 0
+                    # A legacy CSP is registered under Defaults\Provider, a Key Storage Provider is not. Only a legacy CSP key has a KeySpec.
+                    if (Test-Path -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\$($info.Provider)") {
+                        if ($info.Valid) {
+                            $info.KeyNumber = [System.Security.Cryptography.KeyNumber]::Exchange
+                        } else {
+                            $info.KeyNumber = [System.Security.Cryptography.KeyNumber]::Signature
+                        }
+                    }
+                } elseif ($info.Type -eq "System.Security.Cryptography.RSACryptoServiceProvider") {
+                    $info.Provider = $rsa.CspKeyContainerInfo.ProviderName
+                    $info.KeyNumber = $rsa.CspKeyContainerInfo.KeyNumber
+                    $info.FileName = $rsa.CspKeyContainerInfo.UniqueKeyContainerName
+                    $info.Valid = $rsa.CspKeyContainerInfo.KeyNumber -eq [System.Security.Cryptography.KeyNumber]::Exchange
+                }
+                $info
+            }
 
             # As we go remote, ensure the assembly is loaded
             [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
@@ -246,8 +298,7 @@ function Get-DbaNetworkConfiguration {
                     if (-not $dnsNames -and $_.Subject -match 'CN=([^,]+)') { $dnsNames = @( $Matches[1] ) }
                     $dnsNamesOk = $dnsNames -contains $networkName -or $dnsNames -contains "$networkName.$env:USERDNSDOMAIN"
 
-                    $_.PrivateKey -is [System.Security.Cryptography.RSACryptoServiceProvider] -and
-                    $_.PrivateKey.CspKeyContainerInfo.KeyNumber -eq [System.Security.Cryptography.KeyNumber]::Exchange -and
+                    (Get-PrivateKeyInfo -Certificate $_).Valid -and
                     $_.PublicKey.Key.KeySize -ge 2048 -and
                     $_.PublicKey.Oid.FriendlyName -match 'RSA' -and
                     $_.SignatureAlgorithm.FriendlyName -match 'sha256|sha384|sha512' -and
