@@ -6,7 +6,8 @@ function New-DbaComputerCertificate {
     .DESCRIPTION
         Creates a new computer certificate - self-signed or signed by an Active Directory CA, using the Web Server certificate.
 
-        By default, a key with a length of 2048 bits and a friendly name of "SQL Server" is generated.
+        By default, a key with a length of 2048 bits and a friendly name of "SQL Server" is generated. The private key
+        is created by the legacy Microsoft RSA SChannel Cryptographic Provider unless -Provider asks for a Key Storage Provider.
 
         This command was originally intended to help automate the process so that SSL certificates can be available for enforcing encryption on connections.
 
@@ -61,6 +62,12 @@ function New-DbaComputerCertificate {
         Specifies the RSA key size in bits for the certificate's private key.
         Defaults to 2048 bits which meets current industry security standards for production environments.
         4096 bits can be used for high-security environments, though it may slightly impact performance during SSL handshakes.
+
+    .PARAMETER Provider
+        Specifies the cryptographic provider that generates and holds the private key.
+        Defaults to "Microsoft RSA SChannel Cryptographic Provider", a legacy Cryptographic Service Provider (CSP) that creates the key with KeySpec AT_KEYEXCHANGE, which is what the Microsoft certificate requirements for SQL Server name.
+        Use "Microsoft Software Key Storage Provider" for a Cryptography Next Generation (CNG) key. SQL Server 2019 and later load such a key as well, and Set-DbaNetworkCertificate and Test-DbaNetworkCertificate handle both key types.
+        The key is generated on the machine that runs the command and travels with the PFX to a remote computer, so the provider is the same on the target.
 
     .PARAMETER Store
         Specifies the certificate store location where the certificate will be installed.
@@ -213,6 +220,8 @@ function New-DbaComputerCertificate {
         [string]$FriendlyName = "SQL Server",
         [string]$CertificateTemplate = "WebServer",
         [int]$KeyLength = 2048,
+        [ValidateSet("Microsoft RSA SChannel Cryptographic Provider", "Microsoft Software Key Storage Provider")]
+        [string]$Provider = "Microsoft RSA SChannel Cryptographic Provider",
         [string]$Store = "LocalMachine",
         [string]$Folder = "My",
         [ValidateSet("EphemeralKeySet", "Exportable", "PersistKeySet", "UserProtected", "NonExportable")]
@@ -400,7 +409,10 @@ function New-DbaComputerCertificate {
                 Add-Content $certCfg 'Signature="$Windows NT$"'
                 Add-Content $certCfg "[NewRequest]"
                 Add-Content $certCfg "Subject = ""CN=$fqdn"""
-                Add-Content $certCfg "KeySpec = 1"
+                if ($Provider -eq "Microsoft RSA SChannel Cryptographic Provider") {
+                    # A legacy CSP key. KeySpec 1 is AT_KEYEXCHANGE, the KeySpec the Microsoft certificate requirements for SQL Server name.
+                    Add-Content $certCfg "KeySpec = 1"
+                }
                 Add-Content $certCfg "KeyLength = $KeyLength"
                 # Keep the source cert exportable whenever it must be copied to another host.
                 if ("NonExportable" -in $Flag -and -not $ClusterInstanceName -and $computer.IsLocalHost) {
@@ -414,8 +426,14 @@ function New-DbaComputerCertificate {
                 Add-Content $certCfg "PrivateKeyArchive = FALSE"
                 Add-Content $certCfg "UserProtected = FALSE"
                 Add-Content $certCfg "UseExistingKeySet = FALSE"
-                Add-Content $certCfg "ProviderName = ""Microsoft RSA SChannel Cryptographic Provider"""
-                Add-Content $certCfg "ProviderType = 12"
+                Add-Content $certCfg "ProviderName = ""$Provider"""
+                if ($Provider -eq "Microsoft RSA SChannel Cryptographic Provider") {
+                    # ProviderType 12 is PROV_RSA_SCHANNEL.
+                    Add-Content $certCfg "ProviderType = 12"
+                } else {
+                    # A Key Storage Provider has neither a provider type nor a KeySpec, it takes the key algorithm instead.
+                    Add-Content $certCfg "KeyAlgorithm = RSA"
+                }
                 if ($SelfSigned) {
                     Add-Content $certCfg "RequestType = Cert"
                     Add-Content $certCfg "NotBefore = $((Get-Date).ToShortDateString())"
