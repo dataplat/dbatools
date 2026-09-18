@@ -360,10 +360,18 @@ function Get-DbaBackupInformation {
                     # this process invocation only.
                     if ($EnableException) {
                         Stop-Function -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name -EnableException $true
-                    } else {
-                        Write-Message -Level Warning -Message "Failure on $($server.Name)" -ErrorRecord $PSItem -Target $server.Name
                     }
-                    return
+                    # One unreadable file fails the batch as a whole, and with it every readable file given in the same
+                    # call. So read the files one by one: the readable ones survive, and each unreadable one gets a
+                    # warning that names it.
+                    $FileDetails = foreach ($file in $Files) {
+                        $fileName = if ($file.FullName) { $file.FullName } else { "$file" }
+                        try {
+                            Read-DbaBackupHeader -SqlInstance $server -Path $file -StorageCredential $StorageCredential -EnableException
+                        } catch {
+                            Write-Message -Level Warning -Message "Failure on $($server.Name) reading $fileName" -ErrorRecord $PSItem -Target $fileName
+                        }
+                    }
                 }
             }
 
