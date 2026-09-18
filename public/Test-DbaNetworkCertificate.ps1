@@ -179,16 +179,18 @@ function Test-DbaNetworkCertificate {
                     $info.FileName = $rsa.Key.UniqueName
                     $info.Valid = ($rsa.Key.KeyUsage -band [System.Security.Cryptography.CngKeyUsages]::Decryption) -ne 0
                     # A legacy CSP is registered under Defaults\Provider, a Key Storage Provider is not. Only a legacy CSP key has a KeySpec.
+                    # The KeySpec is reported as the name of the KeyNumber enum value, because the enum itself arrives as a number
+                    # when this scriptblock runs on a remote host.
                     if (Test-Path -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\$($info.Provider)") {
                         if ($info.Valid) {
-                            $info.KeyNumber = [System.Security.Cryptography.KeyNumber]::Exchange
+                            $info.KeyNumber = "Exchange"
                         } else {
-                            $info.KeyNumber = [System.Security.Cryptography.KeyNumber]::Signature
+                            $info.KeyNumber = "Signature"
                         }
                     }
                 } elseif ($info.Type -eq "System.Security.Cryptography.RSACryptoServiceProvider") {
                     $info.Provider = $rsa.CspKeyContainerInfo.ProviderName
-                    $info.KeyNumber = $rsa.CspKeyContainerInfo.KeyNumber
+                    $info.KeyNumber = [string]$rsa.CspKeyContainerInfo.KeyNumber
                     $info.FileName = $rsa.CspKeyContainerInfo.UniqueKeyContainerName
                     $info.Valid = $rsa.CspKeyContainerInfo.KeyNumber -eq [System.Security.Cryptography.KeyNumber]::Exchange
                 }
