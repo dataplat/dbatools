@@ -366,8 +366,14 @@ function Get-DbaBackupInformation {
                     # warning that names it.
                     $FileDetails = foreach ($file in $Files) {
                         $fileName = if ($file.FullName) { $file.FullName } else { "$file" }
+                        $splatReadHeader = @{
+                            SqlInstance       = $server
+                            Path              = $file
+                            StorageCredential = $StorageCredential
+                            EnableException   = $true
+                        }
                         try {
-                            Read-DbaBackupHeader -SqlInstance $server -Path $file -StorageCredential $StorageCredential -EnableException
+                            Read-DbaBackupHeader @splatReadHeader
                         } catch {
                             Write-Message -Level Warning -Message "Failure on $($server.Name) reading $fileName" -ErrorRecord $PSItem -Target $fileName
                         }
