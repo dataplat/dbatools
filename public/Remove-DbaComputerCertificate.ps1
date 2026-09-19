@@ -30,7 +30,7 @@ function Remove-DbaComputerCertificate {
     .PARAMETER DeleteKey
         Deletes the private key of the certificate together with the certificate, like the DeleteKey switch of the Cert: drive in Windows PowerShell.
         Works for keys in a legacy Cryptographic Service Provider (what New-DbaComputerCertificate creates) and in a Key Storage Provider (CNG).
-        The key is kept when another certificate in the same store location still uses it, for example a copy of the certificate in another folder or a renewed certificate that reused the key; the output says which one.
+        The key is kept when another certificate in the same store location still uses it, for example a copy of the certificate in another folder (WebHosting and custom folders included) or a renewed certificate that reused the key; the output says which one.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -113,16 +113,16 @@ function Remove-DbaComputerCertificate {
                 param (
                     [ValidateSet("CurrentUser", "LocalMachine")]
                     [string]$Store,
-                    [ValidateSet("AddressBook", "AuthRoot, CertificateAuthority", "Disallowed", "My", "Root", "TrustedPeople", "TrustedPublisher")]
                     [string]$Folder,
                     [ValidateSet("ReadOnly", "ReadWrite")]
                     [string]$Flag = "ReadOnly"
                 )
 
+                # The folder is opened by name, so folders the StoreName enumeration does not know, like WebHosting, work too.
+                # OpenExistingOnly keeps a mistyped folder name from being created as a new empty store.
                 $storename = [System.Security.Cryptography.X509Certificates.StoreLocation]::$Store
-                $foldername = [System.Security.Cryptography.X509Certificates.StoreName]::$Folder
-                $flags = [System.Security.Cryptography.X509Certificates.OpenFlags]::$Flag
-                $certstore = New-Object System.Security.Cryptography.X509Certificates.X509Store -ArgumentList $foldername, $storename
+                $flags = [System.Security.Cryptography.X509Certificates.OpenFlags]$Flag -bor [System.Security.Cryptography.X509Certificates.OpenFlags]::OpenExistingOnly
+                $certstore = New-Object System.Security.Cryptography.X509Certificates.X509Store -ArgumentList $Folder, $storename
                 $certstore.Open($flags)
 
                 $certstore
@@ -133,7 +133,6 @@ function Remove-DbaComputerCertificate {
                 param (
                     [ValidateSet("CurrentUser", "LocalMachine")]
                     [string]$Store,
-                    [ValidateSet("AddressBook", "AuthRoot, CertificateAuthority", "Disallowed", "My", "Root", "TrustedPeople", "TrustedPublisher")]
                     [string]$Folder,
                     [ValidateSet("ReadOnly", "ReadWrite")]
                     [string]$Flag = "ReadOnly",
@@ -243,16 +242,23 @@ function Remove-DbaComputerCertificate {
                     } else {
                         # Another certificate in the same store location may use the same key, for example a copy of this
                         # certificate in another folder or a renewed certificate that reused the key. Then the key stays.
+                        # The folders come from the Cert: drive, because the StoreName enumeration does not know the WebHosting
+                        # folder of IIS or custom folders, and a copy in one of those has to keep the key as well.
                         $storeLocation = [System.Security.Cryptography.X509Certificates.StoreLocation]::$Store
-                        $sharedWith = foreach ($storeName in [System.Enum]::GetValues([System.Security.Cryptography.X509Certificates.StoreName])) {
+                        try {
+                            $storeNames = (Get-ChildItem -Path "Cert:\$Store" -ErrorAction Stop).Name
+                        } catch {
+                            $storeNames = $null
+                        }
+                        $sharedWith = foreach ($storeName in $storeNames) {
                             $otherStore = New-Object System.Security.Cryptography.X509Certificates.X509Store -ArgumentList $storeName, $storeLocation
                             try {
-                                $otherStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
+                                $otherStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]"ReadOnly, OpenExistingOnly")
                                 foreach ($otherCert in $otherStore.Certificates) {
                                     if (-not $otherCert.HasPrivateKey) {
                                         continue
                                     }
-                                    if ($otherCert.Thumbprint -eq $cert.Thumbprint -and "$storeName" -eq $Folder) {
+                                    if ($otherCert.Thumbprint -eq $cert.Thumbprint -and $storeName -eq $Folder) {
                                         continue
                                     }
                                     $otherKey = Get-CoreCertificateKey -Certificate $otherCert
@@ -267,7 +273,10 @@ function Remove-DbaComputerCertificate {
                                 $otherStore.Close()
                             }
                         }
-                        if ($sharedWith) {
+                        if (-not $storeNames) {
+                            $privateKey = "Not deleted: the folders of Cert:\$Store could not be listed, so it is unknown whether another certificate uses the key"
+                            $key = $null
+                        } elseif ($sharedWith) {
                             $privateKey = "Kept, shared with $($sharedWith -join ", ")"
                             $key = $null
                         }

@@ -96,19 +96,35 @@ Describe $CommandName -Tag IntegrationTests {
             $trustedPeople.Add($sharedStoreCert)
             $trustedPeople.Close()
 
+            # A certificate whose key is shared with a copy in a folder the StoreName enumeration does not know: WebHosting,
+            # where IIS keeps its certificates. Opening the folder for writing creates it on a computer without IIS.
+            $webHostingExisted = Test-Path -Path "Cert:\LocalMachine\WebHosting"
+            $webHostingCert = New-DbaComputerCertificate -SelfSigned
+            $webHostingKeyFile = & $getKeyFile $webHostingCert.Thumbprint
+            $webHostingStoreCert = Get-ChildItem -Path "Cert:\LocalMachine\My\$($webHostingCert.Thumbprint)"
+            $webHosting = New-Object System.Security.Cryptography.X509Certificates.X509Store -ArgumentList "WebHosting", "LocalMachine"
+            $webHosting.Open("ReadWrite")
+            $webHosting.Add($webHostingStoreCert)
+            $webHosting.Close()
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            foreach ($leftover in $keptCert.Thumbprint, $cspCert.Thumbprint, $kspThumbprint, $sharedCert.Thumbprint) {
+            foreach ($leftover in $keptCert.Thumbprint, $cspCert.Thumbprint, $kspThumbprint, $sharedCert.Thumbprint, $webHostingCert.Thumbprint) {
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder TrustedPeople -DeleteKey -WarningAction SilentlyContinue
+                $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder WebHosting -DeleteKey -WarningAction SilentlyContinue
             }
-            foreach ($keyFile in $keptKeyFile, $cspKeyFile, $kspKeyFile, $sharedKeyFile) {
+            foreach ($keyFile in $keptKeyFile, $cspKeyFile, $kspKeyFile, $sharedKeyFile, $webHostingKeyFile) {
                 if (Test-Path -Path $keyFile -PathType Leaf) {
                     [System.IO.File]::Delete($keyFile)
                 }
+            }
+            if (-not $webHostingExisted) {
+                # The test created the WebHosting folder, so its registry key goes again.
+                [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey("SOFTWARE\Microsoft\SystemCertificates", $true).DeleteSubKeyTree("WebHosting", $false)
             }
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -147,6 +163,19 @@ Describe $CommandName -Tag IntegrationTests {
             $lastResult.Status | Should -Be "Removed"
             $lastResult.PrivateKey | Should -Be "Deleted"
             Test-Path -Path $sharedKeyFile -PathType Leaf | Should -BeFalse
+            $WarnVar | Should -BeNullOrEmpty
+        }
+
+        It "Keeps a key that a certificate in a folder outside the StoreName enumeration still uses" {
+            $result = Remove-DbaComputerCertificate -Thumbprint $webHostingCert.Thumbprint -DeleteKey
+            $result.Status | Should -Be "Removed"
+            $result.PrivateKey | Should -Be "Kept, shared with $($webHostingCert.Thumbprint) in Cert:\LocalMachine\WebHosting"
+            Test-Path -Path $webHostingKeyFile -PathType Leaf | Should -BeTrue
+
+            $lastResult = Remove-DbaComputerCertificate -Thumbprint $webHostingCert.Thumbprint -Folder WebHosting -DeleteKey
+            $lastResult.Status | Should -Be "Removed"
+            $lastResult.PrivateKey | Should -Be "Deleted"
+            Test-Path -Path $webHostingKeyFile -PathType Leaf | Should -BeFalse
             $WarnVar | Should -BeNullOrEmpty
         }
     }
