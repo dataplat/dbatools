@@ -122,8 +122,9 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-#Tests do not run in appveyor
-Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
+# These tests used to be skipped when APPVEYOR is set, which the Azure lanes do as well. Creating a self-signed
+# certificate in LocalMachine\My works on the runners, so they run there now.
+Describe $CommandName -Tag IntegrationTests {
     Context "Can generate a new certificate with default settings" {
         BeforeAll {
             $defaultCert = New-DbaComputerCertificate -SelfSigned -EnableException
@@ -189,11 +190,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             "$($documentCert.EnhancedKeyUsageList)" -match "1\.3\.6\.1\.5\.5\.7\.3\.1" | Should -BeFalse
         }
     }
-}
 
-# Unlike the Describe above, the provider assertions run on the Azure lane as well: creating a self-signed certificate
-# in LocalMachine\My works on the runners, and the provider of the key has to be verified for real there.
-Describe $CommandName -Tag IntegrationTests {
     Context "Can generate a certificate with a Key Storage Provider key" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
