@@ -156,4 +156,15 @@ Describe "bootstrap-runner.ps1 contract" {
         $configIndex | Should -BeGreaterThan 0
         $markerIndex | Should -BeLessThan $configIndex
     }
+
+    It "sets an account lockout threshold of five or lower before the runner takes its job" {
+        # the Set-DbaLogin unlock test fails exactly five logons and expects the login to be
+        # locked afterwards; without a threshold on the runner it never is (#10529)
+        $bootstrapText = Get-Content -Path $script:BootstrapPath -Raw
+        $bootstrapText | Should -Match "net accounts /lockoutthreshold:(\d+)"
+        $threshold = [int][regex]::Match($bootstrapText, "net accounts /lockoutthreshold:(\d+)").Groups[1].Value
+        $threshold | Should -BeGreaterThan 0
+        $threshold | Should -BeLessOrEqual 5
+        $bootstrapText.IndexOf("net accounts /lockoutthreshold:") | Should -BeLessThan $bootstrapText.IndexOf("& .\config.cmd")
+    }
 }
