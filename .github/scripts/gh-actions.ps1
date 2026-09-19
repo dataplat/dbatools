@@ -353,7 +353,10 @@ END
         $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
 
         $azureUrl = "https://dbatools.blob.core.windows.net/dbatools"
-        $dbName = "dbatoolsci_logship_azure"
+        # The database name is part of the blob name, and the container is shared by every run on every branch.
+        # Scoping it by run id and attempt keeps two runs that reach this backup within the same second from
+        # fighting over one blob (#10667). The cleanup below lists by this prefix, so it still finds its own blobs.
+        $dbName = "dbatoolsci_logship_azure_$($env:GITHUB_RUN_ID)_$($env:GITHUB_RUN_ATTEMPT)"
 
         # Create SAS token credential on both instances
         $primaryServer = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred
@@ -507,7 +510,8 @@ END
     It -Skip:(-not $env:azurepasswd) "adds a second live secondary without replacing the Azure primary configuration" {
         $PSDefaultParameterValues.Clear()
         $azureUrl = "https://dbatools.blob.core.windows.net/dbatools"
-        $dbName = "dbatoolsci_logship_addsecondary"
+        # Scoped by run id and attempt for the same reason as the SAS token test above (#10667).
+        $dbName = "dbatoolsci_logship_addsecondary_$($env:GITHUB_RUN_ID)_$($env:GITHUB_RUN_ATTEMPT)"
         $secondDbName = "${dbName}_second"
         $missingPrimaryDbName = "${dbName}_missing"
         $sasToken = $env:azurepasswd.TrimStart("?")
