@@ -189,7 +189,11 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             "$($documentCert.EnhancedKeyUsageList)" -match "1\.3\.6\.1\.5\.5\.7\.3\.1" | Should -BeFalse
         }
     }
+}
 
+# Unlike the Describe above, the provider assertions run on the Azure lane as well: creating a self-signed certificate
+# in LocalMachine\My works on the runners, and the provider of the key has to be verified for real there.
+Describe $CommandName -Tag IntegrationTests {
     Context "Can generate a certificate with a Key Storage Provider key" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
@@ -204,6 +208,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $cspKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cspStoreCert)
 
             # For a remote computer the command exports a PFX and imports it on the target. The provider has to survive that transfer.
+            # On CI the instance is local, so the transfer only happens against a lab whose instance runs on another computer.
             $computerName = ([DbaInstanceParameter]$TestConfig.InstanceSingle).ComputerName
             $remoteKspCert = New-DbaComputerCertificate -ComputerName $computerName -SelfSigned -Provider "Microsoft Software Key Storage Provider"
             $readProvider = {
