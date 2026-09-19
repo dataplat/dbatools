@@ -20,6 +20,7 @@ Describe $CommandName -Tag UnitTests {
                 "FriendlyName",
                 "CertificateTemplate",
                 "KeyLength",
+                "Provider",
                 "Store",
                 "Folder",
                 "Flag",
@@ -87,11 +88,43 @@ Describe $CommandName -Tag UnitTests {
             $script:requestConfig | Should -Contain "Exportable = TRUE"
             $script:requestConfig | Should -Not -Contain "Exportable = FALSE"
         }
+
+        It "Writes a Key Storage Provider request when Provider asks for one" {
+            $splatKspCertificate = @{
+                ComputerName = "dbatools-review-remote"
+                CaServer     = "dbatools-ca"
+                CaName       = "dbatools-ca"
+                Provider     = "Microsoft Software Key Storage Provider"
+                WhatIf       = $true
+            }
+            $null = New-DbaComputerCertificate @splatKspCertificate
+
+            $script:requestConfig | Should -Contain "ProviderName = ""Microsoft Software Key Storage Provider"""
+            $script:requestConfig | Should -Contain "KeyAlgorithm = RSA"
+            $script:requestConfig | Should -Not -Contain "KeySpec = 1"
+            $script:requestConfig | Should -Not -Contain "ProviderType = 12"
+        }
+
+        It "Writes a legacy CSP request with KeySpec AT_KEYEXCHANGE by default" {
+            $splatDefaultCertificate = @{
+                ComputerName = "dbatools-review-remote"
+                CaServer     = "dbatools-ca"
+                CaName       = "dbatools-ca"
+                WhatIf       = $true
+            }
+            $null = New-DbaComputerCertificate @splatDefaultCertificate
+
+            $script:requestConfig | Should -Contain "ProviderName = ""Microsoft RSA SChannel Cryptographic Provider"""
+            $script:requestConfig | Should -Contain "ProviderType = 12"
+            $script:requestConfig | Should -Contain "KeySpec = 1"
+            $script:requestConfig | Should -Not -Contain "KeyAlgorithm = RSA"
+        }
     }
 }
 
-#Tests do not run in appveyor
-Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
+# These tests used to be skipped when APPVEYOR is set, which the Azure lanes do as well. Creating a self-signed
+# certificate in LocalMachine\My works on the runners, so they run there now.
+Describe $CommandName -Tag IntegrationTests {
     Context "Can generate a new certificate with default settings" {
         BeforeAll {
             $defaultCert = New-DbaComputerCertificate -SelfSigned -EnableException
@@ -155,6 +188,64 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
 
         It "Does not include the Server Authentication EKU OID" {
             "$($documentCert.EnhancedKeyUsageList)" -match "1\.3\.6\.1\.5\.5\.7\.3\.1" | Should -BeFalse
+        }
+    }
+
+    Context "Can generate a certificate with a Key Storage Provider key" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The command returns a copy of the certificate object without the key, so the private key is read from the store entry.
+            $kspCert = New-DbaComputerCertificate -SelfSigned -Provider "Microsoft Software Key Storage Provider"
+            $kspStoreCert = Get-ChildItem -Path "Cert:\LocalMachine\My\$($kspCert.Thumbprint)"
+            $kspKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($kspStoreCert)
+
+            $cspCert = New-DbaComputerCertificate -SelfSigned
+            $cspStoreCert = Get-ChildItem -Path "Cert:\LocalMachine\My\$($cspCert.Thumbprint)"
+            $cspKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cspStoreCert)
+
+            # For a remote computer the command exports a PFX and imports it on the target. The provider has to survive that transfer.
+            # On CI the instance is local, so the transfer only happens against a lab whose instance runs on another computer.
+            $computerName = ([DbaInstanceParameter]$TestConfig.InstanceSingle).ComputerName
+            $remoteKspCert = New-DbaComputerCertificate -ComputerName $computerName -SelfSigned -Provider "Microsoft Software Key Storage Provider"
+            $readProvider = {
+                param ($Thumbprint)
+                $cert = Get-ChildItem -Path "Cert:\LocalMachine\My\$Thumbprint"
+                ([System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)).Key.Provider.Provider
+            }
+            $splatReadProvider = @{
+                ComputerName = $computerName
+                ScriptBlock  = $readProvider
+                ArgumentList = $remoteKspCert.Thumbprint
+                # Raw, because Invoke-Command2 otherwise wraps the string in an object that only has a Length.
+                Raw          = $true
+            }
+            $remoteProvider = Invoke-Command2 @splatReadProvider
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            Remove-DbaComputerCertificate -Thumbprint $kspCert.Thumbprint, $cspCert.Thumbprint
+            Remove-DbaComputerCertificate -ComputerName $computerName -Thumbprint $remoteKspCert.Thumbprint
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Holds the private key in the Key Storage Provider" {
+            $kspKey.Key.Provider.Provider | Should -Be "Microsoft Software Key Storage Provider"
+            Test-Path -Path "$env:ProgramData\Microsoft\Crypto\Keys\$($kspKey.Key.UniqueName)" -PathType Leaf | Should -BeTrue
+        }
+
+        It "Holds the private key in the legacy CSP with KeySpec AT_KEYEXCHANGE by default" {
+            $cspKey.Key.Provider.Provider | Should -Be "Microsoft RSA SChannel Cryptographic Provider"
+            # A legacy CSP key opened through CNG reports an AT_KEYEXCHANGE KeySpec as AllUsages, an AT_SIGNATURE one as Signing.
+            $cspKey.Key.KeyUsage | Should -Be "AllUsages"
+            Test-Path -Path "$env:ProgramData\Microsoft\Crypto\RSA\MachineKeys\$($cspKey.Key.UniqueName)" -PathType Leaf | Should -BeTrue
+        }
+
+        It "Keeps the Key Storage Provider key when the certificate is imported on a remote computer" {
+            $remoteProvider | Should -Be "Microsoft Software Key Storage Provider"
         }
     }
 }
