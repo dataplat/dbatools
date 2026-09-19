@@ -131,4 +131,31 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Schema | Should -Be $schemaName
         }
     }
+
+    Context "When no procedure name can be parsed" {
+        It "Warns and returns nothing instead of every procedure" {
+            # The begin block stops on a name that does not parse, but the process block used to run anyway and
+            # returned all procedures of the database as if no -Name had been given (#10655).
+            $splatBadName = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Database      = $db1Name
+                Name          = "a.b.c.d"
+                WarningAction = "SilentlyContinue"
+            }
+            $results = Get-DbaDbStoredProcedure @splatBadName
+            $results | Should -BeNullOrEmpty
+            ($WarnVar -join " ") | Should -BeLike "*No valid procedure name specified*"
+        }
+
+        It "Throws with -EnableException" {
+            $splatBadName = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = $db1Name
+                Name            = "a.b.c.d"
+                WarningAction   = "SilentlyContinue"
+                EnableException = $true
+            }
+            { Get-DbaDbStoredProcedure @splatBadName } | Should -Throw "*No valid procedure name specified*"
+        }
+    }
 }

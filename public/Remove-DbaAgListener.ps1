@@ -91,13 +91,19 @@ function Remove-DbaAgListener {
 
         if ((Test-Bound -ParameterName SqlInstance)) {
             if ((Test-Bound -Not -ParameterName Listener)) {
-                Stop-Function -Message "You must specify one or more listeners and one or more Availability Groups when using the SqlInstance parameter."
+                Stop-Function -Message "You must specify one or more listeners when using the SqlInstance parameter."
                 return
             }
         }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaAgListener -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Listener $Listener
+            $splatGetAgListener = @{
+                SqlInstance       = $SqlInstance
+                SqlCredential     = $SqlCredential
+                Listener          = $Listener
+                AvailabilityGroup = $AvailabilityGroup
+            }
+            $InputObject += Get-DbaAgListener @splatGetAgListener
         }
 
         foreach ($aglistener in $InputObject) {

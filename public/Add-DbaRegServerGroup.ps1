@@ -151,9 +151,7 @@ function Add-DbaRegServerGroup {
                     $newgroup.Alter()
 
                     Get-DbaRegServerGroup -SqlInstance $currentInstance -Group (Get-RegServerGroupReverseParse -object $newgroup)
-                    if ($currentInstance.ConnectionContext) {
-                        $currentInstance.ConnectionContext.Disconnect()
-                    }
+                    Disconnect-RegServer -Server $newgroup
                 } catch {
                     Stop-Function -Message "Failed to add $reggroup" -ErrorRecord $_ -Continue
                 }

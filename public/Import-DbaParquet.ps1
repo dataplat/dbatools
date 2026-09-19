@@ -257,8 +257,13 @@ function Import-DbaParquet {
         }
 
         # Load Parquet.NET assembly
+        # The process block only runs when this is true. Get-DbaParquetPath warns (or throws) in its own scope
+        # when Parquet.NET is missing, so the interrupt flag that Test-FunctionInterrupt reads is never set here.
+        $parquetLoaded = $false
         $parquetAssembly = [System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq "Parquet" }
-        if (-not $parquetAssembly) {
+        if ($parquetAssembly) {
+            $parquetLoaded = $true
+        } else {
             $parquetDllPath = Get-DbaParquetPath -EnableException:$EnableException
             if (-not $parquetDllPath) {
                 return
@@ -294,6 +299,7 @@ function Import-DbaParquet {
                 }
 
                 Add-Type -Path $parquetDllPath -ErrorAction Stop
+                $parquetLoaded = $true
             } catch {
                 # A type load failure only says "Unable to find type" or "Unable to load one or more of
                 # the requested types" and keeps the reason in LoaderExceptions. Without those the
@@ -700,6 +706,11 @@ WHERE c.object_id = OBJECT_ID(@tableName)
         Write-Message -Level Verbose -Message "Started at $(Get-Date)"
     }
     process {
+        # Without these guards a missing or unloadable Parquet.NET was followed by one "Failed to open Parquet file"
+        # warning per file, after a connection to the instance had already been made (#10655).
+        if (Test-FunctionInterrupt) { return }
+        if (-not $parquetLoaded) { return }
+
         foreach ($filename in $Path) {
             if (-not $PSBoundParameters.ColumnMap) {
                 $ColumnMap = $null
@@ -1031,13 +1042,20 @@ WHERE c.object_id = OBJECT_ID(@tableName)
 
                         $finalRowCountReported = Get-BulkRowsCopiedCount $bulkCopy
 
-                        $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+                        # -1 signals that the reflection lookup failed, not a wrapped counter, so it must not
+                        # reach Get-AdjustedTotalRowsCopied: fed in as a row count it inflates the total by
+                        # billions of rows (see #10675). The running total from the notifications is then the
+                        # best number available.
+                        if ($finalRowCountReported -ge 0) {
+                            $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+                        }
 
                         if ($completed) {
                             Write-Progress -Id 1 -Activity "Inserting $($script:totalRowsCopied) rows" -Status "Complete" -Completed
                         } else {
                             Write-Progress -Id 1 -Activity "Inserting $($script:totalRowsCopied) rows" -Status "Failed" -Completed
                         }
+                        Write-Progress -Activity "Importing from $file" -Completed
                     }
                 }
                 # Clean up Parquet reader if ShouldProcess was skipped (WhatIf mode)

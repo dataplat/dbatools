@@ -101,8 +101,8 @@ function Get-DbaPbmCondition {
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        if ($PSVersionTable.PSEdition -eq "Core") {
-            Stop-Function -Message "This command is not yet supported in PowerShell Core"
+        if ($IsLinux -or $IsMacOS) {
+            Stop-Function -Message "This command is not supported on Linux or macOS"
             return
         }
         foreach ($instance in $SqlInstance) {

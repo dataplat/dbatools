@@ -597,6 +597,7 @@ function Find-DbaInstance {
                         }
                     }
 
+                    Write-ProgressHelper -Activity "Processing: $($computer)" -Completed
                     $masterList | Where-Object { $_.Confidence -ge $MinimumConfidence }
                 }
             }

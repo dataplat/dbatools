@@ -10,7 +10,7 @@ function New-DbaComputerCertificateSigningRequest {
 
         Supports both standalone SQL Server instances and cluster configurations, automatically resolving FQDNs and configuring appropriate DNS entries. The generated certificates work with SQL Server's encryption features including encrypted client connections, mirroring, and backup encryption scenarios.
 
-        By default, creates RSA certificates with 1024-bit keys, though this can be customized for stronger encryption requirements. All certificates are configured as machine certificates with the Microsoft RSA SChannel Cryptographic Provider for compatibility with SQL Server's encryption stack.
+        By default, creates RSA certificates with 2048-bit keys, the minimum the dbatools network certificate commands accept as suitable for SQL Server, though this can be raised for stronger encryption requirements. All certificates are configured as machine certificates with the Microsoft RSA SChannel Cryptographic Provider for compatibility with SQL Server's encryption stack.
 
     .PARAMETER ComputerName
         The target computer name hosting the SQL Server instance where the certificate will be installed. Accepts multiple computer names for batch processing.
@@ -32,7 +32,7 @@ function New-DbaComputerCertificateSigningRequest {
         This name helps administrators identify the certificate's purpose when managing multiple certificates on the same server.
 
     .PARAMETER KeyLength
-        Specifies the RSA key length in bits for the certificate. Defaults to 1024 for compatibility, though 2048 or 4096 is recommended for production.
+        Specifies the RSA key length in bits for the certificate. Defaults to 2048, the minimum key length Test-DbaNetworkCertificate accepts as suitable for SQL Server; 4096 is possible for stronger requirements.
         Higher key lengths provide stronger encryption but may impact SQL Server connection performance on older hardware.
 
     .PARAMETER Dns
@@ -82,12 +82,12 @@ function New-DbaComputerCertificateSigningRequest {
     .EXAMPLE
         PS C:\> New-DbaComputerCertificateSigningRequest
 
-        Creates a computer certificate signing request for the local machine with the keylength of 1024.
+        Creates a computer certificate signing request for the local machine with the keylength of 2048.
 
     .EXAMPLE
         PS C:\> New-DbaComputerCertificateSigningRequest -ComputerName Server1
 
-        Creates a computer certificate signing request for server1 with the keylength of 1024.
+        Creates a computer certificate signing request for server1 with the keylength of 2048.
 
     .EXAMPLE
         PS C:\> New-DbaComputerCertificateSigningRequest -ComputerName sqla, sqlb -ClusterInstanceName sqlcluster -KeyLength 4096
@@ -108,7 +108,7 @@ function New-DbaComputerCertificateSigningRequest {
         [string]$ClusterInstanceName,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [string]$FriendlyName = "SQL Server",
-        [int]$KeyLength = 1024,
+        [int]$KeyLength = 2048,
         [string[]]$Dns,
         [switch]$EnableException
     )
@@ -258,6 +258,7 @@ function New-DbaComputerCertificateSigningRequest {
                 }
                 Get-ChildItem $certCfg, $certCsr
             }
+            Write-ProgressHelper -Completed
         }
     }
 }

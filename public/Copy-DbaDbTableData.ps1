@@ -56,13 +56,14 @@ function Copy-DbaDbTableData {
         Custom SQL SELECT query to use as the data source instead of copying the entire table or view. Supports 3 or 4-part object names.
         Use this when you need to filter rows, join multiple tables, or transform data during the copy operation. Still requires specifying a Table or View parameter for metadata purposes.
 
-        Note: Columns are mapped by ordinal position. If the destination table has an identity column, include a placeholder value (e.g., 0) in your SELECT list at that position.
+        Note: Columns are mapped by position onto the writable columns of the destination table, so computed, rowversion and generated always columns of the destination do not count and must not have a counterpart in the SELECT list.
+        If the destination table has an identity column, include a placeholder value (e.g., 0) in your SELECT list at that position.
         The placeholder will be ignored and the identity value auto-generated unless -KeepIdentity is specified.
 
     .PARAMETER ForceExplicitMapping
         When used together with Query parameter, force the use of explicit column mapping (name-based) instead of switching over to ordinal position mapping. Use with care if query contains aliases.
         Default behaviour when using Query parameter is to use ordinal position mapping, due to the possibility of the query including aliases (SELECT x AS y) which could lead to column mismatching and data not copying.
-        The downside of it automatically switching over to ordinal mapping is that it also tries to copy over computed columns, which will cause it to fail.
+        Positional mapping skips the computed, rowversion and generated always columns of the destination table, so the SELECT list only has to match its writable columns.
 
     .PARAMETER AutoCreateTable
         Automatically creates the destination table if it doesn't exist, using the same structure as the source table.
@@ -326,7 +327,12 @@ function Copy-DbaDbTableData {
 
     process {
         if ((Test-Bound -Not -ParameterName InputObject) -and ((Test-Bound -Not -ParameterName SqlInstance, Database -And) -or (Test-Bound -Not -ParameterName Table, View))) {
-            Stop-Function -Message "You must pipe in a table or specify SqlInstance, Database and [View|Table]."
+            if (Test-Bound -ParameterName Query) {
+                # Without the hint at Query the message reads as if SqlInstance or Database were missing (see #10676).
+                Stop-Function -Message "When using Query, you still have to specify SqlInstance, Database and [View|Table]. The query determines the data that is copied, but the command needs the table or view as the source object for its metadata."
+            } else {
+                Stop-Function -Message "You must pipe in a table or specify SqlInstance, Database and [View|Table]."
+            }
             return
         }
 
@@ -650,6 +656,9 @@ function Copy-DbaDbTableData {
                     $sourceLabel = "Query"
                 }
                 $bulkCopyConnection = $null
+                $cmd = $null
+                $reader = $null
+                $bulkCopy = $null
                 try {
                     if ($Truncate -eq $true) {
                         if ($Pscmdlet.ShouldProcess($destServer, "Truncating table $fqtndest")) {
@@ -672,11 +681,18 @@ function Copy-DbaDbTableData {
                         $bulkCopy.NotifyAfter = $NotifyAfter
                         $bulkCopy.BulkCopyTimeout = $BulkCopyTimeout
 
-                        # Get list of non-computed columns from destination table to avoid insert failures
+                        # Get list of writable columns from destination table to avoid insert failures. Computed, rowversion
+                        # and generated always columns (temporal periods, ledger metadata) cannot be written, and they are also
+                        # what breaks the implicit positional mapping of SqlBulkCopy: it counts a computed column (the server
+                        # then rejects the insert) and silently drops the source column that lands on a rowversion column,
+                        # shifting every column behind it by one (see #10661). GeneratedAlwaysType is only supported by SMO on
+                        # SQL Server 2016 and later and on Azure SQL Database, so it has to be guarded the same way. Azure SQL
+                        # Database is named on its own because its product version says 12 no matter what it supports.
+                        $destSupportsGeneratedAlways = $destServer.VersionMajor -ge 13 -or $destServer.DatabaseEngineType -eq "SqlAzureDatabase"
                         # Refresh the columns collection to ensure it's populated
                         $desttable.Columns.Refresh()
-                        $destColumns = $desttable.Columns | Where-Object Computed -eq $false | Select-Object -ExpandProperty Name
-                        Write-Message -Level Verbose -Message "Destination table has $($destColumns.Count) non-computed columns"
+                        $destColumns = @($desttable.Columns | Where-Object { -not $PSItem.Computed -and $PSItem.DataType.SqlDataType -ne "Timestamp" -and -not ($destSupportsGeneratedAlways -and $PSItem.GeneratedAlwaysType -ne "None") } | Select-Object -ExpandProperty Name)
+                        Write-Message -Level Verbose -Message "Destination table has $($destColumns.Count) writable columns"
 
                         # The legacy bulk copy library uses a 4 byte integer to track the RowsCopied, so the only option is to use
                         # integer wrap so that copy operations of row counts greater than [int32]::MaxValue will report accurate numbers.
@@ -705,24 +721,42 @@ function Copy-DbaDbTableData {
                         $reader = $cmd.ExecuteReader()
 
                         # Only apply explicit column mapping for straight table copies (not custom queries)
-                        # Custom queries may have different column names/aliases, so let SqlBulkCopy use ordinal mapping
+                        # Custom queries may have different column names/aliases, so they are mapped by position
                         # Appending -ForceExplicitMapping will override this behaviour and keep explicit column mapping
                         if (-not (Test-Bound -ParameterName Query) -or $ForceExplicitMapping) {
-                            # Map only columns that exist in both source and destination (excluding computed columns)
+                            # Map only columns that exist in both source and destination (excluding computed, rowversion and generated always columns)
                             for ($i = 0; $i -lt $reader.FieldCount; $i++) {
                                 $sourceColumn = $reader.GetName($i)
                                 if ($destColumns -contains $sourceColumn) {
                                     $null = $bulkCopy.ColumnMappings.Add($sourceColumn, $sourceColumn)
                                 } else {
-                                    Write-Message -Level Verbose -Message "Skipping column '$sourceColumn' (not in destination or is computed)"
+                                    Write-Message -Level Verbose -Message "Skipping column $sourceColumn (not in destination or not writable)"
                                 }
+                            }
+                        } else {
+                            # Map the query columns by position onto the writable destination columns. This is what SqlBulkCopy does
+                            # on its own, except that its list also contains the computed, rowversion and generated always columns (see above).
+                            if ($reader.FieldCount -gt $destColumns.Count) {
+                                $columnCountMessage = "The query returns $($reader.FieldCount) columns but $fqtndest has only $($destColumns.Count) writable columns. Computed, rowversion and generated always columns cannot be written and do not count."
+                                $reader.Close()
+                                throw $columnCountMessage
+                            }
+                            for ($i = 0; $i -lt $reader.FieldCount; $i++) {
+                                Write-Message -Level Verbose -Message "Mapping query column $i ($($reader.GetName($i))) to destination column $($destColumns[$i])"
+                                $null = $bulkCopy.ColumnMappings.Add($i, $destColumns[$i])
                             }
                         }
 
                         $bulkCopy.WriteToServer($reader)
                         $finalRowCountReported = Get-BulkRowsCopiedCount $bulkCopy
 
-                        $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+                        # -1 signals that the reflection lookup failed, not a wrapped counter, so it must not
+                        # reach Get-AdjustedTotalRowsCopied: fed in as a row count it inflates the total by
+                        # billions of rows (see #10675). The running total from the notifications is then the
+                        # best number available.
+                        if ($finalRowCountReported -ge 0) {
+                            $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+                        }
 
                         $RowsTotal = $script:totalRowsCopied
                         $TotalTime = [math]::Round($elapsed.Elapsed.TotalSeconds, 1)
@@ -754,6 +788,27 @@ function Copy-DbaDbTableData {
                 } catch {
                     Stop-Function -Message "Something went wrong" -ErrorRecord $_ -Target $server -continue
                 } finally {
+                    # The source side is only cleaned up inside the try after a successful WriteToServer. When the bulk
+                    # copy fails, the reader stays open, the SELECT keeps running on the source (waiting on ASYNC_NETWORK_IO
+                    # once the network buffers are full) and holds its schema stability lock on the source table until
+                    # someone kills the session (see #10685). So the leftovers are cleaned up here.
+                    if ($reader -and -not $reader.IsClosed) {
+                        try {
+                            # Cancel the command first: closing a reader with unread rows would otherwise drain the whole
+                            # remaining result set from the source before it returns.
+                            $cmd.Cancel()
+                            $reader.Close()
+                        } catch {
+                            Write-Message -Level Debug -Message "Failed to close the reader on the source: $PSItem"
+                        }
+                    }
+                    if ($bulkCopy) {
+                        $bulkCopy.Close()
+                        $bulkCopy.Dispose()
+                    }
+                    if ($reader -and $server.ConnectionContext.SqlConnectionObject.State -eq "Open") {
+                        $server.ConnectionContext.SqlConnectionObject.Close()
+                    }
                     if ($bulkCopyConnection) {
                         $bulkCopyConnection.Close()
                         $bulkCopyConnection.Dispose()

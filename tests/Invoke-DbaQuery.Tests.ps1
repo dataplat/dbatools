@@ -485,4 +485,70 @@ CREATE INDEX IX_Filtered ON dbo.$tableName(Name) WHERE IsDeleted = 0;
             ($sessionsAfter - $sessionsBefore) | Should -BeLessThan 5
         }
     }
+
+    Context "Connections it opens are closed when the query fails (#10659)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The command opens a non-pooled connection per instance and used to close it only after a
+            # successful execution: a failing query left the session behind, both when the failure was
+            # a warning and when it was thrown. Non-pooled connections are the ones nothing else cleans up.
+            # Count the sessions through a server object opened once, because a per-call counting command
+            # would open connections of its own, and only the sessions of this process, so a second test
+            # run on the same instance cannot disturb the count.
+            $countServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -NonPooledConnection
+            $countQuery = @"
+SELECT COUNT(*)
+FROM sys.dm_exec_sessions
+WHERE program_name LIKE N'dbatools%'
+  AND host_process_id = $PID
+  AND status = N'sleeping'
+  AND session_id <> @@spid
+"@
+            # A division by zero fails the batch with severity 16, so the execution throws.
+            $failingQuery = "SELECT 1 / 0 AS DbatoolsciFails"
+
+            # One warm-up call so the background connections of the tab expansion exist before the baseline.
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query "SELECT 1 AS Warmup"
+            $sleepingBefore = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            foreach ($i in 1..3) {
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query $failingQuery -WarningAction SilentlyContinue
+            }
+            $warningsAfterWarn = $WarnVar
+            $sleepingAfterWarn = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            foreach ($i in 1..3) {
+                try {
+                    $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query $failingQuery -EnableException
+                } catch {
+                    $null = $PSItem
+                }
+            }
+            $sleepingAfterThrow = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $countServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "warns about the failed execution" {
+            $warningsAfterWarn | Should -Not -BeNullOrEmpty
+            @($warningsAfterWarn) -join " " | Should -BeLike "*Failed during execution*"
+        }
+
+        It "leaves no sleeping session behind when the failure is a warning" {
+            $sleepingAfterWarn | Should -Be $sleepingBefore
+        }
+
+        It "leaves no sleeping session behind when the failure is thrown" {
+            $sleepingAfterThrow | Should -Be $sleepingBefore
+        }
+    }
 }

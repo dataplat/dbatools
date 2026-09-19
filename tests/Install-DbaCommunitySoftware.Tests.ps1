@@ -134,10 +134,10 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $multiToolDb = "dbatoolsci_community_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $multiToolDb
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $multiToolDb
 
             $splatMultiTool = @{
-                SqlInstance = $TestConfig.InstanceSingle
+                SqlInstance = $TestConfig.InstanceMulti1
                 Software    = "FirstResponderKit", "DarlingData"
                 Database    = $multiToolDb
                 Force       = $true
@@ -154,7 +154,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $splatCleanupMultiTool = @{
-                SqlInstance = $TestConfig.InstanceSingle
+                SqlInstance = $TestConfig.InstanceMulti1
                 Database    = $multiToolDb
                 ErrorAction = "SilentlyContinue"
             }
@@ -231,10 +231,10 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $singleToolDb = "dbatoolsci_community_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $singleToolDb
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $singleToolDb
 
             $splatSingleTool = @{
-                SqlInstance = $TestConfig.InstanceSingle
+                SqlInstance = $TestConfig.InstanceMulti1
                 Software    = "WhoIsActive"
                 Database    = $singleToolDb
                 Force       = $true
@@ -243,7 +243,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $singleToolResults = Install-DbaCommunitySoftware @splatSingleTool
 
             $splatMixedCase = @{
-                SqlInstance = $TestConfig.InstanceSingle
+                SqlInstance = $TestConfig.InstanceMulti1
                 Software    = "WhoIsActive", "whoisactive"
                 Database    = $singleToolDb
                 Force       = $true
@@ -258,7 +258,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $splatCleanupSingleTool = @{
-                SqlInstance = $TestConfig.InstanceSingle
+                SqlInstance = $TestConfig.InstanceMulti1
                 Database    = $singleToolDb
                 ErrorAction = "SilentlyContinue"
             }
@@ -284,7 +284,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            $defaultServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $defaultServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
             $masterDatabase = $defaultServer.Databases["master"]
 
             # The install replaces dbo.sp_WhoisActive in place, and a copy already sitting in master
@@ -297,7 +297,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $defaultDatabaseResults = $null
             if (-not $whoIsActivePreExisted) {
                 $splatDefaultDatabase = @{
-                    SqlInstance = $TestConfig.InstanceSingle
+                    SqlInstance = $TestConfig.InstanceMulti1
                     Software    = "WhoIsActive"
                     Force       = $true
                     Verbose     = $false
@@ -339,7 +339,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $coreSkipDb = "dbatoolsci_community_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $coreSkipDb
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $coreSkipDb
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
@@ -357,7 +357,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $sqlWatchCacheAfter = $null
             if ($PSEdition -eq "Core") {
                 $splatCoreSkip = @{
-                    SqlInstance     = $TestConfig.InstanceSingle
+                    SqlInstance     = $TestConfig.InstanceMulti1
                     Software        = "SQLWATCH", "WhoIsActive"
                     Database        = $coreSkipDb
                     Force           = $true
@@ -373,7 +373,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $splatCleanupCoreSkip = @{
-                SqlInstance = $TestConfig.InstanceSingle
+                SqlInstance = $TestConfig.InstanceMulti1
                 Database    = $coreSkipDb
                 ErrorAction = "SilentlyContinue"
             }
@@ -412,14 +412,14 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $continueDb = "dbatoolsci_community_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $continueDb
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $continueDb
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
             # The unreachable host goes first on purpose: it must fail before the real
             # instance is reached, so a row back from the real one proves the batch continued.
             $splatContinue = @{
-                SqlInstance   = "dbatoolsci_no_such_host", $TestConfig.InstanceSingle
+                SqlInstance   = "dbatoolsci_no_such_host", $TestConfig.InstanceMulti1
                 Software      = "WhoIsActive"
                 Database      = $continueDb
                 WarningAction = "SilentlyContinue"
@@ -431,7 +431,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $splatCleanupContinue = @{
-                SqlInstance = $TestConfig.InstanceSingle
+                SqlInstance = $TestConfig.InstanceMulti1
                 Database    = $continueDb
                 ErrorAction = "SilentlyContinue"
             }
@@ -451,7 +451,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
 
         It "Throws on the first failure when EnableException is used" {
             $splatContinueException = @{
-                SqlInstance     = "dbatoolsci_no_such_host", $TestConfig.InstanceSingle
+                SqlInstance     = "dbatoolsci_no_such_host", $TestConfig.InstanceMulti1
                 Software        = "WhoIsActive"
                 Database        = $continueDb
                 EnableException = $true
@@ -467,13 +467,13 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $whatIfDb = "dbatoolsci_community_$(Get-Random)"
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $whatIfDb
-            $whatIfServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $whatIfDb
+            $whatIfServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
             $splatNoBranch = @{
-                SqlInstance     = $TestConfig.InstanceSingle
+                SqlInstance     = $TestConfig.InstanceMulti1
                 Software        = "WhoIsActive"
                 Branch          = "main"
                 WhatIf          = $true
@@ -483,7 +483,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $null = Install-DbaCommunitySoftware @splatNoBranch
 
             $splatWhatIf = @{
-                SqlInstance = $TestConfig.InstanceSingle
+                SqlInstance = $TestConfig.InstanceMulti1
                 Software    = "WhoIsActive"
                 Database    = $whatIfDb
                 WhatIf      = $true
@@ -499,7 +499,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
             $splatCleanupWhatIf = @{
-                SqlInstance = $TestConfig.InstanceSingle
+                SqlInstance = $TestConfig.InstanceMulti1
                 Database    = $whatIfDb
                 ErrorAction = "SilentlyContinue"
             }

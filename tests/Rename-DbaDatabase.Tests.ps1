@@ -240,10 +240,14 @@ Describe $CommandName -Tag IntegrationTests {
             $dataExtension = [System.IO.Path]::GetExtension($previewDataFile.FileName)
             $logExtension = [System.IO.Path]::GetExtension($previewLogFile.FileName)
 
-            $fileOverrideResults.FNN[$previewDataFile.FileName] | Should -Be (Join-Path -Path $dataDirectory -ChildPath "dbatoolsci_filemove_data_override$dataExtension")
-            $fileOverrideResults.FNN[$previewLogFile.FileName] | Should -Be (Join-Path -Path $logDirectory -ChildPath "dbatoolsci_filemove_log_override$logExtension")
-            $fileDefaultResults.FNN[$previewDataFile.FileName] | Should -Be (Join-Path -Path $dataDirectory -ChildPath "dbatoolsci_filemove_ROWS$dataExtension")
-            $fileDefaultResults.FNN[$previewLogFile.FileName] | Should -Be (Join-Path -Path $logDirectory -ChildPath "dbatoolsci_filemove_journal$logExtension")
+            # Combine instead of Join-Path: these are paths of the instance, and Windows PowerShell
+            # validates the drive of Join-Path against the drives of the machine running the test,
+            # which does not have to own a drive the remote instance keeps its files on. Combine is
+            # also what the command itself builds the new path with.
+            $fileOverrideResults.FNN[$previewDataFile.FileName] | Should -Be ([System.IO.Path]::Combine($dataDirectory, "dbatoolsci_filemove_data_override$dataExtension"))
+            $fileOverrideResults.FNN[$previewLogFile.FileName] | Should -Be ([System.IO.Path]::Combine($logDirectory, "dbatoolsci_filemove_log_override$logExtension"))
+            $fileDefaultResults.FNN[$previewDataFile.FileName] | Should -Be ([System.IO.Path]::Combine($dataDirectory, "dbatoolsci_filemove_ROWS$dataExtension"))
+            $fileDefaultResults.FNN[$previewLogFile.FileName] | Should -Be ([System.IO.Path]::Combine($logDirectory, "dbatoolsci_filemove_journal$logExtension"))
         }
     }
 

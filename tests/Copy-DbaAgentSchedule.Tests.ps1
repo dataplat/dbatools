@@ -74,4 +74,131 @@ Describe $CommandName -Tag IntegrationTests {
             $schedule.ActiveStartTimeOfDay | Should -Be "01:00:00"
         }
     }
+
+    Context "When the destination schedule has no associated jobs and -Force is used" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The same schedule name on both instances, but with different start times, so we can
+            # tell a real drop and recreate from a silent no-op. The destination copy has no jobs.
+            $splatSourceForceSchedule = @{
+                SqlInstance       = $TestConfig.InstanceCopy1
+                Schedule          = "dbatoolsci_ForceSchedule"
+                FrequencyType     = "Daily"
+                FrequencyInterval = "Everyday"
+                StartTime         = "010000"
+                Force             = $true
+            }
+            $null = New-DbaAgentSchedule @splatSourceForceSchedule
+
+            $splatDestForceSchedule = @{
+                SqlInstance       = $TestConfig.InstanceCopy2
+                Schedule          = "dbatoolsci_ForceSchedule"
+                FrequencyType     = "Daily"
+                FrequencyInterval = "Everyday"
+                StartTime         = "050000"
+                Force             = $true
+            }
+            $null = New-DbaAgentSchedule @splatDestForceSchedule
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatCopyForce = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Schedule    = "dbatoolsci_ForceSchedule"
+                Force       = $true
+            }
+            $forceResults = @(Copy-DbaAgentSchedule @splatCopyForce)
+            $forceSchedules = @(Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceCopy2 -Schedule dbatoolsci_ForceSchedule)
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaAgentSchedule -SqlInstance $TestConfig.InstanceCopy1 -Schedule dbatoolsci_ForceSchedule -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentSchedule -SqlInstance $TestConfig.InstanceCopy2 -Schedule dbatoolsci_ForceSchedule -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Does not warn" {
+            $WarnVar | Should -BeNullOrEmpty
+        }
+
+        It "Reports the schedule as copied" {
+            $forceResults.Status | Should -Be "Successful"
+        }
+
+        It "Replaces the destination schedule with the source definition" {
+            $forceSchedules.ActiveStartTimeOfDay | Should -Be "01:00:00"
+        }
+
+        It "Leaves exactly one schedule with that name on the destination" {
+            $forceSchedules.Count | Should -Be 1
+        }
+    }
+
+    Context "When the destination schedule has associated jobs and -Force is used" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatSourceJobSchedule = @{
+                SqlInstance       = $TestConfig.InstanceCopy1
+                Schedule          = "dbatoolsci_JobSchedule"
+                FrequencyType     = "Daily"
+                FrequencyInterval = "Everyday"
+                StartTime         = "010000"
+                Force             = $true
+            }
+            $null = New-DbaAgentSchedule @splatSourceJobSchedule
+
+            # A schedule that a job uses cannot be dropped, so -Force must skip it and leave it alone.
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job dbatoolsci_ScheduleJob
+            $splatDestJobSchedule = @{
+                SqlInstance       = $TestConfig.InstanceCopy2
+                Job               = "dbatoolsci_ScheduleJob"
+                Schedule          = "dbatoolsci_JobSchedule"
+                FrequencyType     = "Daily"
+                FrequencyInterval = "Everyday"
+                StartTime         = "050000"
+                Force             = $true
+            }
+            $null = New-DbaAgentSchedule @splatDestJobSchedule
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatCopyJobSchedule = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Schedule    = "dbatoolsci_JobSchedule"
+                Force       = $true
+            }
+            $jobScheduleResults = @(Copy-DbaAgentSchedule @splatCopyJobSchedule)
+            $jobSchedules = @(Get-DbaAgentSchedule -SqlInstance $TestConfig.InstanceCopy2 -Schedule dbatoolsci_JobSchedule)
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job dbatoolsci_ScheduleJob -KeepUnusedSchedule -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentSchedule -SqlInstance $TestConfig.InstanceCopy1 -Schedule dbatoolsci_JobSchedule -ErrorAction SilentlyContinue
+            $null = Remove-DbaAgentSchedule -SqlInstance $TestConfig.InstanceCopy2 -Schedule dbatoolsci_JobSchedule -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Does not warn" {
+            $WarnVar | Should -BeNullOrEmpty
+        }
+
+        It "Reports the schedule as skipped" {
+            $jobScheduleResults.Status | Should -Be "Skipped"
+            $jobScheduleResults.Notes | Should -Be "Schedule has associated jobs"
+        }
+
+        It "Leaves the destination schedule unchanged" {
+            $jobSchedules.ActiveStartTimeOfDay | Should -Be "05:00:00"
+        }
+    }
 }

@@ -645,6 +645,7 @@ function Export-DbaUser {
                     $sql
                 }
             }
+            Write-ProgressHelper -Completed
         }
         # Just a single file, output path once here
         if (-Not $GenerateFilePerUser -and $FilePath) {

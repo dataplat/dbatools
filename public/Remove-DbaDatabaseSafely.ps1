@@ -417,7 +417,7 @@ function Remove-DbaDatabaseSafely {
                     ## Suggestion check for disk space before restore
                     ## Create Restore Script
                     try {
-                        $jobStepCommand = Restore-DbaDatabase -SqlInstance $destserver -Path $filename -OutputScriptOnly -WithReplace -EnableException
+                        $jobStepCommand = Restore-DbaDatabase -SqlInstance $destserver -Path $filename -OutputScriptOnly -WithReplace -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -EnableException
 
                         $jobStepParams = @{
                             SqlInstance     = $destination

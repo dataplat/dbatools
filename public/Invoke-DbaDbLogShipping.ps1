@@ -710,7 +710,10 @@ function Invoke-DbaDbLogShipping {
                 $DatabaseCollection = $SourceServer.Databases | Where-Object { $_.Name -in $Database }
             }
         } else {
-            Stop-Function -Message "Please supply a database to set up log shipping for" -Target $SourceSqlInstance -Continue
+            # No -Continue here: no loop encloses this call, so the continue would escape the
+            # command and eat an iteration of whatever loop the caller runs in.
+            Stop-Function -Message "Please supply a database to set up log shipping for" -Target $SourceSqlInstance
+            return
         }
 
         $existingPrimaryConfigurations = @{ }
@@ -1867,6 +1870,9 @@ WHERE pd.primary_database = N'$escapedPrimaryDatabase'
                                 MonitorCredential         = $PrimaryMonitorCredential
                                 ThresholdAlertEnabled     = $PrimaryThresholdAlertEnabled
                                 Force                     = $Force
+                                # A failure inside the helper has to throw so that the catch below
+                                # marks the setup as failed and the later phases are skipped.
+                                EnableException           = $true
                             }
 
                             # Add Azure credential if provided (for storage account key authentication)
@@ -1923,12 +1929,16 @@ WHERE pd.primary_database = N'$escapedPrimaryDatabase'
                                 SecondaryDatabase      = $SecondaryDatabase
                                 SecondaryServer        = $destInstance
                                 SecondarySqlCredential = $DestinationSqlCredential
+                                EnableException        = $true
                             }
                             New-DbaLogShippingPrimarySecondary @splatPrimarySecondary
                         } catch {
                             $setupResult = "Failed"
                             $comment = "Something went wrong setting up log shipping for primary instance"
-                            Stop-Function -Message "Something went wrong setting up log shipping for primary instance" -ErrorRecord $_ -Target $SourceSqlInstance -Continue
+                            # No -Continue here: it would advance the database loop past the status
+                            # object at the end of the iteration, so a failure would return nothing.
+                            # $setupResult already suppresses the later phases.
+                            Stop-Function -Message "Something went wrong setting up log shipping for primary instance" -ErrorRecord $_ -Target $SourceSqlInstance
                         }
                     }
                 }
@@ -1957,6 +1967,7 @@ WHERE pd.primary_database = N'$escapedPrimaryDatabase'
                                 PrimaryDatabase            = $($db.Name)
                                 RestoreJob                 = $DatabaseRestoreJob
                                 Force                      = $Force
+                                EnableException            = $true
                             }
 
                             # Add Azure credential if provided (for storage account key authentication)
@@ -2036,6 +2047,7 @@ WHERE pd.primary_database = N'$escapedPrimaryDatabase'
                                 MonitorServer             = $SecondaryMonitorServer
                                 MonitorServerSecurityMode = $SecondaryMonitorServerSecurityMode
                                 MonitorCredential         = $SecondaryMonitorCredential
+                                EnableException           = $true
                             }
                             New-DbaLogShippingSecondaryDatabase @splatSecondaryDatabase
 
@@ -2059,7 +2071,9 @@ WHERE pd.primary_database = N'$escapedPrimaryDatabase'
                         } catch {
                             $setupResult = "Failed"
                             $comment = "Something went wrong setting up log shipping for secondary instance"
-                            Stop-Function -Message "Something went wrong setting up log shipping for secondary instance.`n$($_.Exception.Message)" -ErrorRecord $_ -Target $destInstance -Continue
+                            # No -Continue here: it would advance the database loop past the status
+                            # object at the end of the iteration, so a failure would return nothing.
+                            Stop-Function -Message "Something went wrong setting up log shipping for secondary instance.`n$($_.Exception.Message)" -ErrorRecord $_ -Target $destInstance
                         }
                     }
                 }

@@ -196,5 +196,6 @@ function Install-DbaSqlWatch {
                 Write-Message -Level Verbose -Message "Finished installing/updating SqlWatch in $database on $instance."
             }
         }
+        Write-ProgressHelper -Completed
     }
 }

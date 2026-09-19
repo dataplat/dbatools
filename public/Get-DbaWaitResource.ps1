@@ -111,7 +111,10 @@ function Get-DbaWaitResource {
         try {
             $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
         } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            # No -Continue here: this block has no enclosing loop, so the continue would escape the command
+            # and eat an iteration of whatever loop the caller runs in (#10638).
+            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance
+            return
         }
 
         $null = $WaitResource -match '^(?<Type>[A-Z]*): (?<dbid>[0-9]*):*'

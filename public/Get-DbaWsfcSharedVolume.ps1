@@ -33,14 +33,15 @@ function Get-DbaWsfcSharedVolume {
     .OUTPUTS
         System.Management.ManagementObject
 
-        Returns one ClusterSharedVolume WMI object per shared volume found on the cluster, with three added NoteProperties providing cluster context.
+        Returns one MSCluster_ClusterSharedVolume WMI object per shared volume found on the cluster, with two added NoteProperties providing cluster context.
 
-        Default display properties (ClusterSharedVolume WMI class properties plus):
+        Default display properties (MSCluster_ClusterSharedVolume WMI class properties plus):
         - ClusterName: Name of the Windows Server Failover Cluster
         - ClusterFqdn: Fully qualified domain name of the failover cluster
-        - State: Current state of the cluster shared volume (Online, Offline, Failed, etc.), converted from numeric value
 
-        All properties from the underlying ClusterSharedVolume WMI class are accessible using Select-Object *.
+        The WMI class carries BackupState and FaultState for the volume; there is no single State property.
+
+        All properties from the underlying MSCluster_ClusterSharedVolume WMI class are accessible using Select-Object *.
 
     .LINK
         https://dbatools.io/Get-DbaWsfcSharedVolume
@@ -60,11 +61,10 @@ function Get-DbaWsfcSharedVolume {
     process {
         foreach ($computer in $computername) {
             $cluster = Get-DbaWsfcCluster -ComputerName $computer -Credential $Credential
-            $volume = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName ClusterSharedVolume
+            $volume = Get-DbaCmObject -Computername $computer -Credential $Credential -Namespace root\MSCluster -ClassName MSCluster_ClusterSharedVolume
             # I don't have a shared volume, so I can't see how to clean this up: Passthru
             $volume | Add-Member -Force -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
-            $volume | Add-Member -Force -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn
-            $volume | Add-Member -Force -NotePropertyName State -NotePropertyValue (Get-ResourceState $resource.State) -PassThru
+            $volume | Add-Member -Force -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn -PassThru
         }
     }
 }

@@ -19,7 +19,16 @@ function Set-DbaNetworkCertificate {
         If the given certificate is not returned as a suitable certificate, the command gets detailed information
         about why the given certificate is not suitable and fails with that information.
 
-        This command also grants read permissions for the service account on the certificate's private key.
+        This command also grants read permissions on the certificate's private key
+        to the per-service SID of the instance (NT SERVICE\MSSQLSERVER for the default
+        instance, NT SERVICE\MSSQL$<InstanceName> for named instances). The service SID
+        is always part of the process token of the SQL Server service, so the permission
+        is effective regardless of the account the service runs as, and it does not have
+        to be changed when that account changes.
+
+        The private key may live in a legacy Cryptographic Service Provider (what New-DbaComputerCertificate
+        creates) or in a Key Storage Provider (what New-SelfSignedCertificate creates by default). SQL Server
+        loads both key types, and the read permission is granted on the key file of either provider.
 
         The currently configured certificate can be unset by using the parameter -UnsetCertificate.
 
@@ -43,8 +52,9 @@ function Set-DbaNetworkCertificate {
     .PARAMETER Thumbprint
         Specifies the thumbprint (SHA-1 hash) of the certificate to configure as the network certificate.
         Use this when you know the specific certificate thumbprint from certificates already installed in LocalMachine\My.
-        Must be a 40-character hexadecimal string (no spaces). The certificate must have a private key and the SQL Server
-        service account will be granted read permissions to it.
+        Must be a 40-character hexadecimal string (no spaces). The certificate must have a private key.
+        Read permissions on the private key are granted to the per-service SID of the
+        instance (see the description above).
 
     .PARAMETER UnsetCertificate
         Unsets the currently configured network certificate for the SQL Server instance.
@@ -148,6 +158,60 @@ function Set-DbaNetworkCertificate {
             $verbose = @()
             $exception = $null
 
+            # This function is kept aligned in Get-DbaNetworkConfiguration, Test-DbaNetworkCertificate and Set-DbaNetworkCertificate.
+            # It opens the private key through the CNG API, which works for a legacy CSP key and for a Key Storage Provider (CNG) key
+            # in both PowerShell editions. $cert.PrivateKey does not: it is $null for a Key Storage Provider key in Windows PowerShell
+            # and always an RSACng in PowerShell 7, where CspKeyContainerInfo does not exist.
+            # SQL Server loads both key types (verified with SQL Server 2019, 2022 and 2025 and their Configuration Managers), so a
+            # Key Storage Provider key is not rejected. The Microsoft certificate requirements ask for KeySpec AT_KEYEXCHANGE, and a
+            # legacy CSP key created with AT_SIGNATURE reports a key usage of Signing only when opened through CNG, so the key has
+            # to allow decryption to be valid.
+            function Get-PrivateKeyInfo {
+                param ($Certificate)
+                $info = [PSCustomObject]@{
+                    Type      = $null
+                    Provider  = $null
+                    KeyNumber = $null
+                    FileName  = $null
+                    Valid     = $false
+                }
+                $rsa = $null
+                try {
+                    $rsa = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($Certificate)
+                } catch {
+                    # RSACertificateExtensions needs .NET Framework 4.6, older hosts only have the legacy property.
+                    try {
+                        $rsa = $Certificate.PrivateKey
+                    } catch {
+                        $rsa = $null
+                    }
+                }
+                if ($null -ne $rsa) {
+                    $info.Type = $rsa.GetType().FullName
+                }
+                if ($info.Type -eq "System.Security.Cryptography.RSACng") {
+                    $info.Provider = $rsa.Key.Provider.Provider
+                    $info.FileName = $rsa.Key.UniqueName
+                    $info.Valid = ($rsa.Key.KeyUsage -band [System.Security.Cryptography.CngKeyUsages]::Decryption) -ne 0
+                    # A legacy CSP is registered under Defaults\Provider, a Key Storage Provider is not. Only a legacy CSP key has a KeySpec.
+                    # The KeySpec is reported as the name of the KeyNumber enum value, because the enum itself arrives as a number
+                    # when this scriptblock runs on a remote host.
+                    if (Test-Path -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\$($info.Provider)") {
+                        if ($info.Valid) {
+                            $info.KeyNumber = "Exchange"
+                        } else {
+                            $info.KeyNumber = "Signature"
+                        }
+                    }
+                } elseif ($info.Type -eq "System.Security.Cryptography.RSACryptoServiceProvider") {
+                    $info.Provider = $rsa.CspKeyContainerInfo.ProviderName
+                    $info.KeyNumber = [string]$rsa.CspKeyContainerInfo.KeyNumber
+                    $info.FileName = $rsa.CspKeyContainerInfo.UniqueKeyContainerName
+                    $info.Valid = $rsa.CspKeyContainerInfo.KeyNumber -eq [System.Security.Cryptography.KeyNumber]::Exchange
+                }
+                $info
+            }
+
             try {
                 $verbose += "Starting initialization of WMI object"
 
@@ -179,14 +243,19 @@ function Set-DbaNetworkCertificate {
 
                     # -Force is needed to also find archived certificates, as SQL Server can use a certificate that has been archived.
                     $cert = Get-ChildItem Cert:\LocalMachine\My -Force -ErrorAction Stop | Where-Object { $_.Thumbprint -eq $thumbprint }
-                    $keyPath = $env:ProgramData + "\Microsoft\Crypto\RSA\MachineKeys\"
-                    if ($PSVersionTable.PSVersion.Major -ge 6) {
-                        $keyName = $cert.PrivateKey.Key.UniqueName
-                    } else {
-                        $keyName = $cert.PrivateKey.CspKeyContainerInfo.UniqueKeyContainerName
+                    $privateKeyInfo = Get-PrivateKeyInfo -Certificate $cert
+                    $verbose += "Private key provider: $($privateKeyInfo.Provider), key file name: $($privateKeyInfo.FileName)"
+                    if (-not $privateKeyInfo.FileName) {
+                        throw "Can't find private key path: the certificate has no accessible RSA private key"
                     }
-                    $keyFullPath = $keyPath + $keyName
-                    if (-not (Test-Path $keyFullPath -Type Leaf)) {
+                    # A legacy CSP keeps its machine keys under RSA\MachineKeys, a Key Storage Provider under Keys.
+                    $keyFullPath = $null
+                    foreach ($keyPath in ($env:ProgramData + "\Microsoft\Crypto\RSA\MachineKeys\"), ($env:ProgramData + "\Microsoft\Crypto\Keys\")) {
+                        if (Test-Path -Path ($keyPath + $privateKeyInfo.FileName) -Type Leaf) {
+                            $keyFullPath = $keyPath + $privateKeyInfo.FileName
+                        }
+                    }
+                    if (-not $keyFullPath) {
                         throw "Can't find private key path"
                     }
 
@@ -310,7 +379,17 @@ function Set-DbaNetworkCertificate {
                     if (-not $detailedCertTest.CertificateFound) { $failedChecks += "CertificateNotFound" }
                     if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.KeyUsagesValid) { $failedChecks += "KeyUsagesInvalid" }
                     if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.DnsNamesValid) { $failedChecks += "DnsNamesInvalid" }
-                    if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.PrivateKeyValid) { $failedChecks += "PrivateKeyInvalid" }
+                    if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.PrivateKeyValid) {
+                        # The private key has to allow key exchange (KeySpec AT_KEYEXCHANGE for a legacy CSP key, as the Microsoft
+                        # certificate requirements demand). Say what the key is, because "invalid" alone sends people looking at
+                        # permissions.
+                        if ($detailedCertTest.PrivateKeyType) {
+                            $privateKeyDescription = "a $($detailedCertTest.PrivateKeyProvider) key that allows signing only, SQL Server needs a key exchange key (KeySpec AT_KEYEXCHANGE for a legacy CSP key)"
+                        } else {
+                            $privateKeyDescription = "not accessible"
+                        }
+                        $failedChecks += "PrivateKeyInvalid (the private key is $privateKeyDescription)"
+                    }
                     if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.PublicKeyValid) { $failedChecks += "PublicKeyInvalid" }
                     if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.SignatureAlgorithmValid) { $failedChecks += "SignatureAlgorithmInvalid" }
                     if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.EnhancedKeyUsageValid) { $failedChecks += "EnhancedKeyUsageInvalid" }
@@ -404,6 +483,7 @@ function Set-DbaNetworkCertificate {
                     Notes                 = $notes
                 }
             }
+            Write-ProgressHelper -Completed
         }
     }
 }

@@ -198,19 +198,19 @@ function Copy-DbaDatabase {
         Migrates a single user database TestDB using Backup and restore from instance sql2014a to sql2014b. Backup files are stored in \\fileshare\sql\migration.
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2012 -Destination sql2014, sql2016 -DetachAttach -Reattach
+        PS C:\> Copy-DbaDatabase -Source sql2012 -Destination sql2014, sql2016 -AllDatabases -DetachAttach -Reattach
 
         Databases will be migrated from sql2012 to both sql2014 and sql2016 using the detach/copy files/attach method. The following will be performed: kick all users out of the database, detach all data/log files, files copied to the admin share (\\SqlSERVER\M$\MSSql...) of destination server, attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackup -Force
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -AllDatabases -BackupRestore -UseLastBackup -Force
 
-        Migrates all user databases to sqlcluster and sql2016 using the last Full, Diff and Log backups from sql204a. If the databases exist on the destinations, they will be dropped prior to attach.
+        Migrates all user databases to sqlcluster and sql2016 using the last Full, Diff and Log backups from sql2014a. If the databases exist on the destinations, they will be dropped prior to attach.
 
         Note that the backups must exist in a location accessible by all destination servers, such a network share.
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -SharedPath \\fileshare\sql\migration
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -AllDatabases -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -SharedPath \\fileshare\sql\migration
 
         Migrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\fileshare\sql\migration. If the database exists on the destination, it will be dropped prior to attach.
 
@@ -226,7 +226,7 @@ function Copy-DbaDatabase {
         Migrates Mydb from instance sql2014 to AzureDb on the specified Azure SQL Manage Instance, replacing the existing AzureDb if it exists, using the blob storage account https://someblob.blob.core.windows.net/sql using the Sql Server Credential AzBlobCredential
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -BackupRestore -SharedPath \\FS\Backup -AdvancedBackupParams @{ CompressBackup = $true }
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -AllDatabases -BackupRestore -SharedPath \\FS\Backup -AdvancedBackupParams @{ CompressBackup = $true }
 
         Migrates all user databases to sqlcluster. Uses the parameter CompressBackup with the backup command to save some space on the shared path.
 
@@ -408,8 +408,14 @@ function Copy-DbaDatabase {
                 # Add support for Full Text Catalogs in SQL Server 2005 and below
                 if ($sourceServer.VersionMajor -lt 10) {
                     try {
-                        $fttable = $null = $sourceServer.Databases[$dbName].ExecuteWithResults('sp_help_fulltext_catalogs')
-                        $allrows = $fttable.Tables[0].rows
+                        # This used to read "$fttable = $null = ...", which assigns $null to $fttable, so
+                        # $allrows was always empty and no full text catalog was ever copied.
+                        # The Query script method runs the procedure in that database like ExecuteWithResults
+                        # of SMO does, by issuing a USE on the connection context of the parent server, which
+                        # belongs to the caller - but it puts the previous database back. It returns the rows,
+                        # so there is no table to unwrap. See #10555.
+                        $fttable = $sourceServer.Databases[$dbName].Query("sp_help_fulltext_catalogs")
+                        $allrows = $fttable
                     } catch {
                         # Nothing, it's just not enabled
                         # here to avoid an empty catch
@@ -768,7 +774,17 @@ function Copy-DbaDatabase {
         }
 
         if ($Database -contains "master" -or $Database -contains "msdb" -or $Database -contains "tempdb") {
-            Stop-Function -Message "Migrating system databases is not currently supported." -Continue
+            # This rejects one input, not the command: a plain Stop-Function sets the interrupt flag that
+            # Test-FunctionInterrupt reads at the top of this block, which would drop every database piped in
+            # after this one, and -Continue has no loop to continue here (#10638). So throw under
+            # -EnableException, otherwise warn, and return from this process invocation only.
+            $systemDbMessage = "Migrating system databases is not currently supported."
+            if ($EnableException) {
+                Stop-Function -Message $systemDbMessage -EnableException $true
+            } else {
+                Write-Message -Level Warning -Message $systemDbMessage
+            }
+            return
         }
 
         try {
@@ -1006,7 +1022,11 @@ function Copy-DbaDatabase {
                 $sql = "SELECT db.Name AS dbname, type_desc AS FileType, mf.Name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN sys.databases db ON db.database_id = mf.database_id"
             }
 
-            $dbFileTable = $sourceServer.Databases['master'].ExecuteWithResults($sql)
+            # Read on the server connection and not through the master database: the statement queries
+            # sys.master_files and never needed a database context, and going through the Database object
+            # would move the connection of the caller into master. See #10555. ExecuteWithResults of the
+            # connection context returns the same DataSet, which the Select calls below rely on.
+            $dbFileTable = $sourceServer.ConnectionContext.ExecuteWithResults($sql)
 
             if ($destServer.VersionMajor -eq 8) {
                 $sql = "SELECT DB_NAME (dbid) AS dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END AS filetype FROM sysaltfiles"
@@ -1014,7 +1034,8 @@ function Copy-DbaDatabase {
                 $sql = "SELECT db.Name AS dbname, type_desc AS FileType, mf.Name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN sys.databases db ON db.database_id = mf.database_id"
             }
 
-            $remoteDbFileTable = $destServer.Databases['master'].ExecuteWithResults($sql)
+            # See the comment above - the same for the destination.
+            $remoteDbFileTable = $destServer.ConnectionContext.ExecuteWithResults($sql)
 
             $fileStructure = Get-SqlFileStructure -sourceserver $sourceServer -destserver $destServer -databaselist $databaseList -ReuseSourceFolderStructure $ReuseSourceFolderStructure
 
@@ -1443,6 +1464,15 @@ function Copy-DbaDatabase {
                             If ($Pscmdlet.ShouldProcess($destServer.Name, "Setting db owner to $dbowner for $destinationDbName")) {
                                 # needed because the newly restored database doesn't show up
                                 $destServer.Databases.Refresh()
+                                # Refresh() on the collection only updates its membership. A database that
+                                # already existed on the destination - a copy with -WithReplace or -Continue -
+                                # keeps the property values SMO cached while the restore had it inaccessible,
+                                # and Set-DbaDbOwner would then skip it as not accessible. Refreshing the
+                                # object itself rereads those values.
+                                $destDb = $destServer.Databases[$destinationDbName]
+                                if ($destDb) {
+                                    $destDb.Refresh()
+                                }
                                 $dbOwner = $sourceServer.Databases[$dbName].Owner
                                 if ($null -eq $dbOwner -or $destServer.Logins.Name -notcontains $dbOwner) {
                                     $dbOwner = Get-SaLoginName -SqlInstance $destServer

@@ -470,441 +470,450 @@ function Install-DbaMaintenanceSolution {
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
+            try {
 
-            if ($server.Version.Major -lt 14) {
-                Stop-Function -Message "The Maintenance Solution is not supported on SQL Server version $($server.Version). Skipping $instance." -Target $instance -Continue
-            }
-
-            $db = $server.Databases[$Database]
-
-            if ($null -eq $db) {
-                Stop-Function -Message "Database $Database not found on $instance. Skipping." -Target $instance -Continue
-            }
-
-            if ((Test-Bound -ParameterName ReplaceExisting -Not)) {
-                $procs = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
-                $tables = Get-DbaDbTable -SqlInstance $server -Database $Database -Table CommandLog, Queue, QueueDatabase -IncludeSystemDBs | Where-Object Database -eq $Database
-
-                if ($null -ne $procs -or $null -ne $tables) {
-                    Stop-Function -Message "The Maintenance Solution already exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."
-                    continue
+                if ($server.Version.Major -lt 14) {
+                    Stop-Function -Message "The Maintenance Solution is not supported on SQL Server version $($server.Version). Skipping $instance." -Target $instance -Continue
                 }
-            }
 
-            if ((Test-Bound -ParameterName BackupLocation -Not)) {
-                $BackupLocation = (Get-DbaDefaultPath -SqlInstance $server).Backup
-            }
-            Write-ProgressHelper -ExcludePercent -Message "Ola Hallengren's solution will be installed on database $Database"
+                $db = $server.Databases[$Database]
 
-            if ($Solution -notcontains 'All') {
-                $required = @('CommandExecute.sql')
-            }
+                if ($null -eq $db) {
+                    Stop-Function -Message "Database $Database not found on $instance. Skipping." -Target $instance -Continue
+                }
 
-            if ($LogToTable -and $InstallJobs -eq $false) {
-                $required += 'CommandLog.sql'
-            }
+                if ((Test-Bound -ParameterName ReplaceExisting -Not)) {
+                    $procs = Get-DbaModule -SqlInstance $server -Database $Database | Where-Object Name -in 'CommandExecute', 'DatabaseBackup', 'DatabaseIntegrityCheck', 'IndexOptimize'
+                    $tables = Get-DbaDbTable -SqlInstance $server -Database $Database -Table CommandLog, Queue, QueueDatabase -IncludeSystemDBs | Where-Object Database -eq $Database
 
-            if ($Solution -contains 'Backup') {
-                $required += 'DatabaseBackup.sql'
-            }
+                    if ($null -ne $procs -or $null -ne $tables) {
+                        Stop-Function -Message "The Maintenance Solution already exists in $Database on $instance. Use -ReplaceExisting to automatically drop and recreate."
+                        continue
+                    }
+                }
 
-            if ($Solution -contains 'IntegrityCheck') {
-                $required += 'DatabaseIntegrityCheck.sql'
-            }
+                if ((Test-Bound -ParameterName BackupLocation -Not)) {
+                    $BackupLocation = (Get-DbaDefaultPath -SqlInstance $server).Backup
+                }
+                Write-ProgressHelper -ExcludePercent -Message "Ola Hallengren's solution will be installed on database $Database"
 
-            if ($Solution -contains 'IndexOptimize') {
-                $required += 'IndexOptimize.sql'
-            }
+                if ($Solution -notcontains 'All') {
+                    $required = @('CommandExecute.sql')
+                }
 
-            if ($Solution -contains 'All' -and $InstallJobs) {
-                $required += 'MaintenanceSolution.sql'
-            }
+                if ($LogToTable -and $InstallJobs -eq $false) {
+                    $required += 'CommandLog.sql'
+                }
 
-            if ($Solution -contains 'All' -and $InstallJobs -eq $false) {
-                $required += 'CommandExecute.sql'
-                $required += 'DatabaseBackup.sql'
-                $required += 'DatabaseIntegrityCheck.sql'
-                $required += 'IndexOptimize.sql'
-            }
+                if ($Solution -contains 'Backup') {
+                    $required += 'DatabaseBackup.sql'
+                }
 
-            if ($InstallParallel) {
-                $required += 'Queue.sql'
-                $required += 'QueueDatabase.sql'
-            }
+                if ($Solution -contains 'IntegrityCheck') {
+                    $required += 'DatabaseIntegrityCheck.sql'
+                }
 
-            $listOfFiles = Get-ChildItem -Filter "*.sql" -Path $localCachedCopy -Recurse | Select-Object -ExpandProperty FullName
+                if ($Solution -contains 'IndexOptimize') {
+                    $required += 'IndexOptimize.sql'
+                }
 
-            $fileContents = Get-DbaOlaWithParameters -listOfFiles $listOfFiles
+                if ($Solution -contains 'All' -and $InstallJobs) {
+                    $required += 'MaintenanceSolution.sql'
+                }
 
-            $cleanupQuery = $null
-            if ($ReplaceExisting) {
-                [string]$cleanupQuery = $("
-                            IF OBJECT_ID('[dbo].[CommandExecute]', 'P') IS NOT NULL
-                                DROP PROCEDURE [dbo].[CommandExecute];
-                            IF OBJECT_ID('[dbo].[DatabaseBackup]', 'P') IS NOT NULL
-                                DROP PROCEDURE [dbo].[DatabaseBackup];
-                            IF OBJECT_ID('[dbo].[DatabaseIntegrityCheck]', 'P') IS NOT NULL
-                                DROP PROCEDURE [dbo].[DatabaseIntegrityCheck];
-                            IF OBJECT_ID('[dbo].[IndexOptimize]', 'P') IS NOT NULL
-                                DROP PROCEDURE [dbo].[IndexOptimize];
-                            ")
-
-                if ($LogToTable) {
-                    $cleanupQuery += $("
-                            IF OBJECT_ID('[dbo].[CommandLog]', 'U') IS NOT NULL
-                                DROP TABLE [dbo].[CommandLog];
-                            ")
+                if ($Solution -contains 'All' -and $InstallJobs -eq $false) {
+                    $required += 'CommandExecute.sql'
+                    $required += 'DatabaseBackup.sql'
+                    $required += 'DatabaseIntegrityCheck.sql'
+                    $required += 'IndexOptimize.sql'
                 }
 
                 if ($InstallParallel) {
-                    $cleanupQuery += $("
-                            IF OBJECT_ID('[dbo].[QueueDatabase]', 'U') IS NOT NULL
-                                DROP TABLE [dbo].[QueueDatabase];
-                            IF OBJECT_ID('[dbo].[Queue]', 'U') IS NOT NULL
-                                DROP TABLE [dbo].[Queue];
-                            ")
+                    $required += 'Queue.sql'
+                    $required += 'QueueDatabase.sql'
                 }
 
-                if ($Pscmdlet.ShouldProcess($instance, "Dropping all objects created by Ola's Maintenance Solution")) {
-                    Write-ProgressHelper -ExcludePercent -Message "Dropping objects created by Ola's Maintenance Solution"
-                    # Invoke-DbaQuery names the database instead of running on the connection of the caller, which
-                    # $db.Invoke() would leave in that database. This is how the installation below runs as well.
-                    $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $cleanupQuery -EnableException
-                }
+                $listOfFiles = Get-ChildItem -Filter "*.sql" -Path $localCachedCopy -Recurse | Select-Object -ExpandProperty FullName
 
-                # Remove Ola's Jobs
-                if ($InstallJobs -and $ReplaceExisting) {
-                    Write-ProgressHelper -ExcludePercent -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution"
-                    $jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
-                    if ($jobs) {
-                        $jobs | ForEach-Object {
-                            if ($Pscmdlet.ShouldProcess($instance, "Dropping job $_.name")) {
-                                $null = Remove-DbaAgentJob -SqlInstance $server -Job $_.name -Confirm:$false
-                            }
-                        }
+                $fileContents = Get-DbaOlaWithParameters -listOfFiles $listOfFiles
+
+                $cleanupQuery = $null
+                if ($ReplaceExisting) {
+                    [string]$cleanupQuery = $("
+                                IF OBJECT_ID('[dbo].[CommandExecute]', 'P') IS NOT NULL
+                                    DROP PROCEDURE [dbo].[CommandExecute];
+                                IF OBJECT_ID('[dbo].[DatabaseBackup]', 'P') IS NOT NULL
+                                    DROP PROCEDURE [dbo].[DatabaseBackup];
+                                IF OBJECT_ID('[dbo].[DatabaseIntegrityCheck]', 'P') IS NOT NULL
+                                    DROP PROCEDURE [dbo].[DatabaseIntegrityCheck];
+                                IF OBJECT_ID('[dbo].[IndexOptimize]', 'P') IS NOT NULL
+                                    DROP PROCEDURE [dbo].[IndexOptimize];
+                                ")
+
+                    if ($LogToTable) {
+                        $cleanupQuery += $("
+                                IF OBJECT_ID('[dbo].[CommandLog]', 'U') IS NOT NULL
+                                    DROP TABLE [dbo].[CommandLog];
+                                ")
                     }
-                }
-            }
 
-            Write-ProgressHelper -ExcludePercent -Message "Installing on server $instance, database $Database"
-
-            $result = "Success"
-            foreach ($file in $fileContents.Keys | Sort-Object) {
-                $shortFileName = Split-Path $file -Leaf
-                if ($required.Contains($shortFileName)) {
-                    if ($Pscmdlet.ShouldProcess($instance, "Installing $shortFileName")) {
-                        Write-ProgressHelper -ExcludePercent -Message "Installing $shortFileName"
-                        $sql = $fileContents[$file]
-                        try {
-                            # We use Invoke-DbaQuery because using ExecuteNonQuery with long batches causes problems on AppVeyor.
-                            $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $sql -EnableException
-                        } catch {
-                            $result = "Failed"
-                            Stop-Function -Message "Could not execute $shortFileName in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
-                        }
+                    if ($InstallParallel) {
+                        $cleanupQuery += $("
+                                IF OBJECT_ID('[dbo].[QueueDatabase]', 'U') IS NOT NULL
+                                    DROP TABLE [dbo].[QueueDatabase];
+                                IF OBJECT_ID('[dbo].[Queue]', 'U') IS NOT NULL
+                                    DROP TABLE [dbo].[Queue];
+                                ")
                     }
-                }
-            }
 
-            if ($PSBoundParameters.AutoScheduleJobs) {
-                Write-ProgressHelper -ExcludePercent -Message "Scheduling jobs"
+                    if ($Pscmdlet.ShouldProcess($instance, "Dropping all objects created by Ola's Maintenance Solution")) {
+                        Write-ProgressHelper -ExcludePercent -Message "Dropping objects created by Ola's Maintenance Solution"
+                        # Invoke-DbaQuery names the database instead of running on the connection of the caller, which
+                        # $db.Invoke() would leave in that database. This is how the installation below runs as well.
+                        $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $cleanupQuery -EnableException
+                    }
 
-                <#
-                    WeeklyFull will create weekly full, daily differential and 15 minute log backups.
-
-                    To skip diffs, specify NoDiff in the values. To perform log backups each hour instead of every
-                    15 minutes, specify HourlyLog in the values.
-
-                    System databases:
-                    Full backup every day
-                    Integrity check one day per week
-
-                    I (Ola) recommend that you run a full backup after the index maintenance. The following differential backups will then be small. I also recommend that you perform the full backup after the integrity check. Then you know that the integrity of the backup is okay.
-
-                    Cleanup:
-
-                    sp_delete_backuphistory one day per week
-                    sp_purge_jobhistory one day per week
-                    CommandLog cleanup one day per week
-                    Output file cleanup one day per week
-                #>
-                $null = $server.Refresh()
-                $null = $server.JobServer.Jobs.Refresh()
-
-                $schedules = Get-DbaAgentSchedule -SqlInstance $server
-                $sunday = $schedules | Where-Object FrequencyInterval -eq 1
-                $start = $StartTime
-                $hour = New-TimeSpan -Hours 1
-                $twohours = New-TimeSpan -Hours 2
-                $twelvehours = New-TimeSpan -Hours 12
-                $twentyfourhours = New-TimeSpan -Hours 24
-
-                if ($sunday) {
-                    foreach ($time in $sunday) {
-                        if ($time.ActiveStartTimeOfDay) {
-                            if ($time.ActiveStartTimeOfDay.ToString().Replace(":", "") -eq $start) {
-                                $start = $time.ActiveStartTimeOfDay.Add($hour).ToString().Replace(":", "")
+                    # Remove Ola's Jobs
+                    if ($InstallJobs -and $ReplaceExisting) {
+                        Write-ProgressHelper -ExcludePercent -Message "Removing existing SQL Agent Jobs created by Ola's Maintenance Solution"
+                        $jobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
+                        if ($jobs) {
+                            $jobs | ForEach-Object {
+                                if ($Pscmdlet.ShouldProcess($instance, "Dropping job $_.name")) {
+                                    $null = Remove-DbaAgentJob -SqlInstance $server -Job $_.name -Confirm:$false
+                                }
                             }
                         }
                     }
                 }
 
-                if ("WeeklyFull" -in $AutoScheduleJobs) {
-                    $fullparams = @{
-                        SqlInstance       = $server
-                        Job               = "DatabaseBackup - USER_DATABASES - FULL"
-                        Schedule          = "Weekly Full User Backup"
-                        FrequencyType     = "Weekly"
-                        FrequencyInterval = "Sunday" # 1
-                        StartTime         = $start
-                        Force             = $true
+                Write-ProgressHelper -ExcludePercent -Message "Installing on server $instance, database $Database"
+
+                $result = "Success"
+                foreach ($file in $fileContents.Keys | Sort-Object) {
+                    $shortFileName = Split-Path $file -Leaf
+                    if ($required.Contains($shortFileName)) {
+                        if ($Pscmdlet.ShouldProcess($instance, "Installing $shortFileName")) {
+                            Write-ProgressHelper -ExcludePercent -Message "Installing $shortFileName"
+                            $sql = $fileContents[$file]
+                            try {
+                                # We use Invoke-DbaQuery because using ExecuteNonQuery with long batches causes problems on AppVeyor.
+                                $null = Invoke-DbaQuery -SqlInstance $server -Database $Database -Query $sql -EnableException
+                            } catch {
+                                $result = "Failed"
+                                Stop-Function -Message "Could not execute $shortFileName in $Database on $instance" -ErrorRecord $_ -Target $db -Continue
+                            }
+                        }
                     }
-                } elseif ("DailyFull" -in $AutoScheduleJobs) {
-                    $fullparams = @{
+                }
+
+                if ($PSBoundParameters.AutoScheduleJobs) {
+                    Write-ProgressHelper -ExcludePercent -Message "Scheduling jobs"
+
+                    <#
+                        WeeklyFull will create weekly full, daily differential and 15 minute log backups.
+
+                        To skip diffs, specify NoDiff in the values. To perform log backups each hour instead of every
+                        15 minutes, specify HourlyLog in the values.
+
+                        System databases:
+                        Full backup every day
+                        Integrity check one day per week
+
+                        I (Ola) recommend that you run a full backup after the index maintenance. The following differential backups will then be small. I also recommend that you perform the full backup after the integrity check. Then you know that the integrity of the backup is okay.
+
+                        Cleanup:
+
+                        sp_delete_backuphistory one day per week
+                        sp_purge_jobhistory one day per week
+                        CommandLog cleanup one day per week
+                        Output file cleanup one day per week
+                    #>
+                    $null = $server.Refresh()
+                    $null = $server.JobServer.Jobs.Refresh()
+
+                    $schedules = Get-DbaAgentSchedule -SqlInstance $server
+                    $sunday = $schedules | Where-Object FrequencyInterval -eq 1
+                    $start = $StartTime
+                    $hour = New-TimeSpan -Hours 1
+                    $twohours = New-TimeSpan -Hours 2
+                    $twelvehours = New-TimeSpan -Hours 12
+                    $twentyfourhours = New-TimeSpan -Hours 24
+
+                    if ($sunday) {
+                        foreach ($time in $sunday) {
+                            if ($time.ActiveStartTimeOfDay) {
+                                if ($time.ActiveStartTimeOfDay.ToString().Replace(":", "") -eq $start) {
+                                    $start = $time.ActiveStartTimeOfDay.Add($hour).ToString().Replace(":", "")
+                                }
+                            }
+                        }
+                    }
+
+                    if ("WeeklyFull" -in $AutoScheduleJobs) {
+                        $fullparams = @{
+                            SqlInstance       = $server
+                            Job               = "DatabaseBackup - USER_DATABASES - FULL"
+                            Schedule          = "Weekly Full User Backup"
+                            FrequencyType     = "Weekly"
+                            FrequencyInterval = "Sunday" # 1
+                            StartTime         = $start
+                            Force             = $true
+                        }
+                    } elseif ("DailyFull" -in $AutoScheduleJobs) {
+                        $fullparams = @{
+                            SqlInstance       = $server
+                            Job               = "DatabaseBackup - USER_DATABASES - FULL"
+                            Schedule          = "Daily Full User Backup"
+                            FrequencyType     = "Daily"
+                            FrequencyInterval = "EveryDay"
+                            StartTime         = $start
+                            Force             = $true
+                        }
+                    }
+
+                    if ("WeeklyFull" -in $AutoScheduleJobs -or "DailyFull" -in $AutoScheduleJobs) {
+                        $fullschedule = New-DbaAgentSchedule @fullparams
+                    }
+
+                    if ($fullschedule.ActiveStartTimeOfDay) {
+                        $systemdaily = $fullschedule.ActiveStartTimeOfDay.Add($twohours) -replace ":|\-|1\.", ""
+                    } else {
+                        $systemdaily = "031500"
+                    }
+
+                    $fullsystemparams = @{
                         SqlInstance       = $server
-                        Job               = "DatabaseBackup - USER_DATABASES - FULL"
-                        Schedule          = "Daily Full User Backup"
+                        Job               = "DatabaseBackup - SYSTEM_DATABASES - FULL"
+                        Schedule          = "Daily Full System Backup"
                         FrequencyType     = "Daily"
                         FrequencyInterval = "EveryDay"
-                        StartTime         = $start
+                        StartTime         = $systemdaily
                         Force             = $true
                     }
-                }
 
-                if ("WeeklyFull" -in $AutoScheduleJobs -or "DailyFull" -in $AutoScheduleJobs) {
-                    $fullschedule = New-DbaAgentSchedule @fullparams
-                }
+                    $null = New-DbaAgentSchedule @fullsystemparams
 
-                if ($fullschedule.ActiveStartTimeOfDay) {
-                    $systemdaily = $fullschedule.ActiveStartTimeOfDay.Add($twohours) -replace ":|\-|1\.", ""
-                } else {
-                    $systemdaily = "031500"
-                }
+                    if ($fullschedule.ActiveStartTimeOfDay) {
+                        $integrity = $fullschedule.ActiveStartTimeOfDay.Subtract($twelvehours) -replace ":|\-|1\.", ""
+                    } else {
+                        $integrity = "044500"
+                    }
 
-                $fullsystemparams = @{
-                    SqlInstance       = $server
-                    Job               = "DatabaseBackup - SYSTEM_DATABASES - FULL"
-                    Schedule          = "Daily Full System Backup"
-                    FrequencyType     = "Daily"
-                    FrequencyInterval = "EveryDay"
-                    StartTime         = $systemdaily
-                    Force             = $true
-                }
-
-                $null = New-DbaAgentSchedule @fullsystemparams
-
-                if ($fullschedule.ActiveStartTimeOfDay) {
-                    $integrity = $fullschedule.ActiveStartTimeOfDay.Subtract($twelvehours) -replace ":|\-|1\.", ""
-                } else {
-                    $integrity = "044500"
-                }
-
-                $integrityparams = @{
-                    SqlInstance       = $server
-                    Job               = "DatabaseIntegrityCheck - SYSTEM_DATABASES", "DatabaseIntegrityCheck - USER_DATABASES"
-                    Schedule          = "Weekly Integrity Check"
-                    FrequencyType     = "Weekly"
-                    FrequencyInterval = "Saturday" # 6
-                    StartTime         = $integrity
-                    Force             = $true
-                }
-
-                $null = New-DbaAgentSchedule @integrityparams
-
-                if ($fullschedule.ActiveStartTimeOfDay) {
-                    $indexoptimize = $fullschedule.ActiveStartTimeOfDay.Subtract($twentyfourhours) -replace ":|\-|1\.", ""
-                } else {
-                    $indexoptimize = "224500"
-                }
-
-
-                $integrityparams = @{
-                    SqlInstance       = $server
-                    Job               = "IndexOptimize - USER_DATABASES"
-                    Schedule          = "Weekly Index Optimization"
-                    FrequencyType     = "Weekly"
-                    FrequencyInterval = "Saturday" # 6
-                    StartTime         = $indexoptimize
-                    Force             = $true
-                }
-
-                $null = New-DbaAgentSchedule @integrityparams
-
-                if ("NoDiff" -notin $AutoScheduleJobs -and "DailyFull" -notin $AutoScheduleJobs) {
-                    $diffparams = @{
+                    $integrityparams = @{
                         SqlInstance       = $server
-                        Job               = "DatabaseBackup - USER_DATABASES - DIFF"
-                        Schedule          = "Daily Diff Backup"
+                        Job               = "DatabaseIntegrityCheck - SYSTEM_DATABASES", "DatabaseIntegrityCheck - USER_DATABASES"
+                        Schedule          = "Weekly Integrity Check"
                         FrequencyType     = "Weekly"
-                        FrequencyInterval = 126 # all days but sunday
-                        StartTime         = $start
+                        FrequencyInterval = "Saturday" # 6
+                        StartTime         = $integrity
                         Force             = $true
                     }
-                    $null = New-DbaAgentSchedule @diffparams
-                }
 
-                if ("HourlyLog" -in $AutoScheduleJobs) {
-                    $logparams = @{
-                        SqlInstance             = $server
-                        Job                     = "DatabaseBackup - USER_DATABASES - LOG"
-                        Schedule                = "Hourly Log Backup"
-                        FrequencyType           = "Daily"
-                        FrequencyInterval       = 1
-                        FrequencySubDayType     = "Hours"
-                        FrequencySubDayInterval = 1
-                        StartTime               = "000000"
-                        Force                   = $true
-                    }
-                } else {
-                    $logparams = @{
-                        SqlInstance             = $server
-                        Job                     = "DatabaseBackup - USER_DATABASES - LOG"
-                        Schedule                = "15 Minute Log Backup"
-                        FrequencyType           = "Daily"
-                        FrequencyInterval       = 1
-                        FrequencySubDayInterval = 15
-                        FrequencySubDayType     = "Minute"
-                        StartTime               = "000000"
-                        Force                   = $true
-                    }
-                }
-                $null = New-DbaAgentSchedule @logparams
+                    $null = New-DbaAgentSchedule @integrityparams
 
-                # You know... why not? These are lightweight tasks.
-                $cleanparams = @{
-                    SqlInstance       = $server
-                    Job               = "Output File Cleanup", "sp_delete_backuphistory", "sp_purge_jobhistory", "CommandLog Cleanup"
-                    Schedule          = "Weekly Clean and Purge"
-                    FrequencyType     = "Weekly"
-                    FrequencyInterval = "Sunday"
-                    StartTime         = "235000" # 11:50 pm
-                    Force             = $true
-                }
-
-                $null = New-DbaAgentSchedule @cleanparams
-            }
-
-            # Modify backup job steps to include additional parameters
-            if ($InstallJobs) {
-                Write-ProgressHelper -ExcludePercent -Message "Applying additional backup parameters to job steps"
-
-                $null = $server.Refresh()
-                $null = $server.JobServer.Jobs.Refresh()
-
-                $backupJobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
-
-                foreach ($job in $backupJobs) {
-                    if ($job.Name -notmatch "DatabaseBackup") {
-                        continue
+                    if ($fullschedule.ActiveStartTimeOfDay) {
+                        $indexoptimize = $fullschedule.ActiveStartTimeOfDay.Subtract($twentyfourhours) -replace ":|\-|1\.", ""
+                    } else {
+                        $indexoptimize = "224500"
                     }
 
-                    $jobSteps = Get-DbaAgentJobStep -SqlInstance $server -Job $job.Name
 
-                    foreach ($step in $jobSteps) {
-                        $originalCommand = $step.Command
-                        $modifiedCommand = $originalCommand
+                    $integrityparams = @{
+                        SqlInstance       = $server
+                        Job               = "IndexOptimize - USER_DATABASES"
+                        Schedule          = "Weekly Index Optimization"
+                        FrequencyType     = "Weekly"
+                        FrequencyInterval = "Saturday" # 6
+                        StartTime         = $indexoptimize
+                        Force             = $true
+                    }
 
-                        # Add ChangeBackupType parameter for DIFF and LOG backups only
-                        if ($ChangeBackupType -and ($job.Name -match "DIFF|LOG")) {
-                            if ($modifiedCommand -notmatch "@ChangeBackupType") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@ChangeBackupType = 'Y'"
-                            }
+                    $null = New-DbaAgentSchedule @integrityparams
+
+                    if ("NoDiff" -notin $AutoScheduleJobs -and "DailyFull" -notin $AutoScheduleJobs) {
+                        $diffparams = @{
+                            SqlInstance       = $server
+                            Job               = "DatabaseBackup - USER_DATABASES - DIFF"
+                            Schedule          = "Daily Diff Backup"
+                            FrequencyType     = "Weekly"
+                            FrequencyInterval = 126 # all days but sunday
+                            StartTime         = $start
+                            Force             = $true
+                        }
+                        $null = New-DbaAgentSchedule @diffparams
+                    }
+
+                    if ("HourlyLog" -in $AutoScheduleJobs) {
+                        $logparams = @{
+                            SqlInstance             = $server
+                            Job                     = "DatabaseBackup - USER_DATABASES - LOG"
+                            Schedule                = "Hourly Log Backup"
+                            FrequencyType           = "Daily"
+                            FrequencyInterval       = 1
+                            FrequencySubDayType     = "Hours"
+                            FrequencySubDayInterval = 1
+                            StartTime               = "000000"
+                            Force                   = $true
+                        }
+                    } else {
+                        $logparams = @{
+                            SqlInstance             = $server
+                            Job                     = "DatabaseBackup - USER_DATABASES - LOG"
+                            Schedule                = "15 Minute Log Backup"
+                            FrequencyType           = "Daily"
+                            FrequencyInterval       = 1
+                            FrequencySubDayInterval = 15
+                            FrequencySubDayType     = "Minute"
+                            StartTime               = "000000"
+                            Force                   = $true
+                        }
+                    }
+                    $null = New-DbaAgentSchedule @logparams
+
+                    # You know... why not? These are lightweight tasks.
+                    $cleanparams = @{
+                        SqlInstance       = $server
+                        Job               = "Output File Cleanup", "sp_delete_backuphistory", "sp_purge_jobhistory", "CommandLog Cleanup"
+                        Schedule          = "Weekly Clean and Purge"
+                        FrequencyType     = "Weekly"
+                        FrequencyInterval = "Sunday"
+                        StartTime         = "235000" # 11:50 pm
+                        Force             = $true
+                    }
+
+                    $null = New-DbaAgentSchedule @cleanparams
+                }
+
+                # Modify backup job steps to include additional parameters
+                if ($InstallJobs) {
+                    Write-ProgressHelper -ExcludePercent -Message "Applying additional backup parameters to job steps"
+
+                    $null = $server.Refresh()
+                    $null = $server.JobServer.Jobs.Refresh()
+
+                    $backupJobs = Get-DbaAgentJob -SqlInstance $server | Where-Object Description -match "hallengren"
+
+                    foreach ($job in $backupJobs) {
+                        if ($job.Name -notmatch "DatabaseBackup") {
+                            continue
                         }
 
-                        # Add ModificationLevel parameter for jobs with ChangeBackupType
-                        if ($ModificationLevel -gt 0 -and ($job.Name -match "DIFF")) {
-                            if ($modifiedCommand -notmatch "@ModificationLevel") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@ModificationLevel = $ModificationLevel"
-                            }
-                        }
+                        $jobSteps = Get-DbaAgentJobStep -SqlInstance $server -Job $job.Name
 
-                        # Compress parameter for all backup jobs
-                        # Default: do not include @Compress (instance-level setting applies)
-                        if ($Compress -eq "ForceOn") {
-                            $modifiedCommand = $modifiedCommand -replace "@Compress = 'N'", "@Compress = 'Y'"
-                            if ($modifiedCommand -notmatch "@Compress") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Compress = 'Y'"
-                            }
-                        } elseif ($Compress -eq "ForceOff") {
-                            $modifiedCommand = $modifiedCommand -replace "@Compress = 'Y'", "@Compress = 'N'"
-                            if ($modifiedCommand -notmatch "@Compress") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Compress = 'N'"
-                            }
-                        } elseif ($Compress -eq "Remove") {
-                            $modifiedCommand = $modifiedCommand -replace "@Compress = '[YN]',\r?\n", ""
-                            $modifiedCommand = $modifiedCommand -replace ",\r?\n@Compress = '[YN]'", ""
-                        }
+                        foreach ($step in $jobSteps) {
+                            $originalCommand = $step.Command
+                            $modifiedCommand = $originalCommand
 
-                        # Add CopyOnly parameter for all backup jobs
-                        if ($CopyOnly) {
-                            if ($modifiedCommand -notmatch "@CopyOnly") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@CopyOnly = 'Y'"
-                            }
-                        }
-
-                        # Verify parameter for all backup jobs
-                        # Ola includes @Verify = 'Y' by default. Default: leave unchanged.
-                        if ($Verify -eq "ForceOn") {
-                            $modifiedCommand = $modifiedCommand -replace "@Verify = 'N'", "@Verify = 'Y'"
-                            if ($modifiedCommand -notmatch "@Verify") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Verify = 'Y'"
-                            }
-                        } elseif ($Verify -eq "ForceOff") {
-                            $modifiedCommand = $modifiedCommand -replace "@Verify = 'Y'", "@Verify = 'N'"
-                            if ($modifiedCommand -notmatch "@Verify") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Verify = 'N'"
-                            }
-                        } elseif ($Verify -eq "Remove") {
-                            $modifiedCommand = $modifiedCommand -replace "@Verify = '[YN]',\r?\n", ""
-                            $modifiedCommand = $modifiedCommand -replace ",\r?\n@Verify = '[YN]'", ""
-                        }
-
-                        # CheckSum parameter for all backup jobs
-                        # Ola includes @Checksum = 'Y' by default. Default: leave unchanged.
-                        if ($CheckSum -eq "ForceOn") {
-                            $modifiedCommand = $modifiedCommand -replace "@Checksum = 'N'", "@Checksum = 'Y'"
-                            if ($modifiedCommand -notmatch "@Checksum") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Checksum = 'Y'"
-                            }
-                        } elseif ($CheckSum -eq "ForceOff") {
-                            $modifiedCommand = $modifiedCommand -replace "@Checksum = 'Y'", "@Checksum = 'N'"
-                            if ($modifiedCommand -notmatch "@Checksum") {
-                                $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Checksum = 'N'"
-                            }
-                        } elseif ($CheckSum -eq "Remove") {
-                            $modifiedCommand = $modifiedCommand -replace "@Checksum = '[YN]',\r?\n", ""
-                            $modifiedCommand = $modifiedCommand -replace ",\r?\n@Checksum = '[YN]'", ""
-                        }
-
-                        # Update job step if command was modified
-                        if ($modifiedCommand -ne $originalCommand) {
-                            if ($Pscmdlet.ShouldProcess($instance, "Updating job step '$($step.Name)' in job '$($job.Name)'")) {
-                                $splatJobStep = @{
-                                    SqlInstance = $server
-                                    Job         = $job.Name
-                                    StepName    = $step.Name
-                                    Command     = $modifiedCommand
+                            # Add ChangeBackupType parameter for DIFF and LOG backups only
+                            if ($ChangeBackupType -and ($job.Name -match "DIFF|LOG")) {
+                                if ($modifiedCommand -notmatch "@ChangeBackupType") {
+                                    $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@ChangeBackupType = 'Y'"
                                 }
-                                $null = Set-DbaAgentJobStep @splatJobStep
+                            }
+
+                            # Add ModificationLevel parameter for jobs with ChangeBackupType
+                            if ($ModificationLevel -gt 0 -and ($job.Name -match "DIFF")) {
+                                if ($modifiedCommand -notmatch "@ModificationLevel") {
+                                    $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@ModificationLevel = $ModificationLevel"
+                                }
+                            }
+
+                            # Compress parameter for all backup jobs
+                            # Default: do not include @Compress (instance-level setting applies)
+                            if ($Compress -eq "ForceOn") {
+                                $modifiedCommand = $modifiedCommand -replace "@Compress = 'N'", "@Compress = 'Y'"
+                                if ($modifiedCommand -notmatch "@Compress") {
+                                    $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Compress = 'Y'"
+                                }
+                            } elseif ($Compress -eq "ForceOff") {
+                                $modifiedCommand = $modifiedCommand -replace "@Compress = 'Y'", "@Compress = 'N'"
+                                if ($modifiedCommand -notmatch "@Compress") {
+                                    $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Compress = 'N'"
+                                }
+                            } elseif ($Compress -eq "Remove") {
+                                $modifiedCommand = $modifiedCommand -replace "@Compress = '[YN]',\r?\n", ""
+                                $modifiedCommand = $modifiedCommand -replace ",\r?\n@Compress = '[YN]'", ""
+                            }
+
+                            # Add CopyOnly parameter for all backup jobs
+                            if ($CopyOnly) {
+                                if ($modifiedCommand -notmatch "@CopyOnly") {
+                                    $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@CopyOnly = 'Y'"
+                                }
+                            }
+
+                            # Verify parameter for all backup jobs
+                            # Ola includes @Verify = 'Y' by default. Default: leave unchanged.
+                            if ($Verify -eq "ForceOn") {
+                                $modifiedCommand = $modifiedCommand -replace "@Verify = 'N'", "@Verify = 'Y'"
+                                if ($modifiedCommand -notmatch "@Verify") {
+                                    $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Verify = 'Y'"
+                                }
+                            } elseif ($Verify -eq "ForceOff") {
+                                $modifiedCommand = $modifiedCommand -replace "@Verify = 'Y'", "@Verify = 'N'"
+                                if ($modifiedCommand -notmatch "@Verify") {
+                                    $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Verify = 'N'"
+                                }
+                            } elseif ($Verify -eq "Remove") {
+                                $modifiedCommand = $modifiedCommand -replace "@Verify = '[YN]',\r?\n", ""
+                                $modifiedCommand = $modifiedCommand -replace ",\r?\n@Verify = '[YN]'", ""
+                            }
+
+                            # CheckSum parameter for all backup jobs
+                            # Ola includes @Checksum = 'Y' by default. Default: leave unchanged.
+                            if ($CheckSum -eq "ForceOn") {
+                                $modifiedCommand = $modifiedCommand -replace "@Checksum = 'N'", "@Checksum = 'Y'"
+                                if ($modifiedCommand -notmatch "@Checksum") {
+                                    $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Checksum = 'Y'"
+                                }
+                            } elseif ($CheckSum -eq "ForceOff") {
+                                $modifiedCommand = $modifiedCommand -replace "@Checksum = 'Y'", "@Checksum = 'N'"
+                                if ($modifiedCommand -notmatch "@Checksum") {
+                                    $modifiedCommand = $modifiedCommand -replace "(@LogToTable = '[YN]')", "`$1,$([System.Environment]::NewLine)@Checksum = 'N'"
+                                }
+                            } elseif ($CheckSum -eq "Remove") {
+                                $modifiedCommand = $modifiedCommand -replace "@Checksum = '[YN]',\r?\n", ""
+                                $modifiedCommand = $modifiedCommand -replace ",\r?\n@Checksum = '[YN]'", ""
+                            }
+
+                            # Update job step if command was modified
+                            if ($modifiedCommand -ne $originalCommand) {
+                                if ($Pscmdlet.ShouldProcess($instance, "Updating job step '$($step.Name)' in job '$($job.Name)'")) {
+                                    $splatJobStep = @{
+                                        SqlInstance = $server
+                                        Job         = $job.Name
+                                        StepName    = $step.Name
+                                        Command     = $modifiedCommand
+                                    }
+                                    $null = Set-DbaAgentJobStep @splatJobStep
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            if ($sql) {
-                # then whatif wasn't passed
-                [PSCustomObject]@{
-                    ComputerName = $server.ComputerName
-                    InstanceName = $server.ServiceName
-                    SqlInstance  = $server.DomainInstanceName
-                    Results      = $result
+                if ($sql) {
+                    # then whatif wasn't passed
+                    [PSCustomObject]@{
+                        ComputerName = $server.ComputerName
+                        InstanceName = $server.ServiceName
+                        SqlInstance  = $server.DomainInstanceName
+                        Results      = $result
+                    }
                 }
-            }
 
-            if ($isNewConnection) {
-                # Close non-pooled connection as this is not done automatically.
-                $null = $server | Disconnect-DbaInstance
+            } finally {
+                # Only close the connection if Connect-DbaInstance opened a new one for us. The disconnect sits in a
+                # finally, because the -Continue exits after the connection is opened, and any exception thrown under
+                # -EnableException, used to skip it and leave the non-pooled session behind (#10659). Non-pooled
+                # connections are the ones nothing else cleans up.
+                if ($isNewConnection) {
+                    # Close non-pooled connection as this is not done automatically.
+                    # -WhatIf:$false because this is ownership bookkeeping, not the user's operation: Disconnect-DbaInstance
+                    # supports ShouldProcess, so a propagated $WhatIfPreference would skip the actual disconnect.
+                    $null = $server | Disconnect-DbaInstance -WhatIf:$false -Confirm:$false
+                }
             }
         }
 

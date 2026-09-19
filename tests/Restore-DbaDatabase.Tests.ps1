@@ -172,6 +172,95 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
 
+    Context "Honors EnableException when no full backup anchors the chain #10621" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Build a full/diff/log chain with one file per backup, so the diff and log never share a
+            # file with the full (the default backup file name has minute resolution and would hide
+            # the missing full by accident).
+            $chainDbName = "dbatoolsci_chaintest_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $chainDbName
+            $splatChainBackup = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $chainDbName
+                Path        = $backupPath
+            }
+            $null = Backup-DbaDatabase @splatChainBackup -Type Full -FilePath "chaintest_full.bak"
+            $chainDiff = Backup-DbaDatabase @splatChainBackup -Type Diff -FilePath "chaintest_diff.bak"
+            $chainLog = Backup-DbaDatabase @splatChainBackup -Type Log -FilePath "chaintest_log.trn"
+
+            # An existing directory without any backup files, to hit the "No backups passed through" path.
+            $emptyBackupDir = "$backupPath\emptydir"
+            $null = New-Item -Path $emptyBackupDir -ItemType Directory
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $chainDbName | Remove-DbaDatabase
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Throws when only diff and log are passed with EnableException" {
+            $splatRestore = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Path            = $chainDiff.BackupPath, $chainLog.BackupPath
+                DatabaseName    = $chainDbName
+                WithReplace     = $true
+                EnableException = $true
+            }
+            { Restore-DbaDatabase @splatRestore } | Should -Throw "*Fullname property not found*"
+        }
+
+        It "Still warns and returns nothing without EnableException" {
+            $splatRestore = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Path          = $chainDiff.BackupPath, $chainLog.BackupPath
+                DatabaseName  = $chainDbName
+                WithReplace   = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $results = Restore-DbaDatabase @splatRestore
+            $results | Should -BeNullOrEmpty
+            # Two warnings: the selection names what is missing, and the command says that nothing was
+            # restored because of it (#10657). Before, the second one did not exist and the empty result
+            # looked like a successful restore.
+            $warnings = @($WarnVar) -join " "
+            $warnings | Should -BeLike "*Fullname property not found*"
+            $warnings | Should -BeLike "*Nothing to restore*"
+            $warnings | Should -BeLike "*$chainDbName*"
+        }
+
+        It "Throws when the path holds no backups at all with EnableException" {
+            $splatRestore = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Path            = $emptyBackupDir
+                DatabaseName    = $chainDbName
+                WithReplace     = $true
+                EnableException = $true
+            }
+            { Restore-DbaDatabase @splatRestore } | Should -Throw "*No backups passed through*"
+        }
+
+        It "Warns that no backups passed through and returns nothing without EnableException" {
+            $splatRestore = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Path          = $emptyBackupDir
+                DatabaseName  = $chainDbName
+                WithReplace   = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $results = Restore-DbaDatabase @splatRestore
+            $results | Should -BeNullOrEmpty
+            @($WarnVar) -join " " | Should -BeLike "*No backups passed through*"
+        }
+    }
+
+
     Context "Database is restored with correct renamings" {
         BeforeAll {
             $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem -EnableException | Remove-DbaDatabase -EnableException
@@ -771,17 +860,17 @@ insert #TmpIndex exec ('dbcc ind(PageRestore,testpage,-1)')
 dbcc ind(PageRestore,testpage,-1)
 
 declare @pageid int
-select top 1 @pageid=PagePid from #TmpIndex where IAMFID is not null and IAmPID is not null
+select top 1 @pageid=PagePid from #TmpIndex where IAMFID is not null and IAMPid is not null
 
 --select * from #TmpIndex
 --pageid = 256
-alter database pagerestore set single_user with rollback immediate
+alter database PageRestore set single_user with rollback immediate
 
-dbcc writepage(pagerestore,1,@pageid,0,1,0x41,1)
-dbcc writepage(pagerestore,1,@pageid,1,1,0x41,1)
-dbcc writepage(pagerestore,1,@pageid,2,1,0x41,1)
+dbcc writepage(PageRestore,1,@pageid,0,1,0x41,1)
+dbcc writepage(PageRestore,1,@pageid,1,1,0x41,1)
+dbcc writepage(PageRestore,1,@pageid,2,1,0x41,1)
 
-alter database pagerestore set multi_user
+alter database PageRestore set multi_user
 
 insert into testpage values (REPLICATE('e','8000'))
 
@@ -790,18 +879,18 @@ Backup log PageRestore to disk='$backupPath\PageRestore.trn'
 insert into testpage values (REPLICATE('f','8000'))
 use master
 "@
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $sql -Database Pagerestore
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $sql -Database PageRestore
         }
 
         It "Should have warned about corruption" {
-            $sqlResults2 = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database Master -Query "select * from pagerestore.dbo.testpage where filler like 'a%'" -WarningAction SilentlyContinue
+            $sqlResults2 = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "select * from PageRestore.dbo.testpage where filler like 'a%'" -WarningAction SilentlyContinue
             $WarnVar | Should -Match ([regex]::Escape("SQL Server detected a logical consistency-based I/O error: incorrect checksum (expected"))
             $sqlResults2 | Should -BeNullOrEmpty
         }
 
         It "Should work after page restore" {
-            $null = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database pagerestore -last | Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -PageRestore (Get-DbaSuspectPage -SqlInstance $TestConfig.InstanceSingle -Database PageRestore) -TrustDbBackupHistory -DatabaseName PageRestore -PageRestoreTailFolder $backupPath
-            $sqlResults3 = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "select * from pagerestore.dbo.testpage where filler like 'f%'"
+            $null = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database PageRestore -last | Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -PageRestore (Get-DbaSuspectPage -SqlInstance $TestConfig.InstanceSingle -Database PageRestore) -TrustDbBackupHistory -DatabaseName PageRestore -PageRestoreTailFolder $backupPath
+            $sqlResults3 = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "select * from PageRestore.dbo.testpage where filler like 'f%'"
             ($null -eq $sqlResults3) | Should -Be $false
         }
     }
@@ -811,7 +900,7 @@ use master
         It "Should backup and restore cleanly" {
             Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem | Remove-DbaDatabase
             $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Path "$($TestConfig.appveyorlabrepo)\singlerestore\singlerestore.bak" -DatabaseName PipeTest -DestinationFilePrefix PipeTest
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database Pipetest -BackupDirectory $backupPath -CopyOnly | Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -DatabaseName restored -ReplaceDbNameInFile
+            $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database PipeTest -BackupDirectory $backupPath -CopyOnly | Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -DatabaseName restored -ReplaceDbNameInFile
             $results.RestoreComplete | Should -Be $true
         }
     }
@@ -873,54 +962,224 @@ use master
     }
 
 
-    <#
-    TODO:
-    The next tests are skipped because they don't work as expected.
-    In "$($TestConfig.appveyorlabrepo)\sql2008-backups\StopAt" the backup chain is maybe broken (is file StopAt_22.trn missing?)
-    Restore-DbaDatabase writes a warning: Microsoft.Data.SqlClient.SqlError: The log in this backup set begins at LSN 19000000021500001, which is too recent to apply to the database. An earlier log backup that includes LSN 19000000020400004 can be restored.
-    Pester does not like this warning, reason currently unknown. But the context and the complete test fail with "System.Management.Automation.ParameterBindingValidationException: Cannot bind argument to parameter 'ErrorRecord' because it is null".
-    Maybe it's because the warning is written to $error but has no ErrorRecord.
-    #>
-
-    Context -Skip "Test restoring with StopAt" {
+    Context "Test restoring with StopMark, StopBefore, StopAfterDate and StopAtLsn" {
         BeforeAll {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem -EnableException | Remove-DbaDatabase -EnableException
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The old static fixture in sql2008-backups\StopAt was broken from its first commit
+            # (StopAt_22.trn never made it into the repo), so these tests were skipped for years.
+            # The chain is generated here instead: two transactions carry the same mark name, with
+            # a timestamp captured between them so StopAfterDate can select the second one. The
+            # steps table records how far a restore came: 1 before the first mark, 2 inside it,
+            # 3 after it, 4 inside the second mark, 5 after that.
+            $stopMarkDbName = "dbatoolsci_stopmark_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $stopMarkDbName
+            $splatStopMarkQuery = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $stopMarkDbName
+            }
+            Invoke-DbaQuery @splatStopMarkQuery -Query "CREATE TABLE steps (step int NOT NULL)"
+            # Change data capture on the database and the table, so the chain carries CDC metadata: a restore under
+            # another name drops it unless KEEP_CDC reaches the statement that recovers.
+            Invoke-DbaQuery @splatStopMarkQuery -Query "EXEC sys.sp_cdc_enable_db"
+            Invoke-DbaQuery @splatStopMarkQuery -Query "EXEC sys.sp_cdc_enable_table @source_schema = N'dbo', @source_name = N'steps', @role_name = NULL, @supports_net_changes = 0"
+            $stopMarkCopyName = "$($stopMarkDbName)_copy"
+            $stopMarkBracketName = "$($stopMarkDbName)]copy"
+            $splatStopMarkBackup = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $stopMarkDbName
+                Path        = $backupPath
+            }
+            # STOPATMARK references the transaction NAME - the string after WITH MARK is only a
+            # description - so the transactions themselves have to be named dbatoolstest.
+            $firstMarkQuery = @"
+BEGIN TRAN dbatoolstest WITH MARK 'first dbatools test mark';
+INSERT INTO steps VALUES (2);
+COMMIT TRAN dbatoolstest
+"@
+            $secondMarkQuery = @"
+BEGIN TRAN dbatoolstest WITH MARK 'second dbatools test mark';
+INSERT INTO steps VALUES (4);
+COMMIT TRAN dbatoolstest
+"@
+            $stopMarkFull = Backup-DbaDatabase @splatStopMarkBackup -Type Full -FilePath "stopmark_full.bak"
+            Invoke-DbaQuery @splatStopMarkQuery -Query "INSERT INTO steps VALUES (1)"
+            Invoke-DbaQuery @splatStopMarkQuery -Query $firstMarkQuery
+            Invoke-DbaQuery @splatStopMarkQuery -Query "INSERT INTO steps VALUES (3)"
+            $stopMarkLog1 = Backup-DbaDatabase @splatStopMarkBackup -Type Log -FilePath "stopmark_log1.trn"
+            # STOPATMARK ... AFTER selects the first mark after the given time, so the time has to
+            # sit strictly between the commits of the two marked transactions.
+            Start-Sleep -Seconds 2
+            $betweenMarksTime = Get-Date
+            Start-Sleep -Seconds 2
+            Invoke-DbaQuery @splatStopMarkQuery -Query $secondMarkQuery
+            Invoke-DbaQuery @splatStopMarkQuery -Query "INSERT INTO steps VALUES (5)"
+            $stopMarkLog2 = Backup-DbaDatabase @splatStopMarkBackup -Type Log -FilePath "stopmark_log2.trn"
+            $stopMarkBackupFiles = $stopMarkFull.BackupPath, $stopMarkLog1.BackupPath, $stopMarkLog2.BackupPath
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "Should have stoped at mark" {
-            $restoreOutput = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name StopAt2 -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\StopAt" -StopMark dbatoolstest -WarningAction SilentlyContinue -ErrorAction SilentlyContinue -ErrorVariable x
-            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name StopAt2 -Recover
-            $sqlOut = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database StopAt2 -Query "select max(step) as ms from steps"
-            $sqlOut.ms | Should -Be 9876
-        }
-    }
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+            # Disabling CDC first removes the capture and cleanup jobs that dropping the database would leave behind.
+            foreach ($cdcDbName in $stopMarkDbName, $stopMarkCopyName, $stopMarkBracketName) {
+                $cdcDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $cdcDbName
+                if ($cdcDb) {
+                    # The copy restored without KeepCDC came up without CDC, and sp_cdc_disable_db fails on such a database.
+                    $cdcEnabled = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "SELECT is_cdc_enabled FROM sys.databases WHERE name = N'$cdcDbName'" -As SingleValue
+                    if ($cdcDb.Status -eq "Normal" -and $cdcEnabled) {
+                        Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $cdcDbName -Query "EXEC sys.sp_cdc_disable_db"
+                    }
+                    $null = $cdcDb | Remove-DbaDatabase
+                }
+            }
 
-    Context -Skip "Test restoring with StopAtBefore" {
-        BeforeAll {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem -EnableException | Remove-DbaDatabase -EnableException
-        }
-
-        It "Should have stoped at mark" {
-            $restoreOutput = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name StopAt2 -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\StopAt" -StopMark dbatoolstest -StopBefore -WarningAction SilentlyContinue
-            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name StopAt2 -Recover
-            $sqlOut = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database StopAt2 -Query "select max(step) as ms from steps"
-            $sqlOut.ms | Should -Be 8764
-        }
-    }
-
-
-    Context -Skip "Test restoring with StopAt, StopAtLsn and StopAfterDate" {
-        BeforeAll {
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem -EnableException | Remove-DbaDatabase -EnableException
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "Should have stoped at mark" {
-            $restoreOutput = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name StopAt2 -Path "$($TestConfig.appveyorlabrepo)\sql2008-backups\StopAt" -StopMark dbatoolstest -StopAfterDate (Get-Date "2020-05-12 13:33:35") -WarningAction SilentlyContinue
-            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name StopAt2 -Recover
-            $sqlOut = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database StopAt2 -Query "select max(step) as ms from steps"
-            $sqlOut.ms | Should -Be 29876
-            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database StopAt2
+        It "Should have stopped at the first mark" {
+            $splatRestore = @{
+                SqlInstance  = $TestConfig.InstanceSingle
+                Path         = $stopMarkBackupFiles
+                DatabaseName = $stopMarkDbName
+                WithReplace  = $true
+                StopMark     = "dbatoolstest"
+            }
+            $results = @(Restore-DbaDatabase @splatRestore)
+            # The mark sits in the first of two log files. The command used to apply the second one anyway, which
+            # SQL Server refuses after a reached stop point, and left the database restoring behind a warning
+            # (#10656). Now the second log is skipped, no warning is written, and the database is recovered by
+            # the command itself, so no -Recover is needed here.
+            $WarnVar | Should -BeNullOrEmpty
+            $results.Count | Should -Be 2
+            $results[-1].BackupFile | Should -BeLike "*stopmark_log1.trn"
+            $results[-1].NoRecovery | Should -BeFalse
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $stopMarkDbName).Status | Should -Be "Normal"
+            $maxStep = Invoke-DbaQuery @splatStopMarkQuery -Query "select max(step) as ms from steps" -As SingleValue
+            # The marked transaction itself is included, everything after it is not.
+            $maxStep | Should -Be 2
+        }
+
+        It "Should have stopped before the first mark" {
+            $splatRestore = @{
+                SqlInstance  = $TestConfig.InstanceSingle
+                Path         = $stopMarkBackupFiles
+                DatabaseName = $stopMarkDbName
+                WithReplace  = $true
+                StopMark     = "dbatoolstest"
+                StopBefore   = $true
+            }
+            $results = @(Restore-DbaDatabase @splatRestore)
+            $WarnVar | Should -BeNullOrEmpty
+            $results.Count | Should -Be 2
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $stopMarkDbName).Status | Should -Be "Normal"
+            $maxStep = Invoke-DbaQuery @splatStopMarkQuery -Query "select max(step) as ms from steps" -As SingleValue
+            # The marked transaction itself is excluded this time.
+            $maxStep | Should -Be 1
+        }
+
+        It "Does not throw under EnableException when the stop point is not in the last log file" {
+            # This was the visible half of #10656: a successful stop-at-mark restore threw on the log after the mark.
+            $splatRestore = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Path            = $stopMarkBackupFiles
+                DatabaseName    = $stopMarkDbName
+                WithReplace     = $true
+                StopMark        = "dbatoolstest"
+                EnableException = $true
+            }
+            { $script:stopMarkThrowResults = @(Restore-DbaDatabase @splatRestore) } | Should -Not -Throw
+            $script:stopMarkThrowResults.Count | Should -Be 2
+            $maxStep = Invoke-DbaQuery @splatStopMarkQuery -Query "select max(step) as ms from steps" -As SingleValue
+            $maxStep | Should -Be 2
+        }
+
+        It "Carries KeepCDC and ErrorBrokerConversations into the recovery after an early stop mark" {
+            # The recovery after a reached mark is a statement of its own, and it dropped the recovery-only options
+            # the last backup would have carried: a restore under another name lost the CDC metadata and came up
+            # with the broker disabled despite the switches.
+            $splatRestore = @{
+                SqlInstance              = $TestConfig.InstanceSingle
+                Path                     = $stopMarkBackupFiles
+                DatabaseName             = $stopMarkCopyName
+                DestinationFilePrefix    = $stopMarkCopyName
+                StopMark                 = "dbatoolstest"
+                KeepCDC                  = $true
+                ErrorBrokerConversations = $true
+            }
+            $results = @(Restore-DbaDatabase @splatRestore)
+            $WarnVar | Should -BeNullOrEmpty
+            $results.Count | Should -Be 2
+            $copyState = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "SELECT is_cdc_enabled, is_broker_enabled FROM sys.databases WHERE name = N'$stopMarkCopyName'"
+            $copyState.is_cdc_enabled | Should -BeTrue
+            $copyState.is_broker_enabled | Should -BeTrue
+            $splatCopyQuery = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $stopMarkCopyName
+            }
+            Invoke-DbaQuery @splatCopyQuery -Query "SELECT COUNT(*) FROM cdc.change_tables" -As SingleValue | Should -Be 1
+            $maxStep = Invoke-DbaQuery @splatCopyQuery -Query "select max(step) as ms from steps" -As SingleValue
+            $maxStep | Should -Be 2
+        }
+
+        It "Recovers after an early stop mark when the database name contains a closing bracket" {
+            # The recovery after a reached mark is a statement the command builds itself, not one scripted by SMO, and it
+            # put the name between brackets as it was. A closing bracket in the name broke that statement, so the command
+            # warned and left the database restoring, the very failure this fix is about.
+            $splatRestore = @{
+                SqlInstance           = $TestConfig.InstanceSingle
+                Path                  = $stopMarkBackupFiles
+                DatabaseName          = $stopMarkBracketName
+                DestinationFilePrefix = $stopMarkBracketName
+                StopMark              = "dbatoolstest"
+            }
+            $results = @(Restore-DbaDatabase @splatRestore)
+            $WarnVar | Should -BeNullOrEmpty
+            $results.Count | Should -Be 2
+            $results[-1].NoRecovery | Should -BeFalse
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $stopMarkBracketName).Status | Should -Be "Normal"
+            $maxStep = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $stopMarkBracketName -Query "select max(step) as ms from steps" -As SingleValue
+            $maxStep | Should -Be 2
+        }
+
+        It "Leaves the database restoring after the stop point with NoRecovery and still skips the rest" {
+            $splatRestore = @{
+                SqlInstance  = $TestConfig.InstanceSingle
+                Path         = $stopMarkBackupFiles
+                DatabaseName = $stopMarkDbName
+                WithReplace  = $true
+                StopMark     = "dbatoolstest"
+                NoRecovery   = $true
+            }
+            $results = @(Restore-DbaDatabase @splatRestore)
+            $WarnVar | Should -BeNullOrEmpty
+            $results.Count | Should -Be 2
+            $results[-1].NoRecovery | Should -BeTrue
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $stopMarkDbName).Status | Should -Be "Restoring"
+            # The caller asked for it, so the recovery is the caller's, as before.
+            $null = Restore-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -DatabaseName $stopMarkDbName -Recover
+            $maxStep = Invoke-DbaQuery @splatStopMarkQuery -Query "select max(step) as ms from steps" -As SingleValue
+            $maxStep | Should -Be 2
+        }
+
+        It "Should have stopped at the second mark with StopAfterDate" {
+            $splatRestore = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Path          = $stopMarkBackupFiles
+                DatabaseName  = $stopMarkDbName
+                WithReplace   = $true
+                StopMark      = "dbatoolstest"
+                StopAfterDate = $betweenMarksTime
+                WarningAction = "SilentlyContinue"
+            }
+            $null = Restore-DbaDatabase @splatRestore
+            # No -Recover here: the second mark sits in the last log file, so the restore stops at the
+            # mark and recovers the database in the same statement.
+            $maxStep = Invoke-DbaQuery @splatStopMarkQuery -Query "select max(step) as ms from steps" -As SingleValue
+            # The first mark before the timestamp is skipped, the second marked transaction is included.
+            $maxStep | Should -Be 4
         }
 
         It "Should have stoped at lsn" {

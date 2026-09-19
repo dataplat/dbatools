@@ -165,25 +165,28 @@ function Copy-DbaAgentSchedule {
                         }
                         continue
                     } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Schedule [$scheduleName] has associated jobs. Skipping.")) {
-                            if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
+                        # A schedule that is attached to a job at the destination cannot be dropped, so it cannot be overwritten even with -Force.
+                        # This has to be tested before ShouldProcess, otherwise the drop below would be unreachable in a normal run.
+                        if ($destServer.JobServer.Jobs.JobSchedules.Name -contains $scheduleName) {
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Schedule [$scheduleName] has associated jobs. Skipping.")) {
                                 $copySharedScheduleStatus.Status = "Skipped"
                                 $copySharedScheduleStatus.Notes = "Schedule has associated jobs"
                                 $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 Write-Message -Level Verbose -Message "Schedule [$scheduleName] has associated jobs. Skipping."
                             }
                             continue
-                        } else {
-                            if ($Pscmdlet.ShouldProcess($destinstance, "Dropping schedule $scheduleName and recreating")) {
-                                try {
-                                    Write-Message -Level Verbose -Message "Dropping schedule $scheduleName"
-                                    $destServer.JobServer.SharedSchedules[$scheduleName].Drop()
-                                } catch {
-                                    $copySharedScheduleStatus.Status = "Failed"
-                                    $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                    Write-Message -Level Verbose -Message "Issue dropping schedule $scheduleName on $destinstance | $PSItem"
-                                    continue
-                                }
+                        }
+
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping schedule $scheduleName and recreating")) {
+                            try {
+                                Write-Message -Level Verbose -Message "Dropping schedule $scheduleName"
+                                $destServer.JobServer.SharedSchedules[$scheduleName].Drop()
+                            } catch {
+                                $copySharedScheduleStatus.Status = "Failed"
+                                $copySharedScheduleStatus.Notes = "Issue dropping schedule on destination"
+                                $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Level Verbose -Message "Issue dropping schedule $scheduleName on $destinstance | $PSItem"
+                                continue
                             }
                         }
                     }

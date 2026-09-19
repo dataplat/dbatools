@@ -130,7 +130,7 @@ function Move-DbaRegServerGroup {
                     Write-Message -Level Verbose -Message "Executing $($regservergroup.ScriptMove($groupobject).GetScript())"
                     $null = $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptMove($groupobject).GetScript())
                     Get-DbaRegServerGroup -SqlInstance $server -Group $newname
-                    $parentserver.ServerConnection.Disconnect()
+                    Disconnect-RegServer -Server $parentserver
                 } catch {
                     Stop-Function -Message "Failed to move $($regserver.Name) to $NewGroup on $($regserver.SqlInstance)" -ErrorRecord $_ -Continue
                 }

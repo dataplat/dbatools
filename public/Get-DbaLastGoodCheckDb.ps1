@@ -158,89 +158,98 @@ function Get-DbaLastGoodCheckDb {
 
             foreach ($db in $databases) {
                 $server = $db.Parent
-                Write-Message -Level Verbose -Message "Processing $($db.Name) on $($server.Name)."
 
-                if ($db.IsAccessible -eq $false) {
-                    Stop-Function -Message "The database $($db.Name) is not accessible. Skipping database." -Continue -Target $db
-                }
+                # Working through a Database object moves the connection into that database and never moves it
+                # back - the query below runs there, and so does every enumeration of a database level
+                # collection. The database of the caller is put back when the work is done. See #10555.
+                $callerDatabase = $server.ConnectionContext.CurrentDatabase
+                try {
+                    Write-Message -Level Verbose -Message "Processing $($db.Name) on $($server.Name)."
 
-                $isAzure = $db.Parent.DatabaseEngineType -match "Azure"
-
-                if (-not $isAzure) {
-                    $isAdmin = $db.Parent.ConnectionContext.ExecuteScalar("SELECT IS_SRVROLEMEMBER('sysadmin')")
-                } else {
-                    $isAdmin = $false
-                }
-
-                if ($db.Parent.VersionMajor -lt 10 -or $isAdmin) {
-                    $dbNameQuoted = '[' + $db.Name.Replace(']', ']]') + ']'
-                    $sql = "DBCC DBINFO ($dbNameQuoted) WITH TABLERESULTS"
-                    Write-Message -Level Debug -Message "T-SQL: $sql"
-
-                    $resultTable = $db.ExecuteWithResults($sql).Tables[0]
-                    [datetime[]]$lastKnownGoodArray = $resultTable | Where-Object Field -eq 'dbi_dbccLastKnownGood' | Select-Object -ExpandProperty Value
-
-                    ## look for databases with two or more occurrences of the field dbi_dbccLastKnownGood
-                    if ($lastKnownGoodArray.count -ge 2) {
-                        Write-Message -Level Verbose -Message "The database $db has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest."
+                    if ($db.IsAccessible -eq $false) {
+                        Stop-Function -Message "The database $($db.Name) is not accessible. Skipping database." -Continue -Target $db
                     }
-                    [datetime]$lastKnownGood = $lastKnownGoodArray | Sort-Object -Descending | Select-Object -First 1
 
-                    [int]$createVersion = ($resultTable | Where-Object Field -eq 'dbi_createVersion').Value
-                    [int]$dbccFlags = ($resultTable | Where-Object Field -eq 'dbi_dbccFlags').Value
+                    $isAzure = $db.Parent.DatabaseEngineType -match "Azure"
 
-                    if (($createVersion -lt 611) -and ($dbccFlags -eq 0)) {
-                        $dataPurityEnabled = $false
+                    if (-not $isAzure) {
+                        $isAdmin = $db.Parent.ConnectionContext.ExecuteScalar("SELECT IS_SRVROLEMEMBER('sysadmin')")
                     } else {
-                        $dataPurityEnabled = $true
+                        $isAdmin = $false
                     }
-                } else {
-                    $lastKnownGood = $db.LastGoodCheckDbTime
-                    $dataPurityEnabled = $null
-                }
 
-                if ($lastKnownGood -isnot [datetime]) {
-                    $lastKnownGood = Get-Date '1/1/1900 12:00:00 AM'
-                }
+                    if ($db.Parent.VersionMajor -lt 10 -or $isAdmin) {
+                        $dbNameQuoted = '[' + $db.Name.Replace(']', ']]') + ']'
+                        $sql = "DBCC DBINFO ($dbNameQuoted) WITH TABLERESULTS"
+                        Write-Message -Level Debug -Message "T-SQL: $sql"
 
-                $datecreated = $db.createDate
-                if ($datecreated -isnot [datetime]) {
-                    $datecreated = Get-Date '1/1/1900 12:00:00 AM'
-                }
+                        $resultTable = $db.Query($sql)
+                        [datetime[]]$lastKnownGoodArray = $resultTable | Where-Object Field -eq 'dbi_dbccLastKnownGood' | Select-Object -ExpandProperty Value
 
-                $daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -End (Get-Date)).Days
-                $daysSinceDbCreated = (New-TimeSpan -Start $datecreated -End (Get-Date)).TotalDays
+                        ## look for databases with two or more occurrences of the field dbi_dbccLastKnownGood
+                        if ($lastKnownGoodArray.count -ge 2) {
+                            Write-Message -Level Verbose -Message "The database $db has $($lastKnownGoodArray.count) dbi_dbccLastKnownGood fields. This script will only use the newest."
+                        }
+                        [datetime]$lastKnownGood = $lastKnownGoodArray | Sort-Object -Descending | Select-Object -First 1
 
-                if ($daysSinceCheckDb -lt 7) {
-                    $Status = 'Ok'
-                } elseif ($daysSinceDbCreated -lt 7) {
-                    $Status = 'New database, not checked yet'
-                } else {
-                    $Status = 'CheckDB should be performed'
-                }
+                        [int]$createVersion = ($resultTable | Where-Object Field -eq 'dbi_createVersion').Value
+                        [int]$dbccFlags = ($resultTable | Where-Object Field -eq 'dbi_dbccFlags').Value
 
-                if ($lastKnownGood -eq '1/1/1900 12:00:00 AM') {
-                    Remove-Variable -Name lastKnownGood, daysSinceCheckDb
-                }
+                        if (($createVersion -lt 611) -and ($dbccFlags -eq 0)) {
+                            $dataPurityEnabled = $false
+                        } else {
+                            $dataPurityEnabled = $true
+                        }
+                    } else {
+                        $lastKnownGood = $db.LastGoodCheckDbTime
+                        $dataPurityEnabled = $null
+                    }
 
-                if ($datecreated -eq '1/1/1900 12:00:00 AM') {
-                    Remove-Variable -Name datecreated
-                }
+                    if ($lastKnownGood -isnot [datetime]) {
+                        $lastKnownGood = Get-Date '1/1/1900 12:00:00 AM'
+                    }
+
+                    $datecreated = $db.createDate
+                    if ($datecreated -isnot [datetime]) {
+                        $datecreated = Get-Date '1/1/1900 12:00:00 AM'
+                    }
+
+                    $daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -End (Get-Date)).Days
+                    $daysSinceDbCreated = (New-TimeSpan -Start $datecreated -End (Get-Date)).TotalDays
+
+                    if ($daysSinceCheckDb -lt 7) {
+                        $Status = 'Ok'
+                    } elseif ($daysSinceDbCreated -lt 7) {
+                        $Status = 'New database, not checked yet'
+                    } else {
+                        $Status = 'CheckDB should be performed'
+                    }
+
+                    if ($lastKnownGood -eq '1/1/1900 12:00:00 AM') {
+                        Remove-Variable -Name lastKnownGood, daysSinceCheckDb
+                    }
+
+                    if ($datecreated -eq '1/1/1900 12:00:00 AM') {
+                        Remove-Variable -Name datecreated
+                    }
 
 
-                [PSCustomObject]@{
-                    ComputerName             = $server.ComputerName
-                    InstanceName             = $server.ServiceName
-                    SqlInstance              = $server.DomainInstanceName
-                    Database                 = $db.name
-                    DatabaseCreated          = $db.createDate
-                    LastGoodCheckDb          = $lastKnownGood
-                    DaysSinceDbCreated       = $daysSinceDbCreated
-                    DaysSinceLastGoodCheckDb = $daysSinceCheckDb
-                    Status                   = $status
-                    DataPurityEnabled        = $dataPurityEnabled
-                    CreateVersion            = $createVersion
-                    DbccFlags                = $dbccFlags
+                    [PSCustomObject]@{
+                        ComputerName             = $server.ComputerName
+                        InstanceName             = $server.ServiceName
+                        SqlInstance              = $server.DomainInstanceName
+                        Database                 = $db.name
+                        DatabaseCreated          = $db.createDate
+                        LastGoodCheckDb          = $lastKnownGood
+                        DaysSinceDbCreated       = $daysSinceDbCreated
+                        DaysSinceLastGoodCheckDb = $daysSinceCheckDb
+                        Status                   = $status
+                        DataPurityEnabled        = $dataPurityEnabled
+                        CreateVersion            = $createVersion
+                        DbccFlags                = $dbccFlags
+                    }
+                } finally {
+                    Restore-DatabaseContext -Server $server -Database $callerDatabase
                 }
             }
         }

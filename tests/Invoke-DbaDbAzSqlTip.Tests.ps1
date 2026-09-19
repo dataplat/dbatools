@@ -64,3 +64,26 @@ Describe $CommandName -Tag IntegrationTests -Skip:($env:azuredbpasswd -ne "fails
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "When no database selection is given" {
+        It "Warns once and does not connect to the instance" {
+            # The begin block stops when neither -Database, -ExcludeDatabase nor -AllUserDatabases is given, but the
+            # process block used to run anyway and connected to the instance, which added a second warning about the
+            # instance not being an Azure SQL Database (#10655).
+            $results = Invoke-DbaDbAzSqlTip -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
+            $results | Should -BeNullOrEmpty
+            $WarnVar.Count | Should -Be 1
+            $WarnVar | Should -BeLike "*You must specify databases*"
+        }
+
+        It "Throws with -EnableException" {
+            $splatNoDatabase = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                WarningAction   = "SilentlyContinue"
+                EnableException = $true
+            }
+            { Invoke-DbaDbAzSqlTip @splatNoDatabase } | Should -Throw "*You must specify databases*"
+        }
+    }
+}

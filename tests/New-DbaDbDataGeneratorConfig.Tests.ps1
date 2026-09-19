@@ -25,6 +25,30 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Every masking type in columntypes.json is backed by a randomizer type" {
+        BeforeAll {
+            # The command assigns MaskingType and SubType from bin\datamasking\columntypes.json when a
+            # column name matches one of its synonyms. Nothing else ties that file to the randomizer
+            # types, so a pair that drifts apart from bin\randomizer\en.randomizertypes.csv produces
+            # configurations that Test-DbaDbDataGeneratorConfig rejects. The randomizer types are
+            # themselves guarded against Bogus in Get-DbaRandomizedType.Tests.ps1; this is the missing
+            # guard for columntypes.json.
+            $columnTypes = Get-Content -Path "$PSScriptRoot\..\bin\datamasking\columntypes.json" | ConvertFrom-Json
+            $randomizerTypes = Get-DbaRandomizedType
+
+            $missingCombinations = foreach ($columnType in $columnTypes) {
+                $randomizerCombination = $randomizerTypes | Where-Object { $PSItem.Type -eq $columnType.MaskingType -and $PSItem.SubType -eq $columnType.SubType }
+                if (-not $randomizerCombination) {
+                    "$($columnType.TypeName): $($columnType.MaskingType)/$($columnType.SubType)"
+                }
+            }
+        }
+
+        It "Has no combination that the randomizer types do not know" {
+            $missingCombinations | Should -BeNullOrEmpty
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
@@ -72,6 +96,43 @@ Describe $CommandName -Tag IntegrationTests {
             $configResults.FullName | Should -FileContentMatch "FirstName"
 
             $configResults | Remove-Item -ErrorAction SilentlyContinue
+        }
+    }
+
+    Context "When the target file cannot be written" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Generate the config once so the target file exists, then make it read-only so that
+            # every following write fails inside the command.
+            $splatLockedConfig = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbNameGenerator
+                Path        = $tempConfigPath
+            }
+            $lockedConfigFile = New-DbaDbDataGeneratorConfig @splatLockedConfig
+            $lockedConfigFile.IsReadOnly = $true
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The write-failure guard used to run Stop-Function -Continue without an enclosing loop -
+            # the continue escaped the command and consumed an iteration of this very loop, so the
+            # counter fell short (#10638).
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = New-DbaDbDataGeneratorConfig @splatLockedConfig -WarningAction SilentlyContinue
+                $loopCount++
+            }
+        }
+
+        AfterAll {
+            $lockedConfigFile.IsReadOnly = $false
+            $lockedConfigFile | Remove-Item -ErrorAction SilentlyContinue
+        }
+
+        It "Warns without eating an iteration of the caller's loop" {
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*Something went wrong writing the results*"
         }
     }
 }

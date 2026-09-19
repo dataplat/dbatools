@@ -159,4 +159,38 @@ Describe $CommandName -Tag IntegrationTests {
             (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job dbatoolsci_testjob_validation) | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "The connection of the caller keeps its database (#10555)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $contextJobName = "dbatoolsci_testjob_context"
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $contextJobName
+
+            # sp_delete_job used to be run through the msdb database, which leaves the connection of the
+            # caller there. Only a non-pooled connection shows it, because SMO reopens a pooled one at its
+            # default database.
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $null = Remove-DbaAgentJob -SqlInstance $callerServer -Job $contextJobName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $callerServer | Disconnect-DbaInstance
+            $null = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $contextJobName | Remove-DbaAgentJob -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "still removes the job" {
+            Get-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $contextJobName | Should -BeNullOrEmpty
+        }
+
+        It "leaves the connection in the database it was on" {
+            $callerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()") | Should -Be "master"
+        }
+    }
 }

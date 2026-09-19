@@ -68,8 +68,44 @@ Describe $CommandName -Tag IntegrationTests {
            ,[last_mod_date]
            ,[last_mod_user])
         VALUES
-           ($profile_id,'dbatoolssci@dbatools.io',NULL,NULL,'Test Job',NULL,NULL,'A Test Job failed to run','TEXT','Normal','Normal',NULL,'MIME',NULL,NULL,
+           ($profile_id,'dbatoolssci@dbatools.io',NULL,NULL,'Test Job',NULL,NULL,'A Test Job failed to run','TEXT','NORMAL','NORMAL',NULL,'MIME',NULL,NULL,
           0,1,256,'',0,0,'2018-12-9 11:44:32.600','dbatools\dbatoolssci',1,1,'2018-12-9 11:44:33.000','2018-12-9 11:44:33.273','sa')"
+        )
+        # A second row with sent_status = 2 (failed): FAILED is a status whose uppercase form
+        # contains the letter I, which a culture-sensitive lowercase turns into a dotless i under
+        # the Turkish culture - the culture regression below needs exactly this row.
+        $server.Query("INSERT INTO msdb.[dbo].[sysmail_mailitems]
+           ([profile_id]
+           ,[recipients]
+           ,[copy_recipients]
+           ,[blind_copy_recipients]
+           ,[subject]
+           ,[from_address]
+           ,[reply_to]
+           ,[body]
+           ,[body_format]
+           ,[importance]
+           ,[sensitivity]
+           ,[file_attachments]
+           ,[attachment_encoding]
+           ,[query]
+           ,[execute_query_database]
+           ,[attach_query_result_as_file]
+           ,[query_result_header]
+           ,[query_result_width]
+           ,[query_result_separator]
+           ,[exclude_query_output]
+           ,[append_query_error]
+           ,[send_request_date]
+           ,[send_request_user]
+           ,[sent_account_id]
+           ,[sent_status]
+           ,[sent_date]
+           ,[last_mod_date]
+           ,[last_mod_user])
+        VALUES
+           ($profile_id,'dbatoolssci@dbatools.io',NULL,NULL,'Test Job Failed',NULL,NULL,'A Test Job failed to run','TEXT','NORMAL','NORMAL',NULL,'MIME',NULL,NULL,
+          0,1,256,'',0,0,'2018-12-9 11:44:32.600','dbatools\dbatoolssci',1,2,'2018-12-9 11:44:33.000','2018-12-9 11:44:33.273','sa')"
         )
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -123,6 +159,26 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have SentStatus of Sent" {
             $results.SentStatus | Should -Be "Sent"
+        }
+    }
+
+    Context "Gets Db Mail History using -Status under a Turkish culture" {
+        BeforeAll {
+            # ValidateSet accepts case-insensitive input, so FAILED reaches the command as typed.
+            # Its uppercase I is the letter a culture-sensitive lowercase turns into a dotless i
+            # under Turkish rules, which can never match the ASCII tokens sysmail stores - the
+            # command has to normalize invariantly.
+            $cultureBefore = [System.Globalization.CultureInfo]::CurrentCulture
+            try {
+                [System.Globalization.CultureInfo]::CurrentCulture = "tr-TR"
+                $resultsTurkish = Get-DbaDbMailHistory -SqlInstance $TestConfig.InstanceSingle -Status FAILED
+            } finally {
+                [System.Globalization.CultureInfo]::CurrentCulture = $cultureBefore
+            }
+        }
+
+        It "Finds the failed mail although the culture lowercases differently" {
+            $resultsTurkish.SentStatus | Should -Be "Failed"
         }
     }
 

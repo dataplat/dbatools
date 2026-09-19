@@ -539,6 +539,7 @@ $script:xplat = @(
         'Get-DbaQueryExecutionTime',
         'Get-DbaTempdbUsage',
         'Find-DbaDbGrowthEvent',
+        'Find-DbaDbQueryStoreRegression',
         'Test-DbaLinkedServerConnection',
         'Get-DbaDbFile',
         'Get-DbaDbFileGrowth',

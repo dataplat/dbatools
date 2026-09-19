@@ -305,7 +305,10 @@ function Update-SqlPermission {
                 if ($Pscmdlet.ShouldProcess($destination, "Adding $newDbUsername to $dbName.")) {
                     $sql = $SourceServer.Databases[$dbName].Users[$dbUsername].Script() | Out-String
                     try {
-                        $destDb.ExecuteNonQuery($sql.Replace("[$dbUsername]", "[$newDbUsername]").Replace("[$loginName]", "[$newLoginName]"))
+                        # Through the Invoke script method and not through ExecuteNonQuery of SMO: both run
+                        # the statement in that database by issuing a USE on the connection context of the
+                        # parent server, but only ours puts the previous database back. See #10555.
+                        $destDb.Invoke($sql.Replace("[$dbUsername]", "[$newDbUsername]").Replace("[$loginName]", "[$newLoginName]"))
                         Write-Message -Level Verbose -Message "Adding user $newDbUsername (login: $newLoginName) to $dbName successfully performed."
                     } catch {
                         Stop-Function -Message "Failed to add $newDbUsername (login: $newLoginName) to $dbName on $destination." -Target $db -ErrorRecord $_
@@ -343,7 +346,8 @@ function Update-SqlPermission {
                     $scriptOptions.IncludeIfNotExists = $true
                     $userScript = Export-DbaUser -SqlInstance $SourceServer -Database $dbName -User $dbUsername -Passthru -Template -ScriptingOptionsObject $scriptOptions -EnableException:$EnableException
                     $userScript = $userScript.Replace('{templateUser}', $newDbUsername)
-                    $destDb.ExecuteNonQuery($userScript)
+                    # See the comment above: the Invoke script method puts the database back afterwards.
+                    $destDb.Invoke($userScript)
                 }
             } else {
                 # Database Roles: db_owner, db_datareader, etc

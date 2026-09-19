@@ -147,7 +147,9 @@ function Export-DbaExecutionPlan {
             param(
                 [object]$object
             )
-            $instanceName = $object.SqlInstance
+            # The instance name is part of the file name, so a named instance has to lose its backslash: with it
+            # every Save() below failed with "Could not find a part of the path" and nothing was exported.
+            $instanceName = $object.SqlInstance -replace "[\\/:*?`"<>|]", "-"
             $dbName = $object.DatabaseName
             $queryPosition = $object.QueryPosition
             $sqlHandle = "0x"; $object.SqlHandle | ForEach-Object { $sqlHandle += ("{0:X}" -f $_).PadLeft(2, "0") }
@@ -187,8 +189,13 @@ function Export-DbaExecutionPlan {
 
     process {
 
-        if ((Test-Bound -ParamterName Path) -and ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo])) {
-            if ($Path -eq (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport')) {
+        # The default of -Path is not in $PSBoundParameters, so gating this on Test-Bound skipped the bootstrap
+        # exactly when it was needed: with -Path omitted on a profile where the configured export directory does
+        # not exist yet, the Save() calls in Export-Plan wrote into a missing directory and exported nothing. Validate the
+        # resolved path whether or not the caller bound it: the configured directory is created, anything else
+        # has to be an existing directory (#10655).
+        if ((Get-Item $Path -ErrorAction Ignore) -isnot [System.IO.DirectoryInfo]) {
+            if ($Path -eq (Get-DbatoolsConfigValue -FullName "Path.DbatoolsExport")) {
                 $null = New-Item -ItemType Directory -Path $Path
             } else {
                 Stop-Function -Message "Path ($Path) must be a directory"

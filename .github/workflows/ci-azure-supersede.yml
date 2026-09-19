@@ -33,7 +33,8 @@ concurrency:
 jobs:
   supersede:
     # Fork PRs get a read-only token that cannot cancel runs; their lanes keep FIFO.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Dependabot PRs never start a ci-azure run, so there is nothing to supersede.
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:

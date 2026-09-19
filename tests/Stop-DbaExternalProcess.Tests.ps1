@@ -92,4 +92,19 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Stopped"
         }
     }
+
+    Context "When the process does not exist" {
+        It "Warns without eating an iteration of the caller's loop" {
+            # The catch used to run Stop-Function -Continue at the end of the process block, where no loop
+            # encloses it - the continue escaped the command and consumed an iteration of this very loop, so
+            # the counter stayed at zero (#10638). Stop-Process on a process id that does not exist throws.
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = Stop-DbaExternalProcess -ComputerName localhost -ProcessId 2147483647 -WarningAction SilentlyContinue -Confirm:$false
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            ($WarnVar -join " ") | Should -BeLike "*Error killing 2147483647*"
+        }
+    }
 }

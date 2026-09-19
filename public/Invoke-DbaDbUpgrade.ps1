@@ -180,6 +180,10 @@ function Invoke-DbaDbUpgrade {
         foreach ($db in $InputObject) {
             # create objects to use in updates
             $server = $db.Parent
+
+            # Read before anything else runs, so that this is the database the caller was in and not one
+            # that a statement of this command left behind.
+            $callerDatabase = $server.ConnectionContext.CurrentDatabase
             $serverVersion = $server.VersionMajor
             Write-Message -Level Verbose -Message "SQL Server is using Version: $serverVersion"
 
@@ -228,12 +232,17 @@ function Invoke-DbaDbUpgrade {
                 $targetRecoveryTimeResult = "No change"
             }
 
+            # The maintenance statements below run in the database, so they go through the Invoke script
+            # method of the Database object rather than through SMO's own ExecuteNonQuery. Both issue a
+            # USE on the execution manager of the database, which is the connection context of the parent
+            # server and belongs to the caller, but only ours puts the previous database back afterwards.
+            # See #10555 and #10556.
             if (!($NoCheckDb)) {
                 Write-Message -Level Verbose -Message "Updating $db with DBCC CHECKDB DATA_PURITY"
                 If ($Pscmdlet.ShouldProcess($server, "Updating $db with DBCC CHECKDB DATA_PURITY")) {
                     $tsqlCheckDB = "DBCC CHECKDB ('$($db.Name)') WITH DATA_PURITY, NO_INFOMSGS"
                     try {
-                        $db.ExecuteNonQuery($tsqlCheckDB)
+                        $db.Invoke($tsqlCheckDB)
                         $DataPurityResult = "Success"
                     } catch {
                         Write-Message -Level Warning -Message "Failed run DBCC CHECKDB with DATA_PURITY on $db" -ErrorRecord $_ -Target $instance
@@ -249,7 +258,7 @@ function Invoke-DbaDbUpgrade {
                 If ($Pscmdlet.ShouldProcess($server, "Updating $db with DBCC UPDATEUSAGE")) {
                     $tsqlUpdateUsage = "DBCC UPDATEUSAGE ($db) WITH NO_INFOMSGS;"
                     try {
-                        $db.ExecuteNonQuery($tsqlUpdateUsage)
+                        $db.Invoke($tsqlUpdateUsage)
                         $UpdateUsageResult = "Success"
                     } catch {
                         Write-Message -Level Warning -Message "Failed to run DBCC UPDATEUSAGE on $db" -ErrorRecord $_ -Target $instance
@@ -266,7 +275,7 @@ function Invoke-DbaDbUpgrade {
                 If ($Pscmdlet.ShouldProcess($server, "Updating $db statistics")) {
                     $tsqlStats = "EXEC sp_updatestats;"
                     try {
-                        $db.ExecuteNonQuery($tsqlStats)
+                        $db.Invoke($tsqlStats)
                         $UpdateStatsResult = "Success"
                     } catch {
                         Write-Message -Level Warning -Message "Failed to run sp_updatestats on $db" -ErrorRecord $_ -Target $instance
@@ -280,23 +289,31 @@ function Invoke-DbaDbUpgrade {
 
             if (!($NoRefreshView)) {
                 Write-Message -Level Verbose -Message "Refreshing $db Views"
-                $dbViews = $db.Views | Where-Object IsSystemObject -eq $false
-                $RefreshViewResult = "Success"
-                foreach ($dbview in $dbviews) {
-                    $viewName = $dbView.Name
-                    $viewSchema = $dbView.Schema
-                    $fullName = $viewSchema + "." + $viewName
+                # Enumerating a database level collection like Views runs in the database as well: SMO issues
+                # a USE on the execution manager of the database, which is the connection context of the
+                # parent server, and never switches back. The Invoke calls above put the database back
+                # themselves, so this is the only place in the command that has to do it. See #10555.
+                try {
+                    $dbViews = $db.Views | Where-Object IsSystemObject -eq $false
+                    $RefreshViewResult = "Success"
+                    foreach ($dbview in $dbviews) {
+                        $viewName = $dbView.Name
+                        $viewSchema = $dbView.Schema
+                        $fullName = $viewSchema + "." + $viewName
 
-                    $tsqlupdateView = "EXECUTE sp_refreshview N'$fullName';  "
+                        $tsqlupdateView = "EXECUTE sp_refreshview N'$fullName';  "
 
-                    If ($Pscmdlet.ShouldProcess($server, "Refreshing view $fullName on $db")) {
-                        try {
-                            $db.ExecuteNonQuery($tsqlupdateView)
-                        } catch {
-                            Write-Message -Level Warning -Message "Failed update view $fullName on $db" -ErrorRecord $_ -Target $instance
-                            $RefreshViewResult = "Fail"
+                        If ($Pscmdlet.ShouldProcess($server, "Refreshing view $fullName on $db")) {
+                            try {
+                                $db.Invoke($tsqlupdateView)
+                            } catch {
+                                Write-Message -Level Warning -Message "Failed update view $fullName on $db" -ErrorRecord $_ -Target $instance
+                                $RefreshViewResult = "Fail"
+                            }
                         }
                     }
+                } finally {
+                    Restore-DatabaseContext -Server $server -Database $callerDatabase
                 }
             } else {
                 Write-Message -Level Verbose -Message "Ignore View Refreshes"

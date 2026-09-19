@@ -87,7 +87,7 @@ function New-DbaSsisCatalog {
     )
     begin {
         if ($PSVersionTable.PSEdition -eq "Core") {
-            Stop-Function -Message "This command is not supported on Linux or macOS"
+            Stop-Function -Message "PowerShell Core is not supported because the SQL Server Integration Services object model is only shipped for Windows PowerShell, please use Windows PowerShell."
             return
         }
         if (-not $SecurePassword -and -not $Credential) {

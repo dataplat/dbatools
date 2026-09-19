@@ -20,6 +20,11 @@ function Test-DbaNetworkCertificate {
         consistent behavior. For details on certificate requirements, see
         https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/certificate-requirements
 
+        The private key may live in a legacy Cryptographic Service Provider (what New-DbaComputerCertificate
+        creates) or in a Key Storage Provider (what New-SelfSignedCertificate creates by default). SQL Server
+        loads both key types. The key has to allow key exchange, which for a legacy CSP key means KeySpec
+        AT_KEYEXCHANGE as the Microsoft certificate requirements demand.
+
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
 
@@ -78,7 +83,7 @@ function Test-DbaNetworkCertificate {
         - CertificateFound: Boolean indicating if the certificate was found in LocalMachine\My
         - KeyUsagesValid: Boolean indicating if the certificate has the required key usages (DigitalSignature and KeyEncipherment)
         - DnsNamesValid: Boolean indicating if the certificate's DNS names include the server's network name
-        - PrivateKeyValid: Boolean indicating if the private key is RSACryptoServiceProvider with KeyNumber Exchange
+        - PrivateKeyValid: Boolean indicating if the certificate has an accessible RSA private key that allows key exchange (for a legacy CSP key this is KeySpec AT_KEYEXCHANGE, as the Microsoft certificate requirements demand; a Key Storage Provider (CNG) key is accepted as well, SQL Server loads both key types)
         - PublicKeyValid: Boolean indicating if the public key is RSA with at least 2048 bits
         - SignatureAlgorithmValid: Boolean indicating if the signature algorithm is SHA-256, SHA-384, or SHA-512
         - EnhancedKeyUsageValid: Boolean indicating if the certificate has the Server Authentication enhanced key usage
@@ -86,7 +91,8 @@ function Test-DbaNetworkCertificate {
         - KeyUsages: The actual key usage flags value
         - DnsNames: Array of DNS names from the certificate
         - PrivateKeyType: Full type name of the private key object
-        - PrivateKeyNumber: Key number from the CspKeyContainerInfo
+        - PrivateKeyProvider: Name of the provider that holds the private key, for example "Microsoft RSA SChannel Cryptographic Provider" (legacy CSP) or "Microsoft Software Key Storage Provider" (CNG)
+        - PrivateKeyNumber: KeySpec of a legacy CSP key (Exchange or Signature), $null for a Key Storage Provider key
         - PublicKeySize: Public key size in bits
         - PublicKeyAlgorithm: Public key algorithm friendly name
         - SignatureAlgorithm: Signature algorithm friendly name
@@ -137,6 +143,60 @@ function Test-DbaNetworkCertificate {
             $thumbprint = $args[1]
             $minimumValidDays = $args[2]
 
+            # This function is kept aligned in Get-DbaNetworkConfiguration, Test-DbaNetworkCertificate and Set-DbaNetworkCertificate.
+            # It opens the private key through the CNG API, which works for a legacy CSP key and for a Key Storage Provider (CNG) key
+            # in both PowerShell editions. $cert.PrivateKey does not: it is $null for a Key Storage Provider key in Windows PowerShell
+            # and always an RSACng in PowerShell 7, where CspKeyContainerInfo does not exist.
+            # SQL Server loads both key types (verified with SQL Server 2019, 2022 and 2025 and their Configuration Managers), so a
+            # Key Storage Provider key is not rejected. The Microsoft certificate requirements ask for KeySpec AT_KEYEXCHANGE, and a
+            # legacy CSP key created with AT_SIGNATURE reports a key usage of Signing only when opened through CNG, so the key has
+            # to allow decryption to be valid.
+            function Get-PrivateKeyInfo {
+                param ($Certificate)
+                $info = [PSCustomObject]@{
+                    Type      = $null
+                    Provider  = $null
+                    KeyNumber = $null
+                    FileName  = $null
+                    Valid     = $false
+                }
+                $rsa = $null
+                try {
+                    $rsa = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($Certificate)
+                } catch {
+                    # RSACertificateExtensions needs .NET Framework 4.6, older hosts only have the legacy property.
+                    try {
+                        $rsa = $Certificate.PrivateKey
+                    } catch {
+                        $rsa = $null
+                    }
+                }
+                if ($null -ne $rsa) {
+                    $info.Type = $rsa.GetType().FullName
+                }
+                if ($info.Type -eq "System.Security.Cryptography.RSACng") {
+                    $info.Provider = $rsa.Key.Provider.Provider
+                    $info.FileName = $rsa.Key.UniqueName
+                    $info.Valid = ($rsa.Key.KeyUsage -band [System.Security.Cryptography.CngKeyUsages]::Decryption) -ne 0
+                    # A legacy CSP is registered under Defaults\Provider, a Key Storage Provider is not. Only a legacy CSP key has a KeySpec.
+                    # The KeySpec is reported as the name of the KeyNumber enum value, because the enum itself arrives as a number
+                    # when this scriptblock runs on a remote host.
+                    if (Test-Path -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\$($info.Provider)") {
+                        if ($info.Valid) {
+                            $info.KeyNumber = "Exchange"
+                        } else {
+                            $info.KeyNumber = "Signature"
+                        }
+                    }
+                } elseif ($info.Type -eq "System.Security.Cryptography.RSACryptoServiceProvider") {
+                    $info.Provider = $rsa.CspKeyContainerInfo.ProviderName
+                    $info.KeyNumber = [string]$rsa.CspKeyContainerInfo.KeyNumber
+                    $info.FileName = $rsa.CspKeyContainerInfo.UniqueKeyContainerName
+                    $info.Valid = $rsa.CspKeyContainerInfo.KeyNumber -eq [System.Security.Cryptography.KeyNumber]::Exchange
+                }
+                $info
+            }
+
             # As we go remote, ensure the assembly is loaded
             [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
             $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer
@@ -176,6 +236,7 @@ function Test-DbaNetworkCertificate {
                     KeyUsages               = $null
                     DnsNames                = $null
                     PrivateKeyType          = $null
+                    PrivateKeyProvider      = $null
                     PrivateKeyNumber        = $null
                     PublicKeySize           = $null
                     PublicKeyAlgorithm      = $null
@@ -209,16 +270,11 @@ function Test-DbaNetworkCertificate {
                 $dnsNamesValid = $false
             }
 
-            try {
-                $privateKeyType = if ($null -ne $cert.PrivateKey) { $cert.PrivateKey.GetType().FullName } else { $null }
-                $privateKeyNumber = if ($cert.PrivateKey -is [System.Security.Cryptography.RSACryptoServiceProvider]) { $cert.PrivateKey.CspKeyContainerInfo.KeyNumber } else { $null }
-                $privateKeyValid = $cert.PrivateKey -is [System.Security.Cryptography.RSACryptoServiceProvider] -and
-                $cert.PrivateKey.CspKeyContainerInfo.KeyNumber -eq [System.Security.Cryptography.KeyNumber]::Exchange
-            } catch {
-                $privateKeyType = $null
-                $privateKeyNumber = $null
-                $privateKeyValid = $false
-            }
+            $privateKeyInfo = Get-PrivateKeyInfo -Certificate $cert
+            $privateKeyType = $privateKeyInfo.Type
+            $privateKeyProvider = $privateKeyInfo.Provider
+            $privateKeyNumber = $privateKeyInfo.KeyNumber
+            $privateKeyValid = $privateKeyInfo.Valid
 
             try {
                 $publicKeySize = $cert.PublicKey.Key.KeySize
@@ -268,6 +324,7 @@ function Test-DbaNetworkCertificate {
                 KeyUsages               = $keyUsages
                 DnsNames                = $dnsNames
                 PrivateKeyType          = $privateKeyType
+                PrivateKeyProvider      = $privateKeyProvider
                 PrivateKeyNumber        = $privateKeyNumber
                 PublicKeySize           = $publicKeySize
                 PublicKeyAlgorithm      = $publicKeyAlgorithm

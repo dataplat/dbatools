@@ -369,13 +369,13 @@ function Expand-DbaDbLogFile {
             # We don't have windows credentials here, so Resolve-DbaNetworkName has to respect that and work like Resolve-NetBiosName did before.
             $resolvedComputerName = Resolve-DbaComputerName -ComputerName $SqlInstance
 
-            $databases = $server.Databases | Where-Object IsAccessible
+            $databases = @($server.Databases | Where-Object IsAccessible)
             Write-Message -Level Verbose -Message "Number of databases found: $($databases.Count)."
             if ($Database) {
-                $databases = $databases | Where-Object Name -In $Database
+                $databases = @($databases | Where-Object Name -In $Database)
             }
             if ($ExcludeDatabase) {
-                $databases = $databases | Where-Object Name -NotIn $ExcludeDatabase
+                $databases = @($databases | Where-Object Name -NotIn $ExcludeDatabase)
             }
 
             #go through all databases
@@ -686,7 +686,9 @@ function Expand-DbaDbLogFile {
                 } | Select-DefaultView -ExcludeProperty LogFileCount
             } #foreach database
         } catch {
-            Stop-Function -Message "Logfile $logfile on database $dbName not processed. Error: $($_.Exception.Message). Line Number:  $($_InvocationInfo.ScriptLineNumber)" -Continue
+            # No -Continue here: this block has no enclosing loop, so the continue would escape the command
+            # and eat an iteration of whatever loop the caller runs in (#10638).
+            Stop-Function -Message "Logfile $logfile on database $dbName not processed. Error: $($_.Exception.Message). Line Number:  $($_.InvocationInfo.ScriptLineNumber)"
         }
     }
 

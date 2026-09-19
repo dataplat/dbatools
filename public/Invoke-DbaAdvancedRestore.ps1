@@ -120,6 +120,7 @@ function Invoke-DbaAdvancedRestore {
         Named transaction mark in the transaction log where the restore operation should stop.
         Use this for precise point-in-time recovery to a specific marked transaction, typically created with BEGIN TRAN WITH MARK.
         Provides more granular control than timestamp-based recovery for critical business operations.
+        Once the mark is reached, the remaining backups of the chain are skipped and the database is recovered, unless -NoRecovery is used. A mark in a later backup than the one restored is reported by SQL Server, so nothing is skipped by guesswork.
 
     .PARAMETER StopBefore
         Stops the restore operation just before the specified StopMark or StopAtLsn rather than after it.
@@ -257,8 +258,17 @@ function Invoke-DbaAdvancedRestore {
         [switch]$EnableException
     )
     begin {
+        # Connect-DbaInstance tells us whether it opened a connection for us. We must only close what we opened
+        # ourselves, because closing a connection of the caller takes their session with it. Restore-DbaDatabase
+        # connects once and hands that server object down to here, so this is the connection of its caller. See #10554.
+        $isNewConnection = $false
+        $splatConnect = @{
+            SqlInstance              = $SqlInstance
+            SqlCredential            = $SqlCredential
+            IsNewConnectionReference = [ref]$isNewConnection
+        }
         try {
-            $server = Connect-DbaInstance -SqlInstance $SqlInstance -SqlCredential $SqlCredential
+            $server = Connect-DbaInstance @splatConnect
         } catch {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $SqlInstance
             return
@@ -357,7 +367,24 @@ function Invoke-DbaAdvancedRestore {
             $backups = @($internalHistory | Where-Object { $_.Database -eq $database } | Sort-Object -Property Type, FirstLsn)
             $BackupCnt = 1
 
+            # A restore that stops at a mark (an LSN is a mark to SQL Server as well) reaches its stop point in one of the
+            # log backups, and SQL Server refuses every log after that one with error 4305 ("too recent to apply"). The
+            # command used to attempt them anyway, so a successful stop-at-mark restore ended with warnings, threw under
+            # -EnableException, and left the database restoring (#10656). SQL Server says whether a log reached the mark:
+            # when it did not, the restore carries message 4329 ("contains records logged before the designated mark").
+            # No 4329 after a successful log restore with a mark means the stop point is reached: the remaining backups
+            # are skipped, and the database is recovered right there when the last backup would have recovered it.
+            # Point-in-time restores need none of this, SQL Server takes the later logs of the chain after a STOPAT and
+            # applies nothing from them.
+            $stopAtMarkRequested = -not [string]::IsNullOrEmpty($StopAtLsn) -or -not [string]::IsNullOrEmpty($StopMark)
+            $stopPointReached = $false
+
             foreach ($backup in $backups) {
+                if ($stopPointReached) {
+                    Write-Message -Level Verbose -Message "The stop point was reached before $($backup.FullName -join ", "), skipping it"
+                    $BackupCnt++
+                    continue
+                }
                 $fileRestoreStartTime = Get-Date
                 $restore = New-Object Microsoft.SqlServer.Management.Smo.Restore
                 if (($backup -ne $backups[-1]) -or $true -eq $NoRecovery) {
@@ -458,6 +485,22 @@ function Invoke-DbaAdvancedRestore {
                     try {
                         $restoreComplete = $true
                         $executeAsLogin = $null
+                        # The messages of the restore are read from the connection, which covers the SMO restore and the
+                        # statements executed directly alike. The flag is a reference so the handler can set it.
+                        # The handler is removed in the finally.
+                        $markNotReached = [ref]$false
+                        $stopHandler = $null
+                        if ($stopAtMarkRequested -and $action -eq "Log" -and -not $OutputScriptOnly -and -not $VerifyOnly) {
+                            $stopHandler = [Microsoft.Data.SqlClient.SqlInfoMessageEventHandler] {
+                                param($sender, $eventArgs)
+                                foreach ($sqlError in $eventArgs.Errors) {
+                                    if ($sqlError.Number -eq 4329) {
+                                        $markNotReached.Value = $true
+                                    }
+                                }
+                            }
+                            $server.ConnectionContext.SqlConnectionObject.add_InfoMessage($stopHandler)
+                        }
                         if ($ExecuteAs -ne "" -and $BackupCnt -eq 1) {
                             $executeAsLogin = $ExecuteAs.Replace("'", "''")
                         }
@@ -530,13 +573,53 @@ function Invoke-DbaAdvancedRestore {
                             }
                             Write-Progress -id 1 -Activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete $outerProgress -status ([System.String]::Format("Progress: {0:N2} %", $outerProgress))
                         }
+                        if ($stopHandler -and -not $markNotReached.Value) {
+                            $stopPointReached = $true
+                            Write-Message -Level Verbose -Message "The stop point was reached in $($backup.FullName -join ", ")"
+                            if ($backup -ne $backups[-1] -and $restore.NoRecovery -and -not $NoRecovery) {
+                                # The backups after this one are skipped, so the recovery the last one would have done
+                                # happens here, with the standby file the last one would have used.
+                                # The name goes between brackets, so a closing bracket in it is doubled, as SMO does for the restores above.
+                                $escapedDatabase = $database.Replace("]", "]]")
+                                if ("" -ne $StandbyDirectory) {
+                                    $standbyFile = $StandbyDirectory + "\" + $database + (Get-Date -Format yyyyMMddHHmmss) + ".bak"
+                                    $recoverSql = "RESTORE DATABASE [$escapedDatabase] WITH STANDBY = N'$($standbyFile.Replace("'", "''"))'"
+                                } else {
+                                    $recoverSql = "RESTORE DATABASE [$escapedDatabase] WITH RECOVERY"
+                                }
+                                # This statement is now the one that recovers, so it carries the recovery-only options
+                                # the last backup would have carried: the branch above appends them only to a restore
+                                # that recovers, and the marked log was restored with NORECOVERY.
+                                $recoverOptions = @()
+                                if ($KeepCDC) {
+                                    $recoverOptions += "KEEP_CDC"
+                                }
+                                if ($ErrorBrokerConversations) {
+                                    $recoverOptions += "ERROR_BROKER_CONVERSATIONS"
+                                }
+                                if ($recoverOptions) {
+                                    $recoverSql = $recoverSql + " , " + ($recoverOptions -join " , ")
+                                }
+                                Write-Message -Level Verbose -Message "Recovering $database after the stop point: $recoverSql"
+                                $null = $server.ConnectionContext.ExecuteNonQuery($recoverSql)
+                                $restore.NoRecovery = $false
+                                if ($script -is [System.Collections.Specialized.StringCollection]) {
+                                    $null = $script.Add($recoverSql)
+                                } else {
+                                    $script = "$script`n$recoverSql"
+                                }
+                            }
+                        }
                     } catch {
-                        Write-Message -Level Verbose -Message "Failed, Closing Server connection"
+                        Write-Message -Level Verbose -Message "Failed to restore $database"
                         $restoreComplete = $False
                         $ExitError = $_.Exception.InnerException
                         Stop-Function -Message "Failed to restore db $database, stopping" -ErrorRecord $_ -Continue
                         break
                     } finally {
+                        if ($stopHandler) {
+                            $server.ConnectionContext.SqlConnectionObject.remove_InfoMessage($stopHandler)
+                        }
                         if ($OutputScriptOnly -eq $false) {
                             $pathSep = Get-DbaPathSep -Server $server
                             $RestoreDirectory = ((Split-Path $backup.FileList.PhysicalName -Parent) | Sort-Object -Unique).Replace('\', $pathSep) -Join ','
@@ -598,17 +681,20 @@ function Invoke-DbaAdvancedRestore {
                         if ($restore.Devices.Count -gt 0) {
                             $restore.Devices.Clear()
                         }
-                        Write-Message -Level Verbose -Message "Closing Server connection"
-                        $server.ConnectionContext.Disconnect()
                     }
                 }
                 $BackupCnt++
             }
             Write-Progress -id 2 -Activity "Finished" -Completed
-            if ($server.ConnectionContext.exists) {
-                $server.ConnectionContext.Disconnect()
-            }
             Write-Progress -id 1 -Activity "Finished" -Completed
+        }
+
+        # This used to sit inside the loop above and be guarded by ConnectionContext.exists, which is not a
+        # property of a ServerConnection, so it was never reached. Now it runs once, and only for a connection
+        # that was opened here.
+        if ($isNewConnection) {
+            Write-Message -Level Verbose -Message "Closing the connection that was opened for the restore"
+            $server.ConnectionContext.Disconnect()
         }
     }
 }

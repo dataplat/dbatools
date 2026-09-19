@@ -205,7 +205,7 @@ function Read-DbaBackupHeader {
         foreach ($p in $Path) {
             Write-Message -Level Verbose -Message "Checking: $p"
             if ([System.IO.Path]::GetExtension("$p").Length -eq 0) {
-                Stop-Function -Message "Path ("$p") should be a file, not a folder" -Category InvalidArgument
+                Stop-Function -Message "Path ($p) should be a file, not a folder" -Category InvalidArgument
                 return
             }
         }
@@ -374,6 +374,7 @@ function Read-DbaBackupHeader {
             }
             Start-Sleep -Milliseconds 500
         }
+        Write-Progress -Id 1 -Activity Updating -Completed
         #Close the runspace pool
         $runspacePool.Close()
         [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $defaultrunspace
