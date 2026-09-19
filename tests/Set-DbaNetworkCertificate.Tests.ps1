@@ -65,32 +65,57 @@ Describe $CommandName -Tag IntegrationTests {
         $WarnVar | Should -Match "No suitable certificate found"
     }
 
-    It "Says why a certificate with a CNG key is unsuitable" {
-        # New-SelfSignedCertificate creates a Key Storage Provider (CNG) key by default. SQL Server cannot use
-        # such a key, and the refusal has to name that reason instead of a bare PrivateKeyInvalid.
-        $newCngCertificate = {
-            param ($DnsName)
+    It "Configures a certificate with a Key Storage Provider key and SQL Server loads it" {
+        # New-SelfSignedCertificate creates a Key Storage Provider (CNG) key by default. SQL Server loads such a key
+        # (verified with SQL Server 2019, 2022 and 2025), so the certificate counts as suitable and needs no -Force.
+        # Its key file lives under Crypto\Keys instead of RSA\MachineKeys, and the read permission for the service SID
+        # has to be granted there, otherwise the service does not start with this certificate.
+        $newSelfSignedCertificate = {
+            param ($Options)
+            $networkName = if ($Options.VsName) { $Options.VsName } else { hostname }
+            $dnsName = @()
+            try {
+                $dnsName += [System.Net.Dns]::GetHostEntry($networkName).HostName
+            } catch {
+                # Without a DNS entry the short name alone satisfies the DNS name check.
+            }
+            $dnsName += $networkName
             $splatCertificate = @{
-                DnsName           = $DnsName
+                DnsName           = $dnsName | Select-Object -Unique
                 CertStoreLocation = "Cert:\LocalMachine\My"
-                FriendlyName      = "dbatoolsci_cng_key"
+                FriendlyName      = $Options.FriendlyName
+                KeyAlgorithm      = "RSA"
+                KeyLength         = 2048
+                HashAlgorithm     = "SHA256"
+                KeyUsage          = "DigitalSignature", "KeyEncipherment"
+                TextExtension     = @("2.5.29.37={text}1.3.6.1.5.5.7.3.1")
+                Provider          = $Options.Provider
             }
             (New-SelfSignedCertificate @splatCertificate).Thumbprint
         }
-        $splatCreateCng = @{
+        $vsName = (Get-DbaNetworkConfiguration -SqlInstance $TestConfig.InstanceRestart -OutputType Certificate -EnableException).VSName
+        $kspOptions = @{
+            FriendlyName = "dbatoolsci_ksp_key"
+            VsName       = $vsName
+            Provider     = "Microsoft Software Key Storage Provider"
+        }
+        $splatCreateKsp = @{
             ComputerName = $computerName
-            ScriptBlock  = $newCngCertificate
-            ArgumentList = $computerName
+            ScriptBlock  = $newSelfSignedCertificate
+            ArgumentList = $kspOptions
             # Raw, because Invoke-Command2 otherwise wraps the string in an object that only has a Length.
             Raw          = $true
         }
-        $cngThumbprint = Invoke-Command2 @splatCreateCng
-        $script:createdNetworkCertificateThumbprints += $cngThumbprint
+        $kspThumbprint = Invoke-Command2 @splatCreateKsp
+        $script:createdNetworkCertificateThumbprints += $kspThumbprint
 
-        $result = Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -Thumbprint $cngThumbprint -WarningAction SilentlyContinue
-        $result | Should -BeNullOrEmpty
-        $WarnVar | Should -Match "PrivateKeyInvalid"
-        $WarnVar | Should -Match "legacy CSP key with KeySpec AT_KEYEXCHANGE"
+        $result = Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -Thumbprint $kspThumbprint -RestartService
+        $result.CertificateThumbprint | Should -Be $kspThumbprint
+        $WarnVar | Should -BeNullOrEmpty
+
+        # The proof that SQL Server accepted the key is the ERRORLOG line of the restart that names the thumbprint.
+        $loadedCertificate = Get-DbaErrorLog -SqlInstance $TestConfig.InstanceRestart -LogNumber 0 -Text "successfully loaded for encryption"
+        ($loadedCertificate.Text -join " ") | Should -Match $kspThumbprint
     }
 
     It "applies an unsuitable certificate when Force is used" {
