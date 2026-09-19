@@ -305,6 +305,17 @@ Describe $CommandName -Tag IntegrationTests {
             ($WarnVar -join " ") | Should -BeLike "*Failure on*"
         }
 
+        It "Reads the backup given in the same Path array as the file that is not one" {
+            # One unreadable file used to fail the single header read of the whole array, and the readable files
+            # were lost with it: the array form returned nothing where the pipeline form returned the backup.
+            $validBackup = (Get-ChildItem -Path $DestBackupDir -Filter "$dbname*.bak" | Select-Object -First 1).FullName
+            $results = Get-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -Path $notABackup, $validBackup -WarningAction SilentlyContinue
+            ($results | Measure-Object).Count | Should -BeGreaterThan 0
+            $results.Database | Select-Object -Unique | Should -Be $dbname
+            # The warning names the unreadable file, not just the instance.
+            ($WarnVar -join " ") | Should -BeLike "*Failure on*reading $notABackup*"
+        }
+
         It "Throws for the file that is not a backup under -EnableException" {
             $headerException = $null
             $headerWarnings = $null
