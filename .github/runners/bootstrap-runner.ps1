@@ -89,6 +89,18 @@ Set-NetFirewallProfile -Profile Domain, Private, Public -Enabled False
 # The runner itself is LocalSystem and does not depend on this knob.
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name LocalAccountTokenFilterPolicy -Value 1 -Type DWord
 
+# a SQL login with CHECK_POLICY can only be locked out when the host has an account
+# lockout threshold, and the base image sets none, so LOGINPROPERTY(..., 'IsLocked')
+# stayed 0 whatever happened. SQL Server reads the local policy of the machine running
+# the instance, and the runner is not domain joined, so this is the whole story. The
+# Set-DbaLogin unlock test fails exactly five logons, so the threshold has to be five or
+# lower; duration and window only decide when Windows would release the lock by itself,
+# the test unlocks explicitly (#10529).
+$null = net accounts /lockoutthreshold:5 /lockoutduration:10 /lockoutwindow:10
+if ($LASTEXITCODE -ne 0) {
+    "WARNING: net accounts failed with exit code $LASTEXITCODE; login lockout tests will fail on this runner"
+}
+
 # the smalldisk base keeps a 30GB partition; harmless no-op when already extended
 $partitionMax = (Get-PartitionSupportedSize -DriveLetter C).SizeMax
 $partitionNow = (Get-Partition -DriveLetter C).Size
