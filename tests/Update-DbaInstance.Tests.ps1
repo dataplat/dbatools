@@ -7,7 +7,10 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     BeforeAll {
-        $exeDir = "C:\Temp\dbatools_$CommandName"
+        # The folder lives in the temp folder of the test configuration, not in a fixed C:\Temp: two test
+        # runs on the same machine each have a temp folder of their own, and a fixed path made one run
+        # find the folder of the other.
+        $exeDir = "$($TestConfig.Temp)\dbatools_$CommandName"
 
         # Prevent the functions from executing dangerous stuff and getting right responses where needed
         Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = [uint32[]]3010 } } -ModuleName dbatools
@@ -907,7 +910,7 @@ Describe $CommandName -Tag UnitTests {
 
 Describe -Skip "$CommandName Integration Tests" -Tag IntegrationTests {
     BeforeAll {
-        $exeDir = "C:\Temp\dbatools_$CommandName"
+        $exeDir = "$($TestConfig.Temp)\dbatools_$CommandName"
 
         #ignore restart requirements
         Mock -CommandName Test-PendingReboot -MockWith { $false } -ModuleName dbatools
