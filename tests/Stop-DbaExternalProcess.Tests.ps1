@@ -73,7 +73,9 @@ Describe $CommandName -Tag IntegrationTests {
         GO"
 
         # Restart the SQL Service to ensure we can remove the temporary file.
-        $null = Restart-DbaService -ComputerName $TestConfig.InstanceRestart -Type Engine -Force
+        # Only the instance the process was started on: with -ComputerName alone, every engine on that
+        # host restarts, including the instances the other tests rely on to stay up.
+        $null = Restart-DbaService -SqlInstance $TestConfig.InstanceRestart -Type Engine -Force
         Remove-Item -Path $sqlFile, $sqlcmdOutputFile
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
