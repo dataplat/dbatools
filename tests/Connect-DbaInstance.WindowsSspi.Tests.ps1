@@ -7,10 +7,16 @@ param(
 
 BeforeDiscovery {
     $script:unsupportedPlatform = $PSVersionTable.PSEdition -ne "Core" -or -not $IsWindows
+    # The test logs in with a local Windows user of the machine running the tests, so the instance has to
+    # run on that machine as well: a remote instance cannot resolve a local account of another computer,
+    # and CREATE LOGIN fails with error 15401. The CI runners host their instances locally and keep
+    # running the test; a lab of remote instances skips it. The value decides a Skip, so it has to exist
+    # at discovery time.
+    $script:instanceIsLocalHost = ([DbaInstanceParameter]$TestConfig.InstanceSingle).IsLocalHost
 }
 
 Describe "$CommandName Windows SSPI" -Tag IntegrationTests {
-    Context "explicit Windows credentials use the SqlClient SSPI provider" -Skip:$script:unsupportedPlatform {
+    Context "explicit Windows credentials use the SqlClient SSPI provider" -Skip:($script:unsupportedPlatform -or -not $script:instanceIsLocalHost) {
         BeforeAll {
             if (-not ("Dataplat.Dbatools.Connection.NetworkCredentialSspiContextProvider" -as [type])) {
                 throw "The PowerShell 7 SSPI integration test requires a dbatools.library build with NetworkCredentialSspiContextProvider."
