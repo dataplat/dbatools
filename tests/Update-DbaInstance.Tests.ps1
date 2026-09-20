@@ -604,8 +604,12 @@ Describe $CommandName -Tag UnitTests {
             $result = Update-DbaInstance -InstanceName LAB -KB KB3045321 -Path $exeDir -Download -EnableException
             Should -Invoke -CommandName Get-SQLInstanceComponent -Exactly 1 -Scope It -ModuleName dbatools
             Should -Invoke -CommandName Invoke-Program -Exactly 2 -Scope It -ModuleName dbatools
+            # The command downloads into the local temp folder, unless -Path is a network share, where it
+            # downloads into the share itself. The test folder follows $TestConfig.Temp, which is a share on
+            # a lab that tests remote instances, so the expected folder follows the same rule.
+            $expectedDownloadPath = if (([System.Uri]$exeDir).IsUnc) { $exeDir } else { [System.IO.Path]::GetTempPath() }
             Should -Invoke -CommandName Save-DbaKbUpdate -Exactly 1 -Scope It -ModuleName dbatools -ParameterFilter {
-                $Name -eq '3045321' -and $Path -eq [System.IO.Path]::GetTempPath() -and $Architecture -eq 'x64'
+                $Name -eq "3045321" -and $Path -eq $expectedDownloadPath -and $Architecture -eq "x64"
             }
 
             $result | Should -Not -BeNullOrEmpty
