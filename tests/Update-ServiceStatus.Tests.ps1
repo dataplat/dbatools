@@ -7,21 +7,21 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     InModuleScope dbatools {
-        # No $script: in here. Inside InModuleScope that prefix means the script scope of the dbatools
-        # module, and a variable written there outlives this file: the process keeps the module, so every
-        # test file that runs afterwards sees it. A $script:credential written here reached the mock
-        # parameter filter { $null -eq $Credential } of Set-DbaPrivilege.Tests.ps1, which only defines the
-        # parameters the mocked command was called with and resolves everything else through the scope
-        # chain, and that test failed whenever this file had run before it.
-        BeforeAll {
+        # Everything is set up in BeforeEach, and nothing uses $script:. Inside InModuleScope, Pester runs
+        # a BeforeAll in the script scope of the dbatools module itself, so every variable it assigns -
+        # with or without the $script: prefix - lands in the module and outlives this file: the process
+        # keeps the module, so every test file that runs afterwards sees it. A $credential left there
+        # reached the mock parameter filter { $null -eq $Credential } of Set-DbaPrivilege.Tests.ps1, which
+        # only defines the parameters the mocked command was called with and resolves everything else
+        # through the scope chain, and that test failed whenever this file had run before it. A BeforeEach
+        # runs in a scope of its own that ends with the test.
+        BeforeEach {
             $password = ConvertTo-SecureString "pw" -AsPlainText -Force
             $credential = New-Object PSCredential("sqladmin", $password)
             $mockCimSession = [PSCustomObject]@{
                 ComputerName = "sql1"
             }
-        }
 
-        BeforeEach {
             $service = [PSCustomObject]@{
                 PSComputerName  = "sql1"
                 ComputerName    = "sql1"
