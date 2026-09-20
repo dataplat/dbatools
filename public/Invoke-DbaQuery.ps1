@@ -43,6 +43,7 @@ function Invoke-DbaQuery {
     .PARAMETER As
         Controls the format of returned query results. Choose 'DataRow' (default) for typical result sets, 'PSObject' for PowerShell-friendly objects, or 'SingleValue' for scalar results.
         Use 'PSObject' when you need to pipe results to other PowerShell commands that expect objects. Use 'SingleValue' for queries returning a single value like COUNT(*) or configuration checks.
+        SingleValue returns the first column of every row of the first result set: a scalar for one row, an array for several rows and $null for no row. A NULL value comes back as System.DBNull, and further columns and result sets are dropped without a warning.
 
         PSObject and PSObjectArray output introduces overhead but adds flexibility for working with results: https://forums.powershell.org/t/dealing-with-dbnull/2328/2
 
@@ -122,7 +123,7 @@ function Invoke-DbaQuery {
 
         System.Object (when -As SingleValue is specified)
 
-        Returns a single scalar value (the first column of the first row). Use this for queries returning a count, sum, or other single value like SELECT COUNT(*) or SELECT @@SERVERNAME.
+        Returns the first column of every row of the first result set. For a query that returns one row, such as SELECT COUNT(*) or SELECT @@SERVERNAME, this is a single scalar value; several rows are returned as an array and no row returns $null. A NULL value is returned as System.DBNull, not $null. Further columns and further result sets are discarded without a warning.
 
         When -AppendServerInstance is specified, an additional ServerInstance column is added to DataRow and PSObject output, containing the source SQL Server instance name.
 
