@@ -712,13 +712,29 @@ function Connect-DbaInstance {
                 $createNewConnection = $false
                 if ($Database) {
                     Write-Message -Level Debug -Message "Database [$Database] provided."
-                    if (-not $inputObject.ConnectionContext.CurrentDatabase) {
+                    $inputObjectCurrentDatabase = $inputObject.ConnectionContext.CurrentDatabase
+                    if (-not $inputObjectCurrentDatabase) {
                         Write-Message -Level Debug -Message "ConnectionContext.CurrentDatabase is empty, so connection will be opened to get the value"
+                        # Connect() checks a connection out and keeps it checked out until Disconnect(). SMO
+                        # returns a pooled connection after each batch only when it opened the connection
+                        # itself, so the connection of the object that was passed in used to stay open from
+                        # here on: one session per server object, for the life of the process, that nothing
+                        # but a Disconnect-DbaInstance on that very object could release. A loop that hands
+                        # fresh server objects to Invoke-DbaQuery -Database therefore exhausted the pool after
+                        # a hundred iterations. So the value is read and the connection is returned right away,
+                        # unless the caller had opened it before - then it is theirs to keep. SMO reconnects on
+                        # the next batch as before. The value has to be kept in a variable, because
+                        # Disconnect() clears CurrentDatabase again.
+                        $inputObjectWasOpen = $inputObject.ConnectionContext.IsOpen
                         $inputObject.ConnectionContext.Connect()
-                        Write-Message -Level Debug -Message "ConnectionContext.CurrentDatabase is now [$($inputObject.ConnectionContext.CurrentDatabase)]"
+                        $inputObjectCurrentDatabase = $inputObject.ConnectionContext.CurrentDatabase
+                        if (-not $inputObjectWasOpen) {
+                            $inputObject.ConnectionContext.Disconnect()
+                        }
+                        Write-Message -Level Debug -Message "ConnectionContext.CurrentDatabase was [$inputObjectCurrentDatabase]"
                     }
-                    if ($inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
-                        Write-Message -Level Verbose -Message "Database [$Database] provided. Does not match ConnectionContext.CurrentDatabase [$($inputObject.ConnectionContext.CurrentDatabase)], copying ConnectionContext and setting the CurrentDatabase"
+                    if ($inputObjectCurrentDatabase -ne $Database) {
+                        Write-Message -Level Verbose -Message "Database [$Database] provided. Does not match ConnectionContext.CurrentDatabase [$inputObjectCurrentDatabase], copying ConnectionContext and setting the CurrentDatabase"
                         $copyContext = $true
                         if ($inputObject.ConnectionContext.ConnectAsUserName -ne '') {
                             Write-Message -Level Debug -Message "Using ConnectAsUserName [$($inputObject.ConnectionContext.ConnectAsUserName)], so changing database context is not possible without loosing this information. We will create a new connection targeting database [$Database]"
