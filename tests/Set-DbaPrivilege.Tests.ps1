@@ -138,8 +138,13 @@ InModuleScope dbatools {
             }
             $null = Set-DbaPrivilege @splatSetPrivilegeLocal
 
-            Should -Invoke Test-PSRemoting -Times 1 -Exactly -ParameterFilter { $null -eq $Credential }
-            Should -Invoke Get-DbaService -Times 1 -Exactly -ParameterFilter { $null -eq $Credential }
+            # A parameter filter only defines the parameters the mocked command was called with; any other
+            # name resolves through the scope chain, up to the script scope of the module. So { $null -eq
+            # $Credential } passed on its own and failed as soon as an earlier test file of the same process
+            # had left a $script:credential in the module. Whether the parameter was bound at all is the
+            # question, and that is what $PesterBoundParameters answers.
+            Should -Invoke Test-PSRemoting -Times 1 -Exactly -ParameterFilter { -not $PesterBoundParameters.ContainsKey("Credential") }
+            Should -Invoke Get-DbaService -Times 1 -Exactly -ParameterFilter { -not $PesterBoundParameters.ContainsKey("Credential") }
         }
     }
 }
