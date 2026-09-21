@@ -107,17 +107,49 @@ Describe $CommandName -Tag IntegrationTests {
             $webHosting.Add($webHostingStoreCert)
             $webHosting.Close()
 
+            # A certificate whose key is shared with a copy in a custom folder that the caller is not allowed to read.
+            # The folder is still listed under Cert:\LocalMachine, but opening it fails, so the scan for shared keys is
+            # incomplete and the key has to stay. Read access is taken away with a deny rule on the registry key of the
+            # folder; the rule leaves ReadPermissions and ChangePermissions alone, so the same account can remove it again.
+            $unreadableFolder = "dbatoolsci_unreadable"
+            $unreadableCert = New-DbaComputerCertificate -SelfSigned
+            $unreadableKeyFile = & $getKeyFile $unreadableCert.Thumbprint
+            $unreadableStoreCert = Get-ChildItem -Path "Cert:\LocalMachine\My\$($unreadableCert.Thumbprint)"
+            $unreadableStore = New-Object System.Security.Cryptography.X509Certificates.X509Store -ArgumentList $unreadableFolder, "LocalMachine"
+            $unreadableStore.Open("ReadWrite")
+            $unreadableStore.Add($unreadableStoreCert)
+            $unreadableStore.Close()
+            $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
+            $denyRule = New-Object System.Security.AccessControl.RegistryAccessRule -ArgumentList $currentUser, "QueryValues, EnumerateSubKeys", "ContainerInherit", "None", "Deny"
+            # Set-Acl cannot restore the rule, because it opens the key with the read rights the rule denies.
+            $setUnreadableFolderDenyRule = {
+                param ($Present)
+                $registryRights = [System.Security.AccessControl.RegistryRights]"ReadPermissions, ChangePermissions"
+                $registryKey = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey("SOFTWARE\Microsoft\SystemCertificates\$unreadableFolder", [Microsoft.Win32.RegistryKeyPermissionCheck]::ReadWriteSubTree, $registryRights)
+                $registrySecurity = $registryKey.GetAccessControl()
+                if ($Present) {
+                    $registrySecurity.AddAccessRule($denyRule)
+                } else {
+                    $null = $registrySecurity.RemoveAccessRule($denyRule)
+                }
+                $registryKey.SetAccessControl($registrySecurity)
+                $registryKey.Close()
+            }
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            foreach ($leftover in $keptCert.Thumbprint, $cspCert.Thumbprint, $kspThumbprint, $sharedCert.Thumbprint, $webHostingCert.Thumbprint) {
+            # The deny rule is removed here as well, in case the test that sets it did not get to its finally block.
+            & $setUnreadableFolderDenyRule -Present $false
+            foreach ($leftover in $keptCert.Thumbprint, $cspCert.Thumbprint, $kspThumbprint, $sharedCert.Thumbprint, $webHostingCert.Thumbprint, $unreadableCert.Thumbprint) {
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder TrustedPeople -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder WebHosting -DeleteKey -WarningAction SilentlyContinue
+                $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder $unreadableFolder -DeleteKey -WarningAction SilentlyContinue
             }
-            foreach ($keyFile in $keptKeyFile, $cspKeyFile, $kspKeyFile, $sharedKeyFile, $webHostingKeyFile) {
+            foreach ($keyFile in $keptKeyFile, $cspKeyFile, $kspKeyFile, $sharedKeyFile, $webHostingKeyFile, $unreadableKeyFile) {
                 if (Test-Path -Path $keyFile -PathType Leaf) {
                     [System.IO.File]::Delete($keyFile)
                 }
@@ -126,6 +158,8 @@ Describe $CommandName -Tag IntegrationTests {
                 # The test created the WebHosting folder, so its registry key goes again.
                 [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey("SOFTWARE\Microsoft\SystemCertificates", $true).DeleteSubKeyTree("WebHosting", $false)
             }
+            # The custom folder is always created by the test, so its registry key goes as well.
+            [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey("SOFTWARE\Microsoft\SystemCertificates", $true).DeleteSubKeyTree($unreadableFolder, $false)
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -176,6 +210,29 @@ Describe $CommandName -Tag IntegrationTests {
             $lastResult.Status | Should -Be "Removed"
             $lastResult.PrivateKey | Should -Be "Deleted"
             Test-Path -Path $webHostingKeyFile -PathType Leaf | Should -BeFalse
+            $WarnVar | Should -BeNullOrEmpty
+        }
+
+        It "Keeps a key when a folder of the store location cannot be read" {
+            & $setUnreadableFolderDenyRule -Present $true
+            try {
+                # The folder is listed, but not readable, so the store open throws instead of showing the copy.
+                (Get-ChildItem -Path "Cert:\LocalMachine").Name | Should -Contain $unreadableFolder
+                { Get-ChildItem -Path "Cert:\LocalMachine\$unreadableFolder" -ErrorAction Stop } | Should -Throw
+
+                $result = Remove-DbaComputerCertificate -Thumbprint $unreadableCert.Thumbprint -DeleteKey
+                $result.Status | Should -Be "Removed"
+                $result.PrivateKey | Should -Be "Not deleted: Cert:\LocalMachine\$unreadableFolder could not be read, so it is unknown whether another certificate uses the key"
+                Test-Path -Path $unreadableKeyFile -PathType Leaf | Should -BeTrue
+            } finally {
+                & $setUnreadableFolderDenyRule -Present $false
+            }
+
+            # With the folder readable again, the copy in it still has a working key and takes the key with it.
+            $lastResult = Remove-DbaComputerCertificate -Thumbprint $unreadableCert.Thumbprint -Folder $unreadableFolder -DeleteKey
+            $lastResult.Status | Should -Be "Removed"
+            $lastResult.PrivateKey | Should -Be "Deleted"
+            Test-Path -Path $unreadableKeyFile -PathType Leaf | Should -BeFalse
             $WarnVar | Should -BeNullOrEmpty
         }
     }

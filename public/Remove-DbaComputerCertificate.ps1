@@ -31,6 +31,7 @@ function Remove-DbaComputerCertificate {
         Deletes the private key of the certificate together with the certificate, like the DeleteKey switch of the Cert: drive in Windows PowerShell.
         Works for keys in a legacy Cryptographic Service Provider (what New-DbaComputerCertificate creates) and in a Key Storage Provider (CNG).
         The key is kept when another certificate in the same store location still uses it, for example a copy of the certificate in another folder (WebHosting and custom folders included) or a renewed certificate that reused the key; the output says which one.
+        The key is also kept when a folder of the store location cannot be read, because then it is unknown whether a certificate in that folder uses the key; the output names the folder.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -250,6 +251,10 @@ function Remove-DbaComputerCertificate {
                         } catch {
                             $storeNames = $null
                         }
+                        # A folder is listed from the registry, but opening it or reading its certificates can still fail,
+                        # for example when the caller has no read access to that folder. Then the scan is incomplete and
+                        # the key has to stay, because that folder may hold a certificate that uses it.
+                        $unreadableFolders = @()
                         $sharedWith = foreach ($storeName in $storeNames) {
                             $otherStore = New-Object System.Security.Cryptography.X509Certificates.X509Store -ArgumentList $storeName, $storeLocation
                             try {
@@ -267,8 +272,7 @@ function Remove-DbaComputerCertificate {
                                     }
                                 }
                             } catch {
-                                # A store that cannot be opened holds no certificate that could share the key.
-                                $null = 1
+                                $unreadableFolders += "Cert:\$Store\$storeName"
                             } finally {
                                 $otherStore.Close()
                             }
@@ -278,6 +282,9 @@ function Remove-DbaComputerCertificate {
                             $key = $null
                         } elseif ($sharedWith) {
                             $privateKey = "Kept, shared with $($sharedWith -join ", ")"
+                            $key = $null
+                        } elseif ($unreadableFolders) {
+                            $privateKey = "Not deleted: $($unreadableFolders -join ", ") could not be read, so it is unknown whether another certificate uses the key"
                             $key = $null
                         }
                     }
