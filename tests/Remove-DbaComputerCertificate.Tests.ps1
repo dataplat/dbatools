@@ -192,6 +192,37 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $exchangeKeyFile = & $getKeyFile $exchangeCert.Thumbprint
 
+            # A certificate whose key is shared with an archived copy in another folder. A store hides archived
+            # certificates unless it is opened with IncludeArchived, so the scan has to ask for them. Archiving is a
+            # property of the store entry, which is why the copy is archived through the store it was added to.
+            $archivedCert = New-DbaComputerCertificate -SelfSigned
+            $archivedKeyFile = & $getKeyFile $archivedCert.Thumbprint
+            $trustedPeople.Open("ReadWrite")
+            $trustedPeople.Add((Get-ChildItem -Path "Cert:\LocalMachine\My\$($archivedCert.Thumbprint)"))
+            $trustedPeople.Close()
+            $trustedPeople.Open("ReadWrite")
+            $archivedCopy = $trustedPeople.Certificates | Where-Object Thumbprint -eq $archivedCert.Thumbprint
+            $archivedCopy.Archived = $true
+            $trustedPeople.Close()
+
+            # A certificate whose key also sits in a container of its own: exported to PFX and imported into the user key
+            # set, the copy in CurrentUser\My gets a separate key container with the same key, like the same PFX file
+            # imported once for the machine and once for the user. Deleting the machine container leaves it alone, so the
+            # machine key goes with the machine certificate although the public keys match.
+            $separateCert = New-DbaComputerCertificate -SelfSigned
+            $separateKeyFile = & $getKeyFile $separateCert.Thumbprint
+            $separateStoreCert = Get-ChildItem -Path "Cert:\LocalMachine\My\$($separateCert.Thumbprint)"
+            $separatePassword = "dbatoolsci_$(Get-Random)"
+            $separatePfx = $separateStoreCert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx, $separatePassword)
+            $separateFlags = [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]"UserKeySet, PersistKeySet"
+            $separateUserCert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList $separatePfx, $separatePassword, $separateFlags
+            $currentUserMy.Open("ReadWrite")
+            $currentUserMy.Add($separateUserCert)
+            $currentUserMy.Close()
+            # The file of a user key of a legacy CSP sits under RSA\<SID> in the roaming profile.
+            $separateUserKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey((Get-ChildItem -Path "Cert:\CurrentUser\My\$($separateCert.Thumbprint)")).Key
+            $separateUserKeyFile = "$env:APPDATA\Microsoft\Crypto\RSA\$([System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value)\$($separateUserKey.UniqueName)"
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -200,7 +231,7 @@ Describe $CommandName -Tag IntegrationTests {
             # The deny rule is removed here as well, in case the test that sets it did not get to its finally block.
             & $setUnreadableFolderDenyRule -Present $false
             # A thumbprint is missing when the setup of its certificate failed, the cleanup goes on with the others.
-            $leftovers = @($keptCert.Thumbprint, $cspCert.Thumbprint, $kspThumbprint, $sharedCert.Thumbprint, $webHostingCert.Thumbprint, $unreadableCert.Thumbprint, $currentUserFirstCert.Thumbprint, $localMachineFirstCert.Thumbprint, $exchangeCert.Thumbprint, $signatureCert.Thumbprint) | Where-Object { $PSItem }
+            $leftovers = @($keptCert.Thumbprint, $cspCert.Thumbprint, $kspThumbprint, $sharedCert.Thumbprint, $webHostingCert.Thumbprint, $unreadableCert.Thumbprint, $currentUserFirstCert.Thumbprint, $localMachineFirstCert.Thumbprint, $exchangeCert.Thumbprint, $signatureCert.Thumbprint, $archivedCert.Thumbprint, $separateCert.Thumbprint) | Where-Object { $PSItem }
             foreach ($leftover in $leftovers) {
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder TrustedPeople -DeleteKey -WarningAction SilentlyContinue
@@ -215,7 +246,7 @@ Describe $CommandName -Tag IntegrationTests {
                     [System.IO.File]::Delete($requestFile)
                 }
             }
-            $keyFiles = @($keptKeyFile, $cspKeyFile, $kspKeyFile, $sharedKeyFile, $webHostingKeyFile, $unreadableKeyFile, $currentUserFirstKeyFile, $localMachineFirstKeyFile, $exchangeKeyFile) | Where-Object { $PSItem }
+            $keyFiles = @($keptKeyFile, $cspKeyFile, $kspKeyFile, $sharedKeyFile, $webHostingKeyFile, $unreadableKeyFile, $currentUserFirstKeyFile, $localMachineFirstKeyFile, $exchangeKeyFile, $archivedKeyFile, $separateKeyFile, $separateUserKeyFile) | Where-Object { $PSItem }
             foreach ($keyFile in $keyFiles) {
                 if (Test-Path -Path $keyFile -PathType Leaf) {
                     [System.IO.File]::Delete($keyFile)
@@ -348,6 +379,52 @@ Describe $CommandName -Tag IntegrationTests {
             $lastResult.Status | Should -Be "Removed"
             $lastResult.PrivateKey | Should -Be "Deleted"
             Test-Path -Path $exchangeKeyFile -PathType Leaf | Should -BeFalse
+            $WarnVar | Should -BeNullOrEmpty
+        }
+
+        It "Keeps a key that an archived certificate still uses" {
+            # A plain store open hides the archived copy, which is what the scan has to see through.
+            $trustedPeople.Open("ReadOnly")
+            @($trustedPeople.Certificates | Where-Object Thumbprint -eq $archivedCert.Thumbprint).Count | Should -Be 0
+            $trustedPeople.Close()
+
+            $result = Remove-DbaComputerCertificate -Thumbprint $archivedCert.Thumbprint -DeleteKey
+            $result.Status | Should -Be "Removed"
+            $result.PrivateKey | Should -Be "Kept, shared with $($archivedCert.Thumbprint) in Cert:\LocalMachine\TrustedPeople"
+            Test-Path -Path $archivedKeyFile -PathType Leaf | Should -BeTrue
+            $trustedPeople.Open("ReadOnly, IncludeArchived")
+            $archivedCopy = $trustedPeople.Certificates | Where-Object Thumbprint -eq $archivedCert.Thumbprint
+            $archivedCopy.Archived | Should -BeTrue
+            { [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($archivedCopy) } | Should -Not -Throw
+            $trustedPeople.Close()
+
+            # The archived copy is found by its thumbprint like any other certificate and takes the key with it.
+            $lastResult = Remove-DbaComputerCertificate -Thumbprint $archivedCert.Thumbprint -Folder TrustedPeople -DeleteKey
+            $lastResult.Status | Should -Be "Removed"
+            $lastResult.PrivateKey | Should -Be "Deleted"
+            Test-Path -Path $archivedKeyFile -PathType Leaf | Should -BeFalse
+            $WarnVar | Should -BeNullOrEmpty
+        }
+
+        It "Deletes a key that another certificate only holds in a container of its own" {
+            # The user copy has the same public key, but its own container in the user key set with its own file.
+            $userCopy = Get-ChildItem -Path "Cert:\CurrentUser\My\$($separateCert.Thumbprint)"
+            [Convert]::ToBase64String($userCopy.GetPublicKey()) | Should -Be ([Convert]::ToBase64String((Get-ChildItem -Path "Cert:\LocalMachine\My\$($separateCert.Thumbprint)").GetPublicKey()))
+            $separateUserKey.IsMachineKey | Should -BeFalse
+            Test-Path -Path $separateUserKeyFile -PathType Leaf | Should -BeTrue
+
+            $result = Remove-DbaComputerCertificate -Thumbprint $separateCert.Thumbprint -DeleteKey
+            $result.Status | Should -Be "Removed"
+            $result.PrivateKey | Should -Be "Deleted"
+            Test-Path -Path $separateKeyFile -PathType Leaf | Should -BeFalse
+            # The user copy still has its own key.
+            { [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey((Get-ChildItem -Path "Cert:\CurrentUser\My\$($separateCert.Thumbprint)")) } | Should -Not -Throw
+            Test-Path -Path $separateUserKeyFile -PathType Leaf | Should -BeTrue
+
+            $lastResult = Remove-DbaComputerCertificate -Thumbprint $separateCert.Thumbprint -Store CurrentUser -DeleteKey
+            $lastResult.Status | Should -Be "Removed"
+            $lastResult.PrivateKey | Should -Be "Deleted"
+            Test-Path -Path $separateUserKeyFile -PathType Leaf | Should -BeFalse
             $WarnVar | Should -BeNullOrEmpty
         }
     }
