@@ -219,9 +219,19 @@ Describe $CommandName -Tag IntegrationTests {
             $currentUserMy.Open("ReadWrite")
             $currentUserMy.Add($separateUserCert)
             $currentUserMy.Close()
-            # The file of a user key of a legacy CSP sits under RSA\<SID> in the roaming profile.
+            # The file of a user key of a legacy CSP sits under RSA\<SID>: in the roaming profile for a normal account, under
+            # ProgramData for LocalSystem and the other service accounts, which is what the CI runner is.
             $separateUserKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey((Get-ChildItem -Path "Cert:\CurrentUser\My\$($separateCert.Thumbprint)")).Key
-            $separateUserKeyFile = "$env:APPDATA\Microsoft\Crypto\RSA\$([System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value)\$($separateUserKey.UniqueName)"
+            $separateUserKeyFile = $null
+            foreach ($userKeyRoot in "$env:APPDATA\Microsoft\Crypto\RSA", "$env:ProgramData\Microsoft\Crypto\RSA") {
+                $userKeyCandidate = "$userKeyRoot\$([System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value)\$($separateUserKey.UniqueName)"
+                if (Test-Path -Path $userKeyCandidate -PathType Leaf) {
+                    $separateUserKeyFile = $userKeyCandidate
+                }
+            }
+            if (-not $separateUserKeyFile) {
+                throw "the key file of the user copy of the certificate was not found"
+            }
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
