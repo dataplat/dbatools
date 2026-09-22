@@ -177,7 +177,6 @@ Describe $CommandName -Tag IntegrationTests {
                     "UseExistingKeySet = TRUE",
                     "KeySpec = $keySpec",
                     "MachineKeySet = TRUE",
-                    "Exportable = TRUE",
                     "FriendlyName = `"dbatoolsci_$keyName`"",
                     "ProviderName = `"$sharedProvider`"",
                     "ProviderType = 24",
@@ -216,7 +215,8 @@ Describe $CommandName -Tag IntegrationTests {
                     [System.IO.File]::Delete($requestFile)
                 }
             }
-            foreach ($keyFile in $keptKeyFile, $cspKeyFile, $kspKeyFile, $sharedKeyFile, $webHostingKeyFile, $unreadableKeyFile, $currentUserFirstKeyFile, $localMachineFirstKeyFile, $exchangeKeyFile) {
+            $keyFiles = @($keptKeyFile, $cspKeyFile, $kspKeyFile, $sharedKeyFile, $webHostingKeyFile, $unreadableKeyFile, $currentUserFirstKeyFile, $localMachineFirstKeyFile, $exchangeKeyFile) | Where-Object { $PSItem }
+            foreach ($keyFile in $keyFiles) {
                 if (Test-Path -Path $keyFile -PathType Leaf) {
                     [System.IO.File]::Delete($keyFile)
                 }
