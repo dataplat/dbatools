@@ -463,8 +463,8 @@ function New-DbaComputerCertificate {
                 $pendingRequestsBefore = @((Get-ChildItem -Path Cert:\LocalMachine\REQUEST -ErrorAction SilentlyContinue).Thumbprint)
 
                 if ($PScmdlet.ShouldProcess("local", "Creating certificate for $computer")) {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Running: certreq -new $certCfg $certCsr"
-                    $create = certreq -new $certCfg $certCsr
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Running: certreq -q -new $certCfg $certCsr"
+                    $create = certreq -q -new $certCfg $certCsr
                 }
 
                 if ($SelfSigned) {
@@ -488,13 +488,13 @@ function New-DbaComputerCertificate {
                     }
                 } else {
                     if ($PScmdlet.ShouldProcess("local", "Submitting certificate request for $computer to $CaServer\$CaName")) {
-                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certCsr $certCrt $certPfx"
-                        $submit = certreq -submit -config "$CaServer\$CaName" -attrib $certTemplate $certCsr $certCrt $certPfx
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -q -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certCsr $certCrt $certPfx"
+                        $submit = certreq -q -submit -config "$CaServer\$CaName" -attrib $certTemplate $certCsr $certCrt $certPfx
                     }
 
                     if ($submit -match "ssued") {
-                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -accept -machine $certCrt"
-                        $null = certreq -accept -machine $certCrt
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -q -accept -machine $certCrt"
+                        $null = certreq -q -accept -machine $certCrt
                         $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2 ($certCrt, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
                         $storedCert = Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
                     } elseif ($submit) {
@@ -593,7 +593,7 @@ function New-DbaComputerCertificate {
                 try {
                     Remove-Item -Force -Recurse $certDir -ErrorAction SilentlyContinue
                 } catch {
-                    Stop-Function "Isue removing files from $certDir" -Target $certDir -ErrorRecord $_
+                    Stop-Function -Message "Issue removing files from $certDir" -Target $certDir -ErrorRecord $PSItem
                 }
             }
             Write-ProgressHelper -Completed
