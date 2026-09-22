@@ -20,6 +20,8 @@ function New-DbaComputerCertificate {
 
         The certificate is generated using AD's webserver SSL template on the client machine and pushed to the remote machine.
 
+        The command leaves nothing behind on the computer it runs on: the copy of a self-signed certificate that certreq puts into the intermediate CA store is removed right away, a request the CA did not answer is removed from the REQUEST store together with its key, and a certificate created for another computer is removed from the local store together with its key once it has been exported.
+
     .PARAMETER ComputerName
         Specifies the target computer or computers where the certificate will be created and installed. Defaults to localhost.
         For SQL Server clusters, specify each cluster node here and use ClusterInstanceName for the cluster's virtual name.
@@ -456,6 +458,10 @@ function New-DbaComputerCertificate {
                 Add-Content $certCfg $san
                 Add-Content $certCfg "Critical=2.5.29.17"
 
+                # A request for a CA waits in LocalMachine\REQUEST with its key until the CA answers. The store is noted before
+                # the request is created, so that a request the CA never answered can be found and removed again.
+                $pendingRequestsBefore = @((Get-ChildItem -Path Cert:\LocalMachine\REQUEST -ErrorAction SilentlyContinue).Thumbprint)
+
                 if ($PScmdlet.ShouldProcess("local", "Creating certificate for $computer")) {
                     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Running: certreq -new $certCfg $certCsr"
                     $create = certreq -new $certCfg $certCsr
@@ -464,6 +470,18 @@ function New-DbaComputerCertificate {
                 if ($SelfSigned) {
                     $serial = (($create -Split "Serial Number:" -Split "Subject")[2]).Trim() # D:
                     $storedCert = Get-ChildItem Cert:\LocalMachine\My -Recurse | Where-Object SerialNumber -eq $serial
+
+                    # certreq installs a self-signed certificate twice: with its key in LocalMachine\My, and without the key in
+                    # LocalMachine\CA, the intermediate CA store. The copy serves no purpose, a self-signed certificate is its own
+                    # root, and it stays behind when the certificate is removed later. So it goes right away.
+                    if ($storedCert) {
+                        $caStore = New-Object System.Security.Cryptography.X509Certificates.X509Store -ArgumentList "CA", "LocalMachine"
+                        $caStore.Open("ReadWrite")
+                        foreach ($caCopy in $caStore.Certificates.Find("FindByThumbprint", $storedCert.Thumbprint, $false)) {
+                            $caStore.Remove($caCopy)
+                        }
+                        $caStore.Close()
+                    }
 
                     if ($computer.IsLocalHost) {
                         $storedCert | Select-Object * | Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
@@ -483,7 +501,25 @@ function New-DbaComputerCertificate {
                         Write-Message -Level Warning -Message "Something went wrong"
                         Write-Message -Level Warning -Message "$create"
                         Write-Message -Level Warning -Message "$submit"
-                        Stop-Function -Message "Failure when attempting to create the cert on $computer. Exception: $_" -Target $computer -Continue
+                        # The CA did not issue the certificate, so the pending request and its key would stay in
+                        # LocalMachine\REQUEST forever. They go with the failure.
+                        $pendingRequests = (Get-ChildItem -Path Cert:\LocalMachine\REQUEST -ErrorAction SilentlyContinue).Thumbprint | Where-Object { $PSItem -notin $pendingRequestsBefore }
+                        foreach ($pendingRequest in $pendingRequests) {
+                            Write-Message -Level Verbose -Message "Removing the pending request $pendingRequest and its key from LocalMachine\REQUEST"
+                            $splatRemoveRequest = @{
+                                Thumbprint      = $pendingRequest
+                                Folder          = "REQUEST"
+                                DeleteKey       = $true
+                                Confirm         = $false
+                                EnableException = $true
+                            }
+                            try {
+                                $null = Remove-DbaComputerCertificate @splatRemoveRequest
+                            } catch {
+                                Write-Message -Level Warning -Message "The pending request $pendingRequest could not be removed from LocalMachine\REQUEST: $PSItem"
+                            }
+                        }
+                        Stop-Function -Message "Failure when attempting to create the cert on $computer. $($submit | Select-Object -Last 1)" -Target $computer -Continue
                     }
 
                     if ($Computer.IsLocalHost) {
@@ -501,7 +537,23 @@ function New-DbaComputerCertificate {
                     }
 
                     if ($PScmdlet.ShouldProcess("local", "Removing cert from disk but keeping it in memory")) {
-                        $storedCert | Remove-Item
+                        # The certificate now lives in the PFX data and belongs to the target computer. Removing only the store entry
+                        # would leave its private key on this computer, so the key is deleted with it.
+                        $splatRemoveLocal = @{
+                            Thumbprint      = $storedCert.Thumbprint
+                            DeleteKey       = $true
+                            Confirm         = $false
+                            EnableException = $true
+                        }
+                        try {
+                            $localRemoval = Remove-DbaComputerCertificate @splatRemoveLocal
+                            if ($localRemoval.PrivateKey -ne "Deleted") {
+                                Write-Message -Level Warning -Message "The private key of the certificate $($storedCert.Thumbprint) is still on $env:COMPUTERNAME: $($localRemoval.PrivateKey)"
+                            }
+                        } catch {
+                            # The PFX data is there, so the import on the target still goes ahead.
+                            Write-Message -Level Warning -Message "The certificate $($storedCert.Thumbprint) could not be removed from LocalMachine\My on $env:COMPUTERNAME: $PSItem"
+                        }
                     }
 
                     if ($ClusterInstanceName) { $secondaryNode = $true }
