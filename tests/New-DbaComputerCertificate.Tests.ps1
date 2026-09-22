@@ -304,7 +304,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Warns instead of returning a certificate" {
             $unreachableCaResult | Should -BeNullOrEmpty
-            $unreachableCaWarning | Should -Match "Failure when attempting to create the cert"
+            # The command writes several warnings on this path, the last one is the message of Stop-Function.
+            ($unreachableCaWarning -join " ") | Should -Match "Failure when attempting to create the cert"
         }
 
         It "Removes the pending request and its key again" {
