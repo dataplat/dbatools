@@ -150,41 +150,48 @@ Describe $CommandName -Tag IntegrationTests {
             $currentUserMy.Close()
 
             # A legacy CSP key container can hold a key exchange key and a signature key, and it can only be deleted as a whole.
-            # A second certificate on a signature key in the container of the first certificate has to keep the container alive.
-            $exchangeCert = New-DbaComputerCertificate -SelfSigned
-            $exchangeKeyFile = & $getKeyFile $exchangeCert.Thumbprint
-            $exchangeStoreCert = Get-ChildItem -Path "Cert:\LocalMachine\My\$($exchangeCert.Thumbprint)"
-            $sharedContainer = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($exchangeStoreCert).Key.KeyName
-            # KeyNumber 2 is AT_SIGNATURE, provider type 12 is PROV_RSA_SCHANNEL, the provider of New-DbaComputerCertificate.
-            $signatureKeyParameters = New-Object System.Security.Cryptography.CspParameters -ArgumentList 12, "Microsoft RSA SChannel Cryptographic Provider", $sharedContainer
-            $signatureKeyParameters.KeyNumber = 2
-            $signatureKeyParameters.Flags = [System.Security.Cryptography.CspProviderFlags]::UseMachineKeyStore
-            $signatureKey = New-Object System.Security.Cryptography.RSACryptoServiceProvider -ArgumentList 2048, $signatureKeyParameters
-            $signatureKey.Dispose()
-            # certreq builds the certificate on the signature key that already exists in the container.
-            $signatureRequest = "$env:TEMP\dbatoolsci_signature.inf"
-            $signatureFriendlyName = "dbatoolsci_signature"
-            $signatureRequestLines = @(
-                "[Version]",
-                "Signature=`"`$Windows NT`$`"",
-                "[NewRequest]",
-                "Subject = `"CN=dbatoolsci_signature`"",
-                "KeyContainer = `"$sharedContainer`"",
-                "UseExistingKeySet = TRUE",
-                "KeySpec = 2",
-                "MachineKeySet = TRUE",
-                "Exportable = TRUE",
-                "FriendlyName = `"$signatureFriendlyName`"",
-                "ProviderName = `"Microsoft RSA SChannel Cryptographic Provider`"",
-                "ProviderType = 12",
-                "RequestType = Cert"
-            )
-            Set-Content -Path $signatureRequest -Value $signatureRequestLines
-            $null = certreq -new -q $signatureRequest "$env:TEMP\dbatoolsci_signature.csr"
-            $signatureCert = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object FriendlyName -eq $signatureFriendlyName
-            if (-not $signatureCert) {
-                throw "certreq did not create the certificate on the signature key"
+            # A second certificate on the signature key in the container of the first certificate has to keep the container alive.
+            # The provider is the Enhanced RSA and AES provider (type 24), because the SChannel provider of
+            # New-DbaComputerCertificate creates no signature keys. Both keys are created in one container, then certreq
+            # builds a self-signed certificate on each of them.
+            $sharedContainer = "dbatoolsci_sharedcontainer_$(Get-Random)"
+            $sharedProvider = "Microsoft Enhanced RSA and AES Cryptographic Provider"
+            foreach ($keyNumber in 1, 2) {
+                $containerKeyParameters = New-Object System.Security.Cryptography.CspParameters -ArgumentList 24, $sharedProvider, $sharedContainer
+                $containerKeyParameters.KeyNumber = $keyNumber
+                $containerKeyParameters.Flags = [System.Security.Cryptography.CspProviderFlags]::UseMachineKeyStore
+                $containerKey = New-Object System.Security.Cryptography.RSACryptoServiceProvider -ArgumentList 2048, $containerKeyParameters
+                $containerKey.Dispose()
             }
+            $sharedRequestFiles = @()
+            foreach ($keyName in "exchange", "signature") {
+                $keySpec = if ($keyName -eq "exchange") { 1 } else { 2 }
+                $sharedRequest = "$env:TEMP\dbatoolsci_$keyName.inf"
+                $sharedRequestFiles += $sharedRequest, "$env:TEMP\dbatoolsci_$keyName.csr"
+                $sharedRequestLines = @(
+                    "[Version]",
+                    "Signature=`"`$Windows NT`$`"",
+                    "[NewRequest]",
+                    "Subject = `"CN=dbatoolsci_$keyName`"",
+                    "KeyContainer = `"$sharedContainer`"",
+                    "UseExistingKeySet = TRUE",
+                    "KeySpec = $keySpec",
+                    "MachineKeySet = TRUE",
+                    "Exportable = TRUE",
+                    "FriendlyName = `"dbatoolsci_$keyName`"",
+                    "ProviderName = `"$sharedProvider`"",
+                    "ProviderType = 24",
+                    "RequestType = Cert"
+                )
+                Set-Content -Path $sharedRequest -Value $sharedRequestLines
+                $null = certreq -new -q $sharedRequest "$env:TEMP\dbatoolsci_$keyName.csr"
+            }
+            $exchangeCert = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object FriendlyName -eq "dbatoolsci_exchange"
+            $signatureCert = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object FriendlyName -eq "dbatoolsci_signature"
+            if (-not $exchangeCert -or -not $signatureCert) {
+                throw "certreq did not create the two certificates on the shared container"
+            }
+            $exchangeKeyFile = & $getKeyFile $exchangeCert.Thumbprint
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -193,16 +200,18 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             # The deny rule is removed here as well, in case the test that sets it did not get to its finally block.
             & $setUnreadableFolderDenyRule -Present $false
-            foreach ($leftover in $keptCert.Thumbprint, $cspCert.Thumbprint, $kspThumbprint, $sharedCert.Thumbprint, $webHostingCert.Thumbprint, $unreadableCert.Thumbprint, $currentUserFirstCert.Thumbprint, $localMachineFirstCert.Thumbprint, $exchangeCert.Thumbprint, $signatureCert.Thumbprint) {
+            # A thumbprint is missing when the setup of its certificate failed, the cleanup goes on with the others.
+            $leftovers = @($keptCert.Thumbprint, $cspCert.Thumbprint, $kspThumbprint, $sharedCert.Thumbprint, $webHostingCert.Thumbprint, $unreadableCert.Thumbprint, $currentUserFirstCert.Thumbprint, $localMachineFirstCert.Thumbprint, $exchangeCert.Thumbprint, $signatureCert.Thumbprint) | Where-Object { $PSItem }
+            foreach ($leftover in $leftovers) {
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder TrustedPeople -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder WebHosting -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder $unreadableFolder -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Store CurrentUser -DeleteKey -WarningAction SilentlyContinue
+                # certreq puts a copy of a self-signed certificate into the intermediate CA store as well.
+                $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder CA -WarningAction SilentlyContinue
             }
-            # certreq puts a copy of a self-signed certificate into the intermediate CA store as well.
-            $null = Remove-DbaComputerCertificate -Thumbprint $signatureCert.Thumbprint -Folder CA -WarningAction SilentlyContinue
-            foreach ($requestFile in $signatureRequest, "$env:TEMP\dbatoolsci_signature.csr") {
+            foreach ($requestFile in $sharedRequestFiles) {
                 if (Test-Path -Path $requestFile) {
                     [System.IO.File]::Delete($requestFile)
                 }
