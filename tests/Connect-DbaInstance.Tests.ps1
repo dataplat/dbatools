@@ -960,6 +960,79 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "the connection of a server object that is passed in with -Database is returned to the pool" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # A server object that was connected without -Database has an empty CurrentDatabase until its
+            # connection is opened once, so a call with -Database has to open it to compare the two. The
+            # command used to leave that connection open: SMO returns a pooled connection after each batch
+            # only when it opened the connection itself, and an explicit Connect() keeps it checked out
+            # until Disconnect(). One session per server object then stayed behind for the life of the
+            # process, and a loop over fresh server objects exhausted the pool after a hundred of them.
+            # Clear-DbaConnectionPool closes every idle pooled connection, so what a count sees right after
+            # it are the connections that are still checked out. The count itself runs on a non-pooled
+            # connection that stays open for the whole context and is excluded by its spid.
+            $countServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -NonPooledConnection
+            $countQuery = @"
+SELECT COUNT(*)
+FROM sys.dm_exec_sessions
+WHERE host_process_id = $PID
+  AND host_name = HOST_NAME()
+  AND session_id <> @@SPID
+"@
+            # Each server object needs a connection string of its own, because the command hands back the
+            # cached object for a connection string it has seen before.
+            $clientNames = @(
+                "dbatoolsci_pool_1",
+                "dbatoolsci_pool_2",
+                "dbatoolsci_pool_3"
+            )
+
+            # The sessions of closed connections vanish from the server a moment after the close, so the
+            # count waits a little after every clear.
+            Clear-DbaConnectionPool
+            Start-Sleep -Milliseconds 500
+            $sessionsBefore = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            foreach ($clientName in $clientNames) {
+                $inputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -ClientName $clientName
+                $sameServer = Connect-DbaInstance -SqlInstance $inputServer -Database master
+                $sameServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()") | Should -Be "master"
+            }
+            Clear-DbaConnectionPool
+            Start-Sleep -Milliseconds 500
+            $sessionsAfterSameDatabase = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            foreach ($clientName in $clientNames) {
+                $inputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -ClientName $clientName
+                $null = Invoke-DbaQuery -SqlInstance $inputServer -Database tempdb -Query "SELECT DB_NAME()"
+            }
+            Clear-DbaConnectionPool
+            Start-Sleep -Milliseconds 500
+            $sessionsAfterInvokeDbaQuery = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Get-DbaConnectedInstance | Disconnect-DbaInstance
+            $null = $countServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "leaves no checked-out connection behind when the database already matches" {
+            $sessionsAfterSameDatabase | Should -Be $sessionsBefore
+        }
+
+        It "leaves no checked-out connection behind when Invoke-DbaQuery clones it for another database" {
+            $sessionsAfterInvokeDbaQuery | Should -Be $sessionsBefore
+        }
+    }
+
     Context "multiple connections are properly made using strings" {
         It "returns the proper names" {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
