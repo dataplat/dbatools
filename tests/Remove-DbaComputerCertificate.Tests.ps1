@@ -149,6 +149,43 @@ Describe $CommandName -Tag IntegrationTests {
             $currentUserMy.Add((Get-ChildItem -Path "Cert:\LocalMachine\My\$($localMachineFirstCert.Thumbprint)"))
             $currentUserMy.Close()
 
+            # A legacy CSP key container can hold a key exchange key and a signature key, and it can only be deleted as a whole.
+            # A second certificate on a signature key in the container of the first certificate has to keep the container alive.
+            $exchangeCert = New-DbaComputerCertificate -SelfSigned
+            $exchangeKeyFile = & $getKeyFile $exchangeCert.Thumbprint
+            $exchangeStoreCert = Get-ChildItem -Path "Cert:\LocalMachine\My\$($exchangeCert.Thumbprint)"
+            $sharedContainer = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($exchangeStoreCert).Key.KeyName
+            # KeyNumber 2 is AT_SIGNATURE, provider type 12 is PROV_RSA_SCHANNEL, the provider of New-DbaComputerCertificate.
+            $signatureKeyParameters = New-Object System.Security.Cryptography.CspParameters -ArgumentList 12, "Microsoft RSA SChannel Cryptographic Provider", $sharedContainer
+            $signatureKeyParameters.KeyNumber = 2
+            $signatureKeyParameters.Flags = [System.Security.Cryptography.CspProviderFlags]::UseMachineKeyStore
+            $signatureKey = New-Object System.Security.Cryptography.RSACryptoServiceProvider -ArgumentList 2048, $signatureKeyParameters
+            $signatureKey.Dispose()
+            # certreq builds the certificate on the signature key that already exists in the container.
+            $signatureRequest = "$env:TEMP\dbatoolsci_signature.inf"
+            $signatureFriendlyName = "dbatoolsci_signature"
+            $signatureRequestLines = @(
+                "[Version]",
+                "Signature=`"`$Windows NT`$`"",
+                "[NewRequest]",
+                "Subject = `"CN=dbatoolsci_signature`"",
+                "KeyContainer = `"$sharedContainer`"",
+                "UseExistingKeySet = TRUE",
+                "KeySpec = 2",
+                "MachineKeySet = TRUE",
+                "Exportable = TRUE",
+                "FriendlyName = `"$signatureFriendlyName`"",
+                "ProviderName = `"Microsoft RSA SChannel Cryptographic Provider`"",
+                "ProviderType = 12",
+                "RequestType = Cert"
+            )
+            Set-Content -Path $signatureRequest -Value $signatureRequestLines
+            $null = certreq -new -q $signatureRequest "$env:TEMP\dbatoolsci_signature.csr"
+            $signatureCert = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object FriendlyName -eq $signatureFriendlyName
+            if (-not $signatureCert) {
+                throw "certreq did not create the certificate on the signature key"
+            }
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -156,14 +193,21 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             # The deny rule is removed here as well, in case the test that sets it did not get to its finally block.
             & $setUnreadableFolderDenyRule -Present $false
-            foreach ($leftover in $keptCert.Thumbprint, $cspCert.Thumbprint, $kspThumbprint, $sharedCert.Thumbprint, $webHostingCert.Thumbprint, $unreadableCert.Thumbprint, $currentUserFirstCert.Thumbprint, $localMachineFirstCert.Thumbprint) {
+            foreach ($leftover in $keptCert.Thumbprint, $cspCert.Thumbprint, $kspThumbprint, $sharedCert.Thumbprint, $webHostingCert.Thumbprint, $unreadableCert.Thumbprint, $currentUserFirstCert.Thumbprint, $localMachineFirstCert.Thumbprint, $exchangeCert.Thumbprint, $signatureCert.Thumbprint) {
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder TrustedPeople -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder WebHosting -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder $unreadableFolder -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Store CurrentUser -DeleteKey -WarningAction SilentlyContinue
             }
-            foreach ($keyFile in $keptKeyFile, $cspKeyFile, $kspKeyFile, $sharedKeyFile, $webHostingKeyFile, $unreadableKeyFile, $currentUserFirstKeyFile, $localMachineFirstKeyFile) {
+            # certreq puts a copy of a self-signed certificate into the intermediate CA store as well.
+            $null = Remove-DbaComputerCertificate -Thumbprint $signatureCert.Thumbprint -Folder CA -WarningAction SilentlyContinue
+            foreach ($requestFile in $signatureRequest, "$env:TEMP\dbatoolsci_signature.csr") {
+                if (Test-Path -Path $requestFile) {
+                    [System.IO.File]::Delete($requestFile)
+                }
+            }
+            foreach ($keyFile in $keptKeyFile, $cspKeyFile, $kspKeyFile, $sharedKeyFile, $webHostingKeyFile, $unreadableKeyFile, $currentUserFirstKeyFile, $localMachineFirstKeyFile, $exchangeKeyFile) {
                 if (Test-Path -Path $keyFile -PathType Leaf) {
                     [System.IO.File]::Delete($keyFile)
                 }
@@ -279,6 +323,22 @@ Describe $CommandName -Tag IntegrationTests {
             $lastResult.Status | Should -Be "Removed"
             $lastResult.PrivateKey | Should -Be "Deleted"
             Test-Path -Path $localMachineFirstKeyFile -PathType Leaf | Should -BeFalse
+            $WarnVar | Should -BeNullOrEmpty
+        }
+
+        It "Keeps a legacy key container that still holds the key of another certificate and deletes it with the last one" {
+            # The two certificates have different keys, but the keys share one container, which can only go as a whole.
+            $result = Remove-DbaComputerCertificate -Thumbprint $exchangeCert.Thumbprint -DeleteKey
+            $result.Status | Should -Be "Removed"
+            $result.PrivateKey | Should -Be "Kept, key container shared with $($signatureCert.Thumbprint) in Cert:\LocalMachine\My"
+            Test-Path -Path $exchangeKeyFile -PathType Leaf | Should -BeTrue
+            { [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey((Get-ChildItem -Path "Cert:\LocalMachine\My\$($signatureCert.Thumbprint)")) } | Should -Not -Throw
+
+            # Nothing uses the key exchange key any more, so the container goes with the last certificate.
+            $lastResult = Remove-DbaComputerCertificate -Thumbprint $signatureCert.Thumbprint -DeleteKey
+            $lastResult.Status | Should -Be "Removed"
+            $lastResult.PrivateKey | Should -Be "Deleted"
+            Test-Path -Path $exchangeKeyFile -PathType Leaf | Should -BeFalse
             $WarnVar | Should -BeNullOrEmpty
         }
     }

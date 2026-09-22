@@ -31,7 +31,9 @@ function Remove-DbaComputerCertificate {
         Deletes the private key of the certificate together with the certificate, like the DeleteKey switch of the Cert: drive in Windows PowerShell.
         Works for keys in a legacy Cryptographic Service Provider (what New-DbaComputerCertificate creates) and in a Key Storage Provider (CNG).
         Before the key is deleted, every folder of the LocalMachine store and of the CurrentUser store of the account running the command is checked for another certificate that still uses the key, for example a copy of the certificate in another folder (WebHosting and custom folders included) or in the other store, or a renewed certificate that reused the key. If one exists the key is kept and the output says which one.
+        Another certificate is recognized by its public key, so no private key of another certificate is opened; a smart card certificate in the store of the user would otherwise prompt for the card.
         The key is also kept when a folder of either store cannot be read, because then it is unknown whether a certificate in that folder uses the key; the output names the folder.
+        A legacy Cryptographic Service Provider container can hold a key exchange key and a signature key and can only be deleted as a whole, so it is kept when a certificate still uses the other key; the output names that certificate.
         The personal stores of other accounts on the computer cannot be checked, because they are only available to those accounts. A key that only a certificate in one of them still uses is deleted.
 
     .PARAMETER EnableException
@@ -54,7 +56,7 @@ function Remove-DbaComputerCertificate {
         - Folder: The certificate store folder/subfolder where the certificate was located (My, Root, TrustedPeople, etc.)
         - Thumbprint: The SHA-1 hash thumbprint of the certificate that was targeted for removal
         - Status: The status of the removal operation. Shows "Removed" on success, or "Certificate not found in Cert:\$Store\$Folder" if the certificate was not found
-        - PrivateKey: What happened to the private key. "Kept" without -DeleteKey, "Deleted" with -DeleteKey, "Kept, shared with <thumbprint> in <store>" when another certificate still uses the key, "Not deleted: <reason>" when the deletion failed, "None" when the certificate has no private key, $null when the certificate was not found
+        - PrivateKey: What happened to the private key. "Kept" without -DeleteKey, "Deleted" with -DeleteKey, "Kept, shared with <thumbprint> in <store>" when another certificate still uses the key, "Kept, key container shared with <thumbprint> in <store>" when a certificate still uses the other key of a legacy container, "Not deleted: <reason>" when the deletion failed, "None" when the certificate has no private key, $null when the certificate was not found
 
     .NOTES
         Tags: Certificate, Security
@@ -179,18 +181,37 @@ function Remove-DbaComputerCertificate {
                 $key
             }
 
-            function Remove-CoreCertificateKey {
-                # Deletes the key container. A legacy CSP key is deleted through its own provider, because deleting it
-                # through the CNG bridge leaves the key file behind. Returns $null on success, otherwise the reason.
+            function Get-CoreRsaModulus {
+                # Returns the modulus of an RSA public key as a string, or $null for another key type. The modulus identifies
+                # the key pair, and it comes from the certificate without opening the private key.
                 [CmdletBinding()]
                 param (
-                    [System.Security.Cryptography.CngKey]$Key
+                    [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate
+                )
+                $rsa = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPublicKey($Certificate)
+                if ($null -ne $rsa) {
+                    [Convert]::ToBase64String($rsa.ExportParameters($false).Modulus)
+                }
+            }
+
+            function Remove-CoreCertificateKey {
+                # Deletes the key container. A legacy CSP key is deleted through its own provider, because deleting it
+                # through the CNG bridge leaves the key file behind. Returns $null on success, a reason starting with
+                # "Kept, " when the container has to stay, otherwise the reason of the failure.
+                [CmdletBinding()]
+                param (
+                    [System.Security.Cryptography.CngKey]$Key,
+                    [string]$Modulus,
+                    [hashtable]$OtherModuli
                 )
                 $legacyProviderPath = "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\$($Key.Provider.Provider)"
                 if (Test-Path -Path $legacyProviderPath) {
                     $providerType = (Get-ItemProperty -Path $legacyProviderPath -Name Type).Type
+                    # A legacy container can hold two keys, KeyNumber 1 is AT_KEYEXCHANGE and 2 is AT_SIGNATURE, and it can only
+                    # be deleted as a whole. The key of this certificate is the one with the modulus of the certificate; if the
+                    # other key exists and another certificate still uses it, the container stays.
+                    $cspKey = $null
                     $lastError = $null
-                    # KeyNumber 1 is AT_KEYEXCHANGE, 2 is AT_SIGNATURE; the container holds one of them.
                     foreach ($keyNumber in 1, 2) {
                         try {
                             $cspParameters = New-Object System.Security.Cryptography.CspParameters -ArgumentList $providerType, $Key.Provider.Provider, $Key.KeyName
@@ -199,15 +220,27 @@ function Remove-DbaComputerCertificate {
                             if ($Key.IsMachineKey) {
                                 $cspParameters.Flags = $cspParameters.Flags -bor [System.Security.Cryptography.CspProviderFlags]::UseMachineKeyStore
                             }
-                            $cspKey = New-Object System.Security.Cryptography.RSACryptoServiceProvider -ArgumentList $cspParameters
-                            $cspKey.PersistKeyInCsp = $false
-                            $cspKey.Clear()
-                            return $null
+                            $containerKey = New-Object System.Security.Cryptography.RSACryptoServiceProvider -ArgumentList $cspParameters
+                            $containerModulus = [Convert]::ToBase64String($containerKey.ExportParameters($false).Modulus)
+                            if ($containerModulus -eq $Modulus) {
+                                $cspKey = $containerKey
+                            } elseif ($OtherModuli.ContainsKey($containerModulus)) {
+                                return "Kept, key container shared with $($OtherModuli[$containerModulus])"
+                            }
                         } catch {
                             $lastError = $_.Exception.Message
                         }
                     }
-                    return $lastError
+                    if ($null -eq $cspKey) {
+                        return $lastError
+                    }
+                    try {
+                        $cspKey.PersistKeyInCsp = $false
+                        $cspKey.Clear()
+                        return $null
+                    } catch {
+                        return $_.Exception.Message
+                    }
                 }
                 try {
                     $Key.Delete()
@@ -265,6 +298,13 @@ function Remove-DbaComputerCertificate {
                     # the key has to stay, because that folder may hold a certificate that uses it.
                     $unreadableFolders = @()
                     $localMachineSharers = @()
+                    # No other certificate's private key is opened during the scan: a smart card certificate in the user's
+                    # store, for example, would prompt for the card. Certificates that share a private key share the public
+                    # key, so the public keys are compared. The RSA moduli of the other certificates are kept for the legacy
+                    # container check of Remove-CoreCertificateKey.
+                    $publicKey = [Convert]::ToBase64String($cert.GetPublicKey())
+                    $modulus = Get-CoreRsaModulus -Certificate $cert
+                    $otherModuli = @{}
                     $sharedWith = foreach ($scanLocation in "LocalMachine", "CurrentUser") {
                         $storeLocation = [System.Security.Cryptography.X509Certificates.StoreLocation]::$scanLocation
                         try {
@@ -288,12 +328,16 @@ function Remove-DbaComputerCertificate {
                                     if ($scanLocation -eq "CurrentUser" -and "$storeName\$($otherCert.Thumbprint)" -in $localMachineSharers) {
                                         continue
                                     }
-                                    $otherKey = Get-CoreCertificateKey -Certificate $otherCert
-                                    if ($null -ne $otherKey -and $otherKey.IsMachineKey -eq $key.IsMachineKey -and $otherKey.UniqueName -eq $key.UniqueName) {
+                                    if ([Convert]::ToBase64String($otherCert.GetPublicKey()) -eq $publicKey) {
                                         if ($scanLocation -eq "LocalMachine") {
                                             $localMachineSharers += "$storeName\$($otherCert.Thumbprint)"
                                         }
                                         "$($otherCert.Thumbprint) in Cert:\$scanLocation\$storeName"
+                                    } else {
+                                        $otherModulus = Get-CoreRsaModulus -Certificate $otherCert
+                                        if ($otherModulus -and -not $otherModuli.ContainsKey($otherModulus)) {
+                                            $otherModuli[$otherModulus] = "$($otherCert.Thumbprint) in Cert:\$scanLocation\$storeName"
+                                        }
                                     }
                                 }
                             } catch {
@@ -319,8 +363,10 @@ function Remove-DbaComputerCertificate {
                                 }
                             }
                         }
-                        $reason = Remove-CoreCertificateKey -Key $key
-                        if ($reason) {
+                        $reason = Remove-CoreCertificateKey -Key $key -Modulus $modulus -OtherModuli $otherModuli
+                        if ($reason -like "Kept, *") {
+                            $privateKey = $reason
+                        } elseif ($reason) {
                             $privateKey = "Not deleted: $reason"
                         } elseif ($keyFile -and (Test-Path -Path $keyFile -PathType Leaf)) {
                             $privateKey = "Not deleted: the key file $keyFile is still there"
