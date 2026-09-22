@@ -10,7 +10,7 @@ function New-DbaComputerCertificateSigningRequest {
 
         Supports both standalone SQL Server instances and cluster configurations, automatically resolving FQDNs and configuring appropriate DNS entries. The generated certificates work with SQL Server's encryption features including encrypted client connections, mirroring, and backup encryption scenarios.
 
-        By default, creates RSA certificates with 2048-bit keys, the minimum the dbatools network certificate commands accept as suitable for SQL Server, though this can be raised for stronger encryption requirements. All certificates are configured as machine certificates with the Microsoft RSA SChannel Cryptographic Provider for compatibility with SQL Server's encryption stack.
+        By default, creates RSA certificates with 2048-bit keys, the minimum the dbatools network certificate commands accept as suitable for SQL Server, though this can be raised for stronger encryption requirements. All certificates are configured as machine certificates, by default with the legacy Microsoft RSA SChannel Cryptographic Provider; -Provider switches the private key to the Microsoft Software Key Storage Provider.
 
     .PARAMETER ComputerName
         The target computer name hosting the SQL Server instance where the certificate will be installed. Accepts multiple computer names for batch processing.
@@ -34,6 +34,11 @@ function New-DbaComputerCertificateSigningRequest {
     .PARAMETER KeyLength
         Specifies the RSA key length in bits for the certificate. Defaults to 2048, the minimum key length Test-DbaNetworkCertificate accepts as suitable for SQL Server; 4096 is possible for stronger requirements.
         Higher key lengths provide stronger encryption but may impact SQL Server connection performance on older hardware.
+
+    .PARAMETER Provider
+        Specifies the cryptographic provider that generates and holds the private key of the request.
+        Defaults to "Microsoft RSA SChannel Cryptographic Provider", a legacy Cryptographic Service Provider (CSP) that creates the key with KeySpec AT_KEYEXCHANGE, which is what the Microsoft certificate requirements for SQL Server name.
+        Use "Microsoft Software Key Storage Provider" for a Cryptography Next Generation (CNG) key. SQL Server 2019 and later load such a key as well, and Set-DbaNetworkCertificate and Test-DbaNetworkCertificate handle both key types.
 
     .PARAMETER Dns
         Additional DNS names to include in the certificate's Subject Alternative Name (SAN) field. By default includes both short and FQDN names.
@@ -109,6 +114,8 @@ function New-DbaComputerCertificateSigningRequest {
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [string]$FriendlyName = "SQL Server",
         [int]$KeyLength = 2048,
+        [ValidateSet("Microsoft RSA SChannel Cryptographic Provider", "Microsoft Software Key Storage Provider")]
+        [string]$Provider = "Microsoft RSA SChannel Cryptographic Provider",
         [string[]]$Dns,
         [switch]$EnableException
     )
@@ -228,7 +235,10 @@ function New-DbaComputerCertificateSigningRequest {
                 Add-Content $certCfg 'Signature="$Windows NT$"'
                 Add-Content $certCfg "[NewRequest]"
                 Add-Content $certCfg "Subject = ""CN=$fqdn"""
-                Add-Content $certCfg "KeySpec = 1"
+                if ($Provider -eq "Microsoft RSA SChannel Cryptographic Provider") {
+                    # A legacy CSP key. KeySpec 1 is AT_KEYEXCHANGE, the KeySpec the Microsoft certificate requirements for SQL Server name.
+                    Add-Content $certCfg "KeySpec = 1"
+                }
                 Add-Content $certCfg "KeyLength = $KeyLength"
                 Add-Content $certCfg "Exportable = TRUE"
                 Add-Content $certCfg "MachineKeySet = TRUE"
@@ -237,8 +247,14 @@ function New-DbaComputerCertificateSigningRequest {
                 Add-Content $certCfg "PrivateKeyArchive = FALSE"
                 Add-Content $certCfg "UserProtected = FALSE"
                 Add-Content $certCfg "UseExistingKeySet = FALSE"
-                Add-Content $certCfg "ProviderName = ""Microsoft RSA SChannel Cryptographic Provider"""
-                Add-Content $certCfg "ProviderType = 12"
+                Add-Content $certCfg "ProviderName = ""$Provider"""
+                if ($Provider -eq "Microsoft RSA SChannel Cryptographic Provider") {
+                    # ProviderType 12 is PROV_RSA_SCHANNEL.
+                    Add-Content $certCfg "ProviderType = 12"
+                } else {
+                    # A Key Storage Provider has neither a provider type nor a KeySpec, it takes the key algorithm instead.
+                    Add-Content $certCfg "KeyAlgorithm = RSA"
+                }
                 if ($SelfSigned) {
                     Add-Content $certCfg "RequestType = Cert"
                 } else {
