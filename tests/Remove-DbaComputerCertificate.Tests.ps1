@@ -136,6 +136,19 @@ Describe $CommandName -Tag IntegrationTests {
                 $registryKey.Close()
             }
 
+            # Two certificates whose machine key is shared with a copy in the CurrentUser store of the test account. The copy
+            # keeps the key reference, so it points at the same machine key, and the scan has to look across store locations.
+            # One is removed from CurrentUser first, the other from LocalMachine first.
+            $currentUserFirstCert = New-DbaComputerCertificate -SelfSigned
+            $currentUserFirstKeyFile = & $getKeyFile $currentUserFirstCert.Thumbprint
+            $localMachineFirstCert = New-DbaComputerCertificate -SelfSigned
+            $localMachineFirstKeyFile = & $getKeyFile $localMachineFirstCert.Thumbprint
+            $currentUserMy = New-Object System.Security.Cryptography.X509Certificates.X509Store -ArgumentList "My", "CurrentUser"
+            $currentUserMy.Open("ReadWrite")
+            $currentUserMy.Add((Get-ChildItem -Path "Cert:\LocalMachine\My\$($currentUserFirstCert.Thumbprint)"))
+            $currentUserMy.Add((Get-ChildItem -Path "Cert:\LocalMachine\My\$($localMachineFirstCert.Thumbprint)"))
+            $currentUserMy.Close()
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -143,13 +156,14 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             # The deny rule is removed here as well, in case the test that sets it did not get to its finally block.
             & $setUnreadableFolderDenyRule -Present $false
-            foreach ($leftover in $keptCert.Thumbprint, $cspCert.Thumbprint, $kspThumbprint, $sharedCert.Thumbprint, $webHostingCert.Thumbprint, $unreadableCert.Thumbprint) {
+            foreach ($leftover in $keptCert.Thumbprint, $cspCert.Thumbprint, $kspThumbprint, $sharedCert.Thumbprint, $webHostingCert.Thumbprint, $unreadableCert.Thumbprint, $currentUserFirstCert.Thumbprint, $localMachineFirstCert.Thumbprint) {
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder TrustedPeople -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder WebHosting -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder $unreadableFolder -DeleteKey -WarningAction SilentlyContinue
+                $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Store CurrentUser -DeleteKey -WarningAction SilentlyContinue
             }
-            foreach ($keyFile in $keptKeyFile, $cspKeyFile, $kspKeyFile, $sharedKeyFile, $webHostingKeyFile, $unreadableKeyFile) {
+            foreach ($keyFile in $keptKeyFile, $cspKeyFile, $kspKeyFile, $sharedKeyFile, $webHostingKeyFile, $unreadableKeyFile, $currentUserFirstKeyFile, $localMachineFirstKeyFile) {
                 if (Test-Path -Path $keyFile -PathType Leaf) {
                     [System.IO.File]::Delete($keyFile)
                 }
@@ -233,6 +247,38 @@ Describe $CommandName -Tag IntegrationTests {
             $lastResult.Status | Should -Be "Removed"
             $lastResult.PrivateKey | Should -Be "Deleted"
             Test-Path -Path $unreadableKeyFile -PathType Leaf | Should -BeFalse
+            $WarnVar | Should -BeNullOrEmpty
+        }
+
+        It "Keeps a machine key that a copy of the certificate in the other store location still uses" {
+            # The copy in CurrentUser\My points at the machine key of the LocalMachine certificate.
+            $userCopy = Get-ChildItem -Path "Cert:\CurrentUser\My\$($currentUserFirstCert.Thumbprint)"
+            $userCopy.HasPrivateKey | Should -BeTrue
+            [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($userCopy).Key.IsMachineKey | Should -BeTrue
+
+            # Removed from CurrentUser first: the LocalMachine certificate still needs the key.
+            $result = Remove-DbaComputerCertificate -Thumbprint $currentUserFirstCert.Thumbprint -Store CurrentUser -DeleteKey
+            $result.Status | Should -Be "Removed"
+            $result.PrivateKey | Should -Be "Kept, shared with $($currentUserFirstCert.Thumbprint) in Cert:\LocalMachine\My"
+            Test-Path -Path $currentUserFirstKeyFile -PathType Leaf | Should -BeTrue
+            { [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey((Get-ChildItem -Path "Cert:\LocalMachine\My\$($currentUserFirstCert.Thumbprint)")) } | Should -Not -Throw
+
+            $lastResult = Remove-DbaComputerCertificate -Thumbprint $currentUserFirstCert.Thumbprint -DeleteKey
+            $lastResult.Status | Should -Be "Removed"
+            $lastResult.PrivateKey | Should -Be "Deleted"
+            Test-Path -Path $currentUserFirstKeyFile -PathType Leaf | Should -BeFalse
+
+            # Removed from LocalMachine first: the copy in CurrentUser still needs the key.
+            $result = Remove-DbaComputerCertificate -Thumbprint $localMachineFirstCert.Thumbprint -DeleteKey
+            $result.Status | Should -Be "Removed"
+            $result.PrivateKey | Should -Be "Kept, shared with $($localMachineFirstCert.Thumbprint) in Cert:\CurrentUser\My"
+            Test-Path -Path $localMachineFirstKeyFile -PathType Leaf | Should -BeTrue
+            { [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey((Get-ChildItem -Path "Cert:\CurrentUser\My\$($localMachineFirstCert.Thumbprint)")) } | Should -Not -Throw
+
+            $lastResult = Remove-DbaComputerCertificate -Thumbprint $localMachineFirstCert.Thumbprint -Store CurrentUser -DeleteKey
+            $lastResult.Status | Should -Be "Removed"
+            $lastResult.PrivateKey | Should -Be "Deleted"
+            Test-Path -Path $localMachineFirstKeyFile -PathType Leaf | Should -BeFalse
             $WarnVar | Should -BeNullOrEmpty
         }
     }

@@ -6,7 +6,7 @@ function Remove-DbaComputerCertificate {
     .DESCRIPTION
         Removes certificates from Windows certificate stores on local or remote computers using PowerShell remoting. This is essential for managing SSL/TLS certificates used by SQL Server instances for encrypted connections and authentication. DBAs commonly use this to clean up expired certificates, remove compromised certificates during security incidents, or manage certificate lifecycle during SQL Server migrations and decommissions. The function targets specific certificates by thumbprint and can work across multiple certificate stores and folders.
 
-        Removing a certificate from a store leaves its private key on disk, as the certificate console does. With -DeleteKey the private key is deleted as well, unless another certificate in the same store location still uses it.
+        Removing a certificate from a store leaves its private key on disk, as the certificate console does. With -DeleteKey the private key is deleted as well, unless another certificate in the LocalMachine store or in the CurrentUser store of the account running the command still uses it.
 
     .PARAMETER ComputerName
         Specifies the target computer(s) where certificates will be removed. Defaults to localhost.
@@ -30,8 +30,9 @@ function Remove-DbaComputerCertificate {
     .PARAMETER DeleteKey
         Deletes the private key of the certificate together with the certificate, like the DeleteKey switch of the Cert: drive in Windows PowerShell.
         Works for keys in a legacy Cryptographic Service Provider (what New-DbaComputerCertificate creates) and in a Key Storage Provider (CNG).
-        The key is kept when another certificate in the same store location still uses it, for example a copy of the certificate in another folder (WebHosting and custom folders included) or a renewed certificate that reused the key; the output says which one.
-        The key is also kept when a folder of the store location cannot be read, because then it is unknown whether a certificate in that folder uses the key; the output names the folder.
+        Before the key is deleted, every folder of the LocalMachine store and of the CurrentUser store of the account running the command is checked for another certificate that still uses the key, for example a copy of the certificate in another folder (WebHosting and custom folders included) or in the other store, or a renewed certificate that reused the key. If one exists the key is kept and the output says which one.
+        The key is also kept when a folder of either store cannot be read, because then it is unknown whether a certificate in that folder uses the key; the output names the folder.
+        The personal stores of other accounts on the computer cannot be checked, because they are only available to those accounts. A key that only a certificate in one of them still uses is deleted.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -241,44 +242,54 @@ function Remove-DbaComputerCertificate {
                     if ($null -eq $key) {
                         $privateKey = "Not deleted: the private key could not be opened"
                     } else {
-                        # Another certificate in the same store location may use the same key, for example a copy of this
-                        # certificate in another folder or a renewed certificate that reused the key. Then the key stays.
+                        # Another certificate may use the same key, for example a copy of this certificate in another folder
+                        # or a renewed certificate that reused the key. Then the key stays. A copy keeps its key reference
+                        # across store locations as well: a machine certificate copied into CurrentUser\My still points at
+                        # the machine key. So both locations are scanned whatever -Store says. The personal stores of other
+                        # accounts are out of reach, they live in those accounts' registry hives.
                         # The folders come from the Cert: drive, because the StoreName enumeration does not know the WebHosting
                         # folder of IIS or custom folders, and a copy in one of those has to keep the key as well.
-                        $storeLocation = [System.Security.Cryptography.X509Certificates.StoreLocation]::$Store
-                        try {
-                            $storeNames = (Get-ChildItem -Path "Cert:\$Store" -ErrorAction Stop).Name
-                        } catch {
-                            $storeNames = $null
-                        }
+                        $unlistedLocations = @()
                         # A folder is listed from the registry, but opening it or reading its certificates can still fail,
                         # for example when the caller has no read access to that folder. Then the scan is incomplete and
                         # the key has to stay, because that folder may hold a certificate that uses it.
                         $unreadableFolders = @()
-                        $sharedWith = foreach ($storeName in $storeNames) {
-                            $otherStore = New-Object System.Security.Cryptography.X509Certificates.X509Store -ArgumentList $storeName, $storeLocation
+                        $sharedWith = foreach ($scanLocation in "LocalMachine", "CurrentUser") {
+                            $storeLocation = [System.Security.Cryptography.X509Certificates.StoreLocation]::$scanLocation
                             try {
-                                $otherStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]"ReadOnly, OpenExistingOnly")
-                                foreach ($otherCert in $otherStore.Certificates) {
-                                    if (-not $otherCert.HasPrivateKey) {
-                                        continue
-                                    }
-                                    if ($otherCert.Thumbprint -eq $cert.Thumbprint -and $storeName -eq $Folder) {
-                                        continue
-                                    }
-                                    $otherKey = Get-CoreCertificateKey -Certificate $otherCert
-                                    if ($null -ne $otherKey -and $otherKey.UniqueName -eq $key.UniqueName) {
-                                        "$($otherCert.Thumbprint) in Cert:\$Store\$storeName"
-                                    }
-                                }
+                                $storeNames = (Get-ChildItem -Path "Cert:\$scanLocation" -ErrorAction Stop).Name
                             } catch {
-                                $unreadableFolders += "Cert:\$Store\$storeName"
-                            } finally {
-                                $otherStore.Close()
+                                $storeNames = $null
+                            }
+                            if (-not $storeNames) {
+                                $unlistedLocations += "Cert:\$scanLocation"
+                                continue
+                            }
+                            foreach ($storeName in $storeNames) {
+                                $otherStore = New-Object System.Security.Cryptography.X509Certificates.X509Store -ArgumentList $storeName, $storeLocation
+                                try {
+                                    $otherStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]"ReadOnly, OpenExistingOnly")
+                                    foreach ($otherCert in $otherStore.Certificates) {
+                                        if (-not $otherCert.HasPrivateKey) {
+                                            continue
+                                        }
+                                        if ($otherCert.Thumbprint -eq $cert.Thumbprint -and $scanLocation -eq $Store -and $storeName -eq $Folder) {
+                                            continue
+                                        }
+                                        $otherKey = Get-CoreCertificateKey -Certificate $otherCert
+                                        if ($null -ne $otherKey -and $otherKey.IsMachineKey -eq $key.IsMachineKey -and $otherKey.UniqueName -eq $key.UniqueName) {
+                                            "$($otherCert.Thumbprint) in Cert:\$scanLocation\$storeName"
+                                        }
+                                    }
+                                } catch {
+                                    $unreadableFolders += "Cert:\$scanLocation\$storeName"
+                                } finally {
+                                    $otherStore.Close()
+                                }
                             }
                         }
-                        if (-not $storeNames) {
-                            $privateKey = "Not deleted: the folders of Cert:\$Store could not be listed, so it is unknown whether another certificate uses the key"
+                        if ($unlistedLocations) {
+                            $privateKey = "Not deleted: the folders of $($unlistedLocations -join ", ") could not be listed, so it is unknown whether another certificate uses the key"
                             $key = $null
                         } elseif ($sharedWith) {
                             $privateKey = "Kept, shared with $($sharedWith -join ", ")"
