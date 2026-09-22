@@ -149,6 +149,16 @@ function Stop-DbaProcess {
                 Continue
             }
 
+            if ($session.IsSystem) {
+                # KILL refuses every system session with "Only user processes can be killed", so trying is
+                # pointless and used to end in a warning for each of them. System sessions are not only the
+                # spids below 50: SQL Server 2025 parks workers such as the DB MIRROR tasks above that and in
+                # user databases, where -Database finds them, and so does every restore that has to clear
+                # the database out first.
+                Write-Message -Level Verbose -Message "Skipping spid $currentspid because it is a system process and only user processes can be killed." -Target $session
+                Continue
+            }
+
             if ($Pscmdlet.ShouldProcess($sourceserver, "Killing spid $currentspid")) {
                 try {
                     $sourceserver.KillProcess($currentspid)
