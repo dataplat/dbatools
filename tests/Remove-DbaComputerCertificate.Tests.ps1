@@ -233,6 +233,23 @@ Describe $CommandName -Tag IntegrationTests {
                 throw "the key file of the user copy of the certificate was not found"
             }
 
+            # A certificate that got the legacy key of another certificate through the CNG bridge: CopyWithPrivateKey with
+            # the RSACng of the key writes a key reference with the provider name and container name of the legacy key,
+            # but with the provider type of a Key Storage Provider reference, 0. The scan has to recognize the container
+            # from that reference as well, otherwise the copy loses its key with the original.
+            $bridgeCert = New-DbaComputerCertificate -SelfSigned
+            $bridgeKeyFile = & $getKeyFile $bridgeCert.Thumbprint
+            $bridgeStoreCert = Get-ChildItem -Path "Cert:\LocalMachine\My\$($bridgeCert.Thumbprint)"
+            $bridgeRsa = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($bridgeStoreCert)
+            if ($bridgeRsa.GetType().FullName -ne "System.Security.Cryptography.RSACng") {
+                throw "the legacy key did not come back through the CNG bridge but as $($bridgeRsa.GetType().FullName)"
+            }
+            $bridgePublicOnly = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList (, $bridgeStoreCert.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert))
+            $bridgeCopy = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::CopyWithPrivateKey($bridgePublicOnly, $bridgeRsa)
+            $trustedPeople.Open("ReadWrite")
+            $trustedPeople.Add($bridgeCopy)
+            $trustedPeople.Close()
+
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -241,7 +258,7 @@ Describe $CommandName -Tag IntegrationTests {
             # The deny rule is removed here as well, in case the test that sets it did not get to its finally block.
             & $setUnreadableFolderDenyRule -Present $false
             # A thumbprint is missing when the setup of its certificate failed, the cleanup goes on with the others.
-            $leftovers = @($keptCert.Thumbprint, $cspCert.Thumbprint, $kspThumbprint, $sharedCert.Thumbprint, $webHostingCert.Thumbprint, $unreadableCert.Thumbprint, $currentUserFirstCert.Thumbprint, $localMachineFirstCert.Thumbprint, $exchangeCert.Thumbprint, $signatureCert.Thumbprint, $archivedCert.Thumbprint, $separateCert.Thumbprint) | Where-Object { $PSItem }
+            $leftovers = @($keptCert.Thumbprint, $cspCert.Thumbprint, $kspThumbprint, $sharedCert.Thumbprint, $webHostingCert.Thumbprint, $unreadableCert.Thumbprint, $currentUserFirstCert.Thumbprint, $localMachineFirstCert.Thumbprint, $exchangeCert.Thumbprint, $signatureCert.Thumbprint, $archivedCert.Thumbprint, $separateCert.Thumbprint, $bridgeCert.Thumbprint) | Where-Object { $PSItem }
             foreach ($leftover in $leftovers) {
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -DeleteKey -WarningAction SilentlyContinue
                 $null = Remove-DbaComputerCertificate -Thumbprint $leftover -Folder TrustedPeople -DeleteKey -WarningAction SilentlyContinue
@@ -256,7 +273,7 @@ Describe $CommandName -Tag IntegrationTests {
                     [System.IO.File]::Delete($requestFile)
                 }
             }
-            $keyFiles = @($keptKeyFile, $cspKeyFile, $kspKeyFile, $sharedKeyFile, $webHostingKeyFile, $unreadableKeyFile, $currentUserFirstKeyFile, $localMachineFirstKeyFile, $exchangeKeyFile, $archivedKeyFile, $separateKeyFile, $separateUserKeyFile) | Where-Object { $PSItem }
+            $keyFiles = @($keptKeyFile, $cspKeyFile, $kspKeyFile, $sharedKeyFile, $webHostingKeyFile, $unreadableKeyFile, $currentUserFirstKeyFile, $localMachineFirstKeyFile, $exchangeKeyFile, $archivedKeyFile, $separateKeyFile, $separateUserKeyFile, $bridgeKeyFile) | Where-Object { $PSItem }
             foreach ($keyFile in $keyFiles) {
                 if (Test-Path -Path $keyFile -PathType Leaf) {
                     [System.IO.File]::Delete($keyFile)
@@ -435,6 +452,27 @@ Describe $CommandName -Tag IntegrationTests {
             $lastResult.Status | Should -Be "Removed"
             $lastResult.PrivateKey | Should -Be "Deleted"
             Test-Path -Path $separateUserKeyFile -PathType Leaf | Should -BeFalse
+            $WarnVar | Should -BeNullOrEmpty
+        }
+
+        It "Keeps a legacy key that another certificate references through the CNG bridge and deletes it with the last one" {
+            $bridgeStoreCopy = Get-ChildItem -Path "Cert:\LocalMachine\TrustedPeople\$($bridgeCert.Thumbprint)"
+            $bridgeStoreCopy.HasPrivateKey | Should -BeTrue
+
+            $result = Remove-DbaComputerCertificate -Thumbprint $bridgeCert.Thumbprint -DeleteKey
+            $result.Status | Should -Be "Removed"
+            $result.PrivateKey | Should -Be "Kept, shared with $($bridgeCert.Thumbprint) in Cert:\LocalMachine\TrustedPeople"
+            Test-Path -Path $bridgeKeyFile -PathType Leaf | Should -BeTrue
+            # The copy can still open its key and use it.
+            $bridgeStoreCopy = Get-ChildItem -Path "Cert:\LocalMachine\TrustedPeople\$($bridgeCert.Thumbprint)"
+            $bridgeCopyRsa = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($bridgeStoreCopy)
+            $bridgeSignature = $bridgeCopyRsa.SignData([System.Text.Encoding]::UTF8.GetBytes("dbatoolsci"), [System.Security.Cryptography.HashAlgorithmName]::SHA256, [System.Security.Cryptography.RSASignaturePadding]::Pkcs1)
+            $bridgeSignature.Length | Should -BeGreaterThan 0
+
+            $lastResult = Remove-DbaComputerCertificate -Thumbprint $bridgeCert.Thumbprint -Folder TrustedPeople -DeleteKey
+            $lastResult.Status | Should -Be "Removed"
+            $lastResult.PrivateKey | Should -Be "Deleted"
+            Test-Path -Path $bridgeKeyFile -PathType Leaf | Should -BeFalse
             $WarnVar | Should -BeNullOrEmpty
         }
     }

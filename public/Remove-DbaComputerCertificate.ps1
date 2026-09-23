@@ -414,7 +414,13 @@ namespace Dbatools.Certificate {
                                     } elseif ($otherKeyInfo.MachineKeySet -ne $key.IsMachineKey -or $otherKeyInfo.ContainerName -notin $containerNames) {
                                         $sameContainer = $false
                                     } elseif ($legacyProvider) {
-                                        $sameContainer = $otherKeyInfo.ProviderType -ne 0
+                                        # A key reference with a legacy provider type names the container. So does one with a
+                                        # provider type of 0 that names a legacy provider: a certificate that got the key through
+                                        # the CNG bridge (CopyWithPrivateKey with an RSACng of the key) is written that way, with
+                                        # the provider name and container name of the key but the provider type of a Key Storage
+                                        # Provider reference. Only a Key Storage Provider name rules the certificate out then; an
+                                        # empty provider name counts as a legacy provider.
+                                        $sameContainer = $otherKeyInfo.ProviderType -ne 0 -or (Test-Path -Path "Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography\Defaults\Provider\$($otherKeyInfo.ProviderName)")
                                     } else {
                                         $sameContainer = $otherKeyInfo.ProviderType -eq 0 -and $otherKeyInfo.ProviderName -eq $key.Provider.Provider
                                     }
