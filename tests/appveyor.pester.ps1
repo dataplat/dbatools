@@ -259,7 +259,11 @@ function Get-ComprehensiveErrorMessage {
 
         # Check for Should assertion details in Data property
         if ($TestResult.Data -and $TestResult.Data.Count -gt 0) {
-            $errorMessages += "Test Data: $($TestResult.Data | ConvertTo-Json -Compress)"
+            try {
+                $errorMessages += "Test Data: $($TestResult.Data | ConvertTo-Json -Compress -ErrorAction Stop)"
+            } catch {
+                $errorMessages += "Test Data: $(($TestResult.Data | Out-String).Trim())"
+            }
         }
 
         # Fallback: try to extract from any property that might contain error info
@@ -344,6 +348,29 @@ function Export-TestFailureSummary {
         # Get comprehensive error message with fallbacks
         $errorInfo = Get-ComprehensiveErrorMessage -TestResult $PSItem -DebugMode:$DebugErrorExtraction
 
+        # A failed test that leaves SMO or SFC objects in its output or error record cannot be serialized
+        # by ConvertTo-Json on Windows PowerShell 5.1 ("An item with the same key has already been added",
+        # as those types redeclare an inherited property). The throw used to kill the whole stage, so the
+        # failed test was never reported. See #10714.
+        # Inside a catch block $PSItem is the error record, so the test result is kept in its own variable.
+        $failedTest = $PSItem
+        try {
+            $rawTestResult = $failedTest | ConvertTo-Json -Depth 3 -Compress -ErrorAction Stop
+        } catch {
+            $rawTestResult = "Could not serialize the test result: $($PSItem.Exception.GetType().FullName): $($PSItem.Exception.Message)"
+        }
+
+        # The test cases end up in the summary file, which is serialized as a whole below.
+        # A case that holds such an object must not break it either.
+        $testParameters = $failedTest.Data
+        if ($testParameters) {
+            try {
+                $null = $testParameters | ConvertTo-Json -Depth 10 -Compress -ErrorAction Stop
+            } catch {
+                $testParameters = ($testParameters | Out-String).Trim()
+            }
+        }
+
         @{
             Name          = $PSItem.Name
             Describe      = if ($PSItem.Path.Count -gt 0) { $PSItem.Path[0] } else { "" }
@@ -351,9 +378,9 @@ function Export-TestFailureSummary {
             ErrorMessage  = $errorInfo.ErrorMessage
             StackTrace    = if ($errorInfo.StackTrace) { $errorInfo.StackTrace } else { $stackTrace }
             LineNumber    = $lineNumber
-            Parameters    = $PSItem.Data
+            Parameters    = $testParameters
             TestFile      = $TestFile.Name
-            RawTestResult = $PSItem | ConvertTo-Json -Depth 3 -Compress
+            RawTestResult = $rawTestResult
         }
     }
 
