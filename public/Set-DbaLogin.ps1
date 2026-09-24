@@ -259,32 +259,41 @@ function Set-DbaLogin {
 
     begin {
         # Check the parameters
+        # Every failed check returns right away. These checks used Stop-Function -Continue before, but the begin
+        # block has no enclosing loop, so the continue escaped the command and ate an iteration of the caller's loop.
         if ((Test-Bound -ParameterName 'SqlInstance') -and (Test-Bound -ParameterName 'Login' -Not)) {
             Stop-Function -Message 'You must specify a Login when using SqlInstance'
+            return
         }
 
         if ((Test-Bound -ParameterName 'NewName') -and $Login -eq $NewName) {
-            Stop-Function -Message 'Login name is the same as the value in -NewName' -Target $Login -Continue
+            Stop-Function -Message 'Login name is the same as the value in -NewName' -Target $Login
+            return
         }
 
         if ((Test-Bound -ParameterName 'Disable') -and (Test-Bound -ParameterName 'Enable')) {
-            Stop-Function -Message 'You cannot use both -Enable and -Disable together' -Target $Login -Continue
+            Stop-Function -Message 'You cannot use both -Enable and -Disable together' -Target $Login
+            return
         }
 
         if ((Test-Bound -ParameterName 'GrantLogin') -and (Test-Bound -ParameterName 'DenyLogin')) {
-            Stop-Function -Message 'You cannot use both -GrantLogin and -DenyLogin together' -Target $Login -Continue
+            Stop-Function -Message 'You cannot use both -GrantLogin and -DenyLogin together' -Target $Login
+            return
         }
 
         if ((Test-Bound -ParameterName 'SecurePassword') -and (Test-Bound -ParameterName 'PasswordHash')) {
-            Stop-Function -Message 'You cannot use both -SecurePassword and -PasswordHash together' -Target $Login -Continue
+            Stop-Function -Message 'You cannot use both -SecurePassword and -PasswordHash together' -Target $Login
+            return
         }
 
         if ((Test-Bound -ParameterName 'PasswordHash') -and (Test-Bound -ParameterName 'PasswordMustChange')) {
-            Stop-Function -Message 'You cannot use -PasswordHash with -PasswordMustChange' -Target $Login -Continue
+            Stop-Function -Message 'You cannot use -PasswordHash with -PasswordMustChange' -Target $Login
+            return
         }
 
         if ((Test-Bound -ParameterName 'PasswordHash') -and $PasswordHash -notmatch '^0x[0-9A-Fa-f]+$') {
-            Stop-Function -Message 'PasswordHash must be in hexadecimal format starting with 0x' -Target $Login -Continue
+            Stop-Function -Message 'PasswordHash must be in hexadecimal format starting with 0x' -Target $Login
+            return
         }
 
         if (Test-bound -ParameterName 'SecurePassword') {
@@ -293,16 +302,19 @@ function Set-DbaLogin {
                 'SecureString' { $NewSecurePassword = $SecurePassword }
                 default {
                     Stop-Function -Message 'Password must be a PSCredential or SecureString' -Target $Login
+                    return
                 }
             }
         }
 
         if ((Test-Bound Unlock) -and (Test-Bound SecurePassword -Not) -and (Test-Bound Force -Not)) {
             Stop-Function -Message 'You must specify a password when using the -Unlock parameter or use the -Force parameter. See the help documentation for this command.'
+            return
         }
 
         if ((Test-Bound PasswordMustChange) -and (Test-Bound SecurePassword -Not)) {
             Stop-Function -Message 'You must specify a password when using the -PasswordMustChange parameter. See the command help for more details.'
+            return
         }
     }
 
