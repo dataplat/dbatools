@@ -150,6 +150,40 @@ Describe $CommandName -Tag IntegrationTests {
             @(Get-TestRightEntry -Privilege SeCreateGlobalPrivilege) | Should -Be $holdersBefore
         }
 
+        It "Revokes the privilege from a local account named as .\Name" {
+            # NTAccount cannot translate .\Name, and secedit writes the account by its bare name.
+            $dotAccount = ".\$($testUsers[0])"
+            $null = Set-DbaPrivilege -Type LPIM -User $testAccount
+
+            $result = Remove-DbaPrivilege -Type LPIM -User $dotAccount
+
+            $WarnVar | Should -BeNullOrEmpty
+            $result.User | Should -Be $dotAccount
+            $result.Status | Should -Be "Removed"
+            Test-TestRightHolder -Privilege SeLockMemoryPrivilege -UserName $testUsers[0] -Sid $testSid | Should -BeFalse
+        }
+
+        It "Revokes the privilege from a discovered service account named as .\Name" {
+            # Windows accepts .\Name as the account of a service and Get-DbaService returns it unchanged.
+            # Only the service lookup is replaced, the local security policy is changed for real.
+            $dotAccount = ".\$($testUsers[0])"
+            $mockService = [scriptblock]::Create(@"
+[PSCustomObject]@{
+    ServiceName = "dbatoolsci_noservice"
+    StartName   = "$dotAccount"
+}
+"@)
+            Mock -ModuleName dbatools -CommandName Get-DbaService -MockWith $mockService
+            $null = Set-DbaPrivilege -Type LPIM -User $testAccount
+
+            $result = Remove-DbaPrivilege -Type LPIM
+
+            $WarnVar | Should -BeNullOrEmpty
+            $result.User | Should -Be $dotAccount
+            $result.Status | Should -Be "Removed"
+            Test-TestRightHolder -Privilege SeLockMemoryPrivilege -UserName $testUsers[0] -Sid $testSid | Should -BeFalse
+        }
+
         It "Warns and returns nothing when the account does not hold the privilege" {
             $result = Remove-DbaPrivilege -Type BatchLogon -User $testAccount -WarningAction SilentlyContinue
 

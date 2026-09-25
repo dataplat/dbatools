@@ -24,7 +24,7 @@ function Remove-DbaPrivilege {
 
     .PARAMETER User
         Specifies the account to revoke the privileges from instead of the discovered SQL Server service accounts.
-        Accepts domain accounts (DOMAIN\User), local accounts, per-service SIDs (NT SERVICE\MSSQLSERVER) or a SID (S-1-5-...). A SID is useful for an account that was deleted and cannot be resolved by name any more.
+        Accepts domain accounts (DOMAIN\User), local accounts (COMPUTER\User, .\User or User), per-service SIDs (NT SERVICE\MSSQLSERVER) or a SID (S-1-5-...). A SID is useful for an account that was deleted and cannot be resolved by name any more.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -115,6 +115,10 @@ function Remove-DbaPrivilege {
             function Resolve-EntrySid ([string]$Entry) {
                 if ($Entry -match "^\*?(S-1-[\d-]+)$") {
                     return $Matches[1]
+                }
+                # Windows accepts .\Name as the account of a service, but NTAccount cannot translate that form.
+                if ($Entry -match "^\.\\(.+)$") {
+                    $Entry = "$env:COMPUTERNAME\$($Matches[1])"
                 }
                 try {
                     (New-Object System.Security.Principal.NTAccount($Entry)).Translate([System.Security.Principal.SecurityIdentifier]).Value
