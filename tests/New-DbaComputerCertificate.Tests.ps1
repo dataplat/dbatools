@@ -149,6 +149,12 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns the right default one year expiry date" {
             $defaultCert.NotAfter -match ((Get-Date).Date).AddMonths(12) | Should -BeTrue
         }
+
+        It "Leaves no copy of the certificate in the intermediate CA store" {
+            # certreq installs a self-signed certificate a second time, without its key, in LocalMachine\CA. The command removes that copy.
+            Test-Path -Path "Cert:\LocalMachine\My\$($defaultCert.Thumbprint)" | Should -BeTrue
+            Test-Path -Path "Cert:\LocalMachine\CA\$($defaultCert.Thumbprint)" | Should -BeFalse
+        }
     }
 
     Context "Can generate a new certificate with custom settings" {
@@ -207,7 +213,13 @@ Describe $CommandName -Tag IntegrationTests {
             # For a remote computer the command exports a PFX and imports it on the target. The provider has to survive that transfer.
             # On CI the instance is local, so the transfer only happens against a lab whose instance runs on another computer.
             $computerName = ([DbaInstanceParameter]$TestConfig.InstanceSingle).ComputerName
+            $remoteIsLocal = ([DbaInstanceParameter]$TestConfig.InstanceSingle).IsLocalHost
+            # The key files of this computer before the certificate for the other computer is created here. After the export
+            # the certificate and its key have to be gone from this computer again.
+            $keyFolders = "$env:ProgramData\Microsoft\Crypto\RSA\MachineKeys", "$env:ProgramData\Microsoft\Crypto\Keys"
+            $keyFilesBefore = @((Get-ChildItem -Path $keyFolders -File).Name)
             $remoteKspCert = New-DbaComputerCertificate -ComputerName $computerName -SelfSigned -Provider "Microsoft Software Key Storage Provider"
+            $keyFilesAfter = @((Get-ChildItem -Path $keyFolders -File).Name)
             $readProvider = {
                 param ($Thumbprint)
                 $cert = Get-ChildItem -Path "Cert:\LocalMachine\My\$Thumbprint"
@@ -246,6 +258,131 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Keeps the Key Storage Provider key when the certificate is imported on a remote computer" {
             $remoteProvider | Should -Be "Microsoft Software Key Storage Provider"
+        }
+
+        It "Leaves neither the certificate nor its key on this computer after the transfer to a remote computer" {
+            if ($remoteIsLocal) {
+                Set-ItResult -Skipped -Because "the instance runs on this computer, so the certificate stays here"
+            }
+            Test-Path -Path "Cert:\LocalMachine\My\$($remoteKspCert.Thumbprint)" | Should -BeFalse
+            Test-Path -Path "Cert:\LocalMachine\CA\$($remoteKspCert.Thumbprint)" | Should -BeFalse
+            $keyFilesAfter | Where-Object { $PSItem -notin $keyFilesBefore } | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Leaves nothing behind when the CA does not answer" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # A request for a CA waits in LocalMachine\REQUEST with its key. When the CA cannot be reached the command removes
+            # the request again, so the store and the key folders have to look as before.
+            $requestFolders = "$env:ProgramData\Microsoft\Crypto\RSA\MachineKeys", "$env:ProgramData\Microsoft\Crypto\Keys"
+            $requestsBefore = @((Get-ChildItem -Path Cert:\LocalMachine\REQUEST).Thumbprint)
+            $requestKeyFilesBefore = @((Get-ChildItem -Path $requestFolders -File).Name)
+            $splatUnreachableCa = @{
+                CaServer        = "nosuchca.dbatools.invalid"
+                CaName          = "NoSuchCA"
+                WarningVariable = "unreachableCaWarning"
+                WarningAction   = "SilentlyContinue"
+                EnableException = $false
+            }
+            $unreachableCaResult = New-DbaComputerCertificate @splatUnreachableCa
+            $requestsAfter = @((Get-ChildItem -Path Cert:\LocalMachine\REQUEST).Thumbprint)
+            $requestKeyFilesAfter = @((Get-ChildItem -Path $requestFolders -File).Name)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            # In case the command left the request behind after all.
+            foreach ($leftover in ($requestsAfter | Where-Object { $PSItem -notin $requestsBefore })) {
+                Remove-DbaComputerCertificate -Thumbprint $leftover -Folder REQUEST -DeleteKey
+            }
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Warns instead of returning a certificate" {
+            $unreachableCaResult | Should -BeNullOrEmpty
+            # The command writes several warnings on this path, the last one is the message of Stop-Function.
+            ($unreachableCaWarning -join " ") | Should -Match "Failure when attempting to create the cert"
+        }
+
+        It "Removes the pending request and its key again" {
+            $requestsAfter | Where-Object { $PSItem -notin $requestsBefore } | Should -BeNullOrEmpty
+            $requestKeyFilesAfter | Where-Object { $PSItem -notin $requestKeyFilesBefore } | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "Keeps a request of someone else when the CA does not answer" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Another enrollment creates its own machine request while the command waits for the CA. Only the submission is
+            # intercepted to create that request at exactly this moment; certreq, the store and the keys are real.
+            $otherSubject = "CN=dbatoolsci_otherrequest_$(Get-Random)"
+            $otherInf = "$([System.IO.Path]::GetTempPath())dbatoolsci_otherrequest_$(Get-Random).inf"
+            $otherCsr = "$otherInf.csr"
+            $otherInfContent = @"
+[Version]
+Signature="`$Windows NT`$"
+[NewRequest]
+Subject = "$otherSubject"
+KeyLength = 2048
+Exportable = TRUE
+MachineKeySet = TRUE
+ProviderName = "Microsoft Software Key Storage Provider"
+KeyAlgorithm = RSA
+RequestType = PKCS10
+"@
+            Set-Content -Path $otherInf -Value $otherInfContent
+            $mockCertreq = [scriptblock]::Create(@"
+if (`$args -contains "-submit") {
+    `$null = certreq.exe -q -new "$otherInf" "$otherCsr"
+}
+certreq.exe @args
+"@)
+            Mock -ModuleName dbatools -CommandName certreq -MockWith $mockCertreq
+
+            $requestsBefore = @((Get-ChildItem -Path Cert:\LocalMachine\REQUEST).Thumbprint)
+            $splatUnreachableCa = @{
+                CaServer        = "nosuchca.dbatools.invalid"
+                CaName          = "NoSuchCA"
+                WarningVariable = "otherRequestWarning"
+                WarningAction   = "SilentlyContinue"
+                EnableException = $false
+            }
+            $otherRequestResult = New-DbaComputerCertificate @splatUnreachableCa
+            $newRequests = @(Get-ChildItem -Path Cert:\LocalMachine\REQUEST | Where-Object Thumbprint -notin $requestsBefore)
+            $otherRequest = $newRequests | Where-Object Subject -eq $otherSubject
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            foreach ($leftover in $newRequests) {
+                Remove-DbaComputerCertificate -Thumbprint $leftover.Thumbprint -Folder REQUEST -DeleteKey
+            }
+            Remove-Item -Path $otherInf, $otherCsr -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Warns instead of returning a certificate" {
+            $otherRequestResult | Should -BeNullOrEmpty
+            ($otherRequestWarning -join " ") | Should -Match "Failure when attempting to create the cert"
+        }
+
+        It "Removes only its own request" {
+            $otherRequest | Should -Not -BeNullOrEmpty
+            $newRequests.Count | Should -Be 1
+        }
+
+        It "Keeps the key of the other request" {
+            $otherKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($otherRequest)
+            $otherKey | Should -Not -BeNullOrEmpty
+            # Signing needs the key file itself, the certificate only points to it.
+            $otherKey.SignData([byte[]](1, 2, 3), [System.Security.Cryptography.HashAlgorithmName]::SHA256, [System.Security.Cryptography.RSASignaturePadding]::Pkcs1) | Should -Not -BeNullOrEmpty
         }
     }
 }
