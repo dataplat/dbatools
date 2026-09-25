@@ -458,10 +458,6 @@ function New-DbaComputerCertificate {
                 Add-Content $certCfg $san
                 Add-Content $certCfg "Critical=2.5.29.17"
 
-                # A request for a CA waits in LocalMachine\REQUEST with its key until the CA answers. The store is noted before
-                # the request is created, so that a request the CA never answered can be found and removed again.
-                $pendingRequestsBefore = @((Get-ChildItem -Path Cert:\LocalMachine\REQUEST -ErrorAction SilentlyContinue).Thumbprint)
-
                 if ($PScmdlet.ShouldProcess("local", "Creating certificate for $computer")) {
                     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Running: certreq -q -new $certCfg $certCsr"
                     $create = certreq -q -new $certCfg $certCsr
@@ -503,7 +499,14 @@ function New-DbaComputerCertificate {
                         Write-Message -Level Warning -Message "$submit"
                         # The CA did not issue the certificate, so the pending request and its key would stay in
                         # LocalMachine\REQUEST forever. They go with the failure.
-                        $pendingRequests = (Get-ChildItem -Path Cert:\LocalMachine\REQUEST -ErrorAction SilentlyContinue).Thumbprint | Where-Object { $PSItem -notin $pendingRequestsBefore }
+                        # Other requests may have been created in the meantime by someone else, so only the request of this
+                        # call goes: the one whose public key is in the request file certreq wrote. Every request has its own key.
+                        $pendingRequests = @()
+                        if (Test-Path -Path $certCsr) {
+                            $requestFileBase64 = (Get-Content -Path $certCsr | Where-Object { $PSItem -notmatch "^-----" }) -join ""
+                            $requestFileHex = [System.BitConverter]::ToString([System.Convert]::FromBase64String($requestFileBase64))
+                            $pendingRequests = @(Get-ChildItem -Path Cert:\LocalMachine\REQUEST -ErrorAction SilentlyContinue | Where-Object { $requestFileHex.Contains([System.BitConverter]::ToString($PSItem.PublicKey.EncodedKeyValue.RawData)) } | ForEach-Object { $PSItem.Thumbprint })
+                        }
                         foreach ($pendingRequest in $pendingRequests) {
                             Write-Message -Level Verbose -Message "Removing the pending request $pendingRequest and its key from LocalMachine\REQUEST"
                             $splatRemoveRequest = @{
