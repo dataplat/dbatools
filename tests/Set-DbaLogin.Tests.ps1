@@ -54,6 +54,40 @@ Describe $CommandName -Tag IntegrationTests {
                 @{role = "setupadmin" },
                 @{role = "sysadmin" }
             )
+
+            # The parameter checks that used Stop-Function -Continue in the begin block, one case each.
+            $invalidCombinations = @(
+                @{
+                    Check      = "-NewName equals -Login"
+                    Parameters = @{ Login = "testlogin"; NewName = "testlogin" }
+                    Message    = "Login name is the same as the value in -NewName"
+                },
+                @{
+                    Check      = "-Enable with -Disable"
+                    Parameters = @{ Login = "testlogin"; Enable = $true; Disable = $true }
+                    Message    = "You cannot use both -Enable and -Disable together"
+                },
+                @{
+                    Check      = "-GrantLogin with -DenyLogin"
+                    Parameters = @{ Login = "testlogin"; GrantLogin = $true; DenyLogin = $true }
+                    Message    = "You cannot use both -GrantLogin and -DenyLogin together"
+                },
+                @{
+                    Check      = "-SecurePassword with -PasswordHash"
+                    Parameters = @{ Login = "testlogin"; SecurePassword = (ConvertTo-SecureString -String "dbatools.IO" -AsPlainText -Force); PasswordHash = "0x0200" }
+                    Message    = "You cannot use both -SecurePassword and -PasswordHash together"
+                },
+                @{
+                    Check      = "-PasswordHash with -PasswordMustChange"
+                    Parameters = @{ Login = "testlogin"; PasswordHash = "0x0200"; PasswordMustChange = $true }
+                    Message    = "You cannot use -PasswordHash with -PasswordMustChange"
+                },
+                @{
+                    Check      = "-PasswordHash not hexadecimal"
+                    Parameters = @{ Login = "testlogin"; PasswordHash = "nothex" }
+                    Message    = "PasswordHash must be in hexadecimal format starting with 0x"
+                }
+            )
         }
 
         BeforeAll {
@@ -88,6 +122,18 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Validates -Password is a SecureString or PSCredential" {
             { Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login 'testLogin' -Password 'password' -EnableException } | Should -Throw 'Password must be a PSCredential or SecureString'
+        }
+
+        It "Warns about <Check> without eating an iteration of the caller loop" -ForEach $invalidCombinations {
+            # These checks used Stop-Function -Continue in the begin block, where no loop encloses it - the
+            # continue escaped the command and consumed an iteration of this very loop, so the counter stayed at zero.
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle @Parameters -WarningAction SilentlyContinue
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*$Message*"
         }
     }
 }
