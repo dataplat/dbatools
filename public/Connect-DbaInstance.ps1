@@ -36,6 +36,7 @@ function Connect-DbaInstance {
     .PARAMETER AppendConnectionString
         Adds custom connection string parameters to the generated connection string.
         Use this for advanced connection properties like custom timeout values, SSL settings, or application-specific parameters that aren't covered by other parameters.
+        When ConnectRetryCount, ConnectRetryInterval, or ConnectTimeout is also passed explicitly, the explicit parameter takes precedence.
 
     .PARAMETER ApplicationIntent
         Declares the application workload type when connecting to an Always On Availability Group.
@@ -49,9 +50,19 @@ function Connect-DbaInstance {
         Sets a custom application name in the connection string for identification in SQL Server monitoring tools.
         Use this to distinguish dbatools sessions from other applications when analyzing connections in Profiler, Extended Events, or sys.dm_exec_sessions.
 
+    .PARAMETER ConnectRetryCount
+        Sets the number of retries after an initial connection failure or a broken idle connection is detected. Valid values are 0 to 255; 0 disables connection retries.
+        SQL Server 2014 and later and Azure SQL support restoring broken idle connections. Older SQL Server versions accept this client-side setting but cannot restore an idle session, so the driver disables that part of connection resiliency after login negotiation.
+        This does not retry failed queries, deadlocks, command timeouts, or other errors that occur while a query is running.
+
+    .PARAMETER ConnectRetryInterval
+        Sets the number of seconds between connection retry attempts. Valid values are 1 to 60 seconds, and the setting is ignored when ConnectRetryCount is 0.
+        Set ConnectTimeout high enough to allow the requested retry attempts and intervals to complete.
+
     .PARAMETER ConnectTimeout
         Sets the connection timeout in seconds before the connection attempt fails.
         Increase this for slow networks or busy servers, or decrease it for faster failure detection in automated scripts. Azure SQL Database connections typically need 30 seconds.
+        This controls opening the connection, including connection retry attempts. It does not control query execution; use Invoke-DbaQuery -QueryTimeout or this command's StatementTimeout for that.
 
     .PARAMETER EncryptConnection
         Forces SSL encryption for all data transmitted between client and server.
@@ -252,6 +263,19 @@ function Connect-DbaInstance {
         Creates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover enabled.
 
     .EXAMPLE
+        PS C:\> $splatConnection = @{
+            SqlInstance          = "myserver.database.windows.net"
+            Database             = "MyDb"
+            ConnectRetryCount    = 5
+            ConnectRetryInterval = 10
+            ConnectTimeout       = 120
+        }
+        PS C:\> $server = Connect-DbaInstance @splatConnection
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "SELECT 1"
+
+        Connects with connection resiliency settings suitable for an Azure SQL Database that might be resuming from auto-pause, then reuses that connection for a query.
+
+    .EXAMPLE
         PS C:\> $server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly
 
         Connects with ReadOnly ApplicationIntent.
@@ -392,6 +416,11 @@ function Connect-DbaInstance {
         [switch]$AzureUnsupported,
         [string]$BatchSeparator,
         [string]$ClientName = (Get-DbatoolsConfigValue -FullName 'sql.connection.clientname'),
+        [ValidateRange(0, 255)]
+        [int]$ConnectRetryCount,
+        [ValidateRange(1, 60)]
+        [int]$ConnectRetryInterval,
+        [ValidateRange(0, [int]::MaxValue)]
         [int]$ConnectTimeout = ([Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout),
         [switch]$EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt'),
         [string]$FailoverPartner,
@@ -600,6 +629,8 @@ function Connect-DbaInstance {
                 - AuthenticationType          SqlConnectionInfo.Authentication             SqlConnectionStringBuilder['Authentication']
                 - BatchSeparator                                                                                                                     ConnectionContext.BatchSeparator
                 - ClientName                  SqlConnectionInfo.ApplicationName            SqlConnectionStringBuilder['Application Name']
+                - ConnectRetryCount           SqlConnectionInfo.AdditionalParameters       SqlConnectionStringBuilder['Connect Retry Count']
+                - ConnectRetryInterval        SqlConnectionInfo.AdditionalParameters       SqlConnectionStringBuilder['Connect Retry Interval']
                 - ConnectTimeout              SqlConnectionInfo.ConnectionTimeout          SqlConnectionStringBuilder['Connect Timeout']
                 - Database                    SqlConnectionInfo.DatabaseName               SqlConnectionStringBuilder['Initial Catalog']
                 - EncryptConnection           SqlConnectionInfo.EncryptConnection          SqlConnectionStringBuilder['Encrypt']
@@ -667,7 +698,30 @@ function Connect-DbaInstance {
 
             # Check for ignored parameters
             # We do not check for SqlCredential as this parameter is widely used even if a server SMO is passed in and we don't want to output a message for that
-            $ignoredParameters = 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'TrustServerCertificate', 'AllowTrustServerCertificate', 'WorkstationId', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString', 'AccessToken', 'AuthenticationType'
+            $ignoredParameters = @(
+                "BatchSeparator",
+                "ClientName",
+                "ConnectRetryCount",
+                "ConnectRetryInterval",
+                "ConnectTimeout",
+                "EncryptConnection",
+                "LockTimeout",
+                "MaxPoolSize",
+                "MinPoolSize",
+                "NetworkProtocol",
+                "PacketSize",
+                "PooledConnectionLifetime",
+                "SqlExecutionModes",
+                "TrustServerCertificate",
+                "AllowTrustServerCertificate",
+                "WorkstationId",
+                "FailoverPartner",
+                "MultipleActiveResultSets",
+                "MultiSubnetFailover",
+                "AppendConnectionString",
+                "AccessToken",
+                "AuthenticationType"
+            )
             if ($inputObjectType -eq 'Server') {
                 if (Test-Bound -ParameterName $ignoredParameters) {
                     Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
@@ -1086,6 +1140,27 @@ function Connect-DbaInstance {
                     Write-Message -Level Debug -Message "AdditionalParameters will be appended by 'Column Encryption Setting=enabled;'"
                     $sqlConnectionInfo.AdditionalParameters += 'Column Encryption Setting=enabled;'
                 }
+                if (Test-Bound -ParameterName "ConnectRetryCount", "ConnectRetryInterval", "ConnectTimeout") {
+                    if ($sqlConnectionInfo.AdditionalParameters) {
+                        $connectionOptionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $sqlConnectionInfo.AdditionalParameters
+                    } else {
+                        $connectionOptionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder
+                    }
+                    if (Test-Bound -ParameterName "ConnectRetryCount") {
+                        Write-Message -Level Debug -Message "Connect Retry Count will be set to '$ConnectRetryCount'"
+                        $connectionOptionStringBuilder["Connect Retry Count"] = $ConnectRetryCount
+                    }
+                    if (Test-Bound -ParameterName "ConnectRetryInterval") {
+                        Write-Message -Level Debug -Message "Connect Retry Interval will be set to '$ConnectRetryInterval'"
+                        $connectionOptionStringBuilder["Connect Retry Interval"] = $ConnectRetryInterval
+                    }
+                    if (Test-Bound -ParameterName "ConnectTimeout") {
+                        # ConnectionTimeout is set through SqlConnectionInfo below. Removing a value from
+                        # AdditionalParameters makes the explicit parameter win over AppendConnectionString.
+                        $null = $connectionOptionStringBuilder.Remove("Connect Timeout")
+                    }
+                    $sqlConnectionInfo.AdditionalParameters = $connectionOptionStringBuilder.ConnectionString
+                }
 
                 #ApplicationIntent      Property   string ApplicationIntent {get;set;}
                 if ($ApplicationIntent) {
@@ -1131,7 +1206,7 @@ function Connect-DbaInstance {
                 # Only a getter, not a setter - so don't touch
 
                 #ConnectionTimeout      Property   int ConnectionTimeout {get;set;}
-                if ($ConnectTimeout) {
+                if ($ConnectTimeout -or (Test-Bound -ParameterName "ConnectTimeout")) {
                     Write-Message -Level Debug -Message "ConnectionTimeout will be set to '$ConnectTimeout'"
                     $sqlConnectionInfo.ConnectionTimeout = $ConnectTimeout
                 }
