@@ -178,7 +178,13 @@ function Test-DbaDbQueryStore {
                 Database     = $namedDatabase
                 FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
             }
-            $skipDatabase = @($ExcludeDatabase) + (Get-QueryStoreUnsupportedDatabase @splatUnsupported)
+            # The model rule comes from Test-DbaFeatureSupport, which throws when the engine or version of the server
+            # cannot be read. That has to end this instance with a message, not the whole pipeline. See #10600.
+            try {
+                $skipDatabase = @($ExcludeDatabase) + (Get-QueryStoreUnsupportedDatabase @splatUnsupported)
+            } catch {
+                Stop-Function -Message "Cannot tell which databases of $server support Query Store" -ErrorRecord $_ -Target $server -Continue
+            }
 
             if ($server.DatabaseEngineType -eq "SqlAzureDatabase") {
                 $skipDatabase += "msdb"
