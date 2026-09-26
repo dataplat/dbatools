@@ -9,7 +9,7 @@ foreach ($item in (Get-ChildItem "$script:PSModuleRoot\private\maintenance" -Fil
 $scriptBlock = {
     $script:___ScriptName = 'dbatools-maintenance'
     # Import module in a way where internals are available
-    $script:disablerunspacetepp = $true
+    $global:disablerunspacetepp = $true
     Import-Module "$([Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleBase)\dbatools.psm1"
 
     try {

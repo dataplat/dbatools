@@ -213,6 +213,77 @@ if ($null -eq $asyncCacheRunspace) {
     }
 }
 
+Describe "$ModuleName maintenance runspace" -Tag UnitTests {
+    <#
+    The maintenance runspace imports a second copy of dbatools a few seconds after Import-Module.
+    Nobody tab completes in a background runspace, so that import has to skip TEPP. The runspace
+    says so with $global:disablerunspacetepp, because the module cannot see the script scope of
+    the code that imports it.
+
+    This is read out of a fresh PowerShell, like the asynchronous cache above. A maintenance task
+    runs inside the runspace and writes down what its copy of the module loaded.
+    #>
+    BeforeAll {
+        $ModulePath = Split-Path $PSScriptRoot -Parent
+
+        $maintenanceProbePath = Join-Path ([System.IO.Path]::GetTempPath()) "dbatools-maintenance-$(Get-Random)"
+        $null = New-Item -Path $maintenanceProbePath -ItemType Directory
+
+        $maintenanceProbeScript = Join-Path $maintenanceProbePath "maintenance-probe.ps1"
+        Set-Content -Path $maintenanceProbeScript -Value @'
+param(
+    $ModulePath,
+    $ResultPath
+)
+
+# Both switches would keep the part under test from loading at all.
+Remove-Item -Path Env:\DBATOOLS_DISABLE_TEPP -ErrorAction SilentlyContinue
+Remove-Item -Path Env:\DBATOOLS_DISABLE_LOGGING -ErrorAction SilentlyContinue
+
+Import-Module (Join-Path $ModulePath "dbatools.psd1") -ErrorAction Stop
+$module = Get-Module dbatools
+
+# The import of the session itself, so that a probe which cannot see TEPP at all fails instead of passing.
+& $module { $script:dbatools_ImportPerformance.Action } | ForEach-Object { "Session=$PSItem" }
+
+$taskScript = [ScriptBlock]::Create("& (Get-Module dbatools) { `$script:dbatools_ImportPerformance.Action } | Set-Content -Path `"$ResultPath`"")
+& $module { param($TaskScript) Register-DbaMaintenanceTask -Name "dbatoolsci_maintenance_probe" -ScriptBlock $TaskScript -Once } $taskScript
+
+$deadline = (Get-Date).AddSeconds(120)
+while (-not (Test-Path -Path $ResultPath) -and (Get-Date) -lt $deadline) {
+    Start-Sleep -Milliseconds 500
+}
+# The task writes the file, so give it a moment to finish.
+Start-Sleep -Seconds 1
+Get-Content -Path $ResultPath -ErrorAction SilentlyContinue | ForEach-Object { "Maintenance=$PSItem" }
+'@
+
+        $maintenanceResultPath = Join-Path $maintenanceProbePath "maintenance-result.txt"
+        $maintenanceProbeHost = (Get-Process -Id $PID).Path
+        $maintenanceProbeOutput = & $maintenanceProbeHost -NoProfile -NonInteractive -File $maintenanceProbeScript -ModulePath $ModulePath -ResultPath $maintenanceResultPath 2>&1
+
+        $sessionActions = $maintenanceProbeOutput | Where-Object { $PSItem -match "^Session=" } | ForEach-Object { "$PSItem" -replace "^Session=", "" }
+        $maintenanceActions = $maintenanceProbeOutput | Where-Object { $PSItem -match "^Maintenance=" } | ForEach-Object { "$PSItem" -replace "^Maintenance=", "" }
+    }
+
+    AfterAll {
+        Remove-Item -Path $maintenanceProbePath -Recurse -ErrorAction SilentlyContinue
+    }
+
+    It "loads TEPP in the session" {
+        $sessionActions | Should -Contain "Loading TEPP" -Because "the probe reported: $maintenanceProbeOutput"
+    }
+
+    It "runs the maintenance task that reports the import of the maintenance runspace" {
+        $maintenanceActions | Should -Contain "Loading Script: Maintenance" -Because "the probe reported: $maintenanceProbeOutput"
+    }
+
+    It "does not load TEPP in the maintenance runspace" {
+        $maintenanceActions | Should -Not -Contain "Loading TEPP" -Because "the probe reported: $maintenanceProbeOutput"
+        $maintenanceActions | Should -Not -Contain "Loading Script: Asynchronous TEPP Cache" -Because "the probe reported: $maintenanceProbeOutput"
+    }
+}
+
 Describe "$ModuleName style" -Tag Compliance {
     <#
     Ensures common formatting standards are applied:
