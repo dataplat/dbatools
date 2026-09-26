@@ -34,6 +34,8 @@ Describe $CommandName -Tag UnitTests {
                 "AzureUnsupported",
                 "BatchSeparator",
                 "ClientName",
+                "ConnectRetryCount",
+                "ConnectRetryInterval",
                 "ConnectTimeout",
                 "EncryptConnection",
                 "FailoverPartner",
@@ -64,6 +66,20 @@ Describe $CommandName -Tag UnitTests {
                 "DisableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+
+        It "rejects ConnectRetryCount values outside 0 to 255" {
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryCount -1 } | Should -Throw
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryCount 256 } | Should -Throw
+        }
+
+        It "rejects ConnectRetryInterval values outside 1 to 60" {
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryInterval 0 } | Should -Throw
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryInterval 61 } | Should -Throw
+        }
+
+        It "rejects negative ConnectTimeout values" {
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectTimeout -1 } | Should -Throw
         }
     }
 
@@ -293,6 +309,23 @@ Describe $CommandName -Tag UnitTests {
             $script:lastServerConnection.ConnectAsUserName | Should -BeNullOrEmpty
         }
 
+        It "uses explicit connection resiliency values instead of AppendConnectionString values" {
+            $splatConnection = @{
+                SqlInstance            = "sqlretry"
+                ConnectRetryCount      = 0
+                ConnectRetryInterval   = 2
+                ConnectTimeout         = 0
+                AppendConnectionString = "ConnectRetryCount=8;ConnectRetryInterval=9;Connect Timeout=60"
+                SqlConnectionOnly      = $true
+            }
+            $result = Connect-DbaInstance @splatConnection
+            $connectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $result.ConnectionString
+
+            $connectionStringBuilder.ConnectRetryCount | Should -Be 0
+            $connectionStringBuilder.ConnectRetryInterval | Should -Be 2
+            $connectionStringBuilder.ConnectTimeout | Should -Be 0
+        }
+
         It "uses the SqlClient SSPI provider for explicit Windows credentials" -Skip:(-not $script:hasCredentialSspiProvider) {
             $splatPassword = @{
                 String      = "password"
@@ -382,6 +415,8 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $params = @{
                 BatchSeparator           = "GO"
+                ConnectRetryCount        = 2
+                ConnectRetryInterval     = 1
                 ConnectTimeout           = 1
                 Database                 = "tempdb"
                 LockTimeout              = 1
@@ -404,6 +439,9 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "sets connectioncontext parameters that are provided" {
             foreach ($param in $params.GetEnumerator()) {
+                if ($param.Key -in "ConnectRetryCount", "ConnectRetryInterval") {
+                    continue
+                }
                 if ($param.Key -eq "Database") {
                     $propName = "DatabaseName"
                 } else {
@@ -411,6 +449,28 @@ Describe $CommandName -Tag IntegrationTests {
                 }
                 $server.ConnectionContext.PSObject.Properties[$propName].Value | Should -Be $param.Value
             }
+        }
+
+        It "sets connection retry parameters in the connection string" {
+            $retryConnectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $server.ConnectionContext.ConnectionString
+            $retryConnectionStringBuilder.ConnectRetryCount | Should -Be 2
+            $retryConnectionStringBuilder.ConnectRetryInterval | Should -Be 1
+        }
+
+        It "gives explicit connection parameters precedence over AppendConnectionString" {
+            $splatConnection = @{
+                SqlInstance            = $TestConfig.InstanceMulti1
+                ConnectRetryCount      = 3
+                ConnectRetryInterval   = 2
+                ConnectTimeout         = 5
+                AppendConnectionString = "ConnectRetryCount=8;ConnectRetryInterval=9;Connect Timeout=60"
+            }
+            $precedenceServer = Connect-DbaInstance @splatConnection
+            $precedenceConnectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $precedenceServer.ConnectionContext.ConnectionString
+
+            $precedenceConnectionStringBuilder.ConnectRetryCount | Should -Be 3
+            $precedenceConnectionStringBuilder.ConnectRetryInterval | Should -Be 2
+            $precedenceConnectionStringBuilder.ConnectTimeout | Should -Be 5
         }
 
         It "returns more than one database" {
