@@ -122,6 +122,17 @@ function Copy-DbaDbQueryStoreOption {
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
+
+        # The options the source has decide what is copied. That depends on the engine, not only on the version,
+        # so this asks the feature rules instead of comparing VersionMajor. See #10600.
+        try {
+            $sourceSupportsQueryStore = Test-DbaFeatureSupport -Server $sourceServer -Feature QueryStore
+            $sourceSupportsWaitStats = Test-DbaFeatureSupport -Server $sourceServer -Feature QueryStoreWaitStats
+            $sourceSupportsCustomCapturePolicy = Test-DbaFeatureSupport -Server $sourceServer -Feature QueryStoreCustomCapturePolicy
+        } catch {
+            Stop-Function -Message "Cannot tell which Query Store options $Source supports" -ErrorRecord $_ -Target $Source
+            return
+        }
     }
 
     process {
@@ -189,7 +200,7 @@ function Copy-DbaDbQueryStoreOption {
                 # Set the Query Store configuration through the Set-DbaQueryStoreConfig function
                 if ($PSCmdlet.ShouldProcess($destServer, "Copying QueryStoreConfig for $destdb")) {
                     try {
-                        if ($sourceServer.VersionMajor -eq 13) {
+                        if ($sourceSupportsQueryStore -and -not $sourceSupportsWaitStats) {
                             $setDbaDbQueryStoreOptionParameters = @{
                                 SqlInstance         = $destServer
                                 SqlCredential       = $DestinationSqlCredential
@@ -202,7 +213,7 @@ function Copy-DbaDbQueryStoreOption {
                                 CleanupMode         = $SourceQSConfig.SizeBasedCleanupMode
                                 StaleQueryThreshold = $SourceQSConfig.StaleQueryThresholdInDays
                             }
-                        } elseif ($sourceServer.VersionMajor -eq 14) {
+                        } elseif ($sourceSupportsWaitStats -and -not $sourceSupportsCustomCapturePolicy) {
                             $setDbaDbQueryStoreOptionParameters = @{
                                 SqlInstance          = $destServer
                                 SqlCredential        = $DestinationSqlCredential
@@ -217,7 +228,7 @@ function Copy-DbaDbQueryStoreOption {
                                 MaxPlansPerQuery     = $SourceQSConfig.MaxPlansPerQuery
                                 WaitStatsCaptureMode = $SourceQSConfig.WaitStatsCaptureMode
                             }
-                        } elseif ($sourceServer.VersionMajor -ge 15) {
+                        } elseif ($sourceSupportsCustomCapturePolicy) {
                             $setDbaDbQueryStoreOptionParameters = @{
                                 SqlInstance                                = $destServer
                                 SqlCredential                              = $DestinationSqlCredential

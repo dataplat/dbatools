@@ -226,7 +226,12 @@ ORDER BY SlowdownFactor DESC;"
                 Write-Message -Level Verbose -Message "Processing $($db.Name) on $server"
 
                 # Piped databases bypass Connect-DbaInstance and its -MinimumVersion check.
-                if ($server.VersionMajor -lt 13) {
+                try {
+                    $supportsQueryStore = Test-DbaFeatureSupport -Server $server -Feature QueryStore
+                } catch {
+                    Stop-Function -Message "Cannot tell whether $server supports Query Store" -ErrorRecord $_ -Target $db -Continue
+                }
+                if (-not $supportsQueryStore) {
                     Stop-Function -Message "Query Store requires SQL Server 2016 or later, $server is version $($server.VersionMajor)" -Target $db -Continue
                 }
 

@@ -16,7 +16,7 @@ function Test-DbaDbQueryStore {
         * StatisticsCollectionIntervalInMinutes = 30 (Time window that runtime stats will be aggregated. Use 30 unless you have space concerns, then leave at the default (60).)
         * WaitStatsCaptureMode = ON (Adds valuable data when troubleshooting.)
         * Trace Flag 7745 enabled
-        * Trace Flag 7752 enabled
+        * Trace Flag 7752 enabled (before SQL Server 2019 only, where Query Store is not yet loaded asynchronously by default)
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -291,7 +291,10 @@ function Test-DbaDbQueryStore {
                 }
                 try {
                     foreach ($tf in $queryStoreTF) {
-                        if (($server.MajorVersion -lt 15 -and $tf.TraceFlag -eq 7752) -or $tf.TraceFlag -eq 7745) {
+                        # SQL Server 2019 loads Query Store asynchronously by default, so 7752 has nothing left to do
+                        # there. This read the nonexistent property MajorVersion until #10600, which is $null and
+                        # therefore always less than 15, so 7752 was reported as missing on every version.
+                        if (($server.VersionMajor -lt 15 -and $tf.TraceFlag -eq 7752) -or $tf.TraceFlag -eq 7745) {
                             $tfEnabled = Get-DbaTraceFlag -SqlInstance $server -TraceFlag $tf.TraceFlag
                             [PSCustomObject]@{
                                 ComputerName     = $server.ComputerName
