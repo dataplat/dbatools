@@ -18,6 +18,7 @@ on:
       - 'bin/**'
       - 'en-us/**'
       - '!.github/dbatools-library-version.json'
+      - '!.github/smo-resource-floors.json'
       - '!bin/dbatools-buildref-index.json'
       - '!bin/dbatools-sqlinstallationcomponents.json'
 
@@ -77,3 +78,9 @@ jobs:
       run: |
         Import-Module ./dbatools.psd1 -ErrorAction Stop
         (Get-DbaManagementObject).LoadTemplate -ne $null
+
+    - name: Compare the SMO enumeration floors with the baseline
+      shell: pwsh
+      run: |
+        Import-Module ./dbatools.psd1 -ErrorAction Stop
+        ./.github/scripts/Test-SmoResourceFloor.ps1

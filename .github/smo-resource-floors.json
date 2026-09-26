@@ -1,0 +1,1223 @@
+{
+  "notes": "Reviewed SMO enumeration floors, see .github/scripts/Test-SmoResourceFloor.ps1 and #10600",
+  "library": "2026.9.16-preview-main-20260916210307",
+  "sqlEnumFileVersion": "18.100.1.19",
+  "resources": {
+    "AditionalParameters.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "AffinityInfo.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "AgentPerfInfo.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "AgentSubsystems.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "AlertNotification.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "ApplicationRole.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "Audit.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "AvailabilityDatabase.xml": {
+      "min_major": "11",
+      "cloud_min_major": ""
+    },
+    "AvailabilityGroup.xml": {
+      "min_major": "11",
+      "cloud_min_major": ""
+    },
+    "AvailabilityGroupListener.xml": {
+      "min_major": "11",
+      "cloud_min_major": ""
+    },
+    "AvailabilityGroupListenerIPAddress.xml": {
+      "min_major": "11",
+      "cloud_min_major": ""
+    },
+    "AvailabilityReplica.xml": {
+      "min_major": "11",
+      "cloud_min_major": ""
+    },
+    "AvailableMedia.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "BackupDevice.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "BoundColumn.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "CdromDrive.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "Check.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "ClusterMemberState.xml": {
+      "min_major": "11",
+      "cloud_min_major": ""
+    },
+    "ClusterSubnet.xml": {
+      "min_major": "11",
+      "cloud_min_major": ""
+    },
+    "Collation.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "Column.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "ColumnEncryptionKey.xml": {
+      "min_major": "13",
+      "cloud_min_major": "12"
+    },
+    "ColumnEncryptionKeyValue.xml": {
+      "min_major": "13",
+      "cloud_min_major": "12"
+    },
+    "ColumnMasterKey.xml": {
+      "min_major": "13",
+      "cloud_min_major": "12"
+    },
+    "ColumnPerm.xml": {
+      "min_major": "7",
+      "cloud_min_major": "10"
+    },
+    "ComputedText.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "Configuration.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "ConfigurationValue.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "Connection.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "Credential.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "CryptographicProvider.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "DBObjectPerm.xml": {
+      "min_major": "7",
+      "cloud_min_major": "10"
+    },
+    "DBPerm.xml": {
+      "min_major": "7",
+      "cloud_min_major": "10"
+    },
+    "Database.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "DatabaseAuditSpecification.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "DatabaseAuditSpecificationDetail.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "DatabaseDdlTrigger.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "DatabaseDdlTriggerEvent.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "DatabaseDiagram.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "DatabaseEncryptionKey.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "DatabaseLocks.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "DatabaseMappings.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "DatabaseMasterKey.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "DatabaseMirroringWitnessRole.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "DatabaseOptions.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "DatabaseReplicaState.xml": {
+      "min_major": "11",
+      "cloud_min_major": ""
+    },
+    "DatabaseRole.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "DatabaseRoleMember.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "DatabaseScopedConfiguration.xml": {
+      "min_major": "13",
+      "cloud_min_major": "12"
+    },
+    "DatabaseScopedCredential.xml": {
+      "min_major": "13",
+      "cloud_min_major": "12"
+    },
+    "DbExtendedProperty.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "Default.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "DefaultColumn.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "DefaultConstrain.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "DefaultDataType.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "DiskFile.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "DistributionColumn.xml": {
+      "min_major": "11",
+      "cloud_min_major": ""
+    },
+    "Drive.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "EdgeConstraint.xml": {
+      "min_major": "15",
+      "cloud_min_major": "12"
+    },
+    "EdgeConstraintClause.xml": {
+      "min_major": "15",
+      "cloud_min_major": "12"
+    },
+    "ErrorLog.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "ErrorLogText.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "ExtendedProperty.xml": {
+      "min_major": "8",
+      "cloud_min_major": "12"
+    },
+    "ExternalDataSource.xml": {
+      "min_major": "13",
+      "cloud_min_major": "12"
+    },
+    "ExternalFileFormat.xml": {
+      "min_major": "13",
+      "cloud_min_major": "12"
+    },
+    "ExternalLanguage.xml": {
+      "min_major": "15",
+      "cloud_min_major": ""
+    },
+    "ExternalLanguageFile.xml": {
+      "min_major": "15",
+      "cloud_min_major": ""
+    },
+    "ExternalLibrary.xml": {
+      "min_major": "14",
+      "cloud_min_major": ""
+    },
+    "ExternalLibraryFile.xml": {
+      "min_major": "14",
+      "cloud_min_major": ""
+    },
+    "ExternalModel.xml": {
+      "min_major": "17",
+      "cloud_min_major": "12"
+    },
+    "ExternalResourcePool.xml": {
+      "min_major": "13",
+      "cloud_min_major": ""
+    },
+    "ExternalResourcePoolAffinityInfo.xml": {
+      "min_major": "13",
+      "cloud_min_major": ""
+    },
+    "ExternalStream.xml": {
+      "min_major": "15",
+      "cloud_min_major": ""
+    },
+    "ExternalStreamingJob.xml": {
+      "min_major": "15",
+      "cloud_min_major": ""
+    },
+    "FKColumn.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "File.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "FileGroup.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "FixedDrive.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "ForeignKey.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "FullTextCatalog.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "FullTextFile.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "FullTextIndex.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "FullTextIndexColumn.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "FullTextLanguage.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "FullTextService.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "FullTextStopList.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "FulltextSemanticLanguage.xml": {
+      "min_major": "11",
+      "cloud_min_major": ""
+    },
+    "Index.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "IndexFragDetail.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "IndexFragFast.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "IndexFragSampled.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "IndexedColumn.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "IndexedJsonPath.xml": {
+      "min_major": "17",
+      "cloud_min_major": "12"
+    },
+    "IndexedXmlPath.xml": {
+      "min_major": "11",
+      "cloud_min_major": "12"
+    },
+    "IndexedXmlPathNamespace.xml": {
+      "min_major": "11",
+      "cloud_min_major": "12"
+    },
+    "Information.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "Job.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "JobServer.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "JobStep.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "JobStepOutputLog.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "KeyEncryption.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "Language.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "Level0ExtendedProperty.xml": {
+      "min_major": "8",
+      "cloud_min_major": "12"
+    },
+    "Level1ExtendedProperty.xml": {
+      "min_major": "8",
+      "cloud_min_major": "12"
+    },
+    "Level2ExtendedProperty.xml": {
+      "min_major": "8",
+      "cloud_min_major": "12"
+    },
+    "Level2IndexExtendedProperty.xml": {
+      "min_major": "8",
+      "cloud_min_major": "12"
+    },
+    "LinkedServer.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "LinkedServerCatalog.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "LinkedServerLogin.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "LinkedServerTable.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "LinkedServerView.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "Lock.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "LogFile.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "LogMarkHistory.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "Login.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "Mail.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "MailAccount.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "MailProfile.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "MailProfileAccounts.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "MailProfilePrincipals.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "MailServer.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "Mail_ErrorLog.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "MaintSubPlanLog.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "MaintSubPlanLogDetail.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "MaintenancePlan.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "MaintenancePlanDeprecated.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "MaintenanceSubPlan.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "MasterKeyEncryption.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "Member.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "NTGroup.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "NTLogin.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "NumberedSPParams.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "NumberedStoredProcedure.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "OLEDBProvProp.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "OLEDBProvider.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "OLEDBProviderSetting.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "OperatorJobNotification.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "OperatorNotification.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "OrderColumn.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "PartitionFunction.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "PartitionFunctionParameter.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "PartitionFunctionRangeValue.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "PartitionScheme.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "PartitionSchemeFileGroup.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "PartitionSchemeParameter.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "PerfInfo.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "PhysicalPartition.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "PlanGuide.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "PrimaryChildren.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "PrimaryFile.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "Process.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "ProxyAccount.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "ProxyAccountPrincipals.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "QueryStoreOptions.xml": {
+      "min_major": "13",
+      "cloud_min_major": "12"
+    },
+    "RemoteDrive.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "RemoteMaintenancePlan.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "RemotePlanLog.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "RemotePlanLogDetail.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "RemoteSubPlan.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "RemovableDrive.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "ReplicaClusterNode.xml": {
+      "min_major": "11",
+      "cloud_min_major": ""
+    },
+    "ResourceGovernor.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "ResourcePool.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "ResourcePoolAffinityInfo.xml": {
+      "min_major": "11",
+      "cloud_min_major": ""
+    },
+    "ResourcePoolScheduler.xml": {
+      "min_major": "11",
+      "cloud_min_major": ""
+    },
+    "Rule.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "RuleColumn.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "RuleDataType.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "SPParams.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "Schedule.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "Schema.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "SearchProperty.xml": {
+      "min_major": "11",
+      "cloud_min_major": "12"
+    },
+    "SearchPropertyList.xml": {
+      "min_major": "11",
+      "cloud_min_major": "12"
+    },
+    "SecurityPolicy.xml": {
+      "min_major": "13",
+      "cloud_min_major": "12"
+    },
+    "SecurityPredicate.xml": {
+      "min_major": "13",
+      "cloud_min_major": "12"
+    },
+    "SensitivityClassification.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "Server.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "ServerAuditSpecification.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "ServerAuditSpecificationDetail.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "ServerDdlTrigger.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "ServerDdlTriggerEvent.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "ServerProxyAccount.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "ServerRole.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "ServiceMasterKey.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "Settings.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "SharedSchedule.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "ShilohYukonPerm.xml": {
+      "min_major": "7",
+      "cloud_min_major": "10"
+    },
+    "SmartAdmin.xml": {
+      "min_major": "12",
+      "cloud_min_major": ""
+    },
+    "SqlAssembly.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "SqlAssemblyFile.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "SqlBoot.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "SrvObjectPerm.xml": {
+      "min_major": "9",
+      "cloud_min_major": ""
+    },
+    "SrvYukonObjectPerm.xml": {
+      "min_major": "9",
+      "cloud_min_major": ""
+    },
+    "SrvYukonPerm.xml": {
+      "min_major": "9",
+      "cloud_min_major": ""
+    },
+    "Statistic.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "StatisticColumn.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "StoredProcedure.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "TablePerm.xml": {
+      "min_major": "7",
+      "cloud_min_major": "10"
+    },
+    "TapeDevice.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "Text.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "Trigger.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "UDF.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "UDFParams.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "Uddt.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "User.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "UserDefinedAggregate.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "UserDefinedAggregateParameter.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "UserDefinedTableType.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "UserDefinedType.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "UserOption.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "View.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "WorkloadGroup.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "WorkloadManagementWorkloadClassifier.xml": {
+      "min_major": "",
+      "cloud_min_major": ""
+    },
+    "WorkloadManagementWorkloadGroup.xml": {
+      "min_major": "",
+      "cloud_min_major": ""
+    },
+    "XStoredProcedure.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "XmlNamespace.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "XmlSchemaCollection.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "XmlType.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "YukonObjectPerm.xml": {
+      "min_major": "9",
+      "cloud_min_major": "10"
+    },
+    "YukonSchemaObjectPerm.xml": {
+      "min_major": "9",
+      "cloud_min_major": "10"
+    },
+    "Yukonuserownedobject.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "YukonuserownedobjectSchema.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "agent_ErrorLog.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "agent_ErrorLogText.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "agent_alert.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "agent_alert_categories.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "agent_alertsystem.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "agent_job_categories.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "agent_jobalert.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "agent_jobhistory.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "agent_jobschedule.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "agent_jobtargetservers.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "agent_operator.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "agent_operator_categories.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "agent_targetserver.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "agent_targetservergroup.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "agent_targetservermember.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "asymmetrickey.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "backupfile.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "backupmediafamily.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "backupmediaset.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "backupset.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "certificate.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "database_mirroring_endpoint.xml": {
+      "min_major": "9",
+      "cloud_min_major": ""
+    },
+    "dbfixedroleperm.xml": {
+      "min_major": "7",
+      "cloud_min_major": ""
+    },
+    "endpoint.xml": {
+      "min_major": "9",
+      "cloud_min_major": ""
+    },
+    "fulltext_ErrorLog.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "fulltext_ErrorLogText.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "http_endpoint.xml": {
+      "min_major": "9",
+      "cloud_min_major": ""
+    },
+    "inc_DbFile.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "inc_IndexFrag.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "inc_column_reference.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "inc_constraint.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_ddl_trigger_event.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_fulltext.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_hadr_policy_health_state.xml": {
+      "min_major": "11",
+      "cloud_min_major": ""
+    },
+    "inc_hadr_setting.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_level2SupportProperties.xml": {
+      "min_major": "7",
+      "cloud_min_major": ""
+    },
+    "inc_named_object.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_object.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_objprop_table_view.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_perm.xml": {
+      "min_major": "7",
+      "cloud_min_major": "10"
+    },
+    "inc_policy_health_state.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "inc_ruledef80.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "inc_server.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_server_sql_module_link.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "inc_shilohExtendedProperty.xml": {
+      "min_major": "8",
+      "cloud_min_major": "12"
+    },
+    "inc_sql_module.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_sql_module_JustText.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "inc_storage.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "inc_system_object.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_system_table_view_sp_udf.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "inc_text.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_type.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_type_reference.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_urn.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_urn_collate_default.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "inc_urn_message.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "inc_urn_schema.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_urn_single.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "inc_urn_soapmethod.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "mixed_module_link.xml": {
+      "min_major": "7",
+      "cloud_min_major": "10"
+    },
+    "parameter.xml": {
+      "min_major": "7",
+      "cloud_min_major": "10"
+    },
+    "restore_plan.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "restorefile.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "restorefilegroup.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "restorehistory.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "resumableindex.xml": {
+      "min_major": "14",
+      "cloud_min_major": "12"
+    },
+    "sdt.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "sequence.xml": {
+      "min_major": "11",
+      "cloud_min_major": "12"
+    },
+    "service_broker_endpoint.xml": {
+      "min_major": "9",
+      "cloud_min_major": ""
+    },
+    "soap_endpoint.xml": {
+      "min_major": "9",
+      "cloud_min_major": ""
+    },
+    "soap_endpoint_method.xml": {
+      "min_major": "9",
+      "cloud_min_major": ""
+    },
+    "sql_module_link.xml": {
+      "min_major": "7",
+      "cloud_min_major": "10"
+    },
+    "symmetrickey.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "synonym.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "sysmessage.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "table.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "tcp_endpoint.xml": {
+      "min_major": "9",
+      "cloud_min_major": ""
+    },
+    "temp_table.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "transaction.xml": {
+      "min_major": "10",
+      "cloud_min_major": "12"
+    },
+    "udfcolumn.xml": {
+      "min_major": "10",
+      "cloud_min_major": "10"
+    },
+    "usermessage.xml": {
+      "min_major": "10",
+      "cloud_min_major": ""
+    },
+    "via_endpoint.xml": {
+      "min_major": "9",
+      "cloud_min_major": ""
+    }
+  }
+}
