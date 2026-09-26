@@ -257,6 +257,8 @@ The dbatools.library version used by CI and local development is pinned in **`.g
 
 `tests/ps3-smoke.ps1` is a deliberate exception: it reads the same file for a version, but skips installing entirely if any dbatools.library is already present, and otherwise downloads from the PowerShell Gallery rather than the GitHub release. A preview pin therefore does **not** reach it, since previews are not published to the Gallery.
 
+`xplat-import.yml` also compares the SMO enumeration floors of the pinned build with `.github/smo-resource-floors.json` and fails when one changed. After reviewing such a change, refresh the baseline with `./.github/scripts/Test-SmoResourceFloor.ps1 -UpdateBaseline` (dbatools imported) and commit it with the pin.
+
 **For full details**, read `.github/DBATOOLS_LIBRARY_VERSION_MANAGEMENT.md`.
 
 ## TEST GUIDELINES
