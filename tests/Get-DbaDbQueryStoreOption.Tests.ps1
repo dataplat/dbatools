@@ -29,6 +29,11 @@ Describe $CommandName -Tag IntegrationTests {
         $discoveryServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $instanceVersionMajor = $discoveryServer.VersionMajor
         $null = $discoveryServer | Disconnect-DbaInstance
+
+        # Azure SQL Database reports product version 12.0 while SMO reads VersionMajor 18 there, so it is the
+        # engine where the Query Store options were decided by accident before #10600. No CI environment has
+        # one; a lab configuration supplies it through AzureSqlDbServer and everywhere else the Context skips.
+        $hasAzureSqlDb = -not [string]::IsNullOrWhiteSpace($TestConfig.AzureSqlDbServer)
     }
 
     BeforeAll {
@@ -117,6 +122,112 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Adds the CustomCapturePolicy values, which SMO does not carry" -Skip:($instanceVersionMajor -lt 15) {
             (Get-Member -InputObject $resultsFromSmo -Name CustomCapturePolicyExecutionCount).MemberType | Should -Be "NoteProperty"
+        }
+    }
+
+    Context "When the default columns are chosen" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $resultsColumns = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $queryStoreDbName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $baseColumns = @(
+                "ComputerName",
+                "InstanceName",
+                "SqlInstance",
+                "Database",
+                "ActualState",
+                "DataFlushIntervalInSeconds",
+                "StatisticsCollectionIntervalInMinutes",
+                "MaxStorageSizeInMB",
+                "CurrentStorageSizeInMB",
+                "QueryCaptureMode",
+                "SizeBasedCleanupMode",
+                "StaleQueryThresholdInDays"
+            )
+            $waitStatsColumns = @(
+                "MaxPlansPerQuery",
+                "WaitStatsCaptureMode"
+            )
+            $customCapturePolicyColumns = @(
+                "CustomCapturePolicyExecutionCount",
+                "CustomCapturePolicyTotalCompileCPUTimeMS",
+                "CustomCapturePolicyTotalExecutionCPUTimeMS",
+                "CustomCapturePolicyStaleThresholdHours"
+            )
+        }
+
+        It "Shows the same columns for the version as before the feature rules took over" {
+            # Written out by version here on purpose, so that a wrong feature rule changes the output and fails.
+            # See #10600.
+            $expectedColumns = $baseColumns
+            if ($serverSingle.VersionMajor -ge 14) {
+                $expectedColumns += $waitStatsColumns
+            }
+            if ($serverSingle.VersionMajor -ge 15) {
+                $expectedColumns += $customCapturePolicyColumns
+            }
+            $resultsColumns.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Should -Be $expectedColumns
+        }
+    }
+
+    Context "When the instance is an Azure SQL Database" -Skip:(-not $hasAzureSqlDb) {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # A serverless database that has been idle is paused and answers the first attempts with error
+            # 40613 "is not currently available" while it resumes, so the connection is retried until it is
+            # up, and only an error that says something else is thrown immediately.
+            $splatAzureConnect = @{
+                SqlInstance    = $TestConfig.AzureSqlDbServer
+                Database       = $TestConfig.AzureSqlDbName
+                SqlCredential  = $TestConfig.AzureSqlDbCred
+                ConnectTimeout = 120
+            }
+            $azureResumeAttempt = 0
+            while ($null -eq $serverAzure) {
+                $azureResumeAttempt++
+                try {
+                    $serverAzure = Connect-DbaInstance @splatAzureConnect
+                } catch {
+                    if ($azureResumeAttempt -ge 10 -or $PSItem.Exception.Message -notmatch "is not currently available") {
+                        throw
+                    }
+                    Start-Sleep -Seconds 15
+                }
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            if ($serverAzure) {
+                $null = $serverAzure | Disconnect-DbaInstance
+            }
+        }
+
+        It "really is an Azure SQL Database, which is what makes this case different" {
+            # Guards the tests below: pointed at a SQL Server they would pass without proving anything.
+            $serverAzure.DatabaseEngineEdition | Should -Be "SqlDatabase"
+            $serverAzure.Version.Major | Should -Be 12
+        }
+
+        It "Shows every Query Store option, which Azure SQL Database has whatever its version says" {
+            $resultsAzure = Get-DbaDbQueryStoreOption -SqlInstance $serverAzure -Database $TestConfig.AzureSqlDbName -WarningVariable warnAzure
+            $warnAzure | Should -BeNullOrEmpty
+            $resultsAzure.Database | Should -Be $TestConfig.AzureSqlDbName
+            $resultsAzure.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Should -Contain "WaitStatsCaptureMode"
+            $resultsAzure.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Should -Contain "CustomCapturePolicyExecutionCount"
+        }
+
+        It "Warns that there is no model to read instead of blaming the version" {
+            # Before #10600 model counted as supported here because VersionMajor is 18, and the named model then
+            # silently returned nothing, because an Azure SQL Database has no model a user can reach.
+            $resultsModel = Get-DbaDbQueryStoreOption -SqlInstance $serverAzure -Database model -WarningVariable warnModel -WarningAction SilentlyContinue
+            $resultsModel | Should -BeNullOrEmpty
+            $warnModel -join "`n" | Should -Match "Azure SQL Database has no model database"
         }
     }
 }

@@ -107,6 +107,15 @@ function Get-DbaDbQueryStoreOption {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            # Which options exist depends on the engine, not only on the version, so this asks the feature rules
+            # instead of comparing VersionMajor. See #10600.
+            try {
+                $supportsWaitStats = Test-DbaFeatureSupport -Server $server -Feature QueryStoreWaitStats
+                $supportsCustomCapturePolicy = Test-DbaFeatureSupport -Server $server -Feature QueryStoreCustomCapturePolicy
+            } catch {
+                Stop-Function -Message "Cannot tell which Query Store options $instance supports" -ErrorRecord $_ -Target $instance -Continue
+            }
+
             # We have to exclude the system databases that cannot have the Query Store feature enabled. Get-DbaDatabase
             # lets -ExcludeDatabase win over -Database, so this is worked out per instance and warns about anything the
             # caller named on purpose instead of dropping it silently.
@@ -135,7 +144,7 @@ function Get-DbaDbQueryStoreOption {
                 # 2017 it was added over the real property, which turns it into a note property that no
                 # longer follows a Refresh of the object. SMO is the single source for those two now, on
                 # every version. See #10562.
-                if ($server.VersionMajor -ge 15) {
+                if ($supportsCustomCapturePolicy) {
                     $QueryStoreOptions = Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query "SELECT capture_policy_execution_count AS CustomCapturePolicyExecutionCount, capture_policy_stale_threshold_hours AS CustomCapturePolicyStaleThresholdHours, capture_policy_total_compile_cpu_time_ms AS CustomCapturePolicyTotalCompileCPUTimeMS, capture_policy_total_execution_cpu_time_ms AS CustomCapturePolicyTotalExecutionCPUTimeMS FROM sys.database_query_store_options;" -As PSObject
                 }
 
@@ -144,16 +153,16 @@ function Get-DbaDbQueryStoreOption {
                 Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 Add-Member -Force -InputObject $qso -MemberType NoteProperty Database -Value $db.Name
 
-                if ($server.VersionMajor -eq 13) {
-                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays
-                } elseif ($server.VersionMajor -eq 14) {
-                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode
-                } elseif ($server.VersionMajor -ge 15) {
+                if ($supportsCustomCapturePolicy) {
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyExecutionCount -Value $QueryStoreOptions.CustomCapturePolicyExecutionCount
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyTotalCompileCPUTimeMS -Value $QueryStoreOptions.CustomCapturePolicyTotalCompileCPUTimeMS
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyTotalExecutionCPUTimeMS -Value $QueryStoreOptions.CustomCapturePolicyTotalExecutionCPUTimeMS
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyStaleThresholdHours -Value $QueryStoreOptions.CustomCapturePolicyStaleThresholdHours
                     Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode, CustomCapturePolicyExecutionCount, CustomCapturePolicyTotalCompileCPUTimeMS, CustomCapturePolicyTotalExecutionCPUTimeMS, CustomCapturePolicyStaleThresholdHours
+                } elseif ($supportsWaitStats) {
+                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode
+                } else {
+                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays
                 }
             }
         }
