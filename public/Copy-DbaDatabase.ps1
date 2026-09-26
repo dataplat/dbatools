@@ -8,7 +8,7 @@ function Copy-DbaDatabase {
 
         Offers two migration methods: backup/restore (safer, supports cross-version migrations) and detach/attach (faster, requires same SQL Server version). The backup/restore method creates copy-only backups to avoid breaking your existing backup chain, while detach/attach physically moves database files via administrative shares.
 
-        Automatically handles file path mapping, preserves database properties like ownership chaining and trustworthy settings, and includes safety checks for Availability Groups, mirroring, and replication. By default, databases are placed in the destination server's default data and log directories, but you can preserve the original folder structure.
+        Automatically handles file path mapping, preserves database properties like ownership chaining and trustworthy settings, and includes safety checks for Availability Groups, mirroring, and replication. By default, databases are placed in the destination server's default data and log directories, but you can preserve the original folder structure or, with backup/restore, name the data, log and FILESTREAM directories.
 
         Works with named instances, clusters, SQL Server Express Edition, and Azure blob storage for cloud scenarios. Supports multiple destination servers, database renaming, and batch operations for migrating multiple databases efficiently.
 
@@ -102,6 +102,21 @@ function Copy-DbaDatabase {
         Maintains the exact file path structure from the source instance on the destination.
         Use this when destination servers have identical drive layouts or when preserving specific organizational folder structures.
         The destination instance must have matching directory paths available.
+
+    .PARAMETER DestinationDataDirectory
+        Specifies the directory on the destination instance where the data files (.mdf, .ndf) are restored.
+        Use this to place a migrated database on a specific drive or in its own folder instead of the default data directory of the destination.
+        When specified alone, the log files are placed in this directory as well. A directory that does not exist yet is created.
+        Only available with -BackupRestore. Cannot be combined with -ReuseSourceFolderStructure or used with an Azure SQL Managed Instance destination.
+
+    .PARAMETER DestinationLogDirectory
+        Specifies the directory on the destination instance where the transaction log files (.ldf) are restored.
+        Can only be used together with -DestinationDataDirectory.
+
+    .PARAMETER DestinationFileStreamDirectory
+        Specifies the directory on the destination instance where the FILESTREAM containers are restored.
+        Without it, FILESTREAM containers are placed in the data directory.
+        Can only be used together with -DestinationDataDirectory and requires FILESTREAM to be enabled on the destination instance.
 
     .PARAMETER IncludeSupportDbs
         Migrates SQL Server feature databases including ReportServer, ReportServerTempDB, SSISDB, and distribution databases.
@@ -239,6 +254,24 @@ function Copy-DbaDatabase {
         PS C:\> Get-DbaDatabase -SqlInstance sql2014a -Database db1, db2 | Copy-DbaDatabase -Destination sqlcluster -BackupRestore -SharedPath \\FS\Backup -NewName $rename
 
         Copies db1 and db2 to sqlcluster under their original names when $rename is an empty string. An empty or whitespace -NewName is treated as not specified, so a script can pass the same variable unconditionally and only set it when a single database should be renamed.
+
+    .EXAMPLE
+        PS C:\> $databases = Get-DbaDatabase -SqlInstance sql2014a -ExcludeSystem
+        PS C:\> foreach ($db in $databases) {
+        >>     $splatCopy = @{
+        >>         Source                         = "sql2014a"
+        >>         Destination                    = "sql2022"
+        >>         Database                       = $db.Name
+        >>         BackupRestore                  = $true
+        >>         SharedPath                     = "\\fileshare\sql\migration"
+        >>         DestinationDataDirectory       = "D:\Data\$($db.Name)"
+        >>         DestinationLogDirectory        = "E:\Log\$($db.Name)"
+        >>         DestinationFileStreamDirectory = "F:\FileStream\$($db.Name)"
+        >>     }
+        >>     Copy-DbaDatabase @splatCopy
+        >> }
+
+        Migrates every user database of sql2014a to sql2022 and restores each one into its own data, log and FILESTREAM folder named after the database. Missing folders are created on the destination.
     #>
     [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
@@ -286,6 +319,12 @@ function Copy-DbaDatabase {
         [parameter(ParameterSetName = "DbBackup")]
         [parameter(ParameterSetName = "DbAttachDetach")]
         [switch]$ReuseSourceFolderStructure,
+        [parameter(ParameterSetName = "DbBackup")]
+        [string]$DestinationDataDirectory,
+        [parameter(ParameterSetName = "DbBackup")]
+        [string]$DestinationLogDirectory,
+        [parameter(ParameterSetName = "DbBackup")]
+        [string]$DestinationFileStreamDirectory,
         [parameter(ParameterSetName = "DbBackup")]
         [parameter(ParameterSetName = "DbAttachDetach")]
         [switch]$IncludeSupportDbs,
@@ -339,6 +378,20 @@ function Copy-DbaDatabase {
         }
         if ($Continue -and -not $UseLastBackup) {
             Stop-Function -Message "-Continue cannot be used without -UseLastBackup"
+            return
+        }
+        # Restore-DbaDatabase would refuse these combinations as well, but only after the destination
+        # database was dropped and the source was backed up, so reject them before any work (#10587)
+        if ($ReuseSourceFolderStructure -and ($DestinationDataDirectory -or $DestinationLogDirectory -or $DestinationFileStreamDirectory)) {
+            Stop-Function -Message "-ReuseSourceFolderStructure cannot be combined with -DestinationDataDirectory, -DestinationLogDirectory or -DestinationFileStreamDirectory"
+            return
+        }
+        if ($DestinationLogDirectory -and -not $DestinationDataDirectory) {
+            Stop-Function -Message "-DestinationLogDirectory can only be used together with -DestinationDataDirectory"
+            return
+        }
+        if ($DestinationFileStreamDirectory -and -not $DestinationDataDirectory) {
+            Stop-Function -Message "-DestinationFileStreamDirectory can only be used together with -DestinationDataDirectory"
             return
         }
 
@@ -856,6 +909,9 @@ function Copy-DbaDatabase {
             if ($destServer.DatabaseEngineEdition -eq 'SqlManagedInstance') {
                 # we have a managed instance destination, set an internal flag to disable switches that don't work
                 $miRestore = $True
+            }
+            if ($miRestore -and ($DestinationDataDirectory -or $DestinationLogDirectory -or $DestinationFileStreamDirectory)) {
+                Stop-Function -Message "-DestinationDataDirectory, -DestinationLogDirectory and -DestinationFileStreamDirectory cannot be used with the managed instance $destinstance, which places the restored files itself. Skipping this destination." -Target $destinstance -Continue
             }
             if ($DetachAttach) {
                 if ($sourceServer.ComputerName -eq $env:COMPUTERNAME -or $destServer.ComputerName -eq $env:COMPUTERNAME) {
@@ -1376,7 +1432,35 @@ function Copy-DbaDatabase {
                                 if ($miRestore) {
                                     $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $destinationDbName -TrustDbBackupHistory -WithReplace:$WithReplace -EnableException -AzureCredential $AzureCredential
                                 } else {
-                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $destinationDbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -Continue:$Continue -EnableException -ReplaceDbNameInFile -AzureCredential $AzureCredential -KeepCDC:$KeepCDC -KeepReplication:$KeepReplication
+                                    $splatRestore = @{
+                                        SqlInstance          = $destServer
+                                        DatabaseName         = $destinationDbName
+                                        NoRecovery           = $NoRecovery
+                                        TrustDbBackupHistory = $true
+                                        WithReplace          = $WithReplace
+                                        Continue             = $Continue
+                                        EnableException      = $true
+                                        ReplaceDbNameInFile  = $true
+                                        AzureCredential      = $AzureCredential
+                                        KeepCDC              = $KeepCDC
+                                        KeepReplication      = $KeepReplication
+                                    }
+                                    # Restore-DbaDatabase counts every bound location parameter, even a switch bound as $false,
+                                    # so only the ones in use are passed. Without any of them it keeps using the default
+                                    # directories of the destination, as before (#10587)
+                                    if ($ReuseSourceFolderStructure) {
+                                        $splatRestore.ReuseSourceFolderStructure = $true
+                                    }
+                                    if ($DestinationDataDirectory) {
+                                        $splatRestore.DestinationDataDirectory = $DestinationDataDirectory
+                                    }
+                                    if ($DestinationLogDirectory) {
+                                        $splatRestore.DestinationLogDirectory = $DestinationLogDirectory
+                                    }
+                                    if ($DestinationFileStreamDirectory) {
+                                        $splatRestore.DestinationFileStreamDirectory = $DestinationFileStreamDirectory
+                                    }
+                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase @splatRestore
                                 }
                             } catch {
                                 $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
