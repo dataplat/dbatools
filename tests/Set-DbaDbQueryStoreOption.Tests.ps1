@@ -176,7 +176,7 @@ Describe $CommandName -Tag IntegrationTests {
                 Database         = $refreshDbName
                 MaxPlansPerQuery = 555
             }
-            if ($multi1VersionMajor -ge 14) {
+            if ($refreshServer.VersionMajor -ge 14) {
                 $splatRefresh.WaitStatsCaptureMode = "Off"
             }
             $resultsRefresh = Set-DbaDbQueryStoreOption @splatRefresh
