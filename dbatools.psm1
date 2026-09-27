@@ -1034,6 +1034,7 @@ $script:xplat = @(
         'Get-DbaOperatingSystem',
         'Get-DbaComputerSystem',
         'Set-DbaPrivilege',
+        'Remove-DbaPrivilege',
         'Set-DbaTcpPort',
         'Set-DbaCmConnection',
         'Get-DbaUptime',

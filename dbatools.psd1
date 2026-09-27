@@ -590,6 +590,7 @@
         'Remove-DbaNetworkCertificate',
         'Remove-DbaPfDataCollectorCounter',
         'Remove-DbaPfDataCollectorSet',
+        'Remove-DbaPrivilege',
         'Remove-DbaRegServer',
         'Remove-DbaRegServerGroup',
         'Remove-DbaRgResourcePool',
