@@ -126,7 +126,7 @@ jobs:
             -v $HOME/.minio/certs:/root/.minio/certs:ro \
             -e "MINIO_ROOT_USER=${{ env.MINIO_ROOT_USER }}" \
             -e "MINIO_ROOT_PASSWORD=${{ env.MINIO_ROOT_PASSWORD }}" \
-            quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z server /data --console-address ":9001"
+            pgsty/minio:RELEASE.2026-08-04T00-00-00Z server /data --console-address ":9001"
 
           # Wait for MinIO to be ready (now using HTTPS)
           echo "Waiting for MinIO to start with TLS..."

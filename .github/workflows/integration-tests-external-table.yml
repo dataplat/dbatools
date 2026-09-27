@@ -94,7 +94,7 @@ jobs:
             -v $HOME/.minio/certs:/root/.minio/certs:ro \
             -e MINIO_ROOT_USER=minioadmin \
             -e MINIO_ROOT_PASSWORD=minioadmin \
-            quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z server /data
+            pgsty/minio:RELEASE.2026-08-04T00-00-00Z server /data
 
           minio_ready=false
           for i in {1..30}; do
