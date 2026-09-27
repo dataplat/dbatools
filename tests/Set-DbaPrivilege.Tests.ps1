@@ -36,6 +36,11 @@ InModuleScope dbatools {
         BeforeEach {
             $script:policyFile = $null
             $script:capturedPolicyContent = $null
+            # What the mocked secedit /export writes; a test replaces it to start from other entries.
+            $script:exportedPolicyContent = @(
+                "[Privilege Rights]"
+                "SeCreateGlobalPrivilege = "
+            )
 
             Mock Test-ElevationRequirement { $true }
             Mock Test-PSRemoting { $true }
@@ -54,10 +59,7 @@ InModuleScope dbatools {
                 $script:policyFile = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "secpolByDbatools-$runToken.cfg"
 
                 if ($ScriptBlock.ToString() -match "secedit /export /cfg") {
-                    Set-Content -Path $script:policyFile -Value @(
-                        "[Privilege Rights]"
-                        "SeCreateGlobalPrivilege = "
-                    )
+                    Set-Content -Path $script:policyFile -Value $script:exportedPolicyContent
                     return
                 }
 
@@ -89,6 +91,59 @@ InModuleScope dbatools {
 
             ($script:capturedPolicyContent | Where-Object { $PSItem -match "^SeCreateGlobalPrivilege" }) |
                 Should -Match "^SeCreateGlobalPrivilege = \*$([regex]::Escape($expectedSid))(,)?$"
+        }
+
+        It "grants to LocalSystem as the SID of the local system account" {
+            # The service manager reports the local system account as LocalSystem, which NTAccount cannot translate.
+            $null = Set-DbaPrivilege -ComputerName $env:COMPUTERNAME -Type CreateGlobalObjects -User LocalSystem -Confirm:$false
+
+            ($script:capturedPolicyContent | Where-Object { $PSItem -match "^SeCreateGlobalPrivilege" }) |
+                Should -Match "^SeCreateGlobalPrivilege = \*S-1-5-18(,)?$"
+        }
+
+        It "adds an account whose SID is only the beginning of an entry that is already there" {
+            # The check was -notmatch on the whole line, so *S-...-5001 counted as the account S-...-500.
+            $user = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+            $userSid = ([System.Security.Principal.NTAccount]$user).Translate([System.Security.Principal.SecurityIdentifier]).Value
+            $script:exportedPolicyContent = @(
+                "[Privilege Rights]"
+                "SeCreateGlobalPrivilege = *$($userSid)1"
+            )
+
+            $null = Set-DbaPrivilege -ComputerName $env:COMPUTERNAME -Type CreateGlobalObjects -User $user -Confirm:$false
+
+            $entries = ($script:capturedPolicyContent | Where-Object { $PSItem -match "^SeCreateGlobalPrivilege" }).Split("=", 2)[1].Split(",").Trim()
+            $entries | Should -Contain "*$userSid"
+            $entries | Should -Contain "*$($userSid)1"
+        }
+
+        It "does not add an account again that is already listed by its name" {
+            # secedit exports a local account by its name, which a comparison by SID text did not recognize.
+            $user = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+            $script:exportedPolicyContent = @(
+                "[Privilege Rights]"
+                "SeCreateGlobalPrivilege = $user"
+            )
+
+            $null = Set-DbaPrivilege -ComputerName $env:COMPUTERNAME -Type CreateGlobalObjects -User $user -Confirm:$false
+
+            ($script:capturedPolicyContent | Where-Object { $PSItem -match "^SeCreateGlobalPrivilege" }) | Should -Be "SeCreateGlobalPrivilege = $user"
+        }
+
+        It "warns and adds nothing for an account that cannot be resolved" {
+            # Without a SID the line got an empty * entry, or the SID of the account before.
+            $splatSetUnknown = @{
+                ComputerName    = $env:COMPUTERNAME
+                Type            = "CreateGlobalObjects"
+                User            = "dbatoolsci_nosuchuser_$(Get-Random)"
+                Confirm         = $false
+                WarningVariable = "unknownWarning"
+                WarningAction   = "SilentlyContinue"
+            }
+            $null = Set-DbaPrivilege @splatSetUnknown
+
+            ($script:capturedPolicyContent | Where-Object { $PSItem -match "^SeCreateGlobalPrivilege" }) | Should -Be "SeCreateGlobalPrivilege = "
+            $unknownWarning | Should -BeLike "*Cannot resolve dbatoolsci_nosuchuser_*"
         }
 
         It "passes the credential to the remoting connectivity test and the service discovery for a remote computer" {
@@ -287,6 +342,111 @@ Describe $CommandName -Tag IntegrationTests {
                 Remove-Event -SourceIdentifier $seceditWatcherSourceId -ErrorAction SilentlyContinue
                 $seceditWatcher.Dispose()
             }
+        }
+    }
+
+    Context "Local accounts" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Returns the entries of one right from the local security policy, the way secedit exports them:
+            # *SID for most accounts, the bare name for local accounts.
+            function Get-TestRightEntry {
+                param ([string]$Privilege)
+                $exportFile = "$([System.IO.Path]::GetTempPath())dbatoolsci_rights_$(Get-Random).cfg"
+                try {
+                    $null = secedit /export /cfg $exportFile /areas USER_RIGHTS
+                    $line = Get-Content -Path $exportFile | Where-Object { $PSItem -match "^$Privilege\s*=" }
+                    if ($line) {
+                        $line.Split("=", 2)[1].Split(",") | ForEach-Object { $PSItem.Trim() } | Where-Object { $PSItem }
+                    }
+                } finally {
+                    Remove-Item -Path $exportFile -ErrorAction SilentlyContinue
+                }
+            }
+
+            # Removes the test account from the given rights, by its name and by its SID.
+            function Remove-TestRightHolder {
+                param (
+                    [string[]]$Privilege,
+                    [string]$UserName,
+                    [string]$Sid
+                )
+                $baseName = "$([System.IO.Path]::GetTempPath())dbatoolsci_revoke_$(Get-Random)"
+                try {
+                    $null = secedit /export /cfg "$baseName.cfg" /areas USER_RIGHTS
+                    $content = Get-Content -Path "$baseName.cfg" | ForEach-Object {
+                        $rightName = $PSItem.Split("=", 2)[0].Trim()
+                        if ($rightName -in $Privilege) {
+                            $kept = $PSItem.Split("=", 2)[1].Split(",") | ForEach-Object { $PSItem.Trim() } | Where-Object { $PSItem -and $PSItem -ne $UserName -and $PSItem -ne "*$Sid" }
+                            "$rightName = $($kept -join ",")"
+                        } else {
+                            $PSItem
+                        }
+                    }
+                    Set-Content -Path "$baseName.cfg" -Value $content -Encoding Unicode
+                    $null = secedit /configure /cfg "$baseName.cfg" /db "$baseName.sdb" /areas USER_RIGHTS /overwrite /quiet
+                } finally {
+                    Remove-Item -Path "$baseName.cfg", "$baseName.sdb", "$baseName.jfm" -ErrorAction SilentlyContinue
+                }
+            }
+
+            # Local account names are limited to 20 characters.
+            $localUserName = "dbatoolsci_sp$(Get-Random -Maximum 99999)"
+            $splatLocalUser = @{
+                Name     = $localUserName
+                Password = (ConvertTo-SecureString -String "dbatools.IO!$(Get-Random)" -AsPlainText -Force)
+            }
+            $null = New-LocalUser @splatLocalUser
+            $localUserSid = ([System.Security.Principal.NTAccount]"$env:COMPUTERNAME\$localUserName").Translate([System.Security.Principal.SecurityIdentifier]).Value
+            $dotAccount = ".\$localUserName"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            Remove-TestRightHolder -Privilege SeLockMemoryPrivilege, SeServiceLogonRight -UserName $localUserName -Sid $localUserSid
+            Remove-LocalUser -Name $localUserName -ErrorAction SilentlyContinue
+        }
+
+        It "Grants the privilege to a local account named as .\Name" {
+            # NTAccount cannot translate .\Name, so the account got no SID and the line an empty * entry.
+            $null = Set-DbaPrivilege -Type LPIM -User $dotAccount -Confirm:$false
+
+            $WarnVar | Should -BeNullOrEmpty
+            Get-TestRightEntry -Privilege SeLockMemoryPrivilege | Where-Object { $PSItem -eq $localUserName -or $PSItem -eq "*$localUserSid" } | Should -Not -BeNullOrEmpty
+        }
+
+        It "Lists an account only once when it is granted again" {
+            $null = Set-DbaPrivilege -Type LPIM -User $dotAccount -Confirm:$false
+
+            @(Get-TestRightEntry -Privilege SeLockMemoryPrivilege | Where-Object { $PSItem -eq $localUserName -or $PSItem -eq "*$localUserSid" }) | Should -HaveCount 1
+        }
+
+        It "Grants the privilege to a discovered service account named as .\Name" {
+            # Windows stores a local service account as .\Name and Get-DbaService returns it unchanged.
+            # Only the service lookup is replaced, the local security policy is changed for real.
+            $mockService = [scriptblock]::Create(@"
+[PSCustomObject]@{
+    ServiceName = "dbatoolsci_noservice"
+    StartName   = "$dotAccount"
+}
+"@)
+            Mock -ModuleName dbatools -CommandName Get-DbaService -MockWith $mockService
+
+            $null = Set-DbaPrivilege -Type ServiceLogon -Confirm:$false
+
+            $WarnVar | Should -BeNullOrEmpty
+            Get-TestRightEntry -Privilege SeServiceLogonRight | Where-Object { $PSItem -eq $localUserName -or $PSItem -eq "*$localUserSid" } | Should -Not -BeNullOrEmpty
+        }
+
+        It "Warns and changes nothing for an account that does not exist" {
+            $holdersBefore = @(Get-TestRightEntry -Privilege SeLockMemoryPrivilege)
+
+            $null = Set-DbaPrivilege -Type LPIM -User "dbatoolsci_nosuchuser_$(Get-Random)" -Confirm:$false -WarningAction SilentlyContinue
+
+            $WarnVar | Should -BeLike "*Cannot resolve dbatoolsci_nosuchuser_*"
+            @(Get-TestRightEntry -Privilege SeLockMemoryPrivilege) | Should -Be $holdersBefore
         }
     }
 }
