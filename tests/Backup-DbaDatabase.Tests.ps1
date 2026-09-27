@@ -182,6 +182,70 @@ ALTER DATABASE model SET RECOVERY $($modelStateBefore.RecoveryModel) WITH NO_WAI
         }
     }
 
+    Context "Completes every progress bar it started" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id with records but without a completed one.
+            $progressScript = @"
+param(`$ModulePath, `$Splat)
+Import-Module -Name `$ModulePath
+Backup-DbaDatabase @Splat
+"@
+            $progressRunspace = [runspacefactory]::CreateRunspace()
+            $progressRunspace.Open()
+
+            function Get-BackupProgressRecord ([hashtable]$Splat) {
+                if ($TestConfig.SqlCred) {
+                    $Splat.SqlCredential = $TestConfig.SqlCred
+                }
+                $progressShell = [powershell]::Create()
+                $progressShell.Runspace = $progressRunspace
+                $null = $progressShell.AddScript($progressScript).AddArgument((Get-Module -Name $ModuleName | Select-Object -First 1).Path).AddArgument($Splat)
+                $null = $progressShell.Invoke()
+                [PSCustomObject]@{
+                    Records = @($progressShell.Streams.Progress)
+                    Errors  = @($progressShell.Streams.Error)
+                }
+                $progressShell.Dispose()
+            }
+
+            function Get-OpenProgressId ([object[]]$Records) {
+                $completedIds = @($Records | Where-Object RecordType -eq "Completed" | Select-Object -ExpandProperty ActivityId -Unique)
+                $Records | Where-Object RecordType -eq "Processing" | Select-Object -ExpandProperty ActivityId -Unique | Where-Object { $PSItem -notin $completedIds }
+            }
+        }
+
+        AfterAll {
+            $progressRunspace.Dispose()
+        }
+
+        It "Completes the bars with -WhatIf" {
+            $splatWhatIf = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Database    = "master", "msdb"
+                Path        = $DestBackupDir
+                WhatIf      = $true
+            }
+            $whatIfResult = Get-BackupProgressRecord -Splat $splatWhatIf
+            $whatIfResult.Errors | Should -BeNullOrEmpty
+            $whatIfResult.Records | Should -Not -BeNullOrEmpty
+            Get-OpenProgressId -Records $whatIfResult.Records | Should -BeNullOrEmpty
+        }
+
+        It "Completes the bars of a backup" {
+            $splatBackup = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Database    = "master"
+                Path        = $DestBackupDir
+            }
+            $backupResult = Get-BackupProgressRecord -Splat $splatBackup
+            $backupResult.Errors | Should -BeNullOrEmpty
+            $backupResult.Records | Should -Not -BeNullOrEmpty
+            Get-OpenProgressId -Records $backupResult.Records | Should -BeNullOrEmpty
+        }
+    }
+
     Context "Should take path and filename" {
         BeforeAll {
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -BackupFileName "PesterTest.bak"
