@@ -91,6 +91,10 @@ function Disable-DbaReplPublishing {
         foreach ($instance in $SqlInstance) {
 
             $replServer = Get-DbaReplServer -SqlInstance $instance -SqlCredential $SqlCredential -EnableException:$EnableException
+            if (-not $replServer) {
+                # Get-DbaReplServer has already warned why it could not connect.
+                continue
+            }
 
             Write-Message -Level Verbose -Message "Disabling and removing publishing for $instance"
 
@@ -107,7 +111,7 @@ function Disable-DbaReplPublishing {
                     Stop-Function -Message "Unable to disable replication publishing" -ErrorRecord $_ -Target $instance -Continue
                 }
             } else {
-                Stop-Function -Message "$instance isn't currently enabled for publishing." -Continue -ContinueLabel main -Target $instance -Category ObjectNotFound
+                Stop-Function -Message "$instance isn't currently enabled for publishing." -Continue -Target $instance -Category ObjectNotFound
             }
         }
     }
