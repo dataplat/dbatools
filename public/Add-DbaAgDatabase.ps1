@@ -283,8 +283,6 @@ function Add-DbaAgDatabase {
         $progress['Id'] = Get-Random
         $progress['Activity'] = "Adding database(s) to Availability Group $AvailabilityGroup"
 
-        # The replica bars of the database being joined, completed in the finally block if the command stops early
-        $syncProgressId = @{ }
         # A throw from Stop-Function, a stopped pipeline and Select-Object -First all leave the process block early, so the bars are completed in finally
         try {
             $testResult = @( )
@@ -670,70 +668,75 @@ function Add-DbaAgDatabase {
                         $syncProgressId[$replicaName] = Get-Random
                     }
 
-                    $stillWaiting = $true
-                    $timeout = (Get-Date).AddSeconds($timeoutSynchronization)
-                    while ($stillWaiting) {
-                        $stillWaiting = $false
-                        $failure = $false
-                        foreach ($replicaName in $replicaServerSMO.Keys) {
-                            if (-not $targetSynchronizationState[$replicaName]) {
-                                Write-Message -Level Verbose -Message "Database $($db.Name) is already joined to Availability Group $AvailabilityGroup. No action will be taken on the replica $replicaName."
-                                continue
-                            }
+                    # A throw from Stop-Function or a stopped pipeline leaves the wait early, so the replica bars are completed in finally
+                    try {
+                        $stillWaiting = $true
+                        $timeout = (Get-Date).AddSeconds($timeoutSynchronization)
+                        while ($stillWaiting) {
+                            $stillWaiting = $false
+                            $failure = $false
+                            foreach ($replicaName in $replicaServerSMO.Keys) {
+                                if (-not $targetSynchronizationState[$replicaName]) {
+                                    Write-Message -Level Verbose -Message "Database $($db.Name) is already joined to Availability Group $AvailabilityGroup. No action will be taken on the replica $replicaName."
+                                    continue
+                                }
 
-                            if (-not $replicaAgDbSMO[$replicaName].IsJoined -or $replicaAgDbSMO[$replicaName].SynchronizationState -ne $targetSynchronizationState[$replicaName]) {
-                                $stillWaiting = $true
-                            }
+                                if (-not $replicaAgDbSMO[$replicaName].IsJoined -or $replicaAgDbSMO[$replicaName].SynchronizationState -ne $targetSynchronizationState[$replicaName]) {
+                                    $stillWaiting = $true
+                                }
 
-                            $syncProgress = @{ }
-                            $syncProgress['Id'] = $syncProgressId[$replicaName]
-                            $syncProgress['ParentId'] = $progress['Id']
-                            $syncProgress['Activity'] = "Adding database $($db.Name) to Availability Group $AvailabilityGroup on replica $replicaName"
-                            if ($replicaAgDbSMO[$replicaName].SynchronizationState -ne $targetSynchronizationState[$replicaName]) {
-                                $syncProgress['Status'] = "IsJoined is $($replicaAgDbSMO[$replicaName].IsJoined), SynchronizationState is $($replicaAgDbSMO[$replicaName].SynchronizationState), waiting for $($targetSynchronizationState[$replicaName])"
-                            } else {
-                                $syncProgress['Status'] = "IsJoined is $($replicaAgDbSMO[$replicaName].IsJoined), SynchronizationState is $($replicaAgDbSMO[$replicaName].SynchronizationState), replica is in desired state"
-                            }
-                            if ($ag.AvailabilityReplicas[$replicaName].SeedingMode -eq 'Automatic' -and $reportSeeding) {
-                                $physicalSeedingStats = $server.Query("SELECT TOP 1 * FROM sys.dm_hadr_physical_seeding_stats WHERE local_database_name = '$($db.Name)' AND remote_machine_name = '$($ag.AvailabilityReplicas[$replicaName].EndpointUrl)' ORDER BY start_time_utc DESC")
-                                if ($physicalSeedingStats) {
-                                    if ($physicalSeedingStats.failure_message -ne [DBNull]::Value) {
-                                        $failure = $true
-                                        Stop-Function -Message "Failed while seeding database $($db.Name) to $replicaName. failure_message: $($physicalSeedingStats.failure_message)." -Continue
+                                $syncProgress = @{ }
+                                $syncProgress['Id'] = $syncProgressId[$replicaName]
+                                $syncProgress['ParentId'] = $progress['Id']
+                                $syncProgress['Activity'] = "Adding database $($db.Name) to Availability Group $AvailabilityGroup on replica $replicaName"
+                                if ($replicaAgDbSMO[$replicaName].SynchronizationState -ne $targetSynchronizationState[$replicaName]) {
+                                    $syncProgress['Status'] = "IsJoined is $($replicaAgDbSMO[$replicaName].IsJoined), SynchronizationState is $($replicaAgDbSMO[$replicaName].SynchronizationState), waiting for $($targetSynchronizationState[$replicaName])"
+                                } else {
+                                    $syncProgress['Status'] = "IsJoined is $($replicaAgDbSMO[$replicaName].IsJoined), SynchronizationState is $($replicaAgDbSMO[$replicaName].SynchronizationState), replica is in desired state"
+                                }
+                                if ($ag.AvailabilityReplicas[$replicaName].SeedingMode -eq 'Automatic' -and $reportSeeding) {
+                                    $physicalSeedingStats = $server.Query("SELECT TOP 1 * FROM sys.dm_hadr_physical_seeding_stats WHERE local_database_name = '$($db.Name)' AND remote_machine_name = '$($ag.AvailabilityReplicas[$replicaName].EndpointUrl)' ORDER BY start_time_utc DESC")
+                                    if ($physicalSeedingStats) {
+                                        if ($physicalSeedingStats.failure_message -ne [DBNull]::Value) {
+                                            $failure = $true
+                                            Stop-Function -Message "Failed while seeding database $($db.Name) to $replicaName. failure_message: $($physicalSeedingStats.failure_message)." -Continue
+                                        }
+
+                                        $syncProgress['PercentComplete'] = [int]($physicalSeedingStats.transferred_size_bytes * 100.0 / $physicalSeedingStats.database_size_bytes)
+                                        $syncProgress['SecondsRemaining'] = [int](($physicalSeedingStats.estimate_time_complete_utc - (Get-Date).ToUniversalTime()).TotalSeconds)
+                                        $syncProgress['CurrentOperation'] = "Seeding state: $($physicalSeedingStats.internal_state_desc), $([int]($physicalSeedingStats.transferred_size_bytes/1024/1024)) out of $([int]($physicalSeedingStats.database_size_bytes/1024/1024)) MB transferred"
                                     }
-
-                                    $syncProgress['PercentComplete'] = [int]($physicalSeedingStats.transferred_size_bytes * 100.0 / $physicalSeedingStats.database_size_bytes)
-                                    $syncProgress['SecondsRemaining'] = [int](($physicalSeedingStats.estimate_time_complete_utc - (Get-Date).ToUniversalTime()).TotalSeconds)
-                                    $syncProgress['CurrentOperation'] = "Seeding state: $($physicalSeedingStats.internal_state_desc), $([int]($physicalSeedingStats.transferred_size_bytes/1024/1024)) out of $([int]($physicalSeedingStats.database_size_bytes/1024/1024)) MB transferred"
+                                    $automaticSeeding = $server.Query("SELECT TOP 1 * FROM sys.dm_hadr_automatic_seeding WHERE ag_id = '$($ag.UniqueId.Guid.ToUpper())' AND ag_db_id = '$($ag.AvailabilityDatabases[$db.Name].UniqueId.Guid.ToUpper())' AND ag_remote_replica_id = '$($ag.AvailabilityReplicas[$replicaName].UniqueId.Guid.ToUpper())' ORDER BY start_time DESC")
+                                    Write-Message -Level Verbose -Message "Current automatic seeding state: $($automaticSeeding.current_state)"
+                                    if ($automaticSeeding.current_state -eq 'FAILED') {
+                                        $failure = $true
+                                        Stop-Function -Message "Failed while seeding database $($db.Name) to $replicaName. failure_message: $($automaticSeeding.failure_state_desc)." -Continue
+                                    }
                                 }
-                                $automaticSeeding = $server.Query("SELECT TOP 1 * FROM sys.dm_hadr_automatic_seeding WHERE ag_id = '$($ag.UniqueId.Guid.ToUpper())' AND ag_db_id = '$($ag.AvailabilityDatabases[$db.Name].UniqueId.Guid.ToUpper())' AND ag_remote_replica_id = '$($ag.AvailabilityReplicas[$replicaName].UniqueId.Guid.ToUpper())' ORDER BY start_time DESC")
-                                Write-Message -Level Verbose -Message "Current automatic seeding state: $($automaticSeeding.current_state)"
-                                if ($automaticSeeding.current_state -eq 'FAILED') {
-                                    $failure = $true
-                                    Stop-Function -Message "Failed while seeding database $($db.Name) to $replicaName. failure_message: $($automaticSeeding.failure_state_desc)." -Continue
-                                }
+                                Write-Message -Level Verbose -Message ($syncProgress['Status'] + $syncProgress['CurrentOperation'])
+                                Write-Progress @syncProgress
                             }
-                            Write-Message -Level Verbose -Message ($syncProgress['Status'] + $syncProgress['CurrentOperation'])
-                            Write-Progress @syncProgress
-                        }
-                        if ($failure) {
-                            $stillWaiting = $false
-                            Stop-Function -Message "Failed while seeding database $($db.Name)." -Continue
-                        }
+                            if ($failure) {
+                                $stillWaiting = $false
+                                Stop-Function -Message "Failed while seeding database $($db.Name)." -Continue
+                            }
 
-                        if ((Get-Date) -gt $timeout) {
-                            $stillWaiting = $false
-                            $failure = $true
-                            Stop-Function -Message "Failed to join or synchronize database $($db.Name). Timeout of $timeoutSynchronization seconds is reached. $progressOperation" -Continue
-                        }
-                        Start-Sleep -Milliseconds $waitWhile
+                            if ((Get-Date) -gt $timeout) {
+                                $stillWaiting = $false
+                                $failure = $true
+                                Stop-Function -Message "Failed to join or synchronize database $($db.Name). Timeout of $timeoutSynchronization seconds is reached. $progressOperation" -Continue
+                            }
+                            Start-Sleep -Milliseconds $waitWhile
 
+                            foreach ($replicaName in $replicaServerSMO.Keys) {
+                                $replicaAgDbSMO[$replicaName].Refresh()
+                            }
+                        }
+                    } finally {
+                        # This runs before the outer finally completes the parent bar, the host would keep the replica bars otherwise
                         foreach ($replicaName in $replicaServerSMO.Keys) {
-                            $replicaAgDbSMO[$replicaName].Refresh()
+                            Write-Progress -Id $syncProgressId[$replicaName] -ParentId $progress['Id'] -Activity Completed -Completed
                         }
-                    }
-                    foreach ($replicaName in $replicaServerSMO.Keys) {
-                        Write-Progress -Id $syncProgressId[$replicaName] -ParentId $progress['Id'] -Activity Completed -Completed
                     }
                     if ($failure) {
                         Stop-Function -Message "Failed to join or synchronize database $($db.Name)." -Continue
@@ -742,10 +745,6 @@ function Add-DbaAgDatabase {
                 $output
             }
         } finally {
-            # The host keeps a child bar whose parent is completed first, so the replica bars go first
-            foreach ($openSyncProgressId in $syncProgressId.Values) {
-                Write-Progress -Id $openSyncProgressId -ParentId $progress["Id"] -Activity Completed -Completed
-            }
             Write-Progress @progress -Completed
         }
     }
