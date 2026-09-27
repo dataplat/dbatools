@@ -204,10 +204,11 @@ function Export-DbaExecutionPlan {
         }
 
         if ($InputObject) {
+            # The return used to sit inside this loop, so -InputObject with more than one plan exported only the first.
             foreach ($object in $InputObject) {
                 Export-Plan $object
-                return
             }
+            return
         }
 
         foreach ($instance in $SqlInstance) {
@@ -273,7 +274,7 @@ function Export-DbaExecutionPlan {
             try {
                 $dataTable = $server.ConnectionContext.ExecuteWithResults($sql).Tables
             } catch {
-                Stop-Function -Message "Issue collecting execution plans" -Target $instance -ErroRecord $_ -Continue
+                Stop-Function -Message "Issue collecting execution plans" -Target $instance -ErrorRecord $_ -Continue
             }
 
             foreach ($row in ($dataTable.Rows)) {
