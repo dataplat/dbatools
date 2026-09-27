@@ -770,12 +770,6 @@ Describe "$ModuleName command structure" -Tag Compliance {
         # site in the same helper, or one that is gone, fails the check until the entry is updated.
         $dynamicContinueExceptions = @(
             [PSCustomObject]@{
-                File     = "Backup-DbaDbCertificate.ps1"
-                Function = "export-cert"
-                Sites    = 3
-                Reason   = "called only inside the foreach over the certificates"
-            },
-            [PSCustomObject]@{
                 File     = "Copy-DbaSsisCatalog.ps1"
                 Function = "Invoke-ProjectDeployment"
                 Sites    = 2
