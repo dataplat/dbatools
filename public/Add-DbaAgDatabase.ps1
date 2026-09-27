@@ -283,460 +283,470 @@ function Add-DbaAgDatabase {
         $progress['Id'] = Get-Random
         $progress['Activity'] = "Adding database(s) to Availability Group $AvailabilityGroup"
 
-        $testResult = @( )
+        # The replica bars of the database being joined, completed in the finally block if the command stops early
+        $syncProgressId = @{ }
+        # A throw from Stop-Function, a stopped pipeline and Select-Object -First all leave the process block early, so the bars are completed in finally
+        try {
+            $testResult = @( )
 
-        foreach ($dbName in $Database) {
-            try {
-                $progress['Status'] = "Test prerequisites for joining database $dbName"
-                Write-Progress @progress
-                $testSplat = @{
-                    SqlInstance            = $SqlInstance
-                    SqlCredential          = $SqlCredential
-                    Secondary              = $Secondary
-                    SecondarySqlCredential = $SecondarySqlCredential
-                    AvailabilityGroup      = $AvailabilityGroup
-                    AddDatabase            = $dbName
-                    UseLastBackup          = $UseLastBackup
-                    EnableException        = $true
-                }
-                if ($SeedingMode) { $testSplat['SeedingMode'] = $SeedingMode }
-                if ($SharedPath) { $testSplat['SharedPath'] = $SharedPath }
-                $testResult += Test-DbaAvailabilityGroup @testSplat
-            } catch {
-                Stop-Function -Message "Testing prerequisites for joining database $dbName to Availability Group $AvailabilityGroup failed." -ErrorRecord $_ -Continue
-            }
-        }
-
-        foreach ($db in $InputObject) {
-            try {
-                $progress['Status'] = "Test prerequisites for joining database $($db.Name)"
-                Write-Progress @progress
-                $testSplat = @{
-                    SqlInstance            = $db.Parent
-                    Secondary              = $Secondary
-                    SecondarySqlCredential = $SecondarySqlCredential
-                    AvailabilityGroup      = $AvailabilityGroup
-                    AddDatabase            = $db.Name
-                    UseLastBackup          = $UseLastBackup
-                    EnableException        = $true
-                }
-                if ($SeedingMode) { $testSplat['SeedingMode'] = $SeedingMode }
-                if ($SharedPath) { $testSplat['SharedPath'] = $SharedPath }
-                $testResult += Test-DbaAvailabilityGroup @testSplat
-            } catch {
-                Stop-Function -Message "Testing prerequisites for joining database $($db.Name) to Availability Group $AvailabilityGroup failed." -ErrorRecord $_ -Continue
-            }
-        }
-
-        Write-Message -Level Verbose -Message "Test for prerequisites returned $($testResult.Count) databases that will be joined to the Availability Group $AvailabilityGroup."
-
-        foreach ($result in $testResult) {
-            $server = $result.PrimaryServerSMO
-            $ag = $result.AvailabilityGroupSMO
-            $db = $result.DatabaseSMO
-            $replicaServerSMO = $result.ReplicaServerSMO
-            $restoreNeeded = $result.RestoreNeeded
-            $backups = $result.Backups
-            $replicaAgDbSMO = @{ }
-            $targetSynchronizationState = @{ }
-            $output = @( )
-
-            $progress['Activity'] = "Adding database $($db.Name) to Availability Group $AvailabilityGroup"
-
-            $progress['Status'] = "Step 1/5: Setting seeding mode if needed"
-            Write-Message -Level Verbose -Message $progress['Status']
-            Write-Progress @progress
-
-            if ($SeedingMode) {
-                Write-Message -Level Verbose -Message "Setting seeding mode to $SeedingMode."
-                $failure = $false
-                foreach ($replicaName in $replicaServerSMO.Keys) {
-                    $replica = $ag.AvailabilityReplicas[$replicaName]
-                    if ($replica.SeedingMode -ne $SeedingMode) {
-                        if ($Pscmdlet.ShouldProcess($server, "Setting seeding mode for replica $replica to $SeedingMode")) {
-                            try {
-                                Write-Message -Level Verbose -Message "Setting seeding mode for replica $replica to $SeedingMode."
-                                $replica.SeedingMode = $SeedingMode
-                                $replica.Alter()
-                                if ($SeedingMode -eq 'Automatic') {
-                                    Write-Message -Level Verbose -Message "Setting GrantAvailabilityGroupCreateDatabasePrivilege on server $($replicaServerSMO[$replicaName]) for Availability Group $AvailabilityGroup."
-                                    $null = Grant-DbaAgPermission -SqlInstance $replicaServerSMO[$replicaName] -Type AvailabilityGroup -AvailabilityGroup $AvailabilityGroup -Permission CreateAnyDatabase
-                                }
-                            } catch {
-                                $failure = $true
-                                Stop-Function -Message "Failed setting seeding mode for replica $replica to $SeedingMode." -ErrorRecord $_ -Continue
-                            }
-                        }
-                    }
-                }
-                if ($failure) {
-                    Stop-Function -Message "Failed setting seeding mode to $SeedingMode." -Continue
-                }
-            }
-
-            # For TDE-encrypted databases, the master certificate must exist on every secondary replica
-            # before a backup can be restored or automatic seeding can succeed.
-            if ($db.EncryptionEnabled -and $db.HasDatabaseEncryptionKey -and $db.DatabaseEncryptionKey.EncryptorType -eq "ServerCertificate") {
-                $encryptorName = $db.DatabaseEncryptionKey.EncryptorName
-                Write-Message -Level Verbose -Message "Database $($db.Name) is TDE-encrypted using certificate '$encryptorName'. Checking secondary replicas."
-
+            foreach ($dbName in $Database) {
                 try {
-                    $sourceTdeCert = Get-DbaDbCertificate -SqlInstance $server -Database "master" -Certificate $encryptorName -EnableException | Select-Object -First 1
+                    $progress['Status'] = "Test prerequisites for joining database $dbName"
+                    Write-Progress @progress
+                    $testSplat = @{
+                        SqlInstance            = $SqlInstance
+                        SqlCredential          = $SqlCredential
+                        Secondary              = $Secondary
+                        SecondarySqlCredential = $SecondarySqlCredential
+                        AvailabilityGroup      = $AvailabilityGroup
+                        AddDatabase            = $dbName
+                        UseLastBackup          = $UseLastBackup
+                        EnableException        = $true
+                    }
+                    if ($SeedingMode) { $testSplat['SeedingMode'] = $SeedingMode }
+                    if ($SharedPath) { $testSplat['SharedPath'] = $SharedPath }
+                    $testResult += Test-DbaAvailabilityGroup @testSplat
                 } catch {
-                    Stop-Function -Message "Failed to validate TDE certificate '$encryptorName' on primary instance $($server.Name)." -ErrorRecord $_ -Continue
-                }
-
-                if (-not $sourceTdeCert) {
-                    Stop-Function -Message "Database $($db.Name) is encrypted by certificate '$encryptorName', but that certificate was not found in master on $($server.Name)." -Continue
-                }
-
-                if (-not $sourceTdeCert.PrivateKeyExists) {
-                    Stop-Function -Message "Database $($db.Name) is encrypted by certificate '$encryptorName', but the certificate on $($server.Name) does not have an accessible private key." -Continue
-                }
-
-                $failure = $false
-                foreach ($replicaName in $replicaServerSMO.Keys) {
-                    $replicaServer = $replicaServerSMO[$replicaName]
-                    try {
-                        $existingCert = Get-DbaDbCertificate -SqlInstance $replicaServer -Database "master" -Certificate $encryptorName -EnableException | Select-Object -First 1
-                    } catch {
-                        $failure = $true
-                        Stop-Function -Message "Failed to validate TDE certificate '$encryptorName' on replica $replicaName." -ErrorRecord $_ -Continue
-                    }
-
-                    if (-not $existingCert) {
-                        if (-not $SharedPath) {
-                            $failure = $true
-                            Stop-Function -Message "Replica $replicaName is missing TDE certificate '$encryptorName'. Provide -SharedPath and optionally -MasterKeySecurePassword to copy it automatically, or pre-stage the matching certificate before adding the database." -Continue
-                        }
-
-                        if ($Pscmdlet.ShouldProcess($replicaServer, "Copy TDE certificate '$encryptorName' from primary to replica $replicaName")) {
-                            try {
-                                Write-Message -Level Verbose -Message "TDE certificate '$encryptorName' not found on $replicaName. Copying from primary."
-                                $splatTdeCert = @{
-                                    Source          = $server
-                                    Destination     = $replicaServer
-                                    Database        = "master"
-                                    Certificate     = $encryptorName
-                                    SharedPath      = $SharedPath
-                                    EnableException = $true
-                                }
-                                if ($MasterKeySecurePassword) {
-                                    $splatTdeCert.MasterKeyPassword = $MasterKeySecurePassword
-                                }
-                                $null = Copy-DbaDbCertificate @splatTdeCert
-                            } catch {
-                                $failure = $true
-                                Stop-Function -Message "Failed to copy TDE certificate '$encryptorName' to replica $replicaName." -ErrorRecord $_ -Continue
-                            }
-                        }
-                        continue
-                    }
-
-                    if (-not $existingCert.PrivateKeyExists) {
-                        $failure = $true
-                        Stop-Function -Message "TDE certificate '$encryptorName' exists on replica $replicaName but does not include a private key. Restore or automatic seeding cannot use it." -Continue
-                    }
-
-                    if ($existingCert.Thumbprint -ne $sourceTdeCert.Thumbprint) {
-                        $failure = $true
-                        Stop-Function -Message "TDE certificate '$encryptorName' on replica $replicaName does not match the primary certificate on $($server.Name)." -Continue
-                    }
-
-                    Write-Message -Level Verbose -Message "TDE certificate '$encryptorName' already exists on replica $replicaName and matches the primary certificate."
-                }
-
-                if ($failure) {
-                    Stop-Function -Message "Failed to validate or copy TDE certificate '$encryptorName' for all replicas of database $($db.Name)." -Continue
+                    Stop-Function -Message "Testing prerequisites for joining database $dbName to Availability Group $AvailabilityGroup failed." -ErrorRecord $_ -Continue
                 }
             }
 
-            $progress['Status'] = "Step 2/5: Running backup and restore if needed"
-            Write-Message -Level Verbose -Message $progress['Status']
-            Write-Progress @progress
-
-            if ($restoreNeeded.Count -gt 0) {
-                if (-not $backups) {
-                    if ($Pscmdlet.ShouldProcess($server, "Taking full and log backup of database $($db.Name)")) {
-                        try {
-                            Write-Message -Level Verbose -Message "Taking full and log backup of database $($db.Name)."
-                            if ($AdvancedBackupParams) {
-                                $fullbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException @AdvancedBackupParams
-                                $logbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException @AdvancedBackupParams
-                            } else {
-                                $fullbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
-                                $logbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
-                            }
-                            $backups = $fullbackup, $logbackup
-                        } catch {
-                            Stop-Function -Message "Failed to take full and log backup of database $($db.Name)." -ErrorRecord $_ -Continue
-                        }
-                    }
-                }
-                $failure = $false
-                foreach ($replicaName in $restoreNeeded.Keys) {
-                    if ($Pscmdlet.ShouldProcess($replicaServerSMO[$replicaName], "Restore database $($db.Name) to replica $replicaName")) {
-                        try {
-                            Write-Message -Level Verbose -Message "Restore database $($db.Name) to replica $replicaName."
-                            $restoreParams = @{
-                                SqlInstance          = $replicaServerSMO[$replicaName]
-                                NoRecovery           = $true
-                                TrustDbBackupHistory = $true
-                                EnableException      = $true
-                            }
-
-                            # Check if we should skip ReuseSourceFolderStructure
-                            if (-not $SkipReuseSourceFolderStructure) {
-                                # Check if primary and replica are on the same platform
-                                $primaryPlatform = $server.HostPlatform
-                                $replicaPlatform = $replicaServerSMO[$replicaName].HostPlatform
-                                if ($primaryPlatform -ne $replicaPlatform) {
-                                    Write-Message -Level Verbose -Message "Primary platform ($primaryPlatform) does not match replica platform ($replicaPlatform). Setting SkipReuseSourceFolderStructure."
-                                    $SkipReuseSourceFolderStructure = $true
-                                }
-                            }
-
-                            # Only use ReuseSourceFolderStructure if not skipped
-                            if (-not $SkipReuseSourceFolderStructure) {
-                                Write-Message -Level Verbose -Message "Using ReuseSourceFolderStructure to maintain consistent folder layout."
-                                $restoreParams['ReuseSourceFolderStructure'] = $true
-                            } else {
-                                Write-Message -Level Verbose -Message "Using replica's default paths for database files."
-                            }
-
-                            $sourceOwner = $db.Owner
-                            $replicaOwner = $replicaServerSMO[$replicaName].ConnectedAs
-                            if ($sourceOwner -ne $replicaOwner) {
-                                Write-Message -Level Verbose -Message "Source database owner is $sourceOwner, replica database owner would be $replicaOwner."
-                                if ($replicaServerSMO[$replicaName].Logins[$db.Owner]) {
-                                    Write-Message -Level Verbose -Message "Source database owner is found on replica, so using ExecuteAs with Restore-DbaDatabase to set correct owner."
-                                    $restoreParams['ExecuteAs'] = $db.Owner
-                                } else {
-                                    Write-Message -Level Verbose -Message "Source database owner is not found on replica, so there is nothing we can do."
-                                }
-                            }
-                            $null = $backups | Restore-DbaDatabase @restoreParams
-                        } catch {
-                            $failure = $true
-                            Stop-Function -Message "Failed to restore database $($db.Name) to replica $replicaName." -ErrorRecord $_ -Continue
-                        }
-                    }
-                }
-                if ($failure) {
-                    Stop-Function -Message "Failed to restore database $($db.Name)." -Continue
-                }
-            }
-
-            $progress['Status'] = "Step 3/5: Add the database to the Availability Group on the primary replica"
-            Write-Message -Level Verbose -Message $progress['Status']
-
-            if ($Pscmdlet.ShouldProcess($server, "Add database $($db.Name) to Availability Group $AvailabilityGroup on the primary replica")) {
+            foreach ($db in $InputObject) {
                 try {
-                    $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on is not yet known"
-                    Write-Message -Level Verbose -Message "Object of type AvailabilityDatabase for $($db.Name) will be created. $($progress['CurrentOperation'])"
+                    $progress['Status'] = "Test prerequisites for joining database $($db.Name)"
                     Write-Progress @progress
-
-                    if ($ag.AvailabilityDatabases.Name -contains $db.Name) {
-                        Write-Message -Level Verbose -Message "Database $($db.Name) is already joined to Availability Group $AvailabilityGroup. No action will be taken on the primary replica."
-                    } else {
-                        $agDb = Get-DbaAgDatabase -SqlInstance $server -AvailabilityGroup $ag.Name -Database $db.Name
-                        $agDb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
-                        $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) is $($agDb.State)"
-                        Write-Message -Level Verbose -Message "Object of type AvailabilityDatabase for $($db.Name) is created. $($progress['CurrentOperation'])"
-                        Write-Progress @progress
-
-                        $agDb.Create()
-                        $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) is $($agDb.State)"
-                        Write-Message -Level Verbose -Message "Method Create of AvailabilityDatabase for $($db.Name) is executed. $($progress['CurrentOperation'])"
-                        Write-Progress @progress
-
-                        # Wait for state to become Existing
-                        # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.sqlsmostate
-                        $timeout = (Get-Date).AddSeconds($timeoutExisting)
-                        while ($agDb.State -ne 'Existing') {
-                            $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) is $($agDb.State), waiting for Existing"
-                            Write-Message -Level Verbose -Message $progress['CurrentOperation']
-                            Write-Progress @progress
-
-                            if ((Get-Date) -gt $timeout) {
-                                Stop-Function -Message "Failed to add database $($db.Name) to Availability Group $AvailabilityGroup. Timeout of $timeoutExisting seconds is reached. State of AvailabilityDatabase for $($db.Name) is still $($agDb.State)." -Continue
-                            }
-                            Start-Sleep -Milliseconds $waitWhile
-                            $agDb.Refresh()
-                        }
-
-                        # Get customized SMO for the output
-                        $output += Get-DbaAgDatabase -SqlInstance $server -AvailabilityGroup $AvailabilityGroup -Database $db.Name -EnableException
+                    $testSplat = @{
+                        SqlInstance            = $db.Parent
+                        Secondary              = $Secondary
+                        SecondarySqlCredential = $SecondarySqlCredential
+                        AvailabilityGroup      = $AvailabilityGroup
+                        AddDatabase            = $db.Name
+                        UseLastBackup          = $UseLastBackup
+                        EnableException        = $true
                     }
+                    if ($SeedingMode) { $testSplat['SeedingMode'] = $SeedingMode }
+                    if ($SharedPath) { $testSplat['SharedPath'] = $SharedPath }
+                    $testResult += Test-DbaAvailabilityGroup @testSplat
                 } catch {
-                    Stop-Function -Message "Failed to add database $($db.Name) to Availability Group $AvailabilityGroup" -ErrorRecord $_ -Continue
+                    Stop-Function -Message "Testing prerequisites for joining database $($db.Name) to Availability Group $AvailabilityGroup failed." -ErrorRecord $_ -Continue
                 }
             }
 
-            $progress['Status'] = "Step 4/5: Add the database to the Availability Group on the secondary replicas"
-            Write-Message -Level Verbose -Message $progress['Status']
+            Write-Message -Level Verbose -Message "Test for prerequisites returned $($testResult.Count) databases that will be joined to the Availability Group $AvailabilityGroup."
 
-            $failure = $false
-            foreach ($replicaName in $replicaServerSMO.Keys) {
-                if ($Pscmdlet.ShouldProcess($replicaServerSMO[$replicaName], "Add database $($db.Name) to Availability Group $AvailabilityGroup on replica $replicaName")) {
-                    $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on replica $replicaName is not yet known"
-                    Write-Message -Level Verbose -Message $progress['CurrentOperation']
-                    Write-Progress @progress
+            foreach ($result in $testResult) {
+                $server = $result.PrimaryServerSMO
+                $ag = $result.AvailabilityGroupSMO
+                $db = $result.DatabaseSMO
+                $replicaServerSMO = $result.ReplicaServerSMO
+                $restoreNeeded = $result.RestoreNeeded
+                $backups = $result.Backups
+                $replicaAgDbSMO = @{ }
+                $targetSynchronizationState = @{ }
+                $output = @( )
 
-                    try {
-                        $replicaAgDb = Get-DbaAgDatabase -SqlInstance $replicaServerSMO[$replicaName] -AvailabilityGroup $AvailabilityGroup -Database $db.Name -EnableException
-                    } catch {
-                        $failure = $true
-                        Stop-Function -Message "Failed to get database $($db.Name) on replica $replicaName." -ErrorRecord $_ -Continue
-                    }
+                $progress['Activity'] = "Adding database $($db.Name) to Availability Group $AvailabilityGroup"
 
-                    if ($replicaAgDb.IsJoined) {
-                        Write-Message -Level Verbose -Message "Database $($db.Name) is already joined to Availability Group $AvailabilityGroup. No action will be taken on the replica $replicaName."
-                        $replicaAgDbSMO[$replicaName] = $replicaAgDb
-                    } else {
-                        # Save SMO in array for the output
-                        $output += $replicaAgDb
-                        # Save SMO in hashtable for further processing
-                        $replicaAgDbSMO[$replicaName] = $replicaAgDb
-                        # Save target targetSynchronizationState for further processing
-                        # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.availabilityreplicaavailabilitymode
-                        # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.availabilitydatabasesynchronizationstate
-                        $availabilityMode = $ag.AvailabilityReplicas[$replicaName].AvailabilityMode
-                        if ($availabilityMode -eq 'AsynchronousCommit') {
-                            $targetSynchronizationState[$replicaName] = 'Synchronizing'
-                        } elseif ($availabilityMode -eq 'SynchronousCommit') {
-                            $targetSynchronizationState[$replicaName] = 'Synchronized'
-                        } else {
-                            $failure = $true
-                            Stop-Function -Message "Unexpected value '$availabilityMode' for AvailabilityMode on replica $replicaName." -Continue
-                        }
+                $progress['Status'] = "Step 1/5: Setting seeding mode if needed"
+                Write-Message -Level Verbose -Message $progress['Status']
+                Write-Progress @progress
 
-                        $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on replica $replicaName is $($replicaAgDb.State)"
-                        Write-Message -Level Verbose -Message $progress['CurrentOperation']
-                        Write-Progress @progress
-
-                        # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.sqlsmostate
-                        $timeout = (Get-Date).AddSeconds($timeoutExisting)
-                        while ($replicaAgDb.State -ne 'Existing') {
-                            $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on replica $replicaName is $($replicaAgDb.State), waiting for Existing."
-                            Write-Message -Level Verbose -Message $progress['CurrentOperation']
-                            Write-Progress @progress
-
-                            if ((Get-Date) -gt $timeout) {
-                                Stop-Function -Message "Failed to add database $($db.Name) on replica $replicaName. Timeout of $timeoutExisting seconds is reached. State of AvailabilityDatabase for $db is still $($replicaAgDb.State)." -Continue
-                            }
-                            Start-Sleep -Milliseconds $waitWhile
-                            $replicaAgDb.Refresh()
-                        }
-
-                        # With automatic seeding, .JoinAvailablityGroup() is not needed, just wait for the magic to happen
-                        if ($ag.AvailabilityReplicas[$replicaName].SeedingMode -ne 'Automatic') {
-                            try {
-                                $progress['CurrentOperation'] = "Joining database $($db.Name) on replica $replicaName"
-                                Write-Message -Level Verbose -Message $progress['CurrentOperation']
-                                Write-Progress @progress
-
-                                # DO NOT fix the typo in "JoinAvailablityGroup()" as it is a typo the SMO.
-                                $replicaAgDb.JoinAvailablityGroup()
-                            } catch {
-                                $failure = $true
-                                Stop-Function -Message "Failed to join database $($db.Name) on replica $replicaName." -ErrorRecord $_ -Continue
-                            }
-                        }
-                    }
-                }
-            }
-            if ($failure) {
-                Stop-Function -Message "Failed to add or join database $($db.Name)." -Continue
-            }
-
-            # Now we have configured everything and we only have to wait...
-
-            $progress['Status'] = "Step 5/5: Wait for the database to finish joining the Availability Group on the secondary replicas"
-            $progress['CurrentOperation'] = ''
-            Write-Message -Level Verbose -Message $progress['Status']
-            Write-Progress @progress
-
-            if ($NoWait) {
-                Write-Message -Level Verbose -Message "NoWait parameter specified. Skipping wait for database $($db.Name) to finish joining the Availability Group $AvailabilityGroup on the secondary replicas. Synchronization will continue in the background."
-            } elseif ($Pscmdlet.ShouldProcess($server, "Wait for the database $($db.Name) to finish joining the Availability Group $AvailabilityGroup on the secondary replicas.")) {
-                # We need to setup a progress bar for every replica to display them all at once.
-                $syncProgressId = @{ }
-                foreach ($replicaName in $replicaServerSMO.Keys) {
-                    $syncProgressId[$replicaName] = Get-Random
-                }
-
-                $stillWaiting = $true
-                $timeout = (Get-Date).AddSeconds($timeoutSynchronization)
-                while ($stillWaiting) {
-                    $stillWaiting = $false
+                if ($SeedingMode) {
+                    Write-Message -Level Verbose -Message "Setting seeding mode to $SeedingMode."
                     $failure = $false
                     foreach ($replicaName in $replicaServerSMO.Keys) {
-                        if (-not $targetSynchronizationState[$replicaName]) {
-                            Write-Message -Level Verbose -Message "Database $($db.Name) is already joined to Availability Group $AvailabilityGroup. No action will be taken on the replica $replicaName."
+                        $replica = $ag.AvailabilityReplicas[$replicaName]
+                        if ($replica.SeedingMode -ne $SeedingMode) {
+                            if ($Pscmdlet.ShouldProcess($server, "Setting seeding mode for replica $replica to $SeedingMode")) {
+                                try {
+                                    Write-Message -Level Verbose -Message "Setting seeding mode for replica $replica to $SeedingMode."
+                                    $replica.SeedingMode = $SeedingMode
+                                    $replica.Alter()
+                                    if ($SeedingMode -eq 'Automatic') {
+                                        Write-Message -Level Verbose -Message "Setting GrantAvailabilityGroupCreateDatabasePrivilege on server $($replicaServerSMO[$replicaName]) for Availability Group $AvailabilityGroup."
+                                        $null = Grant-DbaAgPermission -SqlInstance $replicaServerSMO[$replicaName] -Type AvailabilityGroup -AvailabilityGroup $AvailabilityGroup -Permission CreateAnyDatabase
+                                    }
+                                } catch {
+                                    $failure = $true
+                                    Stop-Function -Message "Failed setting seeding mode for replica $replica to $SeedingMode." -ErrorRecord $_ -Continue
+                                }
+                            }
+                        }
+                    }
+                    if ($failure) {
+                        Stop-Function -Message "Failed setting seeding mode to $SeedingMode." -Continue
+                    }
+                }
+
+                # For TDE-encrypted databases, the master certificate must exist on every secondary replica
+                # before a backup can be restored or automatic seeding can succeed.
+                if ($db.EncryptionEnabled -and $db.HasDatabaseEncryptionKey -and $db.DatabaseEncryptionKey.EncryptorType -eq "ServerCertificate") {
+                    $encryptorName = $db.DatabaseEncryptionKey.EncryptorName
+                    Write-Message -Level Verbose -Message "Database $($db.Name) is TDE-encrypted using certificate '$encryptorName'. Checking secondary replicas."
+
+                    try {
+                        $sourceTdeCert = Get-DbaDbCertificate -SqlInstance $server -Database "master" -Certificate $encryptorName -EnableException | Select-Object -First 1
+                    } catch {
+                        Stop-Function -Message "Failed to validate TDE certificate '$encryptorName' on primary instance $($server.Name)." -ErrorRecord $_ -Continue
+                    }
+
+                    if (-not $sourceTdeCert) {
+                        Stop-Function -Message "Database $($db.Name) is encrypted by certificate '$encryptorName', but that certificate was not found in master on $($server.Name)." -Continue
+                    }
+
+                    if (-not $sourceTdeCert.PrivateKeyExists) {
+                        Stop-Function -Message "Database $($db.Name) is encrypted by certificate '$encryptorName', but the certificate on $($server.Name) does not have an accessible private key." -Continue
+                    }
+
+                    $failure = $false
+                    foreach ($replicaName in $replicaServerSMO.Keys) {
+                        $replicaServer = $replicaServerSMO[$replicaName]
+                        try {
+                            $existingCert = Get-DbaDbCertificate -SqlInstance $replicaServer -Database "master" -Certificate $encryptorName -EnableException | Select-Object -First 1
+                        } catch {
+                            $failure = $true
+                            Stop-Function -Message "Failed to validate TDE certificate '$encryptorName' on replica $replicaName." -ErrorRecord $_ -Continue
+                        }
+
+                        if (-not $existingCert) {
+                            if (-not $SharedPath) {
+                                $failure = $true
+                                Stop-Function -Message "Replica $replicaName is missing TDE certificate '$encryptorName'. Provide -SharedPath and optionally -MasterKeySecurePassword to copy it automatically, or pre-stage the matching certificate before adding the database." -Continue
+                            }
+
+                            if ($Pscmdlet.ShouldProcess($replicaServer, "Copy TDE certificate '$encryptorName' from primary to replica $replicaName")) {
+                                try {
+                                    Write-Message -Level Verbose -Message "TDE certificate '$encryptorName' not found on $replicaName. Copying from primary."
+                                    $splatTdeCert = @{
+                                        Source          = $server
+                                        Destination     = $replicaServer
+                                        Database        = "master"
+                                        Certificate     = $encryptorName
+                                        SharedPath      = $SharedPath
+                                        EnableException = $true
+                                    }
+                                    if ($MasterKeySecurePassword) {
+                                        $splatTdeCert.MasterKeyPassword = $MasterKeySecurePassword
+                                    }
+                                    $null = Copy-DbaDbCertificate @splatTdeCert
+                                } catch {
+                                    $failure = $true
+                                    Stop-Function -Message "Failed to copy TDE certificate '$encryptorName' to replica $replicaName." -ErrorRecord $_ -Continue
+                                }
+                            }
                             continue
                         }
 
-                        if (-not $replicaAgDbSMO[$replicaName].IsJoined -or $replicaAgDbSMO[$replicaName].SynchronizationState -ne $targetSynchronizationState[$replicaName]) {
-                            $stillWaiting = $true
+                        if (-not $existingCert.PrivateKeyExists) {
+                            $failure = $true
+                            Stop-Function -Message "TDE certificate '$encryptorName' exists on replica $replicaName but does not include a private key. Restore or automatic seeding cannot use it." -Continue
                         }
 
-                        $syncProgress = @{ }
-                        $syncProgress['Id'] = $syncProgressId[$replicaName]
-                        $syncProgress['ParentId'] = $progress['Id']
-                        $syncProgress['Activity'] = "Adding database $($db.Name) to Availability Group $AvailabilityGroup on replica $replicaName"
-                        if ($replicaAgDbSMO[$replicaName].SynchronizationState -ne $targetSynchronizationState[$replicaName]) {
-                            $syncProgress['Status'] = "IsJoined is $($replicaAgDbSMO[$replicaName].IsJoined), SynchronizationState is $($replicaAgDbSMO[$replicaName].SynchronizationState), waiting for $($targetSynchronizationState[$replicaName])"
-                        } else {
-                            $syncProgress['Status'] = "IsJoined is $($replicaAgDbSMO[$replicaName].IsJoined), SynchronizationState is $($replicaAgDbSMO[$replicaName].SynchronizationState), replica is in desired state"
+                        if ($existingCert.Thumbprint -ne $sourceTdeCert.Thumbprint) {
+                            $failure = $true
+                            Stop-Function -Message "TDE certificate '$encryptorName' on replica $replicaName does not match the primary certificate on $($server.Name)." -Continue
                         }
-                        if ($ag.AvailabilityReplicas[$replicaName].SeedingMode -eq 'Automatic' -and $reportSeeding) {
-                            $physicalSeedingStats = $server.Query("SELECT TOP 1 * FROM sys.dm_hadr_physical_seeding_stats WHERE local_database_name = '$($db.Name)' AND remote_machine_name = '$($ag.AvailabilityReplicas[$replicaName].EndpointUrl)' ORDER BY start_time_utc DESC")
-                            if ($physicalSeedingStats) {
-                                if ($physicalSeedingStats.failure_message -ne [DBNull]::Value) {
-                                    $failure = $true
-                                    Stop-Function -Message "Failed while seeding database $($db.Name) to $replicaName. failure_message: $($physicalSeedingStats.failure_message)." -Continue
+
+                        Write-Message -Level Verbose -Message "TDE certificate '$encryptorName' already exists on replica $replicaName and matches the primary certificate."
+                    }
+
+                    if ($failure) {
+                        Stop-Function -Message "Failed to validate or copy TDE certificate '$encryptorName' for all replicas of database $($db.Name)." -Continue
+                    }
+                }
+
+                $progress['Status'] = "Step 2/5: Running backup and restore if needed"
+                Write-Message -Level Verbose -Message $progress['Status']
+                Write-Progress @progress
+
+                if ($restoreNeeded.Count -gt 0) {
+                    if (-not $backups) {
+                        if ($Pscmdlet.ShouldProcess($server, "Taking full and log backup of database $($db.Name)")) {
+                            try {
+                                Write-Message -Level Verbose -Message "Taking full and log backup of database $($db.Name)."
+                                if ($AdvancedBackupParams) {
+                                    $fullbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException @AdvancedBackupParams
+                                    $logbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException @AdvancedBackupParams
+                                } else {
+                                    $fullbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Full -EnableException
+                                    $logbackup = $db | Backup-DbaDatabase -BackupDirectory $SharedPath -Type Log -EnableException
+                                }
+                                $backups = $fullbackup, $logbackup
+                            } catch {
+                                Stop-Function -Message "Failed to take full and log backup of database $($db.Name)." -ErrorRecord $_ -Continue
+                            }
+                        }
+                    }
+                    $failure = $false
+                    foreach ($replicaName in $restoreNeeded.Keys) {
+                        if ($Pscmdlet.ShouldProcess($replicaServerSMO[$replicaName], "Restore database $($db.Name) to replica $replicaName")) {
+                            try {
+                                Write-Message -Level Verbose -Message "Restore database $($db.Name) to replica $replicaName."
+                                $restoreParams = @{
+                                    SqlInstance          = $replicaServerSMO[$replicaName]
+                                    NoRecovery           = $true
+                                    TrustDbBackupHistory = $true
+                                    EnableException      = $true
                                 }
 
-                                $syncProgress['PercentComplete'] = [int]($physicalSeedingStats.transferred_size_bytes * 100.0 / $physicalSeedingStats.database_size_bytes)
-                                $syncProgress['SecondsRemaining'] = [int](($physicalSeedingStats.estimate_time_complete_utc - (Get-Date).ToUniversalTime()).TotalSeconds)
-                                $syncProgress['CurrentOperation'] = "Seeding state: $($physicalSeedingStats.internal_state_desc), $([int]($physicalSeedingStats.transferred_size_bytes/1024/1024)) out of $([int]($physicalSeedingStats.database_size_bytes/1024/1024)) MB transferred"
-                            }
-                            $automaticSeeding = $server.Query("SELECT TOP 1 * FROM sys.dm_hadr_automatic_seeding WHERE ag_id = '$($ag.UniqueId.Guid.ToUpper())' AND ag_db_id = '$($ag.AvailabilityDatabases[$db.Name].UniqueId.Guid.ToUpper())' AND ag_remote_replica_id = '$($ag.AvailabilityReplicas[$replicaName].UniqueId.Guid.ToUpper())' ORDER BY start_time DESC")
-                            Write-Message -Level Verbose -Message "Current automatic seeding state: $($automaticSeeding.current_state)"
-                            if ($automaticSeeding.current_state -eq 'FAILED') {
+                                # Check if we should skip ReuseSourceFolderStructure
+                                if (-not $SkipReuseSourceFolderStructure) {
+                                    # Check if primary and replica are on the same platform
+                                    $primaryPlatform = $server.HostPlatform
+                                    $replicaPlatform = $replicaServerSMO[$replicaName].HostPlatform
+                                    if ($primaryPlatform -ne $replicaPlatform) {
+                                        Write-Message -Level Verbose -Message "Primary platform ($primaryPlatform) does not match replica platform ($replicaPlatform). Setting SkipReuseSourceFolderStructure."
+                                        $SkipReuseSourceFolderStructure = $true
+                                    }
+                                }
+
+                                # Only use ReuseSourceFolderStructure if not skipped
+                                if (-not $SkipReuseSourceFolderStructure) {
+                                    Write-Message -Level Verbose -Message "Using ReuseSourceFolderStructure to maintain consistent folder layout."
+                                    $restoreParams['ReuseSourceFolderStructure'] = $true
+                                } else {
+                                    Write-Message -Level Verbose -Message "Using replica's default paths for database files."
+                                }
+
+                                $sourceOwner = $db.Owner
+                                $replicaOwner = $replicaServerSMO[$replicaName].ConnectedAs
+                                if ($sourceOwner -ne $replicaOwner) {
+                                    Write-Message -Level Verbose -Message "Source database owner is $sourceOwner, replica database owner would be $replicaOwner."
+                                    if ($replicaServerSMO[$replicaName].Logins[$db.Owner]) {
+                                        Write-Message -Level Verbose -Message "Source database owner is found on replica, so using ExecuteAs with Restore-DbaDatabase to set correct owner."
+                                        $restoreParams['ExecuteAs'] = $db.Owner
+                                    } else {
+                                        Write-Message -Level Verbose -Message "Source database owner is not found on replica, so there is nothing we can do."
+                                    }
+                                }
+                                $null = $backups | Restore-DbaDatabase @restoreParams
+                            } catch {
                                 $failure = $true
-                                Stop-Function -Message "Failed while seeding database $($db.Name) to $replicaName. failure_message: $($automaticSeeding.failure_state_desc)." -Continue
+                                Stop-Function -Message "Failed to restore database $($db.Name) to replica $replicaName." -ErrorRecord $_ -Continue
                             }
                         }
-                        Write-Message -Level Verbose -Message ($syncProgress['Status'] + $syncProgress['CurrentOperation'])
-                        Write-Progress @syncProgress
                     }
                     if ($failure) {
-                        $stillWaiting = $false
-                        Stop-Function -Message "Failed while seeding database $($db.Name)." -Continue
-                    }
-
-                    if ((Get-Date) -gt $timeout) {
-                        $stillWaiting = $false
-                        $failure = $true
-                        Stop-Function -Message "Failed to join or synchronize database $($db.Name). Timeout of $timeoutSynchronization seconds is reached. $progressOperation" -Continue
-                    }
-                    Start-Sleep -Milliseconds $waitWhile
-
-                    foreach ($replicaName in $replicaServerSMO.Keys) {
-                        $replicaAgDbSMO[$replicaName].Refresh()
+                        Stop-Function -Message "Failed to restore database $($db.Name)." -Continue
                     }
                 }
+
+                $progress['Status'] = "Step 3/5: Add the database to the Availability Group on the primary replica"
+                Write-Message -Level Verbose -Message $progress['Status']
+
+                if ($Pscmdlet.ShouldProcess($server, "Add database $($db.Name) to Availability Group $AvailabilityGroup on the primary replica")) {
+                    try {
+                        $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on is not yet known"
+                        Write-Message -Level Verbose -Message "Object of type AvailabilityDatabase for $($db.Name) will be created. $($progress['CurrentOperation'])"
+                        Write-Progress @progress
+
+                        if ($ag.AvailabilityDatabases.Name -contains $db.Name) {
+                            Write-Message -Level Verbose -Message "Database $($db.Name) is already joined to Availability Group $AvailabilityGroup. No action will be taken on the primary replica."
+                        } else {
+                            $agDb = Get-DbaAgDatabase -SqlInstance $server -AvailabilityGroup $ag.Name -Database $db.Name
+                            $agDb = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityDatabase($ag, $db.Name)
+                            $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) is $($agDb.State)"
+                            Write-Message -Level Verbose -Message "Object of type AvailabilityDatabase for $($db.Name) is created. $($progress['CurrentOperation'])"
+                            Write-Progress @progress
+
+                            $agDb.Create()
+                            $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) is $($agDb.State)"
+                            Write-Message -Level Verbose -Message "Method Create of AvailabilityDatabase for $($db.Name) is executed. $($progress['CurrentOperation'])"
+                            Write-Progress @progress
+
+                            # Wait for state to become Existing
+                            # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.sqlsmostate
+                            $timeout = (Get-Date).AddSeconds($timeoutExisting)
+                            while ($agDb.State -ne 'Existing') {
+                                $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) is $($agDb.State), waiting for Existing"
+                                Write-Message -Level Verbose -Message $progress['CurrentOperation']
+                                Write-Progress @progress
+
+                                if ((Get-Date) -gt $timeout) {
+                                    Stop-Function -Message "Failed to add database $($db.Name) to Availability Group $AvailabilityGroup. Timeout of $timeoutExisting seconds is reached. State of AvailabilityDatabase for $($db.Name) is still $($agDb.State)." -Continue
+                                }
+                                Start-Sleep -Milliseconds $waitWhile
+                                $agDb.Refresh()
+                            }
+
+                            # Get customized SMO for the output
+                            $output += Get-DbaAgDatabase -SqlInstance $server -AvailabilityGroup $AvailabilityGroup -Database $db.Name -EnableException
+                        }
+                    } catch {
+                        Stop-Function -Message "Failed to add database $($db.Name) to Availability Group $AvailabilityGroup" -ErrorRecord $_ -Continue
+                    }
+                }
+
+                $progress['Status'] = "Step 4/5: Add the database to the Availability Group on the secondary replicas"
+                Write-Message -Level Verbose -Message $progress['Status']
+
+                $failure = $false
                 foreach ($replicaName in $replicaServerSMO.Keys) {
-                    Write-Progress -Id $syncProgressId[$replicaName] -ParentId $progress['Id'] -Activity Completed -Completed
+                    if ($Pscmdlet.ShouldProcess($replicaServerSMO[$replicaName], "Add database $($db.Name) to Availability Group $AvailabilityGroup on replica $replicaName")) {
+                        $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on replica $replicaName is not yet known"
+                        Write-Message -Level Verbose -Message $progress['CurrentOperation']
+                        Write-Progress @progress
+
+                        try {
+                            $replicaAgDb = Get-DbaAgDatabase -SqlInstance $replicaServerSMO[$replicaName] -AvailabilityGroup $AvailabilityGroup -Database $db.Name -EnableException
+                        } catch {
+                            $failure = $true
+                            Stop-Function -Message "Failed to get database $($db.Name) on replica $replicaName." -ErrorRecord $_ -Continue
+                        }
+
+                        if ($replicaAgDb.IsJoined) {
+                            Write-Message -Level Verbose -Message "Database $($db.Name) is already joined to Availability Group $AvailabilityGroup. No action will be taken on the replica $replicaName."
+                            $replicaAgDbSMO[$replicaName] = $replicaAgDb
+                        } else {
+                            # Save SMO in array for the output
+                            $output += $replicaAgDb
+                            # Save SMO in hashtable for further processing
+                            $replicaAgDbSMO[$replicaName] = $replicaAgDb
+                            # Save target targetSynchronizationState for further processing
+                            # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.availabilityreplicaavailabilitymode
+                            # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.availabilitydatabasesynchronizationstate
+                            $availabilityMode = $ag.AvailabilityReplicas[$replicaName].AvailabilityMode
+                            if ($availabilityMode -eq 'AsynchronousCommit') {
+                                $targetSynchronizationState[$replicaName] = 'Synchronizing'
+                            } elseif ($availabilityMode -eq 'SynchronousCommit') {
+                                $targetSynchronizationState[$replicaName] = 'Synchronized'
+                            } else {
+                                $failure = $true
+                                Stop-Function -Message "Unexpected value '$availabilityMode' for AvailabilityMode on replica $replicaName." -Continue
+                            }
+
+                            $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on replica $replicaName is $($replicaAgDb.State)"
+                            Write-Message -Level Verbose -Message $progress['CurrentOperation']
+                            Write-Progress @progress
+
+                            # https://docs.microsoft.com/en-us/dotnet/api/microsoft.sqlserver.management.smo.sqlsmostate
+                            $timeout = (Get-Date).AddSeconds($timeoutExisting)
+                            while ($replicaAgDb.State -ne 'Existing') {
+                                $progress['CurrentOperation'] = "State of AvailabilityDatabase for $($db.Name) on replica $replicaName is $($replicaAgDb.State), waiting for Existing."
+                                Write-Message -Level Verbose -Message $progress['CurrentOperation']
+                                Write-Progress @progress
+
+                                if ((Get-Date) -gt $timeout) {
+                                    Stop-Function -Message "Failed to add database $($db.Name) on replica $replicaName. Timeout of $timeoutExisting seconds is reached. State of AvailabilityDatabase for $db is still $($replicaAgDb.State)." -Continue
+                                }
+                                Start-Sleep -Milliseconds $waitWhile
+                                $replicaAgDb.Refresh()
+                            }
+
+                            # With automatic seeding, .JoinAvailablityGroup() is not needed, just wait for the magic to happen
+                            if ($ag.AvailabilityReplicas[$replicaName].SeedingMode -ne 'Automatic') {
+                                try {
+                                    $progress['CurrentOperation'] = "Joining database $($db.Name) on replica $replicaName"
+                                    Write-Message -Level Verbose -Message $progress['CurrentOperation']
+                                    Write-Progress @progress
+
+                                    # DO NOT fix the typo in "JoinAvailablityGroup()" as it is a typo the SMO.
+                                    $replicaAgDb.JoinAvailablityGroup()
+                                } catch {
+                                    $failure = $true
+                                    Stop-Function -Message "Failed to join database $($db.Name) on replica $replicaName." -ErrorRecord $_ -Continue
+                                }
+                            }
+                        }
+                    }
                 }
                 if ($failure) {
-                    Stop-Function -Message "Failed to join or synchronize database $($db.Name)." -Continue
+                    Stop-Function -Message "Failed to add or join database $($db.Name)." -Continue
                 }
+
+                # Now we have configured everything and we only have to wait...
+
+                $progress['Status'] = "Step 5/5: Wait for the database to finish joining the Availability Group on the secondary replicas"
+                $progress['CurrentOperation'] = ''
+                Write-Message -Level Verbose -Message $progress['Status']
+                Write-Progress @progress
+
+                if ($NoWait) {
+                    Write-Message -Level Verbose -Message "NoWait parameter specified. Skipping wait for database $($db.Name) to finish joining the Availability Group $AvailabilityGroup on the secondary replicas. Synchronization will continue in the background."
+                } elseif ($Pscmdlet.ShouldProcess($server, "Wait for the database $($db.Name) to finish joining the Availability Group $AvailabilityGroup on the secondary replicas.")) {
+                    # We need to setup a progress bar for every replica to display them all at once.
+                    $syncProgressId = @{ }
+                    foreach ($replicaName in $replicaServerSMO.Keys) {
+                        $syncProgressId[$replicaName] = Get-Random
+                    }
+
+                    $stillWaiting = $true
+                    $timeout = (Get-Date).AddSeconds($timeoutSynchronization)
+                    while ($stillWaiting) {
+                        $stillWaiting = $false
+                        $failure = $false
+                        foreach ($replicaName in $replicaServerSMO.Keys) {
+                            if (-not $targetSynchronizationState[$replicaName]) {
+                                Write-Message -Level Verbose -Message "Database $($db.Name) is already joined to Availability Group $AvailabilityGroup. No action will be taken on the replica $replicaName."
+                                continue
+                            }
+
+                            if (-not $replicaAgDbSMO[$replicaName].IsJoined -or $replicaAgDbSMO[$replicaName].SynchronizationState -ne $targetSynchronizationState[$replicaName]) {
+                                $stillWaiting = $true
+                            }
+
+                            $syncProgress = @{ }
+                            $syncProgress['Id'] = $syncProgressId[$replicaName]
+                            $syncProgress['ParentId'] = $progress['Id']
+                            $syncProgress['Activity'] = "Adding database $($db.Name) to Availability Group $AvailabilityGroup on replica $replicaName"
+                            if ($replicaAgDbSMO[$replicaName].SynchronizationState -ne $targetSynchronizationState[$replicaName]) {
+                                $syncProgress['Status'] = "IsJoined is $($replicaAgDbSMO[$replicaName].IsJoined), SynchronizationState is $($replicaAgDbSMO[$replicaName].SynchronizationState), waiting for $($targetSynchronizationState[$replicaName])"
+                            } else {
+                                $syncProgress['Status'] = "IsJoined is $($replicaAgDbSMO[$replicaName].IsJoined), SynchronizationState is $($replicaAgDbSMO[$replicaName].SynchronizationState), replica is in desired state"
+                            }
+                            if ($ag.AvailabilityReplicas[$replicaName].SeedingMode -eq 'Automatic' -and $reportSeeding) {
+                                $physicalSeedingStats = $server.Query("SELECT TOP 1 * FROM sys.dm_hadr_physical_seeding_stats WHERE local_database_name = '$($db.Name)' AND remote_machine_name = '$($ag.AvailabilityReplicas[$replicaName].EndpointUrl)' ORDER BY start_time_utc DESC")
+                                if ($physicalSeedingStats) {
+                                    if ($physicalSeedingStats.failure_message -ne [DBNull]::Value) {
+                                        $failure = $true
+                                        Stop-Function -Message "Failed while seeding database $($db.Name) to $replicaName. failure_message: $($physicalSeedingStats.failure_message)." -Continue
+                                    }
+
+                                    $syncProgress['PercentComplete'] = [int]($physicalSeedingStats.transferred_size_bytes * 100.0 / $physicalSeedingStats.database_size_bytes)
+                                    $syncProgress['SecondsRemaining'] = [int](($physicalSeedingStats.estimate_time_complete_utc - (Get-Date).ToUniversalTime()).TotalSeconds)
+                                    $syncProgress['CurrentOperation'] = "Seeding state: $($physicalSeedingStats.internal_state_desc), $([int]($physicalSeedingStats.transferred_size_bytes/1024/1024)) out of $([int]($physicalSeedingStats.database_size_bytes/1024/1024)) MB transferred"
+                                }
+                                $automaticSeeding = $server.Query("SELECT TOP 1 * FROM sys.dm_hadr_automatic_seeding WHERE ag_id = '$($ag.UniqueId.Guid.ToUpper())' AND ag_db_id = '$($ag.AvailabilityDatabases[$db.Name].UniqueId.Guid.ToUpper())' AND ag_remote_replica_id = '$($ag.AvailabilityReplicas[$replicaName].UniqueId.Guid.ToUpper())' ORDER BY start_time DESC")
+                                Write-Message -Level Verbose -Message "Current automatic seeding state: $($automaticSeeding.current_state)"
+                                if ($automaticSeeding.current_state -eq 'FAILED') {
+                                    $failure = $true
+                                    Stop-Function -Message "Failed while seeding database $($db.Name) to $replicaName. failure_message: $($automaticSeeding.failure_state_desc)." -Continue
+                                }
+                            }
+                            Write-Message -Level Verbose -Message ($syncProgress['Status'] + $syncProgress['CurrentOperation'])
+                            Write-Progress @syncProgress
+                        }
+                        if ($failure) {
+                            $stillWaiting = $false
+                            Stop-Function -Message "Failed while seeding database $($db.Name)." -Continue
+                        }
+
+                        if ((Get-Date) -gt $timeout) {
+                            $stillWaiting = $false
+                            $failure = $true
+                            Stop-Function -Message "Failed to join or synchronize database $($db.Name). Timeout of $timeoutSynchronization seconds is reached. $progressOperation" -Continue
+                        }
+                        Start-Sleep -Milliseconds $waitWhile
+
+                        foreach ($replicaName in $replicaServerSMO.Keys) {
+                            $replicaAgDbSMO[$replicaName].Refresh()
+                        }
+                    }
+                    foreach ($replicaName in $replicaServerSMO.Keys) {
+                        Write-Progress -Id $syncProgressId[$replicaName] -ParentId $progress['Id'] -Activity Completed -Completed
+                    }
+                    if ($failure) {
+                        Stop-Function -Message "Failed to join or synchronize database $($db.Name)." -Continue
+                    }
+                }
+                $output
             }
-            $output
+        } finally {
+            # The host keeps a child bar whose parent is completed first, so the replica bars go first
+            foreach ($openSyncProgressId in $syncProgressId.Values) {
+                Write-Progress -Id $openSyncProgressId -ParentId $progress["Id"] -Activity Completed -Completed
+            }
+            Write-Progress @progress -Completed
         }
-        Write-Progress @progress -Completed
     }
 }
