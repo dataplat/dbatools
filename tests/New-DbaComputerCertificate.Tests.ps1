@@ -125,6 +125,23 @@ Describe $CommandName -Tag UnitTests {
 # These tests used to be skipped when APPVEYOR is set, which the Azure lanes do as well. Creating a self-signed
 # certificate in LocalMachine\My works on the runners, so they run there now.
 Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # The thumbprints of the requests in LocalMachine\REQUEST whose public key is in one of the given request files.
+        # Every request has its own key, so this names exactly the requests of those files and nothing that another
+        # enrollment on this computer created in the meantime.
+        function Get-TestRequestThumbprint {
+            param ([string[]]$RequestFile)
+            foreach ($file in $RequestFile) {
+                if (-not (Test-Path -Path $file)) {
+                    continue
+                }
+                $requestBase64 = (Get-Content -Path $file | Where-Object { $PSItem -notmatch "^-----" }) -join ""
+                $requestHex = [System.BitConverter]::ToString([System.Convert]::FromBase64String($requestBase64))
+                Get-ChildItem -Path Cert:\LocalMachine\REQUEST | Where-Object { $requestHex.Contains([System.BitConverter]::ToString($PSItem.PublicKey.EncodedKeyValue.RawData)) } | ForEach-Object { $PSItem.Thumbprint }
+            }
+        }
+    }
+
     Context "Can generate a new certificate with default settings" {
         BeforeAll {
             $defaultCert = New-DbaComputerCertificate -SelfSigned -EnableException
@@ -274,10 +291,23 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+            # Every request file certreq writes is copied, so that cleanup and assertions know the requests of this test by
+            # their keys and never touch a request another enrollment on this computer created meanwhile. certreq is real.
+            # No temp name in this file starts with dbatools: the maintenance task tempcleanup deletes everything in the temp
+            # folder that does, one minute after the module is imported, which is right in the middle of this file.
+            $global:dbatoolsciCsrCopyFolder = "$([System.IO.Path]::GetTempPath())csrcopy_dbatoolsci_$(Get-Random)"
+            $null = New-Item -Path $global:dbatoolsciCsrCopyFolder -ItemType Directory
+            $mockCertreq = {
+                certreq.exe @args
+                if ($args -contains "-new") {
+                    Copy-Item -Path $args[-1] -Destination (Join-Path -Path $global:dbatoolsciCsrCopyFolder -ChildPath "$(Get-Random).csr")
+                }
+            }
+            Mock -ModuleName dbatools -CommandName certreq -MockWith $mockCertreq
+
             # A request for a CA waits in LocalMachine\REQUEST with its key. When the CA cannot be reached the command removes
             # the request again, so the store and the key folders have to look as before.
             $requestFolders = "$env:ProgramData\Microsoft\Crypto\RSA\MachineKeys", "$env:ProgramData\Microsoft\Crypto\Keys"
-            $requestsBefore = @((Get-ChildItem -Path Cert:\LocalMachine\REQUEST).Thumbprint)
             $requestKeyFilesBefore = @((Get-ChildItem -Path $requestFolders -File).Name)
             $splatUnreachableCa = @{
                 CaServer        = "nosuchca.dbatools.invalid"
@@ -287,7 +317,8 @@ Describe $CommandName -Tag IntegrationTests {
                 EnableException = $false
             }
             $unreachableCaResult = New-DbaComputerCertificate @splatUnreachableCa
-            $requestsAfter = @((Get-ChildItem -Path Cert:\LocalMachine\REQUEST).Thumbprint)
+            $requestFiles = @((Get-ChildItem -Path $global:dbatoolsciCsrCopyFolder -Filter "*.csr").FullName)
+            $ownRequestsAfter = @(Get-TestRequestThumbprint -RequestFile $requestFiles)
             $requestKeyFilesAfter = @((Get-ChildItem -Path $requestFolders -File).Name)
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -295,10 +326,12 @@ Describe $CommandName -Tag IntegrationTests {
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            # In case the command left the request behind after all.
-            foreach ($leftover in ($requestsAfter | Where-Object { $PSItem -notin $requestsBefore })) {
+            # In case the command left its request behind after all. Only the requests of this test are removed.
+            foreach ($leftover in (Get-TestRequestThumbprint -RequestFile $requestFiles)) {
                 Remove-DbaComputerCertificate -Thumbprint $leftover -Folder REQUEST -DeleteKey
             }
+            Remove-Item -Path $global:dbatoolsciCsrCopyFolder -Recurse -ErrorAction SilentlyContinue
+            Remove-Variable -Name dbatoolsciCsrCopyFolder -Scope Global -ErrorAction SilentlyContinue
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -309,7 +342,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Removes the pending request and its key again" {
-            $requestsAfter | Where-Object { $PSItem -notin $requestsBefore } | Should -BeNullOrEmpty
+            $requestFiles | Should -HaveCount 1
+            $ownRequestsAfter | Should -BeNullOrEmpty
             $requestKeyFilesAfter | Where-Object { $PSItem -notin $requestKeyFilesBefore } | Should -BeNullOrEmpty
         }
     }
@@ -321,8 +355,8 @@ Describe $CommandName -Tag IntegrationTests {
             # Another enrollment creates its own machine request while the command waits for the CA. Only the submission is
             # intercepted to create that request at exactly this moment; certreq, the store and the keys are real.
             $otherSubject = "CN=dbatoolsci_otherrequest_$(Get-Random)"
-            $otherInf = "$([System.IO.Path]::GetTempPath())dbatoolsci_otherrequest_$(Get-Random).inf"
-            $otherCsr = "$otherInf.csr"
+            $global:dbatoolsciOtherInf = "$([System.IO.Path]::GetTempPath())otherrequest_dbatoolsci_$(Get-Random).inf"
+            $otherCsr = "$global:dbatoolsciOtherInf.csr"
             $otherInfContent = @"
 [Version]
 Signature="`$Windows NT`$"
@@ -335,16 +369,20 @@ ProviderName = "Microsoft Software Key Storage Provider"
 KeyAlgorithm = RSA
 RequestType = PKCS10
 "@
-            Set-Content -Path $otherInf -Value $otherInfContent
-            $mockCertreq = [scriptblock]::Create(@"
-if (`$args -contains "-submit") {
-    `$null = certreq.exe -q -new "$otherInf" "$otherCsr"
-}
-certreq.exe @args
-"@)
+            Set-Content -Path $global:dbatoolsciOtherInf -Value $otherInfContent
+            $global:dbatoolsciCsrCopyFolder = "$([System.IO.Path]::GetTempPath())csrcopy_dbatoolsci_$(Get-Random)"
+            $null = New-Item -Path $global:dbatoolsciCsrCopyFolder -ItemType Directory
+            $mockCertreq = {
+                if ($args -contains "-submit") {
+                    $null = certreq.exe -q -new $global:dbatoolsciOtherInf "$global:dbatoolsciOtherInf.csr"
+                }
+                certreq.exe @args
+                if ($args -contains "-new") {
+                    Copy-Item -Path $args[-1] -Destination (Join-Path -Path $global:dbatoolsciCsrCopyFolder -ChildPath "$(Get-Random).csr")
+                }
+            }
             Mock -ModuleName dbatools -CommandName certreq -MockWith $mockCertreq
 
-            $requestsBefore = @((Get-ChildItem -Path Cert:\LocalMachine\REQUEST).Thumbprint)
             $splatUnreachableCa = @{
                 CaServer        = "nosuchca.dbatools.invalid"
                 CaName          = "NoSuchCA"
@@ -353,18 +391,22 @@ certreq.exe @args
                 EnableException = $false
             }
             $otherRequestResult = New-DbaComputerCertificate @splatUnreachableCa
-            $newRequests = @(Get-ChildItem -Path Cert:\LocalMachine\REQUEST | Where-Object Thumbprint -notin $requestsBefore)
-            $otherRequest = $newRequests | Where-Object Subject -eq $otherSubject
+            $requestFiles = @((Get-ChildItem -Path $global:dbatoolsciCsrCopyFolder -Filter "*.csr").FullName)
+            $ownRequestsAfter = @(Get-TestRequestThumbprint -RequestFile $requestFiles)
+            $otherRequest = Get-ChildItem -Path Cert:\LocalMachine\REQUEST | Where-Object Thumbprint -in @(Get-TestRequestThumbprint -RequestFile $otherCsr)
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            foreach ($leftover in $newRequests) {
-                Remove-DbaComputerCertificate -Thumbprint $leftover.Thumbprint -Folder REQUEST -DeleteKey
+            # The requests of this test: the one of the command, should it still be there, and the other one.
+            foreach ($leftover in (Get-TestRequestThumbprint -RequestFile ($requestFiles + $otherCsr))) {
+                Remove-DbaComputerCertificate -Thumbprint $leftover -Folder REQUEST -DeleteKey
             }
-            Remove-Item -Path $otherInf, $otherCsr -ErrorAction SilentlyContinue
+            Remove-Item -Path $global:dbatoolsciOtherInf, $otherCsr -ErrorAction SilentlyContinue
+            Remove-Item -Path $global:dbatoolsciCsrCopyFolder -Recurse -ErrorAction SilentlyContinue
+            Remove-Variable -Name dbatoolsciCsrCopyFolder, dbatoolsciOtherInf -Scope Global -ErrorAction SilentlyContinue
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -374,8 +416,9 @@ certreq.exe @args
         }
 
         It "Removes only its own request" {
+            $requestFiles | Should -HaveCount 1
+            $ownRequestsAfter | Should -BeNullOrEmpty
             $otherRequest | Should -Not -BeNullOrEmpty
-            $newRequests.Count | Should -Be 1
         }
 
         It "Keeps the key of the other request" {
@@ -383,6 +426,79 @@ certreq.exe @args
             $otherKey | Should -Not -BeNullOrEmpty
             # Signing needs the key file itself, the certificate only points to it.
             $otherKey.SignData([byte[]](1, 2, 3), [System.Security.Cryptography.HashAlgorithmName]::SHA256, [System.Security.Cryptography.RSASignaturePadding]::Pkcs1) | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "Removes only its own request when a second call for the same computer overlaps" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # While the first call waits for the CA, a second call for the same computer runs from start to end. Only the
+            # submission of the first call is intercepted to start the second one at exactly this moment; both calls, certreq,
+            # the store and the keys are real. The request files of both calls are copied to know their requests afterwards.
+            # With one request folder per computer the second call deleted the request file of the first one, which then
+            # could not find its own request and left it behind.
+            $global:dbatoolsciCsrCopyFolder = "$([System.IO.Path]::GetTempPath())csrcopy_dbatoolsci_$(Get-Random)"
+            $null = New-Item -Path $global:dbatoolsciCsrCopyFolder -ItemType Directory
+            $global:dbatoolsciSecondCallStarted = $false
+            $mockCertreq = {
+                if ($args -contains "-submit" -and -not $global:dbatoolsciSecondCallStarted) {
+                    $global:dbatoolsciSecondCallStarted = $true
+                    $splatSecondCall = @{
+                        CaServer        = "nosuchca.dbatools.invalid"
+                        CaName          = "NoSuchCA"
+                        WarningVariable = "secondCallWarning"
+                        WarningAction   = "SilentlyContinue"
+                        EnableException = $false
+                    }
+                    $global:dbatoolsciSecondCallResult = New-DbaComputerCertificate @splatSecondCall
+                    $global:dbatoolsciSecondCallWarning = $secondCallWarning
+                }
+                certreq.exe @args
+                if ($args -contains "-new") {
+                    Copy-Item -Path $args[-1] -Destination (Join-Path -Path $global:dbatoolsciCsrCopyFolder -ChildPath "$(Get-Random).csr")
+                }
+            }
+            Mock -ModuleName dbatools -CommandName certreq -MockWith $mockCertreq
+
+            $splatFirstCall = @{
+                CaServer        = "nosuchca.dbatools.invalid"
+                CaName          = "NoSuchCA"
+                WarningVariable = "firstCallWarning"
+                WarningAction   = "SilentlyContinue"
+                EnableException = $false
+            }
+            $firstCallResult = New-DbaComputerCertificate @splatFirstCall
+            $requestFiles = @((Get-ChildItem -Path $global:dbatoolsciCsrCopyFolder -Filter "*.csr").FullName)
+            $ownRequestsAfter = @(Get-TestRequestThumbprint -RequestFile $requestFiles)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            foreach ($leftover in (Get-TestRequestThumbprint -RequestFile $requestFiles)) {
+                Remove-DbaComputerCertificate -Thumbprint $leftover -Folder REQUEST -DeleteKey
+            }
+            Remove-Item -Path $global:dbatoolsciCsrCopyFolder -Recurse -ErrorAction SilentlyContinue
+            Remove-Variable -Name dbatoolsciCsrCopyFolder, dbatoolsciSecondCallStarted, dbatoolsciSecondCallResult, dbatoolsciSecondCallWarning -Scope Global -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Runs the second call while the first one waits" {
+            $global:dbatoolsciSecondCallStarted | Should -BeTrue
+            $requestFiles | Should -HaveCount 2
+        }
+
+        It "Warns in both calls instead of returning a certificate" {
+            $firstCallResult | Should -BeNullOrEmpty
+            $global:dbatoolsciSecondCallResult | Should -BeNullOrEmpty
+            ($firstCallWarning -join " ") | Should -Match "Failure when attempting to create the cert"
+            ($global:dbatoolsciSecondCallWarning -join " ") | Should -Match "Failure when attempting to create the cert"
+        }
+
+        It "Leaves no request of either call behind" {
+            $ownRequestsAfter | Should -BeNullOrEmpty
         }
     }
 }

@@ -383,20 +383,20 @@ function New-DbaComputerCertificate {
                     }
                 }
 
-                $certDir = "$tempDir\$fqdn"
+                # A folder of its own for every call. A folder named only after the computer was shared by concurrent calls
+                # for the same computer: one call deleted the request files of the other, and a failed call could then read
+                # the request of the other call and remove that one instead of its own.
+                # The name must not start with dbatools: the maintenance task tempcleanup deletes everything in the temp folder
+                # that does, one minute after the module is imported, and would take the folder away while certreq writes to it.
+                $certDir = "$tempDir\certreq-$fqdn-$([System.Guid]::NewGuid())"
                 $certCfg = "$certDir\request.inf"
                 $certCsr = "$certDir\$fqdn.csr"
                 $certCrt = "$certDir\$fqdn.crt"
                 $certPfx = "$certDir\$fqdn.pfx"
                 $tempPfx = "$certDir\temp-$fqdn.pfx"
 
-                if (Test-Path($certDir)) {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Deleting files from $certDir"
-                    $null = Remove-Item "$certDir\*.*"
-                } else {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating $certDir"
-                    $null = New-Item -Path $certDir -ItemType Directory -Force
-                }
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating $certDir"
+                $null = New-Item -Path $certDir -ItemType Directory -Force
 
                 # Make sure output is compat with clusters
                 $shortName = $fqdn.Split(".")[0]
@@ -458,9 +458,18 @@ function New-DbaComputerCertificate {
                 Add-Content $certCfg $san
                 Add-Content $certCfg "Critical=2.5.29.17"
 
+                $ownRequests = @()
                 if ($PScmdlet.ShouldProcess("local", "Creating certificate for $computer")) {
                     Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Running: certreq -q -new $certCfg $certCsr"
                     $create = certreq -q -new $certCfg $certCsr
+
+                    # The pending request of this call, recorded now: its public key is in the request file certreq just wrote,
+                    # and every request has its own key. Should the CA not issue the certificate, exactly this request goes.
+                    if (-not $SelfSigned -and (Test-Path -Path $certCsr)) {
+                        $requestFileBase64 = (Get-Content -Path $certCsr | Where-Object { $PSItem -notmatch "^-----" }) -join ""
+                        $requestFileHex = [System.BitConverter]::ToString([System.Convert]::FromBase64String($requestFileBase64))
+                        $ownRequests = @(Get-ChildItem -Path Cert:\LocalMachine\REQUEST -ErrorAction SilentlyContinue | Where-Object { $requestFileHex.Contains([System.BitConverter]::ToString($PSItem.PublicKey.EncodedKeyValue.RawData)) } | ForEach-Object { $PSItem.Thumbprint })
+                    }
                 }
 
                 if ($SelfSigned) {
@@ -501,12 +510,8 @@ function New-DbaComputerCertificate {
                         # LocalMachine\REQUEST forever. They go with the failure.
                         # Other requests may have been created in the meantime by someone else, so only the request of this
                         # call goes: the one whose public key is in the request file certreq wrote. Every request has its own key.
-                        $pendingRequests = @()
-                        if (Test-Path -Path $certCsr) {
-                            $requestFileBase64 = (Get-Content -Path $certCsr | Where-Object { $PSItem -notmatch "^-----" }) -join ""
-                            $requestFileHex = [System.BitConverter]::ToString([System.Convert]::FromBase64String($requestFileBase64))
-                            $pendingRequests = @(Get-ChildItem -Path Cert:\LocalMachine\REQUEST -ErrorAction SilentlyContinue | Where-Object { $requestFileHex.Contains([System.BitConverter]::ToString($PSItem.PublicKey.EncodedKeyValue.RawData)) } | ForEach-Object { $PSItem.Thumbprint })
-                        }
+                        # The request was recorded right after certreq -new, not read back from the file now.
+                        $pendingRequests = @(Get-ChildItem -Path Cert:\LocalMachine\REQUEST -ErrorAction SilentlyContinue | Where-Object Thumbprint -in $ownRequests | ForEach-Object { $PSItem.Thumbprint })
                         foreach ($pendingRequest in $pendingRequests) {
                             Write-Message -Level Verbose -Message "Removing the pending request $pendingRequest and its key from LocalMachine\REQUEST"
                             $splatRemoveRequest = @{
@@ -522,6 +527,8 @@ function New-DbaComputerCertificate {
                                 Write-Message -Level Warning -Message "The pending request $pendingRequest could not be removed from LocalMachine\REQUEST: $PSItem"
                             }
                         }
+                        # The -Continue skips the removal of the request folder at the end, and every call has a folder of its own.
+                        Remove-Item -Path $certDir -Recurse -Force -ErrorAction SilentlyContinue
                         Stop-Function -Message "Failure when attempting to create the cert on $computer. $($submit | Select-Object -Last 1)" -Target $computer -Continue
                     }
 
@@ -582,12 +589,14 @@ function New-DbaComputerCertificate {
 
                 if ($PScmdlet.ShouldProcess($computer, "Attempting to import new cert")) {
                     if ($flags -contains "UserProtected" -and -not $computer.IsLocalHost) {
+                        Remove-Item -Path $certDir -Recurse -Force -ErrorAction SilentlyContinue
                         Stop-Function -Message "UserProtected flag is only valid for localhost because it causes a prompt, skipping for $computer" -Continue
                     }
                     try {
                         $thumbprint = (Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder, $flags -ScriptBlock $scriptBlock -ErrorAction Stop -Verbose).Thumbprint
                         Get-DbaComputerCertificate -ComputerName $computer -Credential $Credential -Thumbprint $thumbprint
                     } catch {
+                        Remove-Item -Path $certDir -Recurse -Force -ErrorAction SilentlyContinue
                         Stop-Function -Message "Issue importing new cert on $computer" -ErrorRecord $_ -Target $computer -Continue
                     }
                 }
