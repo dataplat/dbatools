@@ -51,17 +51,20 @@ function Connect-DbaInstance {
         Use this to distinguish dbatools sessions from other applications when analyzing connections in Profiler, Extended Events, or sys.dm_exec_sessions.
 
     .PARAMETER ConnectRetryCount
-        Sets the number of retries after an initial connection failure or a broken idle connection is detected. Valid values are 0 to 255; 0 disables connection retries.
+        Sets the number of retries after SqlClient classifies a connection failure as retryable or detects a broken idle connection. Valid values are 0 to 255; 0 disables connection retries.
+        When this parameter is omitted, SqlClient uses its endpoint default. Microsoft.Data.SqlClient 5.x and later default to 1 for non-Azure endpoints, 2 for Azure SQL, and 5 for Azure SQL serverless or on-demand endpoints.
         SQL Server 2014 and later and Azure SQL support restoring broken idle connections. Older SQL Server versions accept this client-side setting but cannot restore an idle session, so the driver disables that part of connection resiliency after login negotiation.
         This does not retry failed queries, deadlocks, command timeouts, or other errors that occur while a query is running.
 
     .PARAMETER ConnectRetryInterval
         Sets the number of seconds between connection retry attempts. Valid values are 1 to 60 seconds, and the setting is ignored when ConnectRetryCount is 0.
+        SqlClient defaults to 10 seconds when this parameter is omitted.
         Set ConnectTimeout high enough to allow the requested retry attempts and intervals to complete.
 
     .PARAMETER ConnectTimeout
         Sets the connection timeout in seconds before the connection attempt fails.
         Increase this for slow networks or busy servers, or decrease it for faster failure detection in automated scripts. Azure SQL Database connections typically need 30 seconds.
+        An explicit value of 0 is preserved and waits indefinitely.
         This controls opening the connection, including connection retry attempts. It does not control query execution; use Invoke-DbaQuery -QueryTimeout or this command's StatementTimeout for that.
 
     .PARAMETER EncryptConnection
@@ -730,11 +733,13 @@ function Connect-DbaInstance {
                 # Parameter TrustServerCertificate changes the connection string be allow connections to instances with the default self-signed certificate
                 if (Test-Bound -ParameterName 'TrustServerCertificate') {
                     Write-Message -Level Verbose -Message "Additional parameter TrustServerCertificate is passed in and will override other settings"
-                } elseif (Test-Bound -ParameterName $ignoredParameters, 'ApplicationIntent', 'StatementTimeout') {
+                }
+                $ignoredConnectionStringParameters = $ignoredParameters | Where-Object { $PSItem -ne "TrustServerCertificate" }
+                if (Test-Bound -ParameterName ($ignoredConnectionStringParameters + "ApplicationIntent", "StatementTimeout")) {
                     Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                 }
             } elseif ($inputObjectType -in 'SqlConnection' ) {
-                if (Test-Bound -ParameterName $ignoredParameters, 'ApplicationIntent', 'StatementTimeout', 'DedicatedAdminConnection') {
+                if (Test-Bound -ParameterName ($ignoredParameters + "ApplicationIntent", "StatementTimeout", "DedicatedAdminConnection")) {
                     Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                 }
             }
