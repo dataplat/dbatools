@@ -751,6 +751,519 @@ Describe "$ModuleName test file structure" -Tag Compliance {
     }
 }
 
+Describe "$ModuleName command structure" -Tag Compliance {
+    <#
+    The command invariants in CLAUDE.md that the AST can prove, checked over public\ and
+    private\functions\. Rule 1: a Stop-Function that can continue has a loop or switch to continue in
+    the same function or scriptblock. Rule 3: a begin block that can set the interrupt flag is followed
+    by if (Test-FunctionInterrupt) { return } as the first statement of process. The analyzer is in
+    dbatools.CommandStructure.ps1, its own fixtures are in the next Describe.
+    #>
+    BeforeAll {
+        $ModulePath = Split-Path $PSScriptRoot -Parent
+        . "$PSScriptRoot\dbatools.CommandStructure.ps1"
+        $stopFunctionParameter = Get-DbaStopFunctionParameterMap -Path "$ModulePath\private\functions\flowcontrol\Stop-Function.ps1"
+
+        # Helpers whose continue is meant to bind at run time to a loop of the command that calls them.
+        # Every call site sits inside a loop of that command, so the continue skips one item and does
+        # not escape the command (triaged in #10638). Each entry names the exact number of sites: a new
+        # site in the same helper, or one that is gone, fails the check until the entry is updated.
+        $dynamicContinueExceptions = @(
+            [PSCustomObject]@{
+                File     = "Backup-DbaDbCertificate.ps1"
+                Function = "export-cert"
+                Sites    = 3
+                Reason   = "called only inside the foreach over the certificates"
+            },
+            [PSCustomObject]@{
+                File     = "Copy-DbaSsisCatalog.ps1"
+                Function = "Invoke-ProjectDeployment"
+                Sites    = 2
+                Reason   = "called only inside the loops over the projects"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaAgentJobHistory.ps1"
+                Function = "Get-JobHistory"
+                Sites    = 1
+                Reason   = "all three call sites sit inside loops of the command"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaHelp.ps1"
+                Function = "Get-DbaHelp"
+                Sites    = 1
+                Reason   = "private; its only caller, Find-DbaCommand, runs it inside the foreach over all commands"
+            },
+            [PSCustomObject]@{
+                File     = "Import-DbaCsv.ps1"
+                Function = "New-SqlTable"
+                Sites    = 1
+                Reason   = "called only inside the loop over the files"
+            },
+            [PSCustomObject]@{
+                File     = "Import-DbaCsv.ps1"
+                Function = "New-SqlTableWithInferredSchema"
+                Sites    = 1
+                Reason   = "called only inside the loop over the files"
+            },
+            [PSCustomObject]@{
+                File     = "Import-DbaParquet.ps1"
+                Function = "New-SqlTable"
+                Sites    = 1
+                Reason   = "called only inside the loop over the files"
+            },
+            [PSCustomObject]@{
+                File     = "Import-DbaPfDataCollectorSetTemplate.ps1"
+                Function = "Import-DbaPfDataCollectorSetTemplate"
+                Sites    = 1
+                Reason   = "in the scriptblock that is invoked inside the loops over the computers and the files"
+            },
+            [PSCustomObject]@{
+                File     = "Invoke-DbaPfRelog.ps1"
+                Function = "Invoke-DbaPfRelog"
+                Sites    = 9
+                Reason   = "in the relog scriptblock that is invoked once per file inside the foreach; documented at the sites (#10643)"
+            },
+            [PSCustomObject]@{
+                File     = "Measure-DbaDiskSpaceRequirement.ps1"
+                Function = "Get-MountPointFromPath"
+                Sites    = 1
+                Reason   = "called only inside the loop over the rows"
+            },
+            [PSCustomObject]@{
+                File     = "Measure-DbaDiskSpaceRequirement.ps1"
+                Function = "Get-MountPointFromDefaultPath"
+                Sites    = 2
+                Reason   = "called only inside the loop over the rows"
+            }
+        )
+
+        $parseErrorFiles = @()
+        $functionFiles = Get-ChildItem -Path "$ModulePath\public", "$ModulePath\private\functions" -Filter "*.ps1" -Recurse | Sort-Object -Property Name
+        $allFindings = foreach ($functionFile in $functionFiles) {
+            $parseErrors = $null
+            $functionAst = [System.Management.Automation.Language.Parser]::ParseFile($functionFile.FullName, [ref]$null, [ref]$parseErrors)
+            if ($parseErrors) {
+                $parseErrorFiles += "$($functionFile.Name): $($parseErrors.Count) parse errors, first at line $($parseErrors[0].Extent.StartLineNumber)"
+                continue
+            }
+            Get-DbaCommandStructureFinding -Ast $functionAst -File $functionFile.Name -StopFunctionParameter $stopFunctionParameter
+        }
+
+        $formatFinding = {
+            param($Finding)
+            "$($Finding.File):$($Finding.Line) $($Finding.Function) - $($Finding.Message)"
+        }
+
+        $argumentFindings = @($allFindings | Where-Object Rule -eq "Arguments" | ForEach-Object { & $formatFinding $PSItem })
+        $guardFindings = @($allFindings | Where-Object Rule -eq "3" | ForEach-Object { & $formatFinding $PSItem })
+
+        $continueFindings = @()
+        $ruleOneFindings = @($allFindings | Where-Object Rule -eq "1")
+        foreach ($helperGroup in ($ruleOneFindings | Group-Object -Property File, Function)) {
+            $firstFinding = $helperGroup.Group[0]
+            $exception = $dynamicContinueExceptions | Where-Object { $PSItem.File -eq $firstFinding.File -and $PSItem.Function -eq $firstFinding.Function }
+            if (-not $exception) {
+                $continueFindings += $helperGroup.Group | ForEach-Object { & $formatFinding $PSItem }
+            } elseif ($exception.Sites -ne $helperGroup.Count) {
+                $continueFindings += "$($firstFinding.File) $($firstFinding.Function) - $($helperGroup.Count) dynamic continue sites, the exception list expects $($exception.Sites) (lines $($helperGroup.Group.Line -join ", "))"
+            }
+        }
+        foreach ($exception in $dynamicContinueExceptions) {
+            $matchingFindings = @($ruleOneFindings | Where-Object { $PSItem.File -eq $exception.File -and $PSItem.Function -eq $exception.Function })
+            if (-not $matchingFindings) {
+                $continueFindings += "$($exception.File) $($exception.Function) - the exception list expects $($exception.Sites) dynamic continue sites and there are none, remove the entry"
+            }
+        }
+    }
+
+    It "every command file can be parsed" {
+        $parseErrorFiles | Should -BeNullOrEmpty
+    }
+
+    It "every Stop-Function call binds its parameters" {
+        $argumentFindings | Should -BeNullOrEmpty -Because "a parameter that binds to nothing fails the call, and a switch the check cannot read cannot be checked"
+    }
+
+    It "every Stop-Function that can continue has a loop or switch to continue in the same function" {
+        $continueFindings | Should -BeNullOrEmpty -Because "without a local target the continue leaves the command and skips an item of the loop of the caller, or ends the whole calling script when a label matches nothing (CLAUDE.md, rule 1)"
+    }
+
+    It "every begin block that can set the interrupt flag is followed by the process guard" {
+        $guardFindings | Should -BeNullOrEmpty -Because "without the guard process runs on after begin stopped (CLAUDE.md, rule 3)"
+    }
+}
+
+Describe "$ModuleName command structure analyzer" -Tag Compliance {
+    <#
+    Fixtures for Get-DbaCommandStructureFinding: each case is a small function, parsed and checked the
+    same way as the commands, so a change to the analyzer that stops catching a case, or starts
+    reporting a correct one, fails here rather than silently in the command structure Describe.
+    #>
+    BeforeAll {
+        $ModulePath = Split-Path $PSScriptRoot -Parent
+        . "$PSScriptRoot\dbatools.CommandStructure.ps1"
+        $stopFunctionParameter = Get-DbaStopFunctionParameterMap -Path "$ModulePath\private\functions\flowcontrol\Stop-Function.ps1"
+
+        $findingsOf = {
+            param($Code, $Rule)
+            $fixtureAst = [System.Management.Automation.Language.Parser]::ParseInput($Code, [ref]$null, [ref]$null)
+            @(Get-DbaCommandStructureFinding -Ast $fixtureAst -File "fixture.ps1" -StopFunctionParameter $stopFunctionParameter | Where-Object Rule -eq $Rule)
+        }
+    }
+
+    Context "Rule 1, a local target for continue" {
+        It "reports -Continue without a loop, with the line and function" {
+            $code = @'
+function Get-Fixture {
+    process {
+        Stop-Function -Message "x" -Continue
+    }
+}
+'@
+            $findings = & $findingsOf $code "1"
+            $findings | Should -HaveCount 1
+            $findings[0].Line | Should -Be 3
+            $findings[0].Function | Should -Be "Get-Fixture"
+        }
+
+        It "accepts -Continue inside a foreach, a while and a switch" {
+            $code = @'
+function Get-Fixture {
+    process {
+        foreach ($item in $InputObject) { Stop-Function -Message "x" -Continue }
+        while ($true) { Stop-Function -Message "x" -Continue }
+        switch ($InputObject) { default { Stop-Function -Message "x" -Continue } }
+    }
+}
+'@
+            & $findingsOf $code "1" | Should -BeNullOrEmpty
+        }
+
+        It "reports -SilentlyContinue alone, which continues under EnableException" {
+            $code = @'
+function Get-Fixture {
+    process {
+        Stop-Function -Message "x" -SilentlyContinue
+    }
+}
+'@
+            & $findingsOf $code "1" | Should -HaveCount 1
+        }
+
+        It "accepts -Continue:`$false and reports -Continue:`$variable" {
+            $code = @'
+function Get-Fixture {
+    process {
+        Stop-Function -Message "x" -Continue:$false
+        Stop-Function -Message "x" -Continue:$shouldContinue
+    }
+}
+'@
+            $findings = & $findingsOf $code "1"
+            $findings | Should -HaveCount 1
+            $findings[0].Line | Should -Be 4
+        }
+
+        It "reads the switches from a splat assigned in the same function" {
+            $code = @'
+function Get-Fixture {
+    process {
+        $splatStop = @{
+            Message  = "x"
+            Continue = $true
+        }
+        Stop-Function @splatStop
+        $splatQuiet = @{
+            Message  = "x"
+            Continue = $false
+        }
+        Stop-Function @splatQuiet
+    }
+}
+'@
+            $findings = & $findingsOf $code "1"
+            $findings | Should -HaveCount 1
+            $findings[0].Line | Should -Be 7
+        }
+
+        It "reports a splat it cannot resolve, both as unresolved and as a possible continue" {
+            $code = @'
+function Get-Fixture {
+    param($SplatFromCaller)
+    process {
+        Stop-Function @SplatFromCaller
+    }
+}
+'@
+            & $findingsOf $code "Arguments" | Should -HaveCount 1
+            & $findingsOf $code "1" | Should -HaveCount 1
+        }
+
+        It "accepts a label that names an enclosing loop and reports one that does not" {
+            $code = @'
+function Get-Fixture {
+    process {
+        :main foreach ($instance in $SqlInstance) {
+            foreach ($database in $Database) {
+                Stop-Function -Message "x" -Continue -ContinueLabel main
+                Stop-Function -Message "x" -Continue -ContinueLabel other
+            }
+        }
+    }
+}
+'@
+            $findings = & $findingsOf $code "1"
+            $findings | Should -HaveCount 1
+            $findings[0].Line | Should -Be 6
+        }
+
+        It "reports a label that cannot be read statically" {
+            $code = @'
+function Get-Fixture {
+    process {
+        :main foreach ($instance in $SqlInstance) {
+            Stop-Function -Message "x" -Continue -ContinueLabel $labelName
+        }
+    }
+}
+'@
+            & $findingsOf $code "1" | Should -HaveCount 1
+        }
+
+        It "reports a nested helper even when a loop surrounds its definition or its call" {
+            $code = @'
+function Get-Fixture {
+    process {
+        foreach ($item in $InputObject) {
+            function Invoke-Helper {
+                Stop-Function -Message "x" -Continue
+            }
+            Invoke-Helper
+        }
+    }
+}
+'@
+            $findings = & $findingsOf $code "1"
+            $findings | Should -HaveCount 1
+            $findings[0].Function | Should -Be "Invoke-Helper"
+        }
+
+        It "reports a callback that relies on a loop outside it, and accepts one with its own loop" {
+            $code = @'
+function Get-Fixture {
+    process {
+        foreach ($item in $InputObject) {
+            $item | ForEach-Object { Stop-Function -Message "x" -Continue }
+            $item | ForEach-Object { foreach ($part in $PSItem) { Stop-Function -Message "x" -Continue } }
+        }
+    }
+}
+'@
+            $findings = & $findingsOf $code "1"
+            $findings | Should -HaveCount 1
+            $findings[0].Line | Should -Be 4
+        }
+
+        It "resolves aliases and unique prefixes and reports a parameter that binds to nothing" {
+            $code = @'
+function Get-Fixture {
+    process {
+        foreach ($item in $InputObject) {
+            Stop-Function -Message "x" -InnerErrorRecord $PSItem -Continue
+            Stop-Function -Message "x" -Error $PSItem -Continue
+            Stop-Function -Message "x" -ErroRecord $PSItem -Continue
+        }
+        Stop-Function -Message "x" -Silent
+    }
+}
+'@
+            $argumentFindings = & $findingsOf $code "Arguments"
+            $argumentFindings | Should -HaveCount 1
+            $argumentFindings[0].Line | Should -Be 6
+            $continueFindings = & $findingsOf $code "1"
+            $continueFindings | Should -HaveCount 1
+            $continueFindings[0].Line | Should -Be 8
+        }
+
+        It "reads -EnableException as a value, so the next argument is not taken for a switch" {
+            $code = @'
+function Get-Fixture {
+    process {
+        Stop-Function -Message "x" -EnableException $true
+        return
+    }
+}
+'@
+            & $findingsOf $code "1" | Should -BeNullOrEmpty
+            & $findingsOf $code "Arguments" | Should -BeNullOrEmpty
+        }
+
+        It "matches parameter names without regard to case" {
+            $code = @'
+function Get-Fixture {
+    process {
+        stop-function -message "x" -continue
+    }
+}
+'@
+            & $findingsOf $code "Arguments" | Should -BeNullOrEmpty
+            & $findingsOf $code "1" | Should -HaveCount 1
+        }
+    }
+
+    Context "Rule 3, the process guard after a begin block that can stop" {
+        It "accepts a begin stop followed by the guard as the first statement of process" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x"
+        return
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+        "work"
+    }
+}
+'@
+            & $findingsOf $code "3" | Should -BeNullOrEmpty
+        }
+
+        It "reports a missing guard" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x"
+        return
+    }
+    process {
+        "work"
+    }
+}
+'@
+            $findings = & $findingsOf $code "3"
+            $findings | Should -HaveCount 1
+            $findings[0].Line | Should -Be 6
+            $findings[0].Message | Should -BeLike "*does not start with*"
+        }
+
+        It "reports a guard that is not the first statement" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x"
+    }
+    process {
+        "work"
+        if (Test-FunctionInterrupt) { return }
+    }
+}
+'@
+            $findings = & $findingsOf $code "3"
+            $findings | Should -HaveCount 1
+            $findings[0].Message | Should -BeLike "*not the first statement*"
+        }
+
+        It "requires the guard for -SilentlyContinue alone, which sets the flag in the default mode" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x" -SilentlyContinue
+    }
+    process {
+        "work"
+    }
+}
+'@
+            & $findingsOf $code "3" | Should -HaveCount 1
+        }
+
+        It "does not require the guard for -Continue, which never sets the flag without throwing" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        foreach ($item in $Path) { Stop-Function -Message "x" -Continue }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            & $findingsOf $code "3" | Should -BeNullOrEmpty
+        }
+
+        It "does not count a helper function or a scriptblock run in a new scope" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        function Invoke-Helper { Stop-Function -Message "x" }
+        & { Stop-Function -Message "x" }
+        Invoke-Command -ScriptBlock { Stop-Function -Message "x" }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            & $findingsOf $code "3" | Should -BeNullOrEmpty
+        }
+
+        It "counts a dot-sourced scriptblock and a ForEach-Object callback, which run in the command scope" {
+            $dotSourced = @'
+function Get-Fixture {
+    begin {
+        . { Stop-Function -Message "x" }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            $callback = @'
+function Get-Fixture {
+    begin {
+        $Path | ForEach-Object { Stop-Function -Message "x" }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            & $findingsOf $dotSourced "3" | Should -HaveCount 1
+            & $findingsOf $callback "3" | Should -HaveCount 1
+        }
+
+        It "reports a scriptblock it cannot place for review instead of treating it as safe" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        $null = Register-EngineEvent -SourceIdentifier Fixture -Action { Stop-Function -Message "x" }
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+    }
+}
+'@
+            $findings = & $findingsOf $code "3"
+            $findings | Should -HaveCount 1
+            $findings[0].Message | Should -BeLike "*cannot determine*"
+        }
+
+        It "reports a begin block that can stop when there is no process block to guard" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x"
+    }
+    end {
+        "work"
+    }
+}
+'@
+            & $findingsOf $code "3" | Should -HaveCount 1
+        }
+    }
+}
+
 # test the module manifest - exports the right functions, processes the right formats, and is generally correct
 <#
 Describe "Manifest" {
