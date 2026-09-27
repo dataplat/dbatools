@@ -27,7 +27,9 @@
 #                     loop. The counter stays armed until the violation clears.
 #
 # Marker and counter files are keyed per hook per transcript and auto-clean
-# after an hour (stale sessions).
+# after a day (stale sessions). The age is measured from the file's last
+# write, and a once-per-session marker is written only once, so the limit
+# must outlast the longest session or the marker of a running session goes.
 
 if [[ -n "${_LIB_STOP_GUARD_LOADED:-}" ]]; then
     return 0
@@ -106,5 +108,6 @@ else
     touch "$_MARKER_FILE" 2>/dev/null
 fi
 
-# Clean up markers older than 1 hour (stale sessions)
-find "$_MARKER_DIR" -type f -mmin +60 -delete 2>/dev/null
+# Clean up markers older than 1 day (stale sessions). One hour deleted the
+# stop-verify done marker and the streak counters of sessions still running.
+find "$_MARKER_DIR" -type f -mmin +1440 -delete 2>/dev/null

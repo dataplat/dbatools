@@ -124,7 +124,7 @@ function Set-DbaSpConfigure {
                 Stop-Function -Message "Value out of range for $configuration ($minValue <-> $maxValue)" -Continue -Category InvalidArgument
             }
 
-            If ($Pscmdlet.ShouldProcess($SqlInstance, "Adjusting server configuration $configuration from $currentConfigValue to $value.")) {
+            If ($Pscmdlet.ShouldProcess($server, "Adjusting server configuration $configuration from $currentConfigValue to $value.")) {
                 try {
                     $configobject.Property.ConfigValue = $value
                     $server.Configuration.Alter()
@@ -140,10 +140,13 @@ function Set-DbaSpConfigure {
 
                     #If it's a dynamic setting we're all clear, otherwise let the user know that SQL needs to be restarted for the change to take
                     if ($isDynamic -eq $false) {
-                        Write-Message -Level Warning -Message "Configuration setting $configuration has been set, but restart of SQL Server is required for the new value `"$value`" to be used (old value: `"$currentRunValue`")" -Target $Instance
+                        Write-Message -Level Warning -Message "Configuration setting $configuration has been set, but restart of SQL Server is required for the new value `"$value`" to be used (old value: `"$currentRunValue`")" -Target $server
                     }
                 } catch {
-                    Stop-Function -Message "Unable to change config setting" -Target $Instance -ErrorRecord $_ -Continue -ContinueLabel main
+                    # The failed value would otherwise stay pending on the server object and be sent again by the
+                    # next Alter() for another configuration of the same server.
+                    $configobject.Property.ConfigValue = $currentConfigValue
+                    Stop-Function -Message "Unable to change config setting" -Target $server -ErrorRecord $_ -Continue
                 }
             }
         }

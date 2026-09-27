@@ -95,4 +95,69 @@ Describe $CommandName -Tag IntegrationTests {
             Get-ChildItem -Path $missingExportPath -Filter "*.sqlplan" | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "When the plan query is refused" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # A login without VIEW SERVER STATE connects, and the query on sys.dm_exec_query_stats fails on the server.
+            $loginName = "dbatoolsci_execplan_$(Get-Random)"
+            $splatPassword = @{
+                String      = "dbatools.IO$(Get-Random)!"
+                AsPlainText = $true
+                Force       = $true
+            }
+            $securePassword = ConvertTo-SecureString @splatPassword
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $loginName -SecurePassword $securePassword
+            $lowCredential = New-Object System.Management.Automation.PSCredential ($loginName, $securePassword)
+            $refusedExportPath = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_execplan_$(Get-Random)"
+            $null = New-Item -ItemType Directory -Path $refusedExportPath
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $loginName -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path $refusedExportPath -Recurse -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Warns instead of failing on its own error handling" {
+            # The catch passed -ErroRecord, a parameter Stop-Function does not have, so the call failed with a
+            # parameter binding error instead of warning.
+            $results = Export-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -SqlCredential $lowCredential -Path $refusedExportPath -WarningAction SilentlyContinue
+            $results | Should -BeNullOrEmpty
+            $WarnVar | Should -BeLike "*Issue collecting execution plans*"
+        }
+    }
+
+    Context "When several plans are passed to -InputObject" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $inputExportPath = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_execplan_$(Get-Random)"
+            $null = New-Item -ItemType Directory -Path $inputExportPath
+            foreach ($i in 1..2) {
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query "SELECT 1 AS dbatoolsci_plan_probe_one"
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query "SELECT 2 AS dbatoolsci_plan_probe_two"
+            }
+            $plans = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Select-Object -First 2)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            Remove-Item -Path $inputExportPath -Recurse -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Exports every plan, not only the first" {
+            # The return sat inside the loop over -InputObject, so only the first plan was exported.
+            $plans | Should -HaveCount 2
+            $results = Export-DbaExecutionPlan -InputObject $plans -Path $inputExportPath
+            $results | Should -HaveCount 2
+        }
+    }
 }
