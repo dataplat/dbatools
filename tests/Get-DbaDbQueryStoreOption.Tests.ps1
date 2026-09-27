@@ -23,9 +23,9 @@ Describe $CommandName -Tag UnitTests {
 }
 Describe $CommandName -Tag IntegrationTests {
     BeforeDiscovery {
-        # MAX_PLANS_PER_QUERY arrived with SQL Server 2017, so the scenario below cannot be built before
-        # that. The value decides a Skip, which Pester needs while it discovers the tests, so it cannot be
-        # read in BeforeAll.
+        # MAX_PLANS_PER_QUERY exists from SQL Server 2016 on, WAIT_STATS_CAPTURE_MODE only from 2017 on, so
+        # the tests below are split by that. The value decides a Skip, which Pester needs while it discovers
+        # the tests, so it cannot be read in BeforeAll.
         $discoveryServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
         $instanceVersionMajor = $discoveryServer.VersionMajor
         $null = $discoveryServer | Disconnect-DbaInstance
@@ -94,7 +94,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "When a value is available from SMO" -Skip:($instanceVersionMajor -lt 14) {
+    Context "When a value is available from SMO" -Skip:($instanceVersionMajor -lt 13) {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
@@ -104,19 +104,26 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "Leaves MaxPlansPerQuery and WaitStatsCaptureMode as the properties of the SMO object" {
-            # Both are real properties of QueryStoreOptions. Adding them with Add-Member replaces the
-            # property with a note property on the object of the caller - one that keeps its value even
-            # after the object is refreshed - so only values SMO does not carry may be added that way.
-            # See #10562. This guards the rule rather than a fix: on SQL Server 2019 and later the two
-            # were queried and then discarded, so nothing observable changed there. It is SQL Server 2017
-            # where they used to be added over the real property, and the lab has no 2017 instance.
+        It "Leaves MaxPlansPerQuery as the property of the SMO object" {
+            # MaxPlansPerQuery and WaitStatsCaptureMode are real properties of QueryStoreOptions. Adding them
+            # with Add-Member replaces the property with a note property on the object of the caller - one that
+            # keeps its value even after the object is refreshed - so only values SMO does not carry may be
+            # added that way. See #10562. This guards the rule rather than a fix: on SQL Server 2019 and later
+            # the two were queried and then discarded, so nothing observable changed there. It is SQL Server
+            # 2017 where they used to be added over the real property, and the lab has no 2017 instance.
+            # SMO reads MaxPlansPerQuery from SQL Server 2016 on, like the engine.
             (Get-Member -InputObject $resultsFromSmo -Name MaxPlansPerQuery).MemberType | Should -Be "Property"
+        }
+
+        It "Still reports MaxPlansPerQuery" {
+            $resultsFromSmo.MaxPlansPerQuery | Should -Not -BeNullOrEmpty
+        }
+
+        It "Leaves WaitStatsCaptureMode as the property of the SMO object" -Skip:($instanceVersionMajor -lt 14) {
             (Get-Member -InputObject $resultsFromSmo -Name WaitStatsCaptureMode).MemberType | Should -Be "Property"
         }
 
-        It "Still reports both of them" {
-            $resultsFromSmo.MaxPlansPerQuery | Should -Not -BeNullOrEmpty
+        It "Still reports WaitStatsCaptureMode" -Skip:($instanceVersionMajor -lt 14) {
             $resultsFromSmo.WaitStatsCaptureMode | Should -Not -BeNullOrEmpty
         }
 
@@ -147,8 +154,10 @@ Describe $CommandName -Tag IntegrationTests {
                 "SizeBasedCleanupMode",
                 "StaleQueryThresholdInDays"
             )
+            $maxPlansColumns = @(
+                "MaxPlansPerQuery"
+            )
             $waitStatsColumns = @(
-                "MaxPlansPerQuery",
                 "WaitStatsCaptureMode"
             )
             $customCapturePolicyColumns = @(
@@ -161,8 +170,11 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Shows the same columns for the version as before the feature rules took over" {
             # Written out by version here on purpose, so that a wrong feature rule changes the output and fails.
-            # See #10600.
+            # See #10600. MaxPlansPerQuery is shown from SQL Server 2016 on, WaitStatsCaptureMode from 2017 on.
             $expectedColumns = $baseColumns
+            if ($serverSingle.VersionMajor -ge 13) {
+                $expectedColumns += $maxPlansColumns
+            }
             if ($serverSingle.VersionMajor -ge 14) {
                 $expectedColumns += $waitStatsColumns
             }

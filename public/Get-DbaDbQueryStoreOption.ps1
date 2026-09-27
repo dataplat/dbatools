@@ -24,9 +24,9 @@ function Get-DbaDbQueryStoreOption {
         - QueryCaptureMode: Query capture mode (All, Auto, None, or Custom)
         - SizeBasedCleanupMode: Cleanup mode when max storage is exceeded (Off, Auto)
         - StaleQueryThresholdInDays: Number of days after which a query is considered stale for cleanup
+        - MaxPlansPerQuery: Maximum number of plans tracked per query
 
         Additional properties for SQL Server 2017 (v14) and later:
-        - MaxPlansPerQuery: Maximum number of plans tracked per query
         - WaitStatsCaptureMode: Wait statistics capture mode (Off, On)
 
         Additional properties for SQL Server 2019 (v15) and later:

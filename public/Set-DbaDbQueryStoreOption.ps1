@@ -61,7 +61,7 @@ function Set-DbaDbQueryStoreOption {
         Set to 30-90 days for most environments; longer retention helps with historical analysis but consumes more space, shorter retention frees space faster.
 
     .PARAMETER MaxPlansPerQuery
-        Limits how many execution plans Query Store retains for each individual query. Default is 200 plans per query (SQL Server 2017+).
+        Limits how many execution plans Query Store retains for each individual query. Default is 200 plans per query.
         Higher values help track plan variations in dynamic environments but consume more space; lower values reduce storage but may miss important plan changes.
 
     .PARAMETER WaitStatsCaptureMode
@@ -128,9 +128,9 @@ function Set-DbaDbQueryStoreOption {
         - QueryCaptureMode: Query capture mode (All, Auto, None, or Custom)
         - SizeBasedCleanupMode: Cleanup mode when max storage is exceeded (Off, Auto)
         - StaleQueryThresholdInDays: Number of days after which a query is considered stale for cleanup
+        - MaxPlansPerQuery: Maximum number of plans tracked per query
 
         Additional properties for SQL Server 2017 (v14) and later:
-        - MaxPlansPerQuery: Maximum number of plans tracked per query
         - WaitStatsCaptureMode: Wait statistics capture mode (Off, On)
 
         Additional properties for SQL Server 2019 (v15) and later:

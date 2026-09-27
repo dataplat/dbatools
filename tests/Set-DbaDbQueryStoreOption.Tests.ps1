@@ -38,8 +38,8 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag IntegrationTests {
     BeforeDiscovery {
-        # MaxPlansPerQuery and WaitStatsCaptureMode arrived with SQL Server 2017. The value decides a
-        # Skip, which Pester needs while it discovers the tests, so it cannot be read in BeforeAll.
+        # MaxPlansPerQuery exists from SQL Server 2016 on, WaitStatsCaptureMode only from 2017 on. The value
+        # decides a Skip, which Pester needs while it discovers the tests, so it cannot be read in BeforeAll.
         $discoveryServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
         $multi1VersionMajor = $discoveryServer.VersionMajor
         $null = $discoveryServer | Disconnect-DbaInstance
@@ -153,7 +153,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "When an option is changed that needs T-SQL" -Skip:($multi1VersionMajor -lt 14) {
+    Context "When an option is changed that needs T-SQL" -Skip:($multi1VersionMajor -lt 13) {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
@@ -169,7 +169,17 @@ Describe $CommandName -Tag IntegrationTests {
 
             # MaxPlansPerQuery and WaitStatsCaptureMode are changed with ALTER DATABASE rather than through
             # SMO, so the SMO object knows nothing about it and still holds what it read before. See #10561.
-            $resultsRefresh = Set-DbaDbQueryStoreOption -SqlInstance $refreshServer -Database $refreshDbName -MaxPlansPerQuery 555 -WaitStatsCaptureMode Off
+            # WaitStatsCaptureMode is only passed where the engine has it, so that SQL Server 2016 proves that
+            # MaxPlansPerQuery is applied on its own.
+            $splatRefresh = @{
+                SqlInstance      = $refreshServer
+                Database         = $refreshDbName
+                MaxPlansPerQuery = 555
+            }
+            if ($multi1VersionMajor -ge 14) {
+                $splatRefresh.WaitStatsCaptureMode = "Off"
+            }
+            $resultsRefresh = Set-DbaDbQueryStoreOption @splatRefresh
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
@@ -182,8 +192,11 @@ Describe $CommandName -Tag IntegrationTests {
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "Returns the values it has just set" {
+        It "Returns the value of MaxPlansPerQuery it has just set" {
             $resultsRefresh.MaxPlansPerQuery | Should -Be 555
+        }
+
+        It "Returns the value of WaitStatsCaptureMode it has just set" -Skip:($multi1VersionMajor -lt 14) {
             $resultsRefresh.WaitStatsCaptureMode | Should -Be "Off"
         }
 
