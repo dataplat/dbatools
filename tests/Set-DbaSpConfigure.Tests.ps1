@@ -59,4 +59,51 @@ Describe $CommandName -Tag IntegrationTests {
             $warning -match "existing" | Should -Be $true
         }
     }
+
+    Context "When the change is refused" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # A login without ALTER SETTINGS can read the configuration, and its Alter() fails on the server.
+            $loginName = "dbatoolsci_spconfig_$(Get-Random)"
+            $splatPassword = @{
+                String      = "dbatools.IO$(Get-Random)!"
+                AsPlainText = $true
+                Force       = $true
+            }
+            $securePassword = ConvertTo-SecureString @splatPassword
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $loginName -SecurePassword $securePassword
+            $lowCredential = New-Object System.Management.Automation.PSCredential ($loginName, $securePassword)
+            $originalTimeout = (Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Name RemoteQueryTimeout).ConfiguredValue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $loginName -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        # The catch used Stop-Function -Continue -ContinueLabel main, and no loop of the command carries that
+        # label. A labeled continue that matches no loop leaves the command and ends the whole calling script.
+        It "Warns without ending the caller loop" {
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = Set-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -SqlCredential $lowCredential -Name RemoteQueryTimeout -Value ($originalTimeout + 1) -WarningAction SilentlyContinue
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*Unable to change config setting*"
+            (Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -Name RemoteQueryTimeout).ConfiguredValue | Should -Be $originalTimeout
+        }
+
+        It "Leaves no refused value pending on the configuration object" {
+            $configObject = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -SqlCredential $lowCredential -Name RemoteQueryTimeout
+            $null = $configObject | Set-DbaSpConfigure -Value ($originalTimeout + 1) -WarningAction SilentlyContinue
+            $configObject.Property.ConfigValue | Should -Be $originalTimeout
+        }
+    }
 }
