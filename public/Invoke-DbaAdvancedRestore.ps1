@@ -322,6 +322,7 @@ function Invoke-DbaAdvancedRestore {
         $internalHistory = @()
     }
     process {
+        if (Test-FunctionInterrupt) { return }
         foreach ($bh in $BackupHistory) {
             $internalHistory += $bh
         }
