@@ -56,11 +56,20 @@ Describe $CommandName -Tag IntegrationTests {
             # That import must not apply the persisted values again, because the configuration is shared by the whole process.
             $configName = "dbatoolsci.test.persisted$(Get-Random)"
             $null = Set-DbatoolsConfig -FullName $configName -Value "persisted"
-            Register-DbatoolsConfig -FullName $configName -Scope UserDefault
+            # FileUserLocal on every platform. UserDefault is the registry on Windows, and Register-DbatoolsConfig
+            # turns it into FileUserLocal elsewhere while Unregister-DbatoolsConfig refuses it there, so the value
+            # stayed in the psf_config.json of the user after every run on Linux and macOS.
+            Register-DbatoolsConfig -FullName $configName -Scope FileUserLocal
         }
 
         AfterAll {
-            Unregister-DbatoolsConfig -FullName $configName -Scope UserDefault
+            Unregister-DbatoolsConfig -FullName $configName -Scope FileUserLocal
+
+            # A value left behind would be loaded by every later process of this user, so this fails the run.
+            $userConfigFile = Join-Path -Path (& (Get-Module dbatools) { $script:path_FileUserLocal }) -ChildPath "psf_config.json"
+            if ((Test-Path -Path $userConfigFile) -and (Select-String -Path $userConfigFile -Pattern $configName -SimpleMatch -Quiet)) {
+                throw "$configName is still persisted in $userConfigFile"
+            }
         }
 
         It "keeps the value set in the session" {
