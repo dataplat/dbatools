@@ -822,18 +822,6 @@ Describe "$ModuleName command structure" -Tag Compliance {
                 Function = "Invoke-DbaPfRelog"
                 Sites    = 9
                 Reason   = "in the relog scriptblock that is invoked once per file inside the foreach; documented at the sites (#10643)"
-            },
-            [PSCustomObject]@{
-                File     = "Measure-DbaDiskSpaceRequirement.ps1"
-                Function = "Get-MountPointFromPath"
-                Sites    = 1
-                Reason   = "called only inside the loop over the rows"
-            },
-            [PSCustomObject]@{
-                File     = "Measure-DbaDiskSpaceRequirement.ps1"
-                Function = "Get-MountPointFromDefaultPath"
-                Sites    = 2
-                Reason   = "called only inside the loop over the rows"
             }
         )
 
