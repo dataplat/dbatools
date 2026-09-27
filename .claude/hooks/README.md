@@ -27,8 +27,8 @@ bash .claude/hooks/hooks-doctor.sh
 | After Write/Edit | `post-write-track-session-files.sh` | records this session's writes (scopes the review gates) and snapshots the just-written content (the "current" side of the isolated diff) | JSON tool* |
 | Session start (compact/resume) | `session-compact-reset-reads.sh` | resets the Read tracker after compaction | JSON tool* |
 | Stop (turn end) | `stop-registration-check.sh` | new `public/*.ps1` must be registered in dbatools.psd1 AND dbatools.psm1 | git |
-| Stop | `stop-todo-report.sh` | TODO/FIXME/HACK in changed files must be resolved or explained | git |
-| Stop | `stop-no-deflection.sh` | blocks blame-dodging language ("pre-existing", "out of scope"...) | JSON tool* |
+| Stop | `stop-todo-report.sh` | `TODO:`/`FIXME:`/`HACK:` in lines added to changed files must be resolved or explained | git |
+| Stop | `stop-no-deflection.sh` | blocks blame-dodging language ("out of scope", "not my responsibility"...) | JSON tool* |
 | Stop | `stop-verify.sh` | one self-verification checklist round per session when `.ps1` changed | git |
 | Stop | `stop-codex-review.sh` | external codex review of this session's diff; blocks until `VERDICT: CLEAN` | codex CLI |
 
