@@ -143,7 +143,15 @@ function Measure-DbaDiskSpaceRequirement {
                 $computerName,
                 [PSCredential]$credential
             )
-            Get-DbaCmObject -Class Win32_MountPoint -ComputerName $computerName -Credential $credential | Select-Object @{n = 'Mountpoint'; e = { $_.Directory.split('=')[1].Replace('"', '').Replace('\\', '\') } }
+            # EnableException, so that a computer that cannot be queried reaches the catch of the callers, which
+            # cache "?" for it. Without it the failure only warned and cached nothing usable.
+            $splatMountPoint = @{
+                Class           = "Win32_MountPoint"
+                ComputerName    = $computerName
+                Credential      = $credential
+                EnableException = $true
+            }
+            Get-DbaCmObject @splatMountPoint | Select-Object @{n = "Mountpoint"; e = { $_.Directory.split("=")[1].Replace("`"", "").Replace("\\", "\") } }
         }
         function Get-MountPointFromPath {
             [CmdletBinding()]
@@ -154,14 +162,18 @@ function Measure-DbaDiskSpaceRequirement {
                 $computerName,
                 [PSCredential]$credential
             )
-            if (!$cacheMP[$computerName]) {
+            # ContainsKey, not the value: a computer without mount points caches an empty result, which must not
+            # make the next row query it again.
+            if (-not $cacheMP.ContainsKey($computerName)) {
                 try {
-                    $cacheMP.Add($computerName, (Get-MountPoint -computerName $computerName -credential $credential))
+                    $cacheMP[$computerName] = Get-MountPoint -computerName $computerName -credential $credential
                     Write-Message -Level Verbose -Message "cacheMP[$computerName] is now cached"
                 } catch {
                     # This way, I won't be asking again for this computer.
-                    $cacheMP.Add($computerName, '?')
-                    Stop-Function -Message "Can't connect to $computerName. cacheMP[$computerName] = ?" -ErrorRecord $_ -Target $computerName -Continue
+                    $cacheMP[$computerName] = "?"
+                    # A warning, not Stop-Function -Continue: the continue escaped this helper and skipped the row
+                    # of the caller, so the "?" below was never returned.
+                    Write-Message -Level Warning -Message "Can't connect to $computerName. cacheMP[$computerName] = ?" -ErrorRecord $_ -Target $computerName
                 }
             }
             if ($cacheMP[$computerName] -eq '?') {
@@ -187,14 +199,16 @@ function Measure-DbaDiskSpaceRequirement {
                 $computerName,
                 [PSCredential]$Credential
             )
-            if (!$cacheDP[$SqlInstance]) {
+            if (-not $cacheDP.ContainsKey($SqlInstance)) {
                 try {
-                    $cacheDP.Add($SqlInstance, (Get-DbaDefaultPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -EnableException))
+                    $cacheDP[$SqlInstance] = Get-DbaDefaultPath -SqlInstance $SqlInstance -SqlCredential $SqlCredential -EnableException
                     Write-Message -Level Verbose -Message "cacheDP[$SqlInstance] is now cached"
                 } catch {
-                    Stop-Function -Message "Can't connect to $SqlInstance" -Continue
-                    $cacheDP.Add($SqlInstance, '?')
-                    return '?'
+                    # A warning, not Stop-Function -Continue: the continue escaped this helper and skipped the row of
+                    # the caller, so the two lines after it never ran and every row tried to connect again.
+                    Write-Message -Level Warning -Message "Can't connect to $SqlInstance" -ErrorRecord $_ -Target $SqlInstance
+                    $cacheDP[$SqlInstance] = "?"
+                    return "?"
                 }
             }
             if ($cacheDP[$SqlInstance] -eq '?') {
@@ -203,14 +217,17 @@ function Measure-DbaDiskSpaceRequirement {
             if (!$computerName) {
                 $computerName = $cacheDP[$SqlInstance].ComputerName
             }
-            if (!$cacheMP[$computerName]) {
+            if (-not $cacheMP.ContainsKey($computerName)) {
                 try {
-                    $cacheMP.Add($computerName, (Get-MountPoint -computerName $computerName -Credential $Credential))
+                    $cacheMP[$computerName] = Get-MountPoint -computerName $computerName -Credential $Credential
                 } catch {
-                    Stop-Function -Message "Can't connect to $computerName." -Continue
-                    $cacheMP.Add($computerName, '?')
-                    return '?'
+                    Write-Message -Level Warning -Message "Can't connect to $computerName." -ErrorRecord $_ -Target $computerName
+                    $cacheMP[$computerName] = "?"
                 }
+            }
+            # Also when an earlier row cached the failure.
+            if ($cacheMP[$computerName] -eq "?") {
+                return "?"
             }
             if ($DefaultPathType -eq 'Log') {
                 $path = $cacheDP[$SqlInstance].Log
@@ -245,8 +262,11 @@ function Measure-DbaDiskSpaceRequirement {
         Write-Message -Level Verbose -Message "$Source.[$Database] -> $Destination.[$DestinationDatabase]"
 
         $sourceDb = Get-DbaDatabase -SqlInstance $sourceServer -Database $Database -SqlCredential $SourceSqlCredential
-        if (Test-Bound 'Database' -not) {
-            Stop-Function -Message "Database [$Database] MUST exist on Source Instance $Source."
+        # -Database is mandatory, so the former check (Test-Bound Database -not) never fired and a missing source
+        # database quietly produced no rows, or only the rows of files that exist on the destination.
+        if (-not $sourceDb) {
+            Stop-Function -Message "Database [$Database] MUST exist on Source Instance $Source." -Target $Source
+            return
         }
         $sourceFiles = @($sourceDb.FileGroups.Files | Select-Object Name, FileName, Size, @{n = 'Type'; e = { 'Data' } })
         $sourceFiles += @($sourceDb.LogFiles | Select-Object Name, FileName, Size, @{n = 'Type'; e = { 'Log' } })
@@ -288,6 +308,13 @@ function Measure-DbaDiskSpaceRequirement {
             }
             if (!$found) {
                 # Files on source but not on destination
+                $splatDefaultPath = @{
+                    DefaultPathType = $sourceFile.Type
+                    SqlInstance     = $Destination
+                    SqlCredential   = $DestinationSqlCredential
+                    computerName    = $computerName
+                    credential      = $Credential
+                }
                 [PSCustomObject]@{
                     SourceComputerName      = $sourceServer.ComputerName
                     SourceInstance          = $sourceServer.ServiceName
@@ -304,8 +331,7 @@ function Measure-DbaDiskSpaceRequirement {
                     DestinationFileName     = $null
                     DestinationFileSize     = [DbaSize]0
                     DifferenceSize          = [DbaSize]($sourceFile.Size * 1000)
-                    MountPoint              = Get-MountPointFromDefaultPath -DefaultPathType $sourceFile.Type -SqlInstance $Destination `
-                        -SqlCredential $DestinationSqlCredential -computerName $computerName -credential $Credential
+                    MountPoint              = Get-MountPointFromDefaultPath @splatDefaultPath
                     FileLocation            = 'Only on Source'
                 } | Select-DefaultView -ExcludeProperty SourceComputerName, SourceInstance, DestinationInstance, DestinationLogicalName
             }
@@ -327,7 +353,7 @@ function Measure-DbaDiskSpaceRequirement {
                     SourceFileSize          = [DbaSize]0
                     DestinationDatabaseName = $destDb.Name
                     DestinationLogicalName  = $destFileNotSource.Name
-                    DestinationFileName     = $destFile.FileName
+                    DestinationFileName     = $destFileNotSource.FileName
                     DestinationFileSize     = [DbaSize]($destFileNotSource.Size * 1000) * -1
                     DifferenceSize          = [DbaSize]($destFileNotSource.Size * 1000) * -1
                     MountPoint              = Get-MountPointFromPath -Path $destFileNotSource.Filename -ComputerName $computerName -Credential $Credential
