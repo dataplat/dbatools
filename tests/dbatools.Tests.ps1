@@ -284,6 +284,85 @@ Get-Content -Path $ResultPath -ErrorAction SilentlyContinue | ForEach-Object { "
     }
 }
 
+Describe "$ModuleName maintenance task tempcleanup" -Tag UnitTests {
+    <#
+    The task runs one minute after every import, in every process, and removes dbatools* items from the temp folder.
+    Items that are still in use by a running command or test of any process must survive it, and so must the export
+    folder that falls back to the temp folder when the account has no Documents folder.
+
+    A fresh PowerShell points TEMP at a probe folder and runs the registered task there, so the real temp folder
+    and the maintenance task of this process stay out of it. The probe folder must not be named dbatools* itself.
+    #>
+    BeforeAll {
+        $ModulePath = Split-Path $PSScriptRoot -Parent
+
+        $cleanupProbePath = Join-Path ([System.IO.Path]::GetTempPath()) "tempcleanup_dbatoolsci_$(Get-Random)"
+        $null = New-Item -Path $cleanupProbePath -ItemType Directory
+        $cleanupStaleTime = (Get-Date).AddDays(-2)
+
+        $freshFolder = New-Item -Path (Join-Path $cleanupProbePath "dbatools-fresh-folder") -ItemType Directory
+        $null = New-Item -Path (Join-Path $freshFolder.FullName "in-use.txt") -ItemType File
+        $freshFile = New-Item -Path (Join-Path $cleanupProbePath "dbatools-fresh.sql") -ItemType File
+
+        $staleFolder = New-Item -Path (Join-Path $cleanupProbePath "dbatools-stale-folder") -ItemType Directory
+        $null = New-Item -Path (Join-Path $staleFolder.FullName "left-behind.txt") -ItemType File
+        $staleFolder.LastWriteTime = $cleanupStaleTime
+        $staleFile = New-Item -Path (Join-Path $cleanupProbePath "dbatools-stale.sql") -ItemType File
+        $staleFile.LastWriteTime = $cleanupStaleTime
+
+        $exportFolder = New-Item -Path (Join-Path $cleanupProbePath "DbatoolsExport") -ItemType Directory
+        $null = New-Item -Path (Join-Path $exportFolder.FullName "export.sql") -ItemType File
+        $exportFolder.LastWriteTime = $cleanupStaleTime
+
+        $otherFile = New-Item -Path (Join-Path $cleanupProbePath "other-stale.txt") -ItemType File
+        $otherFile.LastWriteTime = $cleanupStaleTime
+
+        $cleanupProbeScript = Join-Path $cleanupProbePath "cleanup-probe.ps1"
+        Set-Content -Path $cleanupProbeScript -Value @'
+param(
+    $ModulePath,
+    $TempPath
+)
+
+$Env:TEMP = $TempPath
+Import-Module (Join-Path $ModulePath "dbatools.psd1") -ErrorAction Stop
+# The same folder the fallback of paths.ps1 picks when the account has no Documents folder.
+Set-DbatoolsConfig -FullName "Path.DbatoolsExport" -Value (Join-Path $TempPath "DbatoolsExport")
+& ([Dataplat.Dbatools.Maintenance.MaintenanceHost]::Tasks["tempcleanup"].ScriptBlock)
+"Done"
+'@
+
+        $cleanupProbeHost = (Get-Process -Id $PID).Path
+        $cleanupProbeOutput = & $cleanupProbeHost -NoProfile -NonInteractive -File $cleanupProbeScript -ModulePath $ModulePath -TempPath $cleanupProbePath 2>&1
+    }
+
+    AfterAll {
+        Remove-Item -Path $cleanupProbePath -Recurse -ErrorAction SilentlyContinue
+    }
+
+    It "runs the task" {
+        $cleanupProbeOutput | Should -Contain "Done" -Because "the probe reported: $cleanupProbeOutput"
+    }
+
+    It "keeps dbatools* items that were written to recently" {
+        Join-Path $freshFolder.FullName "in-use.txt" | Should -Exist
+        $freshFile.FullName | Should -Exist
+    }
+
+    It "removes dbatools* items that were not written to for more than a day" {
+        $staleFolder.FullName | Should -Not -Exist
+        $staleFile.FullName | Should -Not -Exist
+    }
+
+    It "keeps the export folder even when it is stale" {
+        Join-Path $exportFolder.FullName "export.sql" | Should -Exist
+    }
+
+    It "keeps items that are not named dbatools*" {
+        $otherFile.FullName | Should -Exist
+    }
+}
+
 Describe "$ModuleName style" -Tag Compliance {
     <#
     Ensures common formatting standards are applied:
