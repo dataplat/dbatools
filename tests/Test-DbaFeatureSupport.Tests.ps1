@@ -30,7 +30,7 @@ Describe $CommandName -Tag UnitTests {
             @{ Label = "SQL Server 2014"; ServerProperty = $sql2014; Feature = "QueryStore"; Expected = $false }
             @{ Label = "SQL Server 2016 RTM"; ServerProperty = $sql2016; Feature = "QueryStore"; Expected = $true }
             @{ Label = "SQL Server 2016 RTM"; ServerProperty = $sql2016; Feature = "QueryStoreWaitStats"; Expected = $false }
-            @{ Label = "SQL Server 2016 RTM"; ServerProperty = $sql2016; Feature = "QueryStoreMaxPlansPerQuery"; Expected = $false }
+            @{ Label = "SQL Server 2016 RTM"; ServerProperty = $sql2016; Feature = "QueryStoreMaxPlansPerQuery"; Expected = $true }
             @{ Label = "SQL Server 2017"; ServerProperty = $sql2017; Feature = "QueryStoreWaitStats"; Expected = $true }
             @{ Label = "SQL Server 2017"; ServerProperty = $sql2017; Feature = "QueryStoreMaxPlansPerQuery"; Expected = $true }
             @{ Label = "SQL Server 2017"; ServerProperty = $sql2017; Feature = "QueryStoreCustomCapturePolicy"; Expected = $false }
@@ -96,7 +96,7 @@ Describe $CommandName -Tag IntegrationTests {
         $sqlServerCases = @(
             @{ Feature = "QueryStore"; FirstMajor = 13 }
             @{ Feature = "QueryStoreWaitStats"; FirstMajor = 14 }
-            @{ Feature = "QueryStoreMaxPlansPerQuery"; FirstMajor = 14 }
+            @{ Feature = "QueryStoreMaxPlansPerQuery"; FirstMajor = 13 }
             @{ Feature = "QueryStoreCustomCapturePolicy"; FirstMajor = 15 }
             @{ Feature = "QueryStoreOnModel"; FirstMajor = 16 }
         )

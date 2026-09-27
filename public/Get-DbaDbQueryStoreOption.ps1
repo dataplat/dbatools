@@ -110,6 +110,7 @@ function Get-DbaDbQueryStoreOption {
             # Which options exist depends on the engine, not only on the version, so this asks the feature rules
             # instead of comparing VersionMajor. See #10600.
             try {
+                $supportsMaxPlansPerQuery = Test-DbaFeatureSupport -Server $server -Feature QueryStoreMaxPlansPerQuery
                 $supportsWaitStats = Test-DbaFeatureSupport -Server $server -Feature QueryStoreWaitStats
                 $supportsCustomCapturePolicy = Test-DbaFeatureSupport -Server $server -Feature QueryStoreCustomCapturePolicy
             } catch {
@@ -153,17 +154,36 @@ function Get-DbaDbQueryStoreOption {
                 Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 Add-Member -Force -InputObject $qso -MemberType NoteProperty Database -Value $db.Name
 
+                # The default view shows the options the engine has, each asked for on its own: MaxPlansPerQuery
+                # exists from SQL Server 2016 on, WaitStatsCaptureMode from 2017 on.
+                $defaultProperties = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Database",
+                    "ActualState",
+                    "DataFlushIntervalInSeconds",
+                    "StatisticsCollectionIntervalInMinutes",
+                    "MaxStorageSizeInMB",
+                    "CurrentStorageSizeInMB",
+                    "QueryCaptureMode",
+                    "SizeBasedCleanupMode",
+                    "StaleQueryThresholdInDays"
+                )
+                if ($supportsMaxPlansPerQuery) {
+                    $defaultProperties += "MaxPlansPerQuery"
+                }
+                if ($supportsWaitStats) {
+                    $defaultProperties += "WaitStatsCaptureMode"
+                }
                 if ($supportsCustomCapturePolicy) {
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyExecutionCount -Value $QueryStoreOptions.CustomCapturePolicyExecutionCount
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyTotalCompileCPUTimeMS -Value $QueryStoreOptions.CustomCapturePolicyTotalCompileCPUTimeMS
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyTotalExecutionCPUTimeMS -Value $QueryStoreOptions.CustomCapturePolicyTotalExecutionCPUTimeMS
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyStaleThresholdHours -Value $QueryStoreOptions.CustomCapturePolicyStaleThresholdHours
-                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode, CustomCapturePolicyExecutionCount, CustomCapturePolicyTotalCompileCPUTimeMS, CustomCapturePolicyTotalExecutionCPUTimeMS, CustomCapturePolicyStaleThresholdHours
-                } elseif ($supportsWaitStats) {
-                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode
-                } else {
-                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays
+                    $defaultProperties += "CustomCapturePolicyExecutionCount", "CustomCapturePolicyTotalCompileCPUTimeMS", "CustomCapturePolicyTotalExecutionCPUTimeMS", "CustomCapturePolicyStaleThresholdHours"
                 }
+                Select-DefaultView -InputObject $qso -Property $defaultProperties
             }
         }
     }

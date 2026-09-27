@@ -50,9 +50,9 @@ function Test-DbaFeatureSupport {
         [string]$Feature
     )
 
-    # Query Store is several features: the options of SQL Server 2016, the wait statistics and plan limit of
-    # SQL Server 2017, the custom capture policy of SQL Server 2019, and a readable Query Store on model from
-    # SQL Server 2022 on. Azure SQL Database has no model a user can reach.
+    # Query Store is several features: the options of SQL Server 2016 including the plan limit per query
+    # (MAX_PLANS_PER_QUERY), the wait statistics of SQL Server 2017, the custom capture policy of SQL Server 2019,
+    # and a readable Query Store on model from SQL Server 2022 on. Azure SQL Database has no model a user can reach.
     $featureRule = @{
         QueryStore                    = @{
             SqlServer        = [version]"13.0"
@@ -65,7 +65,7 @@ function Test-DbaFeatureSupport {
             ManagedInstance  = $true
         }
         QueryStoreMaxPlansPerQuery    = @{
-            SqlServer        = [version]"14.0"
+            SqlServer        = [version]"13.0"
             AzureSqlDatabase = $true
             ManagedInstance  = $true
         }

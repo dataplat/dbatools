@@ -127,6 +127,7 @@ function Copy-DbaDbQueryStoreOption {
         # so this asks the feature rules instead of comparing VersionMajor. See #10600.
         try {
             $sourceSupportsQueryStore = Test-DbaFeatureSupport -Server $sourceServer -Feature QueryStore
+            $sourceSupportsMaxPlansPerQuery = Test-DbaFeatureSupport -Server $sourceServer -Feature QueryStoreMaxPlansPerQuery
             $sourceSupportsWaitStats = Test-DbaFeatureSupport -Server $sourceServer -Feature QueryStoreWaitStats
             $sourceSupportsCustomCapturePolicy = Test-DbaFeatureSupport -Server $sourceServer -Feature QueryStoreCustomCapturePolicy
         } catch {
@@ -212,6 +213,10 @@ function Copy-DbaDbQueryStoreOption {
                                 CaptureMode         = $SourceQSConfig.QueryCaptureMode
                                 CleanupMode         = $SourceQSConfig.SizeBasedCleanupMode
                                 StaleQueryThreshold = $SourceQSConfig.StaleQueryThresholdInDays
+                            }
+                            # SQL Server 2016 has the plan limit per query, only the wait statistics came with 2017.
+                            if ($sourceSupportsMaxPlansPerQuery) {
+                                $setDbaDbQueryStoreOptionParameters["MaxPlansPerQuery"] = $SourceQSConfig.MaxPlansPerQuery
                             }
                         } elseif ($sourceSupportsWaitStats -and -not $sourceSupportsCustomCapturePolicy) {
                             $setDbaDbQueryStoreOptionParameters = @{
