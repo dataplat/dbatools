@@ -194,6 +194,9 @@ FROM (
     INNER JOIN msdb.dbo.sysschedules AS s ON s.schedule_id = js.schedule_id
     WHERE js.job_id = @jobId
 ) AS x"
+
+        # Destinations whose job collection has been refreshed during this invocation (-UseLastModified only)
+        $refreshedDestinations = @{}
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -203,8 +206,11 @@ FROM (
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            # dbatools reuses server objects within a session; refresh so new/dropped jobs are seen on repeat runs
-            $destServer.JobServer.Jobs.Refresh()
+            if ($UseLastModified -and -not $refreshedDestinations.ContainsKey($destServer.Name)) {
+                # dbatools reuses server objects within a session; refresh once so new/dropped jobs are seen on repeat runs
+                $destServer.JobServer.Jobs.Refresh()
+                $refreshedDestinations[$destServer.Name] = $true
+            }
             $destJobs = $destServer.JobServer.Jobs
 
             foreach ($serverJob in $InputObject) {
