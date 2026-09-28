@@ -63,12 +63,17 @@ function Copy-DbaAgentJob {
         Cannot be used when copying multiple jobs simultaneously.
 
     .PARAMETER UseLastModified
-        When enabled, compares the last modification date (date_modified) from msdb.dbo.sysjobs between source and destination instances.
-        Jobs are only copied or updated if the source job is newer than the destination job. This provides intelligent synchronization:
-        - If job doesn't exist on destination: creates it
-        - If source date_modified is newer: drops and recreates the job
-        - If dates are equal: skips the job
-        - If destination is newer: skips with a warning
+        Compares the job definition on source and destination - job properties, enabled state, steps and schedules - and only copies when they actually differ.
+        When the definitions differ, the direction is decided by each job's effective last-modified time: the later of msdb.dbo.sysjobs.date_modified and
+        the date_modified of every schedule attached to the job (sp_update_schedule only touches sysschedules, not the job row). Both values are normalised
+        to UTC using each server's own time zone offset so instances in different time zones compare correctly:
+        - Job doesn't exist on destination: creates it
+        - Definitions identical: skips, regardless of timestamps
+        - Only the enabled state differs and source is not older: updates the flag in place without recreating the job
+        - Definitions differ and source is newer (or equal): drops and recreates the job
+        - Definitions differ and destination is newer: skips with a warning
+        Job IDs, timestamps, version numbers, schedule IDs/UIDs and run history are excluded from the comparison, so jobs that are
+        identical but were created independently (for example on AG replicas) are not needlessly recreated.
         Use this for incremental synchronization scenarios where you want to keep jobs up-to-date without unconditionally overwriting them.
 
     .PARAMETER EnableException
@@ -124,7 +129,7 @@ function Copy-DbaAgentJob {
     .EXAMPLE
         PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlserver2014b -UseLastModified
 
-        Copies jobs from sqlserver2014a to sqlserver2014b, but only creates new jobs or updates existing jobs where the source job has a newer date_modified timestamp. Jobs with matching timestamps are skipped.
+        Copies jobs from sqlserver2014a to sqlserver2014b, creating jobs that don't exist and recreating only those whose definition differs and where the source is not older. Jobs with an identical definition are skipped even when their date_modified values differ. A job that differs only in its enabled state has the flag updated in place.
 
     .EXAMPLE
         PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlserver2014a -Job "OriginalJob" -NewName "JobCopy"
@@ -173,6 +178,22 @@ function Copy-DbaAgentJob {
             return
         }
         if ($Force) { $ConfirmPreference = 'none' }
+
+        # A job's effective last-modified must include its schedules: sp_update_schedule
+        # only touches sysschedules.date_modified, never sysjobs.date_modified.
+        # Returned already normalised to UTC using the server's own offset.
+        $sqlLastModified = "
+SELECT DATEADD(MINUTE, -DATEPART(TZOFFSET, SYSDATETIMEOFFSET()), MAX(x.date_modified)) AS LastModifiedUtc
+FROM (
+    SELECT j.date_modified
+    FROM msdb.dbo.sysjobs AS j
+    WHERE j.job_id = @jobId
+    UNION ALL
+    SELECT s.date_modified
+    FROM msdb.dbo.sysjobschedules AS js
+    INNER JOIN msdb.dbo.sysschedules AS s ON s.schedule_id = js.schedule_id
+    WHERE js.job_id = @jobId
+) AS x"
     }
     process {
         if (Test-FunctionInterrupt) { return }
@@ -182,6 +203,8 @@ function Copy-DbaAgentJob {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
+            # dbatools reuses server objects within a session; refresh so new/dropped jobs are seen on repeat runs
+            $destServer.JobServer.Jobs.Refresh()
             $destJobs = $destServer.JobServer.Jobs
 
             foreach ($serverJob in $InputObject) {
@@ -225,7 +248,7 @@ function Copy-DbaAgentJob {
                 $MaintenancePlanName = $sourceServer.Query($sql).MaintenancePlanName
 
                 if ($MaintenancePlanName) {
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanNam")) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanName")) {
                         $copyJobStatus.Status = "Skipped"
                         $copyJobStatus.Notes = "Job is associated with maintenance plan"
                         $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -312,79 +335,113 @@ function Copy-DbaAgentJob {
 
                 if ($destJobs.name -contains $destJobName) {
                     if ($UseLastModified) {
-                        # Query date_modified from both source and destination using parameterized queries
                         try {
-                            $splatSourceDate = @{
-                                SqlInstance  = $sourceserver
-                                Database     = "msdb"
-                                Query        = "SELECT date_modified FROM dbo.sysjobs WHERE name = @jobName"
-                                SqlParameter = @{ jobName = $jobName }
-                            }
-                            $sourceDate = (Invoke-DbaQuery @splatSourceDate).date_modified
+                            $destJob = $destServer.JobServer.Jobs[$destJobName]
 
-                            $splatDestDate = @{
-                                SqlInstance  = $destServer
-                                Database     = "msdb"
-                                Query        = "SELECT date_modified FROM dbo.sysjobs WHERE name = @jobName"
-                                SqlParameter = @{ jobName = $destJobName }
-                            }
-                            $destDate = (Invoke-DbaQuery @splatDestDate).date_modified
+                            # SMO caches and dbatools reuses server objects within a session, so refresh
+                            # both jobs and their child collections before comparing and before Script()
+                            $serverJob.Refresh()
+                            $serverJob.JobSteps.Refresh($true)
+                            $serverJob.JobSchedules.Refresh($true)
+                            $destJob.Refresh()
+                            $destJob.JobSteps.Refresh($true)
+                            $destJob.JobSchedules.Refresh($true)
 
-                            if ($null -eq $sourceDate -or $null -eq $destDate) {
-                                Write-Message -Level Warning -Message "Could not retrieve date_modified for job $jobName. Skipping date comparison."
-                                if ($force -eq $false) {
-                                    if ($Pscmdlet.ShouldProcess($destinstance, "Job $jobName exists at destination. Use -Force to drop and migrate.")) {
-                                        $copyJobStatus.Status = "Skipped"
-                                        $copyJobStatus.Notes = "Already exists on destination"
-                                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                        Write-Message -Level Verbose -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
-                                    }
-                                    continue
+                            # Compare the definitions first. Timestamps only decide direction when the
+                            # definitions actually differ; on their own they are never a reason to copy.
+                            $splatFingerprint = @{ Job = $serverJob }
+                            if ($missingLogin.Count -gt 0) {
+                                # -Force remaps a missing owner to sa on the destination, so compare against that
+                                $splatFingerprint['OwnerLoginName'] = Get-SqlSaLogin -SqlInstance $destServer
+                            }
+                            if ($DisableOnDestination) {
+                                # desired destination state is disabled regardless of the source
+                                $splatFingerprint['IsEnabled'] = $false
+                            }
+                            $sourcePrint = Get-AgentJobFingerprint @splatFingerprint
+                            $destPrint = Get-AgentJobFingerprint -Job $destJob
+
+                            if ($sourcePrint.Hash -eq $destPrint.Hash) {
+                                if ($Pscmdlet.ShouldProcess($destinstance, "Job $destJobName has an identical definition on source and destination. Skipping.")) {
+                                    $copyJobStatus.Status = "Skipped"
+                                    $copyJobStatus.Notes = "Job definition is identical on source and destination"
+                                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                    Write-Message -Level Verbose -Message "Job $destJobName has an identical definition on source and destination. Skipping."
                                 }
-                            } elseif ($sourceDate -gt $destDate) {
-                                # Source is newer, proceed with drop and recreate
-                                if ($Pscmdlet.ShouldProcess($destinstance, "Source job is newer (modified $sourceDate). Dropping and recreating job $destJobName")) {
+                                continue
+                            }
+
+                            $changed = @()
+                            if ($sourcePrint.Job -cne $destPrint.Job) { $changed += "job properties" }
+                            if ($sourcePrint.Enabled -cne $destPrint.Enabled) { $changed += "enabled state" }
+                            if ($sourcePrint.Steps -cne $destPrint.Steps) { $changed += "steps" }
+                            if ($sourcePrint.Schedules -cne $destPrint.Schedules) { $changed += "schedules" }
+                            $changedText = $changed -join ", "
+
+                            # Effective last-modified (job row + attached schedules), already in UTC
+                            $sourceDate = (Invoke-DbaQuery -SqlInstance $sourceserver -Database msdb -Query $sqlLastModified -SqlParameter @{ jobId = $serverJob.JobID }).LastModifiedUtc
+                            $destDate = (Invoke-DbaQuery -SqlInstance $destServer -Database msdb -Query $sqlLastModified -SqlParameter @{ jobId = $destJob.JobID }).LastModifiedUtc
+
+                            if ($destDate -gt $sourceDate) {
+                                if ($Pscmdlet.ShouldProcess($destinstance, "Job $destJobName differs ($changedText) but is newer on destination. Skipping.")) {
+                                    $copyJobStatus.Status = "Skipped"
+                                    $copyJobStatus.Notes = "Definition differs ($changedText) but destination job is newer than source (dest: $destDate UTC, source: $sourceDate UTC)"
+                                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                    Write-Message -Level Warning -Message "Job $destJobName differs from source ($changedText) but is newer on destination ($destDate UTC) than source ($sourceDate UTC). Skipping. Use -Force without -UseLastModified to overwrite."
+                                }
+                                continue
+                            }
+
+                            # Only the enabled flag differs: align it in place instead of dropping and recreating
+                            if ($changed.Count -eq 1 -and $changed[0] -eq "enabled state") {
+                                $targetEnabled = if ($DisableOnDestination) { $false } else { $serverJob.IsEnabled }
+                                if ($Pscmdlet.ShouldProcess($destinstance, "Job $destJobName differs only in enabled state. Setting IsEnabled to $targetEnabled.")) {
                                     try {
-                                        Write-Message -Message "Source job $jobName is newer. Dropping and recreating $destJobName." -Level Verbose
-                                        # Before dropping, save which alerts reference this job
-                                        $splatAlertsForJob = @{
-                                            SqlInstance  = $destServer
-                                            Database     = "msdb"
-                                            Query        = "SELECT name FROM dbo.sysalerts WHERE job_id = (SELECT job_id FROM dbo.sysjobs WHERE name = @jobName)"
-                                            SqlParameter = @{ jobName = $destJobName }
+                                        $destJob.IsEnabled = $targetEnabled
+                                        $destJob.Alter()
+                                        if ($DisableOnSource) {
+                                            Write-Message -Message "Disabling $jobName on $($sourceserver.Name)" -Level Verbose
+                                            $serverJob.IsEnabled = $false
+                                            $serverJob.Alter()
                                         }
-                                        $alertsReferencingJob = (Invoke-DbaQuery @splatAlertsForJob).name
-                                        Write-Message -Message "Found $($alertsReferencingJob.Count) alert(s) referencing job $destJobName" -Level Verbose
-                                        $destServer.JobServer.Jobs[$destJobName].Drop()
+                                        $copyJobStatus.Status = "Successful"
+                                        $copyJobStatus.Notes = "Enabled state set to $targetEnabled in place; definition otherwise identical, job not recreated"
+                                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                        Write-Message -Level Verbose -Message "Job $destJobName differs only in enabled state. Set IsEnabled to $targetEnabled without recreating."
                                     } catch {
                                         $copyJobStatus.Status = "Failed"
                                         $copyJobStatus.Notes = (Get-ErrorMessage -Record $_).Message
                                         $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                        Write-Message -Level Verbose -Message "Issue dropping job $jobName on $destinstance | $PSItem"
-                                        continue
+                                        Write-Message -Level Verbose -Message "Issue updating enabled state for job $destJobName on $destinstance | $PSItem"
                                     }
-                                }
-                            } elseif ($sourceDate -eq $destDate) {
-                                # Dates are equal, skip
-                                if ($Pscmdlet.ShouldProcess($destinstance, "Job $jobName has same modification date. Skipping.")) {
-                                    $copyJobStatus.Status = "Skipped"
-                                    $copyJobStatus.Notes = "Job has same modification date on source and destination"
-                                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                    Write-Message -Level Verbose -Message "Job $jobName has same modification date ($sourceDate). Skipping."
-                                }
-                                continue
-                            } else {
-                                # Destination is newer, skip with warning
-                                if ($Pscmdlet.ShouldProcess($destinstance, "Job $jobName is newer on destination. Skipping.")) {
-                                    $copyJobStatus.Status = "Skipped"
-                                    $copyJobStatus.Notes = "Destination job is newer than source (dest: $destDate, source: $sourceDate)"
-                                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                                    Write-Message -Level Warning -Message "Job $jobName is newer on destination ($destDate) than source ($sourceDate). Skipping."
                                 }
                                 continue
                             }
+
+                            # Definition differs and source is newer (or the timestamps tie): source wins
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Job $destJobName differs ($changedText) and source is not older (source: $sourceDate UTC, dest: $destDate UTC). Dropping and recreating.")) {
+                                try {
+                                    Write-Message -Message "Job $destJobName differs from source ($changedText). Dropping and recreating." -Level Verbose
+                                    # Before dropping, save which alerts reference this job
+                                    $splatAlertsForJob = @{
+                                        SqlInstance  = $destServer
+                                        Database     = "msdb"
+                                        Query        = "SELECT name FROM dbo.sysalerts WHERE job_id = (SELECT job_id FROM dbo.sysjobs WHERE name = @jobName)"
+                                        SqlParameter = @{ jobName = $destJobName }
+                                    }
+                                    $alertsReferencingJob = (Invoke-DbaQuery @splatAlertsForJob).name
+                                    Write-Message -Message "Found $($alertsReferencingJob.Count) alert(s) referencing job $destJobName" -Level Verbose
+                                    $destJob.Drop()
+                                } catch {
+                                    $copyJobStatus.Status = "Failed"
+                                    $copyJobStatus.Notes = (Get-ErrorMessage -Record $_).Message
+                                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                    Write-Message -Level Verbose -Message "Issue dropping job $jobName on $destinstance | $PSItem"
+                                    continue
+                                }
+                            }
                         } catch {
-                            Write-Message -Level Warning -Message "Error comparing dates for job $jobName | $PSItem"
+                            Write-Message -Level Warning -Message "Error comparing job definitions for $jobName | $PSItem"
                             if ($force -eq $false) {
                                 if ($Pscmdlet.ShouldProcess($destinstance, "Job $jobName exists at destination. Use -Force to drop and migrate.")) {
                                     $copyJobStatus.Status = "Skipped"
