@@ -23,6 +23,7 @@ Describe $CommandName -Tag UnitTests {
                 "Job",
                 "ExcludeJob",
                 "DisableJobOnDestination",
+                "UseJobLastModified",
                 "InputObject",
                 "ExcludePassword",
                 "Force",
@@ -380,12 +381,14 @@ Describe $CommandName -Tag UnitTests {
                         $Destination,
                         [switch]$Force,
                         [switch]$DisableOnDestination,
+                        [switch]$UseLastModified,
                         $InputObject
                     )
 
                     $script:copyAgentJobCall = [PSCustomObject]@{
-                        Destination = $Destination
-                        InputObject = $InputObject
+                        Destination     = $Destination
+                        InputObject     = $InputObject
+                        UseLastModified = $UseLastModified.IsPresent
                     }
                 }
 
@@ -415,6 +418,78 @@ Describe $CommandName -Tag UnitTests {
                 $script:getAgentJobCall.Type | Should -Be "Local"
                 $script:copyAgentJobCall.InputObject.Name | Should -Be "dbatoolsci_localjob"
                 $script:copyAgentJobCall.InputObject.JobType | Should -Be "Local"
+                $script:copyAgentJobCall.UseLastModified | Should -BeFalse
+            }
+        }
+
+        It "Should pass UseJobLastModified through to Copy-DbaAgentJob as UseLastModified" {
+            InModuleScope "dbatools" {
+                function Test-FunctionInterrupt { $false }
+                function Write-ProgressHelper { }
+                function Connect-DbaInstance {
+                    param(
+                        $SqlInstance,
+                        $SqlCredential,
+                        [switch]$DedicatedAdminConnection
+                    )
+
+                    [PSCustomObject]@{
+                        Name               = $SqlInstance.ToString()
+                        DomainInstanceName = $SqlInstance.ToString()
+                    }
+                }
+                function Get-DbaAgentJob {
+                    param(
+                        $SqlInstance,
+                        $Job,
+                        $ExcludeJob,
+                        $Type
+                    )
+
+                    [PSCustomObject]@{
+                        Name       = "dbatoolsci_localjob"
+                        JobType    = "Local"
+                        CategoryID = 1
+                    }
+                }
+                function Copy-DbaAgentJob {
+                    param(
+                        $Destination,
+                        [switch]$Force,
+                        [switch]$DisableOnDestination,
+                        [switch]$UseLastModified,
+                        $InputObject
+                    )
+
+                    $script:copyAgentJobCall = [PSCustomObject]@{
+                        Force           = $Force.IsPresent
+                        UseLastModified = $UseLastModified.IsPresent
+                    }
+                }
+
+                $script:copyAgentJobCall = $null
+
+                $exclude = @(
+                    "AgentAlert",
+                    "AgentCategory",
+                    "AgentOperator",
+                    "AgentProxy",
+                    "AgentSchedule",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "DatabaseOwner",
+                    "LinkedServers",
+                    "LoginPermissions",
+                    "Logins",
+                    "SpConfigure",
+                    "SystemTriggers"
+                )
+
+                $null = Sync-DbaAvailabilityGroup -Primary "sql1" -Secondary "sql2" -Exclude $exclude -Force -UseJobLastModified
+
+                $script:copyAgentJobCall.UseLastModified | Should -BeTrue
+                $script:copyAgentJobCall.Force | Should -BeTrue
             }
         }
     }
