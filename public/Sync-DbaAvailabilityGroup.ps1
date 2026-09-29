@@ -95,6 +95,9 @@ function Sync-DbaAvailabilityGroup {
         Instead of skipping every job that already exists on a secondary (or recreating all of them with -Force), jobs are compared
         by definition - properties, enabled state, steps and schedules - and only those that actually differ are updated, with the
         primary winning when it is not older than the secondary. Jobs that differ only in enabled state are updated in place.
+        When combined with -Force, this switch takes precedence for jobs: existing jobs are still only updated when their definition
+        differs, and -Force only suppresses prompts and remaps missing job owners to sa, while -Force continues to drop and recreate
+        all other object types as usual.
         See Copy-DbaAgentJob for the full behaviour.
 
     .PARAMETER InputObject
@@ -109,6 +112,7 @@ function Sync-DbaAvailabilityGroup {
     .PARAMETER Force
         Drops and recreates existing objects on secondary replicas instead of skipping them.
         Use this when you need to update objects that already exist on secondaries or when objects have configuration differences that need to be synchronized.
+        For agent jobs, -UseJobLastModified takes precedence when both are specified.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
