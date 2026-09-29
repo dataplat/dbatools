@@ -33,8 +33,11 @@ function Get-AgentJobFingerprint {
     )
 
     $owner = if ($OwnerLoginName) { $OwnerLoginName } else { $Job.OwnerLoginName }
-    $enabledValue = if ($PSBoundParameters.ContainsKey('IsEnabled')) { $IsEnabled } else { $Job.IsEnabled }
+    $enabledValue = if ($PSBoundParameters.ContainsKey("IsEnabled")) { $IsEnabled } else { $Job.IsEnabled }
     $enabled = "IsEnabled=$enabledValue"
+
+    # Proxy accounts were introduced in SQL Server 2005; ProxyName is not readable on 2000
+    $supportsProxy = $Job.Parent.Parent.VersionMajor -ge 9
 
     $jobProps = @(
         "Owner=$owner"
@@ -60,7 +63,7 @@ function Get-AgentJobFingerprint {
             "DatabaseName=$($step.DatabaseName)"
             "DatabaseUserName=$($step.DatabaseUserName)"
             "Server=$($step.Server)"
-            "ProxyName=$($step.ProxyName)"
+            "ProxyName=$(if ($supportsProxy) { $step.ProxyName })"
             "OnSuccessAction=$($step.OnSuccessAction)"
             "OnSuccessStep=$($step.OnSuccessStep)"
             "OnFailAction=$($step.OnFailAction)"
@@ -75,7 +78,7 @@ function Get-AgentJobFingerprint {
     }
     $steps = $stepProps -join "`n--`n"
 
-    $scheduleProps = foreach ($sched in ($Job.JobSchedules | Sort-Object Name)) {
+    $scheduleProps = foreach ($sched in $Job.JobSchedules) {
         @(
             "Name=$($sched.Name)"
             "IsEnabled=$($sched.IsEnabled)"
@@ -85,18 +88,21 @@ function Get-AgentJobFingerprint {
             "FrequencySubDayInterval=$($sched.FrequencySubDayInterval)"
             "FrequencyRelativeIntervals=$($sched.FrequencyRelativeIntervals)"
             "FrequencyRecurrenceFactor=$($sched.FrequencyRecurrenceFactor)"
-            "ActiveStartDate=$($sched.ActiveStartDate.ToString('yyyyMMdd'))"
-            "ActiveEndDate=$($sched.ActiveEndDate.ToString('yyyyMMdd'))"
+            "ActiveStartDate=$($sched.ActiveStartDate.ToString("yyyyMMdd"))"
+            "ActiveEndDate=$($sched.ActiveEndDate.ToString("yyyyMMdd"))"
             "ActiveStartTimeOfDay=$($sched.ActiveStartTimeOfDay)"
             "ActiveEndTimeOfDay=$($sched.ActiveEndTimeOfDay)"
         ) -join "`n"
     }
-    $schedules = $scheduleProps -join "`n--`n"
+    # Sorted by the full normalised text: schedule names are not unique per job, and Sort-Object
+    # is not guaranteed to be stable in Windows PowerShell, so sorting by name alone could yield
+    # different fingerprints for the same job
+    $schedules = ($scheduleProps | Sort-Object) -join "`n--`n"
 
     $normalised = "[job]`n$jobProps`n$enabled`n[steps]`n$steps`n[schedules]`n$schedules"
     $sha = [System.Security.Cryptography.SHA256]::Create()
     try {
-        $hash = ($sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($normalised)) | ForEach-Object { $_.ToString('x2') }) -join ''
+        $hash = ($sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($normalised)) | ForEach-Object { $_.ToString("x2") }) -join ""
     } finally {
         $sha.Dispose()
     }
