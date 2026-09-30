@@ -182,6 +182,96 @@ ALTER DATABASE model SET RECOVERY $($modelStateBefore.RecoveryModel) WITH NO_WAI
         }
     }
 
+    Context "Completes every progress bar it started" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id with records but without a completed one.
+            $progressScript = @"
+param(`$ModulePath, `$Splat)
+Import-Module -Name `$ModulePath -ErrorAction Stop
+Backup-DbaDatabase @Splat
+"@
+            # The runspace imports the manifest, not the psm1 that Get-Module reports as the path of the module.
+            # The psm1 adds the type data with the Query method of the server only when the import line itself
+            # names a .psm1 file, which a path in a variable does not, so the backup would fail at its first query.
+            $progressManifest = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $progressRunspace = [runspacefactory]::CreateRunspace()
+            $progressRunspace.Open()
+
+            function Get-BackupProgressRecord ([hashtable]$Splat) {
+                if ($TestConfig.SqlCred) {
+                    $Splat.SqlCredential = $TestConfig.SqlCred
+                }
+                $progressShell = [powershell]::Create()
+                try {
+                    $progressShell.Runspace = $progressRunspace
+                    $null = $progressShell.AddScript($progressScript).AddArgument($progressManifest).AddArgument($Splat)
+                    $progressOutput = @($progressShell.Invoke())
+                    [PSCustomObject]@{
+                        Records  = @($progressShell.Streams.Progress)
+                        Errors   = @($progressShell.Streams.Error)
+                        Warnings = @($progressShell.Streams.Warning)
+                        Output   = $progressOutput
+                    }
+                } finally {
+                    $progressShell.Dispose()
+                }
+            }
+
+            function Get-OpenProgressId ([object[]]$Records) {
+                # An Id can be reused after completion, so only its final record determines whether it is closed.
+                $lastProgressRecordById = @{}
+                foreach ($progressRecord in $Records) {
+                    $lastProgressRecordById[$progressRecord.ActivityId] = $progressRecord
+                }
+                $lastProgressRecordById.Values | Where-Object RecordType -ne "Completed" | Select-Object -ExpandProperty ActivityId
+            }
+        }
+
+        AfterAll {
+            $progressRunspace.Dispose()
+        }
+
+        It "Completes the bars with -WhatIf" {
+            $splatWhatIf = @{
+                SqlInstance     = $TestConfig.InstanceCopy1
+                Database        = "master", "msdb"
+                Path            = $DestBackupDir
+                WhatIf          = $true
+                EnableException = $true
+            }
+            $whatIfResult = Get-BackupProgressRecord -Splat $splatWhatIf
+            $whatIfResult.Errors | Should -BeNullOrEmpty
+            $whatIfResult.Warnings | Should -BeNullOrEmpty
+            $whatIfResult.Output | Should -BeNullOrEmpty
+            $whatIfResult.Records | Should -Not -BeNullOrEmpty
+            foreach ($progressDatabase in $splatWhatIf.Database) {
+                $whatIfResult.Records | Where-Object {
+                    $PSItem.RecordType -eq "Processing" -and $PSItem.Activity -like "Backing up database $progressDatabase to *"
+                } | Should -Not -BeNullOrEmpty
+            }
+            Get-OpenProgressId -Records $whatIfResult.Records | Should -BeNullOrEmpty
+        }
+
+        It "Completes the bars of a backup" {
+            $splatBackup = @{
+                SqlInstance     = $TestConfig.InstanceCopy1
+                Database        = "master"
+                Path            = $DestBackupDir
+                EnableException = $true
+            }
+            $backupResult = Get-BackupProgressRecord -Splat $splatBackup
+            $backupResult.Errors | Should -BeNullOrEmpty
+            $backupResult.Warnings | Should -BeNullOrEmpty
+            $backupResult.Output | Should -HaveCount 1
+            $backupResult.Output[0].DatabaseName | Should -Be "master"
+            $backupResult.Output[0].BackupComplete | Should -BeTrue
+            $backupResult.Records | Where-Object RecordType -eq "Processing" | Should -Not -BeNullOrEmpty
+            Get-OpenProgressId -Records $backupResult.Records | Should -BeNullOrEmpty
+        }
+    }
+
     Context "Should take path and filename" {
         BeforeAll {
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -BackupFileName "PesterTest.bak"
