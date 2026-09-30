@@ -101,6 +101,7 @@ jobs:
         shell: bash
         run: |
           docker run -d \
+            --pull=never \
             --name minio \
             --hostname minio \
             --network localnet \

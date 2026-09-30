@@ -8,7 +8,7 @@ LABEL org.opencontainers.image.title="MinIO CI fixture" \
       org.opencontainers.image.source="https://github.com/minio/minio" \
       org.opencontainers.image.version="${MINIO_VERSION}" \
       org.opencontainers.image.revision="${MINIO_COMMIT}" \
-      org.opencontainers.image.licenses="AGPL-3.0-only"
+      org.opencontainers.image.licenses="AGPL-3.0-or-later"
 
 ENV HOME=/root \
     TMPDIR=/tmp

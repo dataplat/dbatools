@@ -10,10 +10,8 @@ function Get-YamlBlock {
     param(
         [Parameter(Mandatory)]
         [string]$Content,
-
         [Parameter(Mandatory)]
         [string]$Name,
-
         [Parameter(Mandatory)]
         [int]$Indent
     )
@@ -32,7 +30,6 @@ function Get-YamlBlock {
 $expectedVersion = "RELEASE.2025-10-15T17-29-55Z"
 $expectedCommit = "9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a"
 $expectedGoVersion = "1.24.8"
-$expectedSetupGoCommit = "b7ad1dad31e06c5925ef5d2fc7ad053ef454303e"
 $expectedMcChecksum = "01f866e9c5f9b87c2b09116fa5d7c06695b106242d829a8bb32990c00312e891"
 $expectedImage = "dbatools/minio-ci:$expectedVersion"
 $buildScriptPath = Join-Path -Path $RepositoryRoot -ChildPath ".github/scripts/Build-MinioCiImage.sh"
@@ -64,8 +61,10 @@ $requiredBuildLines = @(
     "export GOTOOLCHAIN=local",
     'actual_commit="$(git -C "${source_root}" rev-parse HEAD)"',
     'actual_tag="$(git -C "${source_root}" describe --tags --exact-match)"',
+    "go mod download",
     "go mod verify",
     "MINIO_RELEASE=RELEASE make build",
+    "source_changes=`"`$(git -C `"`${source_root}`" status --porcelain)`"",
     'minio_version_output="$("${source_root}/minio" --version)"',
     "for notice_file in LICENSE NOTICE CREDITS; do",
     'docker build \',
@@ -109,6 +108,25 @@ $requiredBuildBlocks = @(
         '    echo "Built MinIO did not report ${minio_version}: ${minio_version_output}" >&2'
         '    exit 1'
         'fi'
+    ) -join "`n"),
+    (@(
+        "go mod download"
+        "go mod verify"
+        "MINIO_RELEASE=RELEASE make build"
+        "popd > /dev/null"
+    ) -join "`n"),
+    (@(
+        "source_changes=`"`$(git -C `"`${source_root}`" status --porcelain)`""
+        "if [[ -n `"`${source_changes}`" ]]; then"
+        "    echo `"MinIO source tree differs from `${minio_commit}: `${source_changes}`" >&2"
+        "    exit 1"
+        "fi"
+    ) -join "`n"),
+    (@(
+        "if [[ `"`${minio_version_output}`" != *`"commit-id=`${minio_commit}`"* ]]; then"
+        "    echo `"Built MinIO did not report commit `${minio_commit}: `${minio_version_output}`" >&2"
+        "    exit 1"
+        "fi"
     ) -join "`n")
 )
 
@@ -118,13 +136,17 @@ foreach ($requiredBlock in $requiredBuildBlocks) {
     }
 }
 
-$forbiddenBuildPatterns = @(
-    "docker\s+push",
+# The image and binary must stay on the runner: publishing either one changes the AGPL distribution posture.
+$forbiddenPublishPatterns = @(
+    "docker\s+(?:image\s+)?push",
+    "docker\s+(?:image\s+)?save",
+    "--push\b",
     "--cache-to",
-    "--output\s+type=registry"
+    "--output\s+type=registry",
+    "actions/upload-artifact"
 )
 
-foreach ($pattern in $forbiddenBuildPatterns) {
+foreach ($pattern in $forbiddenPublishPatterns) {
     if ($buildScript -match $pattern) {
         throw "MinIO build helper publishes or externally caches the image: $pattern"
     }
@@ -137,7 +159,7 @@ $requiredDockerfileLines = @(
     '      org.opencontainers.image.source="https://github.com/minio/minio" \',
     '      org.opencontainers.image.version="${MINIO_VERSION}" \',
     '      org.opencontainers.image.revision="${MINIO_COMMIT}" \',
-    '      org.opencontainers.image.licenses="AGPL-3.0-only"',
+    "      org.opencontainers.image.licenses=`"AGPL-3.0-or-later`"",
     "COPY minio /usr/bin/minio",
     "COPY LICENSE NOTICE CREDITS /usr/share/licenses/minio/"
 )
@@ -171,8 +193,19 @@ foreach ($relativeWorkflowPath in $workflowPaths) {
         }
     }
 
+    foreach ($pattern in $forbiddenPublishPatterns) {
+        if ($workflow -match $pattern) {
+            throw "$relativeWorkflowPath publishes or exports from the job that builds MinIO: $pattern"
+        }
+    }
+
+    # Test-GitHubActionsPins.ps1 requires the full commit; the value is left to Dependabot.
+    $setupGoPattern = "^        uses: actions/setup-go@[0-9a-f]{40} # v\d+\.\d+\.\d+$"
+    if (-not ($workflowLines -cmatch $setupGoPattern)) {
+        throw "$relativeWorkflowPath must install Go with actions/setup-go pinned to a full commit."
+    }
+
     $requiredWorkflowLines = @(
-        "        uses: actions/setup-go@$expectedSetupGoCommit # v7.0.0",
         "          go-version: `"$expectedGoVersion`"",
         "          cache: false",
         "        run: bash ./.github/scripts/Build-MinioCiImage.sh",
@@ -194,10 +227,11 @@ foreach ($relativeWorkflowPath in $workflowPaths) {
         throw "$relativeWorkflowPath does not run the expected local image $expectedImage."
     }
 
-    $minioRunLines = @($minioRunMatch.Value -split "\r?\n" | ForEach-Object { $_.Trim() })
+    $minioRunLines = @($minioRunMatch.Value -split "\r?\n" | ForEach-Object { $PSItem.Trim() })
     $requiredRunLines = @(
-        'docker run -d \',
-        '--name minio \',
+        "docker run -d \",
+        "--pull=never \",
+        "--name minio \",
         '--hostname minio \',
         '--network localnet \',
         '-p 9000:9000 \',

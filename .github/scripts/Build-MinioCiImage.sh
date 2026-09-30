@@ -39,14 +39,29 @@ fi
 export GOTOOLCHAIN=local
 
 pushd "${source_root}" > /dev/null
+# go mod verify only checks modules already in the module cache, so download first.
+go mod download
 go mod verify
 MINIO_RELEASE=RELEASE make build
 popd > /dev/null
+
+# Assert the build left the pinned source untouched, so the binary is the unmodified release.
+source_changes="$(git -C "${source_root}" status --porcelain)"
+if [[ -n "${source_changes}" ]]; then
+    echo "MinIO source tree differs from ${minio_commit}: ${source_changes}" >&2
+    exit 1
+fi
 
 # Assert minio --version reports the pinned release before packaging it.
 minio_version_output="$("${source_root}/minio" --version)"
 if [[ "${minio_version_output}" != *"${minio_version}"* ]]; then
     echo "Built MinIO did not report ${minio_version}: ${minio_version_output}" >&2
+    exit 1
+fi
+
+# Assert minio --version reports the pinned commit as well.
+if [[ "${minio_version_output}" != *"commit-id=${minio_commit}"* ]]; then
+    echo "Built MinIO did not report commit ${minio_commit}: ${minio_version_output}" >&2
     exit 1
 fi
 
