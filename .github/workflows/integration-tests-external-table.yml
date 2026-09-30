@@ -11,6 +11,8 @@ on:
       - "tests/Copy-DbaDbTableData.Tests.ps1"
       - ".github/scripts/gh-external-table-actions.ps1"
       - ".github/docker/sql2025-polybase/Dockerfile"
+      - ".github/scripts/Build-MinioCiImage.sh"
+      - ".github/docker/minio/**"
       - ".github/workflows/integration-tests-external-table.yml"
   pull_request:
     paths:
@@ -18,6 +20,8 @@ on:
       - "tests/Copy-DbaDbTableData.Tests.ps1"
       - ".github/scripts/gh-external-table-actions.ps1"
       - ".github/docker/sql2025-polybase/Dockerfile"
+      - ".github/scripts/Build-MinioCiImage.sh"
+      - ".github/docker/minio/**"
       - ".github/workflows/integration-tests-external-table.yml"
   workflow_dispatch:
 

@@ -17,6 +17,8 @@ on:
       - "private/functions/Invoke-DbaAdvancedRestore.ps1"
       - ".github/workflows/integration-tests-s3.yml"
       - ".github/scripts/gh-s3actions.ps1"
+      - ".github/scripts/Build-MinioCiImage.sh"
+      - ".github/docker/minio/**"
       - "tests/Test-DbaBackupStorageCompatibility.Tests.ps1"
   pull_request:
     paths:
@@ -31,6 +33,8 @@ on:
       - "private/functions/Invoke-DbaAdvancedRestore.ps1"
       - ".github/workflows/integration-tests-s3.yml"
       - ".github/scripts/gh-s3actions.ps1"
+      - ".github/scripts/Build-MinioCiImage.sh"
+      - ".github/docker/minio/**"
       - "tests/Test-DbaBackupStorageCompatibility.Tests.ps1"
   workflow_dispatch:
 
