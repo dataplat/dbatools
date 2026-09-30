@@ -151,7 +151,8 @@ jobs:
 
           sql_ready=false
           for i in {1..60}; do
-            if docker logs mssql1 2>&1 | grep -q "SQL Server is now ready for client connections"; then
+            # Not grep -q: it exits on the first match, and under pipefail the broken pipe in docker logs fails the test.
+            if docker logs mssql1 2>&1 | grep "SQL Server is now ready for client connections" > /dev/null; then
               sql_ready=true
               break
             fi
