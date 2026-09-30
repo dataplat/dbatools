@@ -1,452 +1,594 @@
-#Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
-param(
-    $ModuleName  = "dbatools",
-    $CommandName = "Copy-DbaAgentJob",
-    $PSDefaultParameterValues = $TestConfig.Defaults
-)
+function Copy-DbaAgentJob {
+    <#
+    .SYNOPSIS
+        Migrates SQL Server Agent jobs between instances with dependency validation
 
-Describe $CommandName -Tag UnitTests {
-    Context "Parameter validation" {
-        It "Should have the expected parameters" {
-            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = $TestConfig.CommonParameters
-            $expectedParameters += @(
-                "Source",
-                "SourceSqlCredential",
-                "Destination",
-                "DestinationSqlCredential",
-                "Job",
-                "ExcludeJob",
-                "DisableOnSource",
-                "DisableOnDestination",
-                "Force",
-                "NewName",
-                "UseLastModified",
-                "InputObject",
-                "EnableException"
-            )
-            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+    .DESCRIPTION
+        Copies SQL Server Agent jobs from one instance to another while automatically validating all dependencies including databases, logins, proxy accounts, and operators. This eliminates the manual process of checking prerequisites before moving jobs during migrations, disaster recovery, or environment promotions.
+
+        The function intelligently skips jobs associated with maintenance plans and provides detailed validation messages for any missing dependencies. By default, existing jobs are preserved unless -Force is specified to overwrite them.
+
+    .PARAMETER Source
+        Source SQL Server instance containing the jobs to copy. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        Use this when copying jobs from a specific instance rather than piping job objects with InputObject.
+
+    .PARAMETER SourceSqlCredential
+        Alternative credentials for connecting to the source SQL Server instance. Accepts PowerShell credentials (Get-Credential).
+        Use this when the source server requires different authentication than your current Windows session, such as SQL authentication or cross-domain scenarios.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+    .PARAMETER Destination
+        Destination SQL Server instance(s) where jobs will be created. You must have sysadmin access and the server must be SQL Server 2000 or higher.
+        Supports multiple destinations to copy jobs to multiple servers simultaneously during migrations or DR setup.
+
+    .PARAMETER DestinationSqlCredential
+        Alternative credentials for connecting to the destination SQL Server instance. Accepts PowerShell credentials (Get-Credential).
+        Use this when the destination server requires different authentication than your current Windows session, such as SQL authentication or cross-domain scenarios.
+        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
+
+    .PARAMETER Job
+        Specifies which SQL Agent jobs to copy by name. Accepts wildcards and multiple job names.
+        Use this to copy specific jobs instead of all jobs, such as during selective migrations or when testing job deployments.
+        If unspecified, all jobs will be processed.
+
+    .PARAMETER ExcludeJob
+        Specifies which SQL Agent jobs to skip during the copy operation. Accepts wildcards and multiple job names.
+        Use this to exclude specific jobs from bulk operations, such as skipping environment-specific jobs or maintenance tasks that shouldn't be migrated.
+
+    .PARAMETER DisableOnSource
+        Disables the job on the source server after successfully copying it to the destination.
+        Use this during server migrations or failover scenarios where you want to prevent the job from running on the old server while it runs on the new one.
+        With -UseLastModified it also applies when the job was found identical on the destination or only its enabled state was aligned;
+        it does not apply when the job was skipped because the destination copy is newer.
+
+    .PARAMETER DisableOnDestination
+        Creates the job on the destination server but leaves it disabled.
+        Use this when deploying jobs to test environments or when you need to review and modify job steps before enabling them in the new environment.
+
+    .PARAMETER InputObject
+        Accepts SQL Agent job objects from the pipeline, typically from Get-DbaAgentJob.
+        Use this to copy pre-filtered jobs or when combining with other job management cmdlets for complex workflows.
+
+        .PARAMETER WhatIf
+        If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
+
+    .PARAMETER Confirm
+        If this switch is enabled, you will be prompted for confirmation before executing any operations that change state.
+
+    .PARAMETER Force
+        Overwrites existing jobs on the destination server and automatically sets missing job owners to the 'sa' login.
+        Use this when you need to replace existing jobs or when source job owners don't exist on the destination server during migrations.
+
+    .PARAMETER NewName
+        The new name for the job on the destination server.
+        Required when source and destination are the same server instance. Use this to create a copy of a job under a different name on the same or a different server.
+        Cannot be used when copying multiple jobs simultaneously.
+
+    .PARAMETER UseLastModified
+        Compares the job definition on source and destination - job properties, enabled state, steps and schedules - and only copies when they actually differ.
+        When the definitions differ, the direction is decided by each job's effective last-modified time: the later of msdb.dbo.sysjobs.date_modified and
+        the date_modified of every schedule attached to the job (sp_update_schedule only touches sysschedules, not the job row). On SQL Server 2000,
+        which has no sysschedules, only the job row is used. Both values are normalised to UTC using each server's current time zone offset so
+        instances in different time zones compare correctly; across a daylight-saving change the value for a job modified before the switch can be
+        off by one hour, which only matters when source and destination are in different time zones.
+        - Job doesn't exist on destination: creates it
+        - Definitions identical: skips, regardless of timestamps
+        - Only the enabled state differs and source is not older: updates the flag in place without recreating the job
+        - Definitions differ and source is newer (or equal): drops and recreates the job
+        - Definitions differ and destination is newer: skips with a warning
+        Job IDs, timestamps, version numbers, schedule IDs/UIDs and run history are excluded from the comparison, so jobs that are
+        identical but were created independently (for example on AG replicas) are not needlessly recreated.
+        Use this for incremental synchronization scenarios where you want to keep jobs up-to-date without unconditionally overwriting them.
+
+    .PARAMETER EnableException
+        By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
+        This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
+        Using this switch turns this "nice by default" feature off and enables you to catch exceptions with your own try/catch.
+
+    .NOTES
+        Tags: Migration, Agent, Job
+        Author: Chrissy LeMaire (@cl), netnerds.net
+
+        Website: https://dbatools.io
+        Copyright: (c) 2018 by dbatools, licensed under MIT
+        License: MIT https://opensource.org/licenses/MIT
+
+    .LINK
+        https://dbatools.io/Copy-DbaAgentJob
+
+    .OUTPUTS
+        MigrationObject (PSCustomObject)
+
+        Returns one object per job processed, regardless of whether it was successfully copied, skipped, or failed. This provides a consistent record of all job migration operations.
+
+        Properties:
+        - DateTime: Timestamp when the operation was attempted (DbaDateTime type)
+        - SourceServer: The name of the source SQL Server instance
+        - DestinationServer: The name of the destination SQL Server instance
+        - Name: The name of the SQL Agent job
+        - Type: Always "Agent Job" indicating the type of object being migrated
+        - Status: The outcome of the operation - "Successful", "Skipped", or "Failed"
+        - Notes: Descriptive message explaining the status (reason for skip, error details, etc.)
+
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster
+
+        Copies all jobs from sqlserver2014a to sqlcluster, using Windows credentials. If jobs with the same name exist on sqlcluster, they will be skipped.
+
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -Job PSJob -SourceSqlCredential $cred -Force
+
+        Copies a single job, the PSJob job from sqlserver2014a to sqlcluster, using SQL credentials for sqlserver2014a and Windows credentials for sqlcluster. If a job with the same name exists on sqlcluster, it will be dropped and recreated because -Force was used.
+
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlcluster -WhatIf -Force
+
+        Shows what would happen if the command were executed using force.
+
+    .EXAMPLE
+        PS C:\> Get-DbaAgentJob -SqlInstance sqlserver2014a | Where-Object Category -eq "Report Server" | Copy-DbaAgentJob -Destination sqlserver2014b
+
+        Copies all SSRS jobs (subscriptions) from AlwaysOn Primary SQL instance sqlserver2014a to AlwaysOn Secondary SQL instance sqlserver2014b
+
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlserver2014b -UseLastModified
+
+        Copies jobs from sqlserver2014a to sqlserver2014b, creating jobs that don't exist and recreating only those whose definition differs and where the source is not older. Jobs with an identical definition are skipped even when their date_modified values differ. A job that differs only in its enabled state has the flag updated in place.
+
+    .EXAMPLE
+        PS C:\> Copy-DbaAgentJob -Source sqlserver2014a -Destination sqlserver2014a -Job "OriginalJob" -NewName "JobCopy"
+
+        Copies the job "OriginalJob" on sqlserver2014a to the same server as "JobCopy". When source and destination are the same instance, -NewName is required.
+    #>
+    [cmdletbinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = "Medium")]
+    param (
+        [DbaInstanceParameter]$Source,
+        [PSCredential]$SourceSqlCredential,
+        [parameter(Mandatory)]
+        [DbaInstanceParameter[]]$Destination,
+        [PSCredential]$DestinationSqlCredential,
+        [object[]]$Job,
+        [object[]]$ExcludeJob,
+        [switch]$DisableOnSource,
+        [switch]$DisableOnDestination,
+        [switch]$Force,
+        [string]$NewName,
+        [switch]$UseLastModified,
+        [parameter(ValueFromPipeline)]
+        [Microsoft.SqlServer.Management.Smo.Agent.Job[]]$InputObject,
+        [switch]$EnableException
+    )
+    begin {
+        if ($Source) {
+            try {
+                $splatGetJob = @{
+                    SqlInstance   = $Source
+                    SqlCredential = $SourceSqlCredential
+                }
+                if (Test-Bound 'Job') {
+                    $splatGetJob['Job'] = $Job
+                }
+                if (Test-Bound 'ExcludeJob') {
+                    $splatGetJob['ExcludeJob'] = $ExcludeJob
+                }
+                $InputObject = Get-DbaAgentJob @splatGetJob
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source
+                return
+            }
         }
+        if ((Test-Bound "NewName") -and $InputObject.Count -gt 1) {
+            Stop-Function -Message "Cannot use -NewName when copying multiple jobs"
+            return
+        }
+        if ($Force) { $ConfirmPreference = 'none' }
+
+        # Effective last-modified for -UseLastModified, normalised to UTC with the server's current offset.
+        # DATEDIFF against GETUTCDATE works on SQL Server 2000+ (SYSDATETIMEOFFSET would need 2008+).
+        # sp_update_schedule stamps sysschedules.date_modified only, never sysjobs.date_modified, so
+        # schedules must be included on 2005+; SQL Server 2000 has no sysschedules and uses the job row alone.
+        $sqlLastModified = "
+SELECT DATEADD(MINUTE, -DATEDIFF(MINUTE, GETUTCDATE(), GETDATE()), MAX(x.date_modified)) AS LastModifiedUtc
+FROM (
+    SELECT j.date_modified
+    FROM msdb.dbo.sysjobs AS j
+    WHERE j.job_id = @jobId
+    UNION ALL
+    SELECT s.date_modified
+    FROM msdb.dbo.sysjobschedules AS js
+    INNER JOIN msdb.dbo.sysschedules AS s ON s.schedule_id = js.schedule_id
+    WHERE js.job_id = @jobId
+) AS x"
+        $sqlLastModified2000 = "
+SELECT DATEADD(MINUTE, -DATEDIFF(MINUTE, GETUTCDATE(), GETDATE()), j.date_modified) AS LastModifiedUtc
+FROM msdb.dbo.sysjobs AS j
+WHERE j.job_id = @jobId"
+
+        # Destinations whose job collection has been refreshed during this invocation (-UseLastModified only)
+        $refreshedDestinations = @{}
     }
-}
-
-Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-        # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
-        # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
-        $backupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
-        $null = New-Item -Path $backupPath -ItemType Directory
-
-        # Explain what needs to be set up for the test:
-        # To test copying agent jobs, we need to create test jobs on the source instance that can be copied to the destination
-
-        # Set variables. They are available in all the It blocks.
-        $sourceJobName = "dbatoolsci_copyjob"
-        $sourceJobDisabledName = "dbatoolsci_copyjob_disabled"
-
-        # Create the objects.
-        $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $sourceJobName
-        $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $sourceJobDisabledName
-
-        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-    }
-
-    AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
-        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-        # Cleanup all created objects.
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled
-        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled
-
-        # Remove the backup directory.
-        Remove-Item -Path $backupPath -Recurse
-
-        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-    }
-
-    Context "Command copies jobs properly" {
-        BeforeAll {
-            $results = Copy-DbaAgentJob -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Job dbatoolsci_copyjob
-        }
-
-        It "returns one success" {
-            $results.Name | Should -Be "dbatoolsci_copyjob"
-            $results.Status | Should -Be "Successful"
-        }
-
-        It "did not copy dbatoolsci_copyjob_disabled" {
-            Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job dbatoolsci_copyjob_disabled | Should -BeNullOrEmpty
-        }
-
-        It "disables jobs when requested" {
-            $splatCopyJob = @{
-                Source               = $TestConfig.InstanceCopy1
-                Destination          = $TestConfig.InstanceCopy2
-                Job                  = "dbatoolsci_copyjob_disabled"
-                DisableOnSource      = $true
-                DisableOnDestination = $true
-                Force                = $true
+    process {
+        if (Test-FunctionInterrupt) { return }
+        foreach ($destinstance in $Destination) {
+            try {
+                $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
             }
-            $results = Copy-DbaAgentJob @splatCopyJob
-
-            $results.Name | Should -Be "dbatoolsci_copyjob_disabled"
-            $results.Status | Should -Be "Successful"
-            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job dbatoolsci_copyjob_disabled).Enabled | Should -BeFalse
-            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job dbatoolsci_copyjob_disabled).Enabled | Should -BeFalse
-        }
-    }
-
-    Context "Regression test for issue #9982" {
-        It "copies all jobs when -Job parameter is not specified" {
-            # Copy all jobs without specifying -Job parameter, using -Force to ensure they copy even if they exist
-            $results = Copy-DbaAgentJob -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Force
-
-            # Both jobs should be copied
-            $results.Name | Should -Contain "dbatoolsci_copyjob"
-            $results.Name | Should -Contain "dbatoolsci_copyjob_disabled"
-            $results.Status | Should -Not -Contain "Skipped"
-            $results.Status | Should -Not -Contain "Failed"
-
-            # Verify jobs exist on destination
-            $destJobsCopied = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job dbatoolsci_copyjob, dbatoolsci_copyjob_disabled
-            $destJobsCopied.Count | Should -BeGreaterOrEqual 2
-        }
-    }
-
-    Context "UseLastModified parameter" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $testJobModified = "dbatoolsci_copyjob_modified"
-            $testScheduleName = "dbatoolsci_copyjob_schedule"
-
-            # Source job with a schedule, so schedule-only changes can be exercised
-            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $testJobModified
-            $splatSchedule = @{
-                SqlInstance       = $TestConfig.InstanceCopy1
-                Job               = $testJobModified
-                Schedule          = $testScheduleName
-                FrequencyType     = "Daily"
-                FrequencyInterval = 1
-                StartTime         = "080000"
+            if ($UseLastModified -and -not $refreshedDestinations.ContainsKey($destServer.Name)) {
+                # dbatools reuses server objects within a session; refresh once so new/dropped jobs are seen on repeat runs
+                $destServer.JobServer.Jobs.Refresh()
+                $refreshedDestinations[$destServer.Name] = $true
             }
-            $null = New-DbaAgentSchedule @splatSchedule
-            Start-Sleep -Seconds 2
+            $destJobs = $destServer.JobServer.Jobs
 
-            # Initial copy: destination now carries a later date_modified than the source
-            $splatInitialCopy = @{
-                Source      = $TestConfig.InstanceCopy1
-                Destination = $TestConfig.InstanceCopy2
-                Job         = $testJobModified
+            foreach ($serverJob in $InputObject) {
+                if ($UseLastModified) {
+                    # SMO caches and dbatools reuses server objects within a session; refresh the source job
+                    # before the dependency checks, the comparison and Script() read from it
+                    $serverJob.Refresh()
+                    $serverJob.JobSteps.Refresh($true)
+                    $serverJob.JobSchedules.Refresh($true)
+                }
+
+                $jobName = $serverJob.Name
+                $jobId = $serverJob.JobId
+                $sourceserver = $serverJob.Parent.Parent
+                $alertsReferencingJob = @()
+                $skipCreate = $false
+                $destJobName = if (Test-Bound "NewName") { $NewName } else { $jobName }
+
+                if ($sourceserver.Name -eq $destServer.Name -and -not (Test-Bound "NewName")) {
+                    Stop-Function -Message "Source and destination are the same server ($($destServer.Name)). Use -NewName to copy job [$jobName] with a different name on the same server." -Continue
+                }
+
+                $copyJobStatus = [PSCustomObject]@{
+                    SourceServer      = $sourceserver.Name
+                    DestinationServer = $destServer.Name
+                    Name              = $destJobName
+                    Type              = "Agent Job"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [DbaDateTime](Get-Date)
+                }
+
+                if ((Test-Bound 'Job') -and $jobName -notin $Job) {
+                    Write-Message -Level Verbose -Message "Job [$jobName] filtered. Skipping."
+                    continue
+                }
+                if ((Test-Bound 'ExcludeJob') -and $jobName -in $ExcludeJob) {
+                    Write-Message -Level Verbose -Message "Job [$jobName] excluded. Skipping."
+                    continue
+                }
+                Write-Message -Message "Working on job: $jobName" -Level Verbose
+                $sql = "
+                SELECT sp.[name] AS MaintenancePlanName
+                FROM msdb.dbo.sysmaintplan_plans AS sp
+                INNER JOIN msdb.dbo.sysmaintplan_subplans AS sps
+                    ON sps.plan_id = sp.id
+                WHERE job_id = '$($jobId)'"
+                Write-Message -Message $sql -Level Debug
+
+                $MaintenancePlanName = $sourceServer.Query($sql).MaintenancePlanName
+
+                if ($MaintenancePlanName) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanName")) {
+                        $copyJobStatus.Status = "Skipped"
+                        $copyJobStatus.Notes = "Job is associated with maintenance plan"
+                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Job [$jobName] is associated with Maintenance Plan: $MaintenancePlanName"
+                    }
+                    continue
+                }
+
+                $dbNames = ($serverJob.JobSteps | Where-Object { $_.SubSystem -notin 'ActiveScripting', 'AnalysisQuery', 'AnalysisCommand' }).DatabaseName | Where-Object { $_.Length -gt 0 }
+                $missingDb = $dbNames | Where-Object { $destServer.Databases.Name -notcontains $_ }
+
+                if ($missingDb.Count -gt 0 -and $dbNames.Count -gt 0) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobName].")) {
+                        $missingDb = ($missingDb | Sort-Object | Get-Unique) -join ", "
+                        $copyJobStatus.Status = "Skipped"
+                        $copyJobStatus.Notes = "Job is dependent on database: $missingDb"
+                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Database(s) $missingDb doesn't exist on destination. Skipping job [$jobName]."
+                    }
+                    continue
+                }
+
+                $missingLogin = $serverJob.OwnerLoginName | Where-Object { $destServer.Logins.Name -notcontains $_ }
+
+                if ($missingLogin.Count -gt 0) {
+                    # Secondary check: verify if the owner has access via AD group membership
+                    $missingLogin = $missingLogin | Where-Object {
+                        $ownerName = $_
+                        try {
+                            $adInfo = $destServer.EnumWindowsUserInfo($ownerName)
+                            if ($adInfo.Rows.Count -gt 0) {
+                                Write-Message -Level Verbose -Message "Login $ownerName not found as a direct login but has access via AD group membership on destination. Proceeding."
+                                $false
+                            } else {
+                                $true
+                            }
+                        } catch {
+                            Write-Message -Level Verbose -Message "Could not verify AD group membership for $ownerName on destination: $PSItem"
+                            $true
+                        }
+                    }
+                }
+
+                if ($missingLogin.Count -gt 0) {
+                    if ($force -eq $false) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Login(s) $missingLogin doesn't exist on destination. Use -Force to set owner to [sa]. Skipping job [$jobName].")) {
+                            $missingLogin = ($missingLogin | Sort-Object | Get-Unique) -join ", "
+                            $copyJobStatus.Status = "Skipped"
+                            $copyJobStatus.Notes = "Job is dependent on login $missingLogin"
+                            $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            Write-Message -Level Verbose -Message "Login(s) $missingLogin doesn't exist on destination. Use -Force to set owner to [sa]. Skipping job [$jobName]."
+                        }
+                        continue
+                    }
+                }
+
+                $proxyNames = ($serverJob.JobSteps | Where-Object ProxyName).ProxyName
+                $missingProxy = $proxyNames | Where-Object { $destServer.JobServer.ProxyAccounts.Name -notcontains $_ }
+
+                if ($missingProxy -and $proxyNames) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Proxy Account(s) $missingProxy doesn't exist on destination. Skipping job [$jobName].")) {
+                        $missingProxy = ($missingProxy | Sort-Object | Get-Unique) -join ", "
+                        $copyJobStatus.Status = "Skipped"
+                        $copyJobStatus.Notes = "Job is dependent on proxy $missingProxy"
+                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Proxy Account(s) $missingProxy doesn't exist on destination. Skipping job [$jobName]."
+                    }
+                    continue
+                }
+
+                $operators = $serverJob.OperatorToEmail, $serverJob.OperatorToNetSend, $serverJob.OperatorToPage | Where-Object { $_.Length -gt 0 }
+                $missingOperators = $operators | Where-Object { $destServer.JobServer.Operators.Name -notcontains $_ }
+
+                if ($missingOperators.Count -gt 0 -and $operators.Count -gt 0) {
+                    $missingOperator = ($missingOperators | Sort-Object | Get-Unique) -join ", "
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobName]")) {
+                        $copyJobStatus.Status = "Skipped"
+                        $copyJobStatus.Notes = "Job is dependent on operator $missingOperator"
+                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Operator(s) $($missingOperator) doesn't exist on destination. Skipping job [$jobName]"
+                    }
+                    continue
+                }
+
+                if ($destJobs.name -contains $destJobName) {
+                    if ($UseLastModified) {
+                        try {
+                            $destJob = $destServer.JobServer.Jobs[$destJobName]
+                            $destJob.Refresh()
+                            $destJob.JobSteps.Refresh($true)
+                            $destJob.JobSchedules.Refresh($true)
+
+                            # Compare the definitions first. Timestamps only decide direction when the
+                            # definitions actually differ; on their own they are never a reason to copy.
+                            $splatFingerprint = @{ Job = $serverJob }
+                            if ($missingLogin.Count -gt 0) {
+                                # -Force remaps a missing owner to sa on the destination, so compare against that
+                                $splatFingerprint["OwnerLoginName"] = Get-SqlSaLogin -SqlInstance $destServer
+                            }
+                            if ($DisableOnDestination) {
+                                # desired destination state is disabled regardless of the source
+                                $splatFingerprint["IsEnabled"] = $false
+                            }
+                            $sourcePrint = Get-AgentJobFingerprint @splatFingerprint
+                            $destPrint = Get-AgentJobFingerprint -Job $destJob
+
+                            if ($sourcePrint.Hash -eq $destPrint.Hash) {
+                                if ($Pscmdlet.ShouldProcess($destinstance, "Job $destJobName has an identical definition on source and destination. Skipping.")) {
+                                    $copyJobStatus.Status = "Skipped"
+                                    $copyJobStatus.Notes = "Job definition is identical on source and destination"
+                                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                    Write-Message -Level Verbose -Message "Job $destJobName has an identical definition on source and destination. Skipping."
+                                }
+                                # Nothing to create; fall through so -DisableOnSource still applies
+                                $skipCreate = $true
+                            } else {
+                                $changed = @()
+                                if ($sourcePrint.Job -cne $destPrint.Job) { $changed += "job properties" }
+                                if ($sourcePrint.Enabled -cne $destPrint.Enabled) { $changed += "enabled state" }
+                                if ($sourcePrint.Steps -cne $destPrint.Steps) { $changed += "steps" }
+                                if ($sourcePrint.Schedules -cne $destPrint.Schedules) { $changed += "schedules" }
+                                $changedText = $changed -join ", "
+
+                                # Effective last-modified (job row + attached schedules on 2005+), already in UTC
+                                $sourceQuery = if ($sourceserver.VersionMajor -lt 9) { $sqlLastModified2000 } else { $sqlLastModified }
+                                $destQuery = if ($destServer.VersionMajor -lt 9) { $sqlLastModified2000 } else { $sqlLastModified }
+                                $splatSourceDate = @{
+                                    SqlInstance  = $sourceserver
+                                    Database     = "msdb"
+                                    Query        = $sourceQuery
+                                    SqlParameter = @{ jobId = $serverJob.JobID }
+                                }
+                                $sourceDate = (Invoke-DbaQuery @splatSourceDate).LastModifiedUtc
+                                $splatDestDate = @{
+                                    SqlInstance  = $destServer
+                                    Database     = "msdb"
+                                    Query        = $destQuery
+                                    SqlParameter = @{ jobId = $destJob.JobID }
+                                }
+                                $destDate = (Invoke-DbaQuery @splatDestDate).LastModifiedUtc
+
+                                if ($destDate -gt $sourceDate) {
+                                    if ($Pscmdlet.ShouldProcess($destinstance, "Job $destJobName differs ($changedText) but is newer on destination. Skipping.")) {
+                                        $copyJobStatus.Status = "Skipped"
+                                        $copyJobStatus.Notes = "Definition differs ($changedText) but destination job is newer than source (dest: $destDate UTC, source: $sourceDate UTC)"
+                                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                        Write-Message -Level Warning -Message "Job $destJobName differs from source ($changedText) but is newer on destination ($destDate UTC) than source ($sourceDate UTC). Skipping. Use -Force without -UseLastModified to overwrite."
+                                    }
+                                    continue
+                                }
+
+                                if ($changed.Count -eq 1 -and $changed[0] -eq "enabled state") {
+                                    # Only the enabled flag differs: align it in place instead of dropping and recreating
+                                    $targetEnabled = if ($DisableOnDestination) { $false } else { $serverJob.IsEnabled }
+                                    if ($Pscmdlet.ShouldProcess($destinstance, "Job $destJobName differs only in enabled state. Setting IsEnabled to $targetEnabled.")) {
+                                        try {
+                                            $destJob.IsEnabled = $targetEnabled
+                                            $destJob.Alter()
+                                            $copyJobStatus.Status = "Successful"
+                                            $copyJobStatus.Notes = "Enabled state set to $targetEnabled in place; definition otherwise identical, job not recreated"
+                                            $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                            Write-Message -Level Verbose -Message "Job $destJobName differs only in enabled state. Set IsEnabled to $targetEnabled without recreating."
+                                        } catch {
+                                            $copyJobStatus.Status = "Failed"
+                                            $copyJobStatus.Notes = (Get-ErrorMessage -Record $_).Message
+                                            $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                            Write-Message -Level Verbose -Message "Issue updating enabled state for job $destJobName on $destinstance | $PSItem"
+                                            # Destination is not in sync; skip the -DisableOnSource tail so the job is not left disabled on both sides
+                                            continue
+                                        }
+                                    }
+                                    # Nothing to create; fall through so -DisableOnSource still applies
+                                    $skipCreate = $true
+                                } else {
+                                    # Definition differs and source is newer (or the timestamps tie): source wins
+                                    if ($Pscmdlet.ShouldProcess($destinstance, "Job $destJobName differs ($changedText) and source is not older (source: $sourceDate UTC, dest: $destDate UTC). Dropping and recreating.")) {
+                                        try {
+                                            Write-Message -Message "Job $destJobName differs from source ($changedText). Dropping and recreating." -Level Verbose
+                                            # Before dropping, save which alerts reference this job
+                                            $splatAlertsForJob = @{
+                                                SqlInstance  = $destServer
+                                                Database     = "msdb"
+                                                Query        = "SELECT name FROM dbo.sysalerts WHERE job_id = (SELECT job_id FROM dbo.sysjobs WHERE name = @jobName)"
+                                                SqlParameter = @{ jobName = $destJobName }
+                                            }
+                                            $alertsReferencingJob = (Invoke-DbaQuery @splatAlertsForJob).name
+                                            Write-Message -Message "Found $($alertsReferencingJob.Count) alert(s) referencing job $destJobName" -Level Verbose
+                                            $destJob.Drop()
+                                        } catch {
+                                            $copyJobStatus.Status = "Failed"
+                                            $copyJobStatus.Notes = (Get-ErrorMessage -Record $_).Message
+                                            $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                            Write-Message -Level Verbose -Message "Issue dropping job $jobName on $destinstance | $PSItem"
+                                            continue
+                                        }
+                                    }
+                                }
+                            }
+                        } catch {
+                            Write-Message -Level Warning -Message "Error comparing job definitions for $jobName | $PSItem"
+                            if ($force -eq $false) {
+                                if ($Pscmdlet.ShouldProcess($destinstance, "Job $jobName exists at destination. Use -Force to drop and migrate.")) {
+                                    $copyJobStatus.Status = "Skipped"
+                                    $copyJobStatus.Notes = "Already exists on destination"
+                                    $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                    Write-Message -Level Verbose -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
+                                }
+                                continue
+                            }
+                        }
+                    } elseif ($force -eq $false) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Job $jobName exists at destination. Use -Force to drop and migrate.")) {
+                            $copyJobStatus.Status = "Skipped"
+                            $copyJobStatus.Notes = "Already exists on destination"
+                            $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            Write-Message -Level Verbose -Message "Job $jobName exists at destination. Use -Force to drop and migrate."
+                        }
+                        continue
+                    } else {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping job $destJobName and recreating")) {
+                            try {
+                                Write-Message -Message "Dropping Job $destJobName" -Level Verbose
+                                # Before dropping, save which alerts reference this job
+                                $splatAlertsForJob = @{
+                                    SqlInstance  = $destServer
+                                    Database     = "msdb"
+                                    Query        = "SELECT name FROM dbo.sysalerts WHERE job_id = (SELECT job_id FROM dbo.sysjobs WHERE name = @jobName)"
+                                    SqlParameter = @{ jobName = $destJobName }
+                                }
+                                $alertsReferencingJob = (Invoke-DbaQuery @splatAlertsForJob).name
+                                Write-Message -Message "Found $($alertsReferencingJob.Count) alert(s) referencing job $destJobName" -Level Verbose
+                                $destServer.JobServer.Jobs[$destJobName].Drop()
+                            } catch {
+                                $copyJobStatus.Status = "Failed"
+                                $copyJobStatus.Notes = (Get-ErrorMessage -Record $_).Message
+                                $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Level Verbose -Message "Issue dropping job $jobName on $destinstance | $PSItem"
+                                continue
+                            }
+                        }
+                    }
+                }
+
+                if (-not $skipCreate -and $Pscmdlet.ShouldProcess($destinstance, "Creating Job $destJobName")) {
+                    try {
+                        Write-Message -Message "Copying Job $jobName as $destJobName" -Level Verbose
+                        $sql = $serverJob.Script() | Out-String
+
+                        if ($missingLogin.Count -gt 0 -and $force) {
+                            $saLogin = Get-SqlSaLogin -SqlInstance $destServer
+                            $sql = $sql -replace [Regex]::Escape("@owner_login_name=N'$missingLogin'"), "@owner_login_name=N'$saLogin'"
+                        }
+
+                        $sql = $sql -replace [Regex]::Escape("@server=N'$($sourceserver.DomainInstanceName)'"), "@server=N'$($destServer.DomainInstanceName)'"
+
+                        if (Test-Bound "NewName") {
+                            $sql = $sql -replace [Regex]::Escape("@job_name=N'$jobName'"), "@job_name=N'$NewName'"
+                        }
+
+                        Write-Message -Message $sql -Level Debug
+                        $destServer.Query($sql)
+
+                        $destServer.JobServer.Jobs.Refresh()
+                        $destServer.JobServer.Jobs[$destJobName].IsEnabled = $sourceServer.JobServer.Jobs[$serverJob.name].IsEnabled
+                        $destServer.JobServer.Jobs[$destJobName].Alter()
+
+                        # Restore alert-to-job links if job was dropped and recreated
+                        if ($alertsReferencingJob -and $alertsReferencingJob.Count -gt 0) {
+                            Write-Message -Message "Restoring alert-to-job links for $jobName" -Level Verbose
+                            foreach ($alertName in $alertsReferencingJob) {
+                                try {
+                                    $splatUpdateAlert = @{
+                                        SqlInstance  = $destServer
+                                        Database     = "msdb"
+                                        Query        = "EXEC dbo.sp_update_alert @name = @alertName, @job_name = @jobName"
+                                        SqlParameter = @{
+                                            alertName = $alertName
+                                            jobName   = $jobName
+                                        }
+                                    }
+                                    $null = Invoke-DbaQuery @splatUpdateAlert
+                                    Write-Message -Message "Restored link between alert [$alertName] and job [$jobName]" -Level Verbose
+                                } catch {
+                                    Write-Message -Level Warning -Message "Failed to restore alert link for [$alertName] to job [$jobName] | $PSItem"
+                                }
+                            }
+                        }
+
+                        $copyJobStatus.Status = "Successful"
+                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    } catch {
+                        $copyJobStatus.Status = "Failed"
+                        $copyJobStatus.Notes = (Get-ErrorMessage -Record $_)
+                        $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Issue copying job $jobName on $destinstance | $PSItem"
+                        continue
+                    }
+                }
+
+                # Already reflected in the comparison when the job was not recreated
+                if ($DisableOnDestination -and -not $skipCreate) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Disabling $destJobName")) {
+                        Write-Message -Message "Disabling $destJobName on $destinstance" -Level Verbose
+                        $destServer.JobServer.Jobs[$destJobName].IsEnabled = $False
+                        $destServer.JobServer.Jobs[$destJobName].Alter()
+                    }
+                }
+
+                if ($DisableOnSource) {
+                    if ($Pscmdlet.ShouldProcess($source, "Disabling $jobName")) {
+                        Write-Message -Message "Disabling $jobName on $source" -Level Verbose
+                        $serverJob.IsEnabled = $false
+                        $serverJob.Alter()
+                    }
+                }
             }
-            $null = Copy-DbaAgentJob @splatInitialCopy
-
-            # Read msdb directly so assertions don't depend on cached SMO objects
-            $queryJobRow = "SELECT job_id, enabled, date_modified FROM dbo.sysjobs WHERE name = @jobName"
-            $queryScheduleTime = "
-SELECT s.active_start_time
-FROM dbo.sysjobs AS j
-INNER JOIN dbo.sysjobschedules AS js ON js.job_id = j.job_id
-INNER JOIN dbo.sysschedules AS s ON s.schedule_id = js.schedule_id
-WHERE j.name = @jobName AND s.name = @scheduleName"
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job dbatoolsci_copyjob_modified -ErrorAction SilentlyContinue
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job dbatoolsci_copyjob_modified -ErrorAction SilentlyContinue
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "skips job when definitions are identical even though date_modified differs" {
-            $sourceRow = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Database msdb -Query $queryJobRow -SqlParameter @{ jobName = $testJobModified }
-            $destRow = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Database msdb -Query $queryJobRow -SqlParameter @{ jobName = $testJobModified }
-            $sourceRow.date_modified | Should -Not -Be $destRow.date_modified
-
-            $splatUseModified = @{
-                Source          = $TestConfig.InstanceCopy1
-                Destination     = $TestConfig.InstanceCopy2
-                Job             = $testJobModified
-                UseLastModified = $true
-            }
-            $result = Copy-DbaAgentJob @splatUseModified
-
-            $result.Name | Should -Be $testJobModified
-            $result.Status | Should -Be "Skipped"
-            $result.Notes | Should -BeLike "*identical*"
-        }
-
-        It "updates job when source is newer" {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Set-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $testJobModified -Description "Modified description"
-            Start-Sleep -Seconds 2
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $splatUseModified = @{
-                Source          = $TestConfig.InstanceCopy1
-                Destination     = $TestConfig.InstanceCopy2
-                Job             = $testJobModified
-                UseLastModified = $true
-            }
-            $result = Copy-DbaAgentJob @splatUseModified
-
-            $result.Name | Should -Be $testJobModified
-            $result.Status | Should -Be "Successful"
-            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job $testJobModified).Description | Should -Be "Modified description"
-        }
-
-        It "aligns enabled state in place without recreating the job" {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $destJobIdBefore = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Database msdb -Query $queryJobRow -SqlParameter @{ jobName = $testJobModified }).job_id
-            $null = Set-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $testJobModified -Disabled
-            Start-Sleep -Seconds 2
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $splatUseModified = @{
-                Source          = $TestConfig.InstanceCopy1
-                Destination     = $TestConfig.InstanceCopy2
-                Job             = $testJobModified
-                UseLastModified = $true
-            }
-            $result = Copy-DbaAgentJob @splatUseModified
-
-            $result.Status | Should -Be "Successful"
-            $result.Notes | Should -BeLike "*in place*"
-            $destRow = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Database msdb -Query $queryJobRow -SqlParameter @{ jobName = $testJobModified }
-            $destRow.enabled | Should -Be 0
-            $destRow.job_id | Should -Be $destJobIdBefore
-        }
-
-        It "recreates job when only the schedule changed on the source" {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            # sp_update_schedule touches sysschedules.date_modified only, never sysjobs.date_modified
-            $splatUpdateSchedule = @{
-                SqlInstance  = $TestConfig.InstanceCopy1
-                Database     = "msdb"
-                Query        = "EXEC dbo.sp_update_schedule @name = @scheduleName, @active_start_time = 100000"
-                SqlParameter = @{ scheduleName = $testScheduleName }
-            }
-            $null = Invoke-DbaQuery @splatUpdateSchedule
-            Start-Sleep -Seconds 2
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $splatUseModified = @{
-                Source          = $TestConfig.InstanceCopy1
-                Destination     = $TestConfig.InstanceCopy2
-                Job             = $testJobModified
-                UseLastModified = $true
-            }
-            $result = Copy-DbaAgentJob @splatUseModified
-
-            $result.Status | Should -Be "Successful"
-            $splatCheck = @{
-                SqlInstance  = $TestConfig.InstanceCopy2
-                Database     = "msdb"
-                Query        = $queryScheduleTime
-                SqlParameter = @{ jobName = $testJobModified; scheduleName = $testScheduleName }
-            }
-            (Invoke-DbaQuery @splatCheck).active_start_time | Should -Be 100000
-        }
-
-        It "does not churn a job kept disabled with -DisableOnDestination" {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Set-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $testJobModified -Enabled
-            $splatForceDisabled = @{
-                Source               = $TestConfig.InstanceCopy1
-                Destination          = $TestConfig.InstanceCopy2
-                Job                  = $testJobModified
-                Force                = $true
-                DisableOnDestination = $true
-            }
-            $null = Copy-DbaAgentJob @splatForceDisabled
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $splatUseModified = @{
-                Source               = $TestConfig.InstanceCopy1
-                Destination          = $TestConfig.InstanceCopy2
-                Job                  = $testJobModified
-                UseLastModified      = $true
-                DisableOnDestination = $true
-            }
-            $result = Copy-DbaAgentJob @splatUseModified
-
-            $result.Status | Should -Be "Skipped"
-            $result.Notes | Should -BeLike "*identical*"
-        }
-
-        It "applies -DisableOnSource when the job is identical on the destination" {
-            $splatUseModified = @{
-                Source               = $TestConfig.InstanceCopy1
-                Destination          = $TestConfig.InstanceCopy2
-                Job                  = $testJobModified
-                UseLastModified      = $true
-                DisableOnDestination = $true
-                DisableOnSource      = $true
-            }
-            $result = Copy-DbaAgentJob @splatUseModified
-
-            $result.Status | Should -Be "Skipped"
-            $result.Notes | Should -BeLike "*identical*"
-            $sourceRow = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Database msdb -Query $queryJobRow -SqlParameter @{ jobName = $testJobModified }
-            $sourceRow.enabled | Should -Be 0
-        }
-
-        It "skips job when definition differs but destination is newer" {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Set-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job $testJobModified -Description "Changed on destination"
-            Start-Sleep -Seconds 2
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-            $splatUseModified = @{
-                Source          = $TestConfig.InstanceCopy1
-                Destination     = $TestConfig.InstanceCopy2
-                Job             = $testJobModified
-                UseLastModified = $true
-                WarningVariable = "warn"
-                WarningAction   = "SilentlyContinue"
-            }
-            $result = Copy-DbaAgentJob @splatUseModified
-
-            $result.Status | Should -Be "Skipped"
-            $result.Notes | Should -BeLike "*newer on destination*"
-            ($warn -join " ") | Should -Match "newer on destination"
-        }
-    }
-
-    Context "Regression test for issue #9316 - alert-to-job links preserved with -Force" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            $testJobWithAlert = "dbatoolsci_copyjob_alert"
-            $testAlertName = "dbatoolsci_alert_for_job"
-
-            # Create job on both instances
-            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $testJobWithAlert
-            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job $testJobWithAlert
-
-            # Create alert on destination that references the job
-            $splatCreateAlert = @{
-                SqlInstance = $TestConfig.InstanceCopy2
-                Database    = "msdb"
-                Query       = @"
-EXEC msdb.dbo.sp_add_alert
-    @name = N'$testAlertName',
-    @message_id = 0,
-    @severity = 16,
-    @enabled = 1,
-    @delay_between_responses = 0,
-    @include_event_description_in = 1,
-    @job_name = N'$testJobWithAlert'
-"@
-            }
-            $null = Invoke-DbaQuery @splatCreateAlert
-
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $splatDropAlert = @{
-                SqlInstance = $TestConfig.InstanceCopy2
-                Database    = "msdb"
-                Query       = "EXEC msdb.dbo.sp_delete_alert @name = N'$testAlertName'"
-            }
-            $null = Invoke-DbaQuery @splatDropAlert -ErrorAction SilentlyContinue
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $testJobWithAlert -ErrorAction SilentlyContinue
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job $testJobWithAlert -ErrorAction SilentlyContinue
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "preserves alert-to-job link when copying with -Force" {
-            # Copy the job with -Force, which should drop and recreate it
-            $splatCopyForce = @{
-                Source      = $TestConfig.InstanceCopy1
-                Destination = $TestConfig.InstanceCopy2
-                Job         = $testJobWithAlert
-                Force       = $true
-            }
-            $result = Copy-DbaAgentJob @splatCopyForce
-
-            $result.Status | Should -Be "Successful"
-
-            # Verify the alert still has the job association
-            $splatCheckAlert = @{
-                SqlInstance = $TestConfig.InstanceCopy2
-                Database    = "msdb"
-                Query       = @"
-SELECT a.name as AlertName, j.name as JobName
-FROM msdb.dbo.sysalerts a
-LEFT JOIN msdb.dbo.sysjobs j ON a.job_id = j.job_id
-WHERE a.name = '$testAlertName'
-"@
-            }
-            $alertCheck = Invoke-DbaQuery @splatCheckAlert
-
-            $alertCheck.AlertName | Should -Be $testAlertName
-            $alertCheck.JobName | Should -Be $testJobWithAlert
-        }
-    }
-
-    Context "-NewName parameter" {
-        BeforeAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $sourceNewNameJob = "dbatoolsci_newname_source"
-            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $sourceNewNameJob
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        AfterAll {
-            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job "dbatoolsci_newname_source", "dbatoolsci_newname_copy" -ErrorAction SilentlyContinue
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job "dbatoolsci_newname_renamed" -ErrorAction SilentlyContinue
-            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        }
-
-        It "copies job to same server with new name" {
-            $splatSameServer = @{
-                Source      = $TestConfig.InstanceCopy1
-                Destination = $TestConfig.InstanceCopy1
-                Job         = $sourceNewNameJob
-                NewName     = "dbatoolsci_newname_copy"
-            }
-            $result = Copy-DbaAgentJob @splatSameServer
-
-            $result.Name | Should -Be "dbatoolsci_newname_copy"
-            $result.Status | Should -Be "Successful"
-            $copiedJob = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job "dbatoolsci_newname_copy"
-            $copiedJob | Should -Not -BeNullOrEmpty
-        }
-
-        It "fails when copying to same server without -NewName" {
-            $splatNoNewName = @{
-                Source          = $TestConfig.InstanceCopy1
-                Destination     = $TestConfig.InstanceCopy1
-                Job             = $sourceNewNameJob
-                EnableException = $true
-            }
-            { Copy-DbaAgentJob @splatNoNewName } | Should -Throw
-        }
-
-        It "copies job to different server with new name" {
-            $splatDiffServer = @{
-                Source      = $TestConfig.InstanceCopy1
-                Destination = $TestConfig.InstanceCopy2
-                Job         = $sourceNewNameJob
-                NewName     = "dbatoolsci_newname_renamed"
-            }
-            $result = Copy-DbaAgentJob @splatDiffServer
-
-            $result.Name | Should -Be "dbatoolsci_newname_renamed"
-            $result.Status | Should -Be "Successful"
-            $renamedJob = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job "dbatoolsci_newname_renamed"
-            $renamedJob | Should -Not -BeNullOrEmpty
         }
     }
 }
