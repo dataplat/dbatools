@@ -200,19 +200,27 @@ Backup-DbaDatabase @Splat
                     $Splat.SqlCredential = $TestConfig.SqlCred
                 }
                 $progressShell = [powershell]::Create()
-                $progressShell.Runspace = $progressRunspace
-                $null = $progressShell.AddScript($progressScript).AddArgument((Get-Module -Name $ModuleName | Select-Object -First 1).Path).AddArgument($Splat)
-                $null = $progressShell.Invoke()
-                [PSCustomObject]@{
-                    Records = @($progressShell.Streams.Progress)
-                    Errors  = @($progressShell.Streams.Error)
+                try {
+                    $progressShell.Runspace = $progressRunspace
+                    $null = $progressShell.AddScript($progressScript).AddArgument((Get-Module -Name $ModuleName | Select-Object -First 1).Path).AddArgument($Splat)
+                    $progressOutput = @($progressShell.Invoke())
+                    [PSCustomObject]@{
+                        Records = @($progressShell.Streams.Progress)
+                        Errors  = @($progressShell.Streams.Error)
+                        Output  = $progressOutput
+                    }
+                } finally {
+                    $progressShell.Dispose()
                 }
-                $progressShell.Dispose()
             }
 
             function Get-OpenProgressId ([object[]]$Records) {
-                $completedIds = @($Records | Where-Object RecordType -eq "Completed" | Select-Object -ExpandProperty ActivityId -Unique)
-                $Records | Where-Object RecordType -eq "Processing" | Select-Object -ExpandProperty ActivityId -Unique | Where-Object { $PSItem -notin $completedIds }
+                # An Id can be reused after completion, so only its final record determines whether it is closed.
+                $lastProgressRecordById = @{}
+                foreach ($progressRecord in $Records) {
+                    $lastProgressRecordById[$progressRecord.ActivityId] = $progressRecord
+                }
+                $lastProgressRecordById.Values | Where-Object RecordType -ne "Completed" | Select-Object -ExpandProperty ActivityId
             }
         }
 
@@ -229,7 +237,13 @@ Backup-DbaDatabase @Splat
             }
             $whatIfResult = Get-BackupProgressRecord -Splat $splatWhatIf
             $whatIfResult.Errors | Should -BeNullOrEmpty
+            $whatIfResult.Output | Should -BeNullOrEmpty
             $whatIfResult.Records | Should -Not -BeNullOrEmpty
+            foreach ($progressDatabase in $splatWhatIf.Database) {
+                $whatIfResult.Records | Where-Object {
+                    $PSItem.RecordType -eq "Processing" -and $PSItem.Activity -like "Backing up database $progressDatabase to *"
+                } | Should -Not -BeNullOrEmpty
+            }
             Get-OpenProgressId -Records $whatIfResult.Records | Should -BeNullOrEmpty
         }
 
@@ -241,7 +255,10 @@ Backup-DbaDatabase @Splat
             }
             $backupResult = Get-BackupProgressRecord -Splat $splatBackup
             $backupResult.Errors | Should -BeNullOrEmpty
-            $backupResult.Records | Should -Not -BeNullOrEmpty
+            $backupResult.Output | Should -HaveCount 1
+            $backupResult.Output[0].DatabaseName | Should -Be "master"
+            $backupResult.Output[0].BackupComplete | Should -BeTrue
+            $backupResult.Records | Where-Object RecordType -eq "Processing" | Should -Not -BeNullOrEmpty
             Get-OpenProgressId -Records $backupResult.Records | Should -BeNullOrEmpty
         }
     }
