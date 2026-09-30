@@ -13,6 +13,10 @@ function New-DbaComputerCertificate {
 
         It makes a lot of assumptions - namely, that your account is allowed to auto-enroll and that you have permission to do everything it needs to do ;)
 
+        When the CA holds the request as pending, for example because the template requires the approval of a CA manager, no certificate
+        is returned. The warning names the request ID and the certreq commands that install the certificate once it is issued; the request
+        and its private key stay in LocalMachine\REQUEST of the computer that runs the command until then.
+
         References:
         https://www.itprotoday.com/sql-server/7-steps-ssl-encryption
         https://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/
@@ -492,17 +496,39 @@ function New-DbaComputerCertificate {
                         $storedCert | Select-Object * | Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
                     }
                 } else {
+                    $submit = $null
+                    $submitExitCode = $null
                     if ($PScmdlet.ShouldProcess("local", "Submitting certificate request for $computer to $CaServer\$CaName")) {
                         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -q -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certCsr $certCrt $certPfx"
                         $submit = certreq -q -submit -config "$CaServer\$CaName" -attrib $certTemplate $certCsr $certCrt $certPfx
+                        $submitExitCode = $LASTEXITCODE
                     }
 
-                    if ($submit -match "ssued") {
+                    # The outcome comes from the exit code and the certificate file, not from the messages: they are localized,
+                    # and "Certificate not issued" of a refused request contains "issued" as well. certreq ends with 0 when the
+                    # CA took the request, and writes the certificate file only when the CA issued the certificate right away.
+                    # A CA may also hold a request as pending, for example until a CA manager approves it.
+                    if ($submitExitCode -eq 0 -and (Test-Path -Path $certCrt)) {
                         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -q -accept -machine $certCrt"
                         $null = certreq -q -accept -machine $certCrt
                         $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2 ($certCrt, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
                         $storedCert = Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
-                    } elseif ($submit) {
+                    } elseif ($submitExitCode -eq 0) {
+                        # The request is pending at the CA. It stays in LocalMachine\REQUEST with its private key, because the
+                        # certificate the CA issues later can only be installed with that key. The request files are not needed for that.
+                        Write-Message -Level Verbose -Message "$submit"
+                        $requestId = ([regex]::Match("$submit", "RequestId:\s*(\d+)")).Groups[1].Value
+                        if (-not $requestId) {
+                            $requestId = "<RequestId from the CA>"
+                        }
+                        $requestCrt = "$computer-$requestId.crt"
+                        $pendingMessage = "The CA $CaServer\$CaName holds the certificate request $requestId for $computer as pending, for example until a CA manager approves it. The request and its private key stay in LocalMachine\REQUEST on $env:COMPUTERNAME. Once the CA has issued the certificate, install it on $env:COMPUTERNAME with: certreq -retrieve -config `"$CaServer\$CaName`" $requestId $requestCrt, then certreq -accept -machine $requestCrt."
+                        if (-not $computer.IsLocalHost) {
+                            $pendingMessage += " Then export it with its private key and import it on $computer with Add-DbaComputerCertificate."
+                        }
+                        Remove-Item -Path $certDir -Recurse -Force -ErrorAction SilentlyContinue
+                        Stop-Function -Message $pendingMessage -Target $computer -Continue
+                    } elseif ($null -ne $submitExitCode) {
                         Write-Message -Level Warning -Message "Something went wrong"
                         Write-Message -Level Warning -Message "$create"
                         Write-Message -Level Warning -Message "$submit"

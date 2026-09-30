@@ -501,4 +501,142 @@ RequestType = PKCS10
             $ownRequestsAfter | Should -BeNullOrEmpty
         }
     }
+
+    # A real CA refuses a template it does not offer right away. Its message "Certificate not issued" contains "issued", which
+    # the command once took for success: it then tried to install a certificate that was never written and left the request behind.
+    # No CI environment has a CA, so this runs only against a lab that sets CaServer and CaName in its configuration.
+    Context "Removes the request when the CA refuses it" -Skip:(-not $TestConfig.CaServer) {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The request files are copied to know the request of this test by its key, see the contexts above. certreq is real.
+            $global:dbatoolsciCsrCopyFolder = "$([System.IO.Path]::GetTempPath())csrcopy_dbatoolsci_$(Get-Random)"
+            $null = New-Item -Path $global:dbatoolsciCsrCopyFolder -ItemType Directory
+            $mockCertreq = {
+                certreq.exe @args
+                if ($args -contains "-new") {
+                    Copy-Item -Path $args[-1] -Destination (Join-Path -Path $global:dbatoolsciCsrCopyFolder -ChildPath "$(Get-Random).csr")
+                }
+            }
+            Mock -ModuleName dbatools -CommandName certreq -MockWith $mockCertreq
+
+            $splatRefusingCa = @{
+                CaServer            = $TestConfig.CaServer
+                CaName              = $TestConfig.CaName
+                CertificateTemplate = "dbatoolsci_NoSuchTemplate"
+                WarningVariable     = "refusedWarning"
+                WarningAction       = "SilentlyContinue"
+                EnableException     = $false
+            }
+            $refusedResult = New-DbaComputerCertificate @splatRefusingCa
+            $requestFiles = @((Get-ChildItem -Path $global:dbatoolsciCsrCopyFolder -Filter "*.csr").FullName)
+            $ownRequestsAfter = @(Get-TestRequestThumbprint -RequestFile $requestFiles)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            foreach ($leftover in (Get-TestRequestThumbprint -RequestFile $requestFiles)) {
+                Remove-DbaComputerCertificate -Thumbprint $leftover -Folder REQUEST -DeleteKey
+            }
+            Remove-Item -Path $global:dbatoolsciCsrCopyFolder -Recurse -ErrorAction SilentlyContinue
+            Remove-Variable -Name dbatoolsciCsrCopyFolder -Scope Global -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Warns with the reason of the CA instead of returning a certificate" {
+            $refusedResult | Should -BeNullOrEmpty
+            ($refusedWarning -join " ") | Should -Match "Failure when attempting to create the cert"
+        }
+
+        It "Removes its request and the key again" {
+            $requestFiles | Should -HaveCount 1
+            $ownRequestsAfter | Should -BeNullOrEmpty
+        }
+    }
+
+    # A real CA whose template holds every request as pending until a CA manager approves it. No CI environment has one,
+    # so this runs only against a lab that sets CaServer, CaName and ApprovalTemplate in its configuration.
+    Context "Keeps a pending request so that the certificate can be installed once it is issued" -Skip:(-not $TestConfig.ApprovalTemplate) {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The request files are copied to know the request of this test by its key, see the contexts above. certreq is real.
+            $global:dbatoolsciCsrCopyFolder = "$([System.IO.Path]::GetTempPath())csrcopy_dbatoolsci_$(Get-Random)"
+            $null = New-Item -Path $global:dbatoolsciCsrCopyFolder -ItemType Directory
+            $mockCertreq = {
+                certreq.exe @args
+                if ($args -contains "-new") {
+                    Copy-Item -Path $args[-1] -Destination (Join-Path -Path $global:dbatoolsciCsrCopyFolder -ChildPath "$(Get-Random).csr")
+                }
+            }
+            Mock -ModuleName dbatools -CommandName certreq -MockWith $mockCertreq
+
+            $caConfig = "$($TestConfig.CaServer)\$($TestConfig.CaName)"
+            $splatPendingCa = @{
+                CaServer            = $TestConfig.CaServer
+                CaName              = $TestConfig.CaName
+                CertificateTemplate = $TestConfig.ApprovalTemplate
+                WarningVariable     = "pendingWarning"
+                WarningAction       = "SilentlyContinue"
+                EnableException     = $false
+            }
+            $pendingResult = New-DbaComputerCertificate @splatPendingCa
+            $requestFiles = @((Get-ChildItem -Path $global:dbatoolsciCsrCopyFolder -Filter "*.csr").FullName)
+            $pendingRequest = Get-ChildItem -Path Cert:\LocalMachine\REQUEST | Where-Object Thumbprint -in @(Get-TestRequestThumbprint -RequestFile $requestFiles)
+            $pendingRequestId = ([regex]::Match("$pendingWarning", "certificate request (\d+)")).Groups[1].Value
+
+            # A CA manager approves the request, then the certreq commands the warning names install the certificate. They
+            # run with -q here, so that a failure reports instead of showing a dialog.
+            $approval = certutil -config $caConfig -resubmit $pendingRequestId
+            $retrieveCommand = [regex]::Match("$pendingWarning", "certreq -retrieve -config `"([^`"]+)`" (\d+) (\S+\.crt)")
+            $acceptCommand = [regex]::Match("$pendingWarning", "certreq -accept -machine (\S+\.crt)")
+            $issuedCrt = Join-Path -Path $global:dbatoolsciCsrCopyFolder -ChildPath $retrieveCommand.Groups[3].Value
+            $null = certreq.exe -q -retrieve -config $retrieveCommand.Groups[1].Value $retrieveCommand.Groups[2].Value $issuedCrt
+            $null = certreq.exe -q -accept -machine (Join-Path -Path $global:dbatoolsciCsrCopyFolder -ChildPath $acceptCommand.Groups[1].Value)
+            $issuedThumbprint = (New-Object System.Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList $issuedCrt).Thumbprint
+            $installedCert = Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object Thumbprint -eq $issuedThumbprint
+            $requestAfterAccept = @(Get-TestRequestThumbprint -RequestFile $requestFiles)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            if ($issuedThumbprint -and (Get-ChildItem -Path Cert:\LocalMachine\My | Where-Object Thumbprint -eq $issuedThumbprint)) {
+                Remove-DbaComputerCertificate -Thumbprint $issuedThumbprint -DeleteKey
+            }
+            foreach ($leftover in (Get-TestRequestThumbprint -RequestFile $requestFiles)) {
+                Remove-DbaComputerCertificate -Thumbprint $leftover -Folder REQUEST -DeleteKey
+            }
+            Remove-Item -Path $global:dbatoolsciCsrCopyFolder -Recurse -ErrorAction SilentlyContinue
+            Remove-Variable -Name dbatoolsciCsrCopyFolder -Scope Global -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Warns with the request ID instead of returning a certificate" {
+            $pendingResult | Should -BeNullOrEmpty
+            ($pendingWarning -join " ") | Should -Match "as pending"
+            $pendingRequestId | Should -Match "^\d+$"
+        }
+
+        It "Keeps the request and its key while the CA holds it" {
+            $requestFiles | Should -HaveCount 1
+            $pendingRequest | Should -HaveCount 1
+            $pendingKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($pendingRequest)
+            # Signing needs the key file itself, the certificate only points to it.
+            $pendingKey.SignData([byte[]](1, 2, 3), [System.Security.Cryptography.HashAlgorithmName]::SHA256, [System.Security.Cryptography.RSASignaturePadding]::Pkcs1) | Should -Not -BeNullOrEmpty
+        }
+
+        It "Installs the certificate with its private key once a CA manager has approved it" {
+            "$approval" | Should -Match "-resubmit command completed successfully"
+            $retrieveCommand.Groups[1].Value | Should -Be $caConfig
+            $retrieveCommand.Groups[2].Value | Should -Be $pendingRequestId
+            $acceptCommand.Groups[1].Value | Should -Be $retrieveCommand.Groups[3].Value
+            $installedCert | Should -Not -BeNullOrEmpty
+            $installedCert.HasPrivateKey | Should -BeTrue
+            $requestAfterAccept | Should -BeNullOrEmpty
+        }
+    }
 }
