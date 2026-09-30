@@ -40,7 +40,7 @@ export GOTOOLCHAIN=local
 
 pushd "${source_root}" > /dev/null
 go mod verify
-make build
+MINIO_RELEASE=RELEASE make build
 popd > /dev/null
 
 # Assert minio --version reports the pinned release before packaging it.

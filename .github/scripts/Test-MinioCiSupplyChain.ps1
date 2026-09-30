@@ -65,7 +65,7 @@ $requiredBuildLines = @(
     'actual_commit="$(git -C "${source_root}" rev-parse HEAD)"',
     'actual_tag="$(git -C "${source_root}" describe --tags --exact-match)"',
     "go mod verify",
-    "make build",
+    "MINIO_RELEASE=RELEASE make build",
     'minio_version_output="$("${source_root}/minio" --version)"',
     "for notice_file in LICENSE NOTICE CREDITS; do",
     'docker build \',
