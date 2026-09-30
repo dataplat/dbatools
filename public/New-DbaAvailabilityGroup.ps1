@@ -470,346 +470,330 @@ function New-DbaAvailabilityGroup {
             return
         }
 
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Checking requirements"
-        $requirementsFailed = $false
+        # A throw from Stop-Function, a stopped pipeline and an early return all leave the process block, so the bar is completed in finally
+        try {
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Checking requirements"
+            $requirementsFailed = $false
 
-        if (-not $server.IsHadrEnabled) {
-            $requirementsFailed = $true
-            Write-Message -Level Warning -Message "Availability Group (HADR) is not configured for the instance: $Primary. Use Enable-DbaAgHadr to configure the instance."
-        }
-
-        if ($Secondary) {
-            $secondaries = @()
-            if ($SeedingMode -eq "Automatic") {
-                $primarypath = Get-DbaDefaultPath -SqlInstance $server
+            if (-not $server.IsHadrEnabled) {
+                $requirementsFailed = $true
+                Write-Message -Level Warning -Message "Availability Group (HADR) is not configured for the instance: $Primary. Use Enable-DbaAgHadr to configure the instance."
             }
-            foreach ($instance in $Secondary) {
-                try {
-                    $second = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SecondarySqlCredential
-                    $secondaries += $second
-                } catch {
-                    Write-Progress -Activity "Adding new availability group" -Completed
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                }
 
-                if (-not $second.IsHadrEnabled) {
-                    $requirementsFailed = $true
-                    Write-Message -Level Warning -Message "Availability Group (HADR) is not configured for the instance: $instance. Use Enable-DbaAgHadr to configure the instance."
-                }
-
+            if ($Secondary) {
+                $secondaries = @()
                 if ($SeedingMode -eq "Automatic") {
-                    $secondarypath = Get-DbaDefaultPath -SqlInstance $second
-                    if ($primarypath.Data -ne $secondarypath.Data) {
-                        Write-Message -Level Warning -Message "Primary and secondary ($instance) default data paths do not match. Trying anyway."
+                    $primarypath = Get-DbaDefaultPath -SqlInstance $server
+                }
+                foreach ($instance in $Secondary) {
+                    try {
+                        $second = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SecondarySqlCredential
+                        $secondaries += $second
+                    } catch {
+                        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                     }
-                    if ($primarypath.Log -ne $secondarypath.Log) {
-                        Write-Message -Level Warning -Message "Primary and secondary ($instance) default log paths do not match. Trying anyway."
+
+                    if (-not $second.IsHadrEnabled) {
+                        $requirementsFailed = $true
+                        Write-Message -Level Warning -Message "Availability Group (HADR) is not configured for the instance: $instance. Use Enable-DbaAgHadr to configure the instance."
+                    }
+
+                    if ($SeedingMode -eq "Automatic") {
+                        $secondarypath = Get-DbaDefaultPath -SqlInstance $second
+                        if ($primarypath.Data -ne $secondarypath.Data) {
+                            Write-Message -Level Warning -Message "Primary and secondary ($instance) default data paths do not match. Trying anyway."
+                        }
+                        if ($primarypath.Log -ne $secondarypath.Log) {
+                            Write-Message -Level Warning -Message "Primary and secondary ($instance) default log paths do not match. Trying anyway."
+                        }
                     }
                 }
             }
-        }
 
-        if ($requirementsFailed) {
-            Write-Progress -Activity "Adding new availability group" -Completed
-            Stop-Function -Message "Prerequisites are not completly met, so stopping here. See warning messages for details."
-            return
-        }
-
-        # Don't reuse $server here, it fails
-        if (Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name) {
-            Write-Progress -Activity "Adding new availability group" -Completed
-            Stop-Function -Message "Availability group named $Name already exists on $Primary"
-            return
-        }
-
-        if ($Certificate) {
-            $cert = Get-DbaDbCertificate -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Certificate $Certificate
-            if (-not $cert) {
-                Write-Progress -Activity "Adding new availability group" -Completed
-                Stop-Function -Message "Certificate $Certificate does not exist on $Primary" -Target $Primary
-                return
-            }
-        }
-
-        if (($SharedPath)) {
-            if (-not (Test-DbaPath -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Path $SharedPath)) {
-                Write-Progress -Activity "Adding new availability group" -Completed
-                # No -Continue on these guards: no loop encloses them, so the continue escaped the
-                # command before the return below ever ran and ate an iteration of the caller's loop.
-                Stop-Function -Message "Cannot access $SharedPath from $Primary"
-                return
-            }
-        }
-
-        if ($Database -and -not $UseLastBackup -and -not $SharedPath -and $Secondary -and $SeedingMode -ne 'Automatic') {
-            Write-Progress -Activity "Adding new availability group" -Completed
-            Stop-Function -Message "You must specify a SharedPath when adding databases to a manually seeded availability group"
-            return
-        }
-
-        if ($server.HostPlatform -eq "Linux") {
-            # New to SQL Server 2017 (14.x) is the introduction of a cluster type for AGs. For Linux, there are two valid values: External and None.
-            if ($ClusterType -notin "External", "None") {
-                Write-Progress -Activity "Adding new availability group" -Completed
-                Stop-Function -Message "Linux only supports ClusterType of External or None"
-                return
-            }
-            # Microsoft Distributed Transaction Coordinator (DTC) is not supported under Linux in SQL Server 2017
-            if ($DtcSupport) {
-                Write-Progress -Activity "Adding new availability group" -Completed
-                Stop-Function -Message "Microsoft Distributed Transaction Coordinator (DTC) is not supported under Linux"
-                return
-            }
-        }
-
-        if ($ClusterType -eq "None" -and $server.VersionMajor -lt 14) {
-            Write-Progress -Activity "Adding new availability group" -Completed
-            Stop-Function -Message "ClusterType of None only supported in SQL Server 2017 and above"
-            return
-        }
-
-        # Check if ConnectionModeInSecondaryRole is set on Standard Edition
-        if ($ConnectionModeInSecondaryRole -and $ConnectionModeInSecondaryRole -ne "AllowNoConnections") {
-            $instances = @($server) + $secondaries
-            foreach ($instance in $instances) {
-                if ($instance.EngineEdition -eq "Standard") {
-                    Write-Message -Level Warning -Message "ConnectionModeInSecondaryRole is not supported on Standard Edition. The setting will be ignored on $($instance.Name). Consider using Enterprise or Developer Edition for read-only secondary replicas."
-                }
-            }
-        }
-
-        # database checks
-        if ($Database) {
-            $dbs += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $Database
-        }
-
-        foreach ($primarydb in $dbs) {
-            if ($primarydb.MirroringStatus -ne "None") {
-                Write-Progress -Activity "Adding new availability group" -Completed
-                Stop-Function -Message "Cannot setup mirroring on database ($($primarydb.Name)) due to its current mirroring state: $($primarydb.MirroringStatus)"
+            if ($requirementsFailed) {
+                Stop-Function -Message "Prerequisites are not completly met, so stopping here. See warning messages for details."
                 return
             }
 
-            if ($primarydb.Status -ne "Normal") {
-                Write-Progress -Activity "Adding new availability group" -Completed
-                Stop-Function -Message "Cannot setup mirroring on database ($($primarydb.Name)) due to its current state: $($primarydb.Status)"
+            # Don't reuse $server here, it fails
+            if (Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name) {
+                Stop-Function -Message "Availability group named $Name already exists on $Primary"
                 return
             }
 
-            if ($primarydb.RecoveryModel -ne "Full") {
-                if ((Test-Bound -ParameterName UseLastBackup)) {
-                    Write-Progress -Activity "Adding new availability group" -Completed
-                    Stop-Function -Message "$($primarydb.Name) not set to full recovery. UseLastBackup cannot be used."
+            if ($Certificate) {
+                $cert = Get-DbaDbCertificate -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Certificate $Certificate
+                if (-not $cert) {
+                    Stop-Function -Message "Certificate $Certificate does not exist on $Primary" -Target $Primary
                     return
-                } else {
-                    Set-DbaDbRecoveryModel -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $primarydb.Name -RecoveryModel Full
                 }
             }
-        }
 
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating availability group named $Name on $Primary"
+            if (($SharedPath)) {
+                if (-not (Test-DbaPath -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Path $SharedPath)) {
+                    # No -Continue on these guards: no loop encloses them, so the continue escaped the
+                    # command before the return below ever ran and ate an iteration of the caller's loop.
+                    Stop-Function -Message "Cannot access $SharedPath from $Primary"
+                    return
+                }
+            }
 
-        # Start work
-        if ($Pscmdlet.ShouldProcess($Primary, "Setting up availability group named $Name and adding primary replica")) {
+            if ($Database -and -not $UseLastBackup -and -not $SharedPath -and $Secondary -and $SeedingMode -ne 'Automatic') {
+                Stop-Function -Message "You must specify a SharedPath when adding databases to a manually seeded availability group"
+                return
+            }
+
+            if ($server.HostPlatform -eq "Linux") {
+                # New to SQL Server 2017 (14.x) is the introduction of a cluster type for AGs. For Linux, there are two valid values: External and None.
+                if ($ClusterType -notin "External", "None") {
+                    Stop-Function -Message "Linux only supports ClusterType of External or None"
+                    return
+                }
+                # Microsoft Distributed Transaction Coordinator (DTC) is not supported under Linux in SQL Server 2017
+                if ($DtcSupport) {
+                    Stop-Function -Message "Microsoft Distributed Transaction Coordinator (DTC) is not supported under Linux"
+                    return
+                }
+            }
+
+            if ($ClusterType -eq "None" -and $server.VersionMajor -lt 14) {
+                Stop-Function -Message "ClusterType of None only supported in SQL Server 2017 and above"
+                return
+            }
+
+            # Check if ConnectionModeInSecondaryRole is set on Standard Edition
+            if ($ConnectionModeInSecondaryRole -and $ConnectionModeInSecondaryRole -ne "AllowNoConnections") {
+                $instances = @($server) + $secondaries
+                foreach ($instance in $instances) {
+                    if ($instance.EngineEdition -eq "Standard") {
+                        Write-Message -Level Warning -Message "ConnectionModeInSecondaryRole is not supported on Standard Edition. The setting will be ignored on $($instance.Name). Consider using Enterprise or Developer Edition for read-only secondary replicas."
+                    }
+                }
+            }
+
+            # database checks
+            if ($Database) {
+                $dbs += Get-DbaDatabase -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $Database
+            }
+
+            foreach ($primarydb in $dbs) {
+                if ($primarydb.MirroringStatus -ne "None") {
+                    Stop-Function -Message "Cannot setup mirroring on database ($($primarydb.Name)) due to its current mirroring state: $($primarydb.MirroringStatus)"
+                    return
+                }
+
+                if ($primarydb.Status -ne "Normal") {
+                    Stop-Function -Message "Cannot setup mirroring on database ($($primarydb.Name)) due to its current state: $($primarydb.Status)"
+                    return
+                }
+
+                if ($primarydb.RecoveryModel -ne "Full") {
+                    if ((Test-Bound -ParameterName UseLastBackup)) {
+                        Stop-Function -Message "$($primarydb.Name) not set to full recovery. UseLastBackup cannot be used."
+                        return
+                    } else {
+                        Set-DbaDbRecoveryModel -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -Database $primarydb.Name -RecoveryModel Full
+                    }
+                }
+            }
+
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating availability group named $Name on $Primary"
+
+            # Start work
+            if ($Pscmdlet.ShouldProcess($Primary, "Setting up availability group named $Name and adding primary replica")) {
+                try {
+                    $ag = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroup -ArgumentList $server, $Name
+                    $ag.AutomatedBackupPreference = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupAutomatedBackupPreference]::$AutomatedBackupPreference
+                    $ag.FailureConditionLevel = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupFailureConditionLevel]::$FailureConditionLevel
+                    $ag.HealthCheckTimeout = $HealthCheckTimeout
+
+                    if ($server.VersionMajor -ge 13) {
+                        $ag.BasicAvailabilityGroup = $Basic
+                        $ag.DatabaseHealthTrigger = $DatabaseHealthTrigger
+                        $ag.DtcSupportEnabled = $DtcSupport
+                    }
+
+                    if ($server.VersionMajor -ge 14) {
+                        $ag.ClusterType = $ClusterType
+                    }
+
+                    if ($server.VersionMajor -ge 16) {
+                        $ag.IsContained = $IsContained
+                        $ag.ReuseSystemDatabases = $ReuseSystemDatabases
+                    }
+
+                    if ($server.VersionMajor -ge 17 -and $ClusterConnectionOption) {
+                        $ag.ClusterConnectionOptions = $ClusterConnectionOption
+                    }
+
+                    if ($PassThru) {
+                        $defaults = 'LocalReplicaRole', 'Name as AvailabilityGroup', 'PrimaryReplicaServerName as PrimaryReplica', 'AutomatedBackupPreference', 'AvailabilityReplicas', 'AvailabilityDatabases', 'AvailabilityGroupListeners'
+                        return (Select-DefaultView -InputObject $ag -Property $defaults)
+                    }
+
+                    $replicaparams = @{
+                        InputObject                   = $ag
+                        ClusterType                   = $ClusterType
+                        AvailabilityMode              = $AvailabilityMode
+                        FailoverMode                  = $FailoverMode
+                        BackupPriority                = $BackupPriority
+                        ConnectionModeInPrimaryRole   = $ConnectionModeInPrimaryRole
+                        ConnectionModeInSecondaryRole = $ConnectionModeInSecondaryRole
+                        Endpoint                      = $Endpoint
+                        Certificate                   = $Certificate
+                        ConfigureXESession            = $ConfigureXESession
+                    }
+
+                    if ($EndpointUrl) {
+                        $epUrl, $EndpointUrl = $EndpointUrl
+                        $replicaparams += @{EndpointUrl = $epUrl }
+                    }
+
+                    if ($server.VersionMajor -ge 13) {
+                        $replicaparams += @{SeedingMode = $SeedingMode }
+                    }
+
+                    $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $server
+                } catch {
+                    $msg = $_.Exception.InnerException.InnerException.Message
+                    if (-not $msg) {
+                        $msg = $_
+                    }
+                    Stop-Function -Message $msg -ErrorRecord $_ -Target $Primary
+                    return
+                }
+            }
+
+            # Add replicas
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding secondary replicas"
+
+            foreach ($second in $secondaries) {
+                if ($Pscmdlet.ShouldProcess($second.Name, "Adding replica to availability group named $Name")) {
+                    try {
+                        # Add replicas
+                        if ($EndpointUrl) {
+                            $epUrl, $EndpointUrl = $EndpointUrl
+                            $replicaparams['EndpointUrl'] = $epUrl
+                        }
+
+                        $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $second
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
+                    }
+                }
+            }
+
             try {
-                $ag = New-Object Microsoft.SqlServer.Management.Smo.AvailabilityGroup -ArgumentList $server, $Name
-                $ag.AutomatedBackupPreference = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupAutomatedBackupPreference]::$AutomatedBackupPreference
-                $ag.FailureConditionLevel = [Microsoft.SqlServer.Management.Smo.AvailabilityGroupFailureConditionLevel]::$FailureConditionLevel
-                $ag.HealthCheckTimeout = $HealthCheckTimeout
-
-                if ($server.VersionMajor -ge 13) {
-                    $ag.BasicAvailabilityGroup = $Basic
-                    $ag.DatabaseHealthTrigger = $DatabaseHealthTrigger
-                    $ag.DtcSupportEnabled = $DtcSupport
-                }
-
-                if ($server.VersionMajor -ge 14) {
-                    $ag.ClusterType = $ClusterType
-                }
-
-                if ($server.VersionMajor -ge 16) {
-                    $ag.IsContained = $IsContained
-                    $ag.ReuseSystemDatabases = $ReuseSystemDatabases
-                }
-
-                if ($server.VersionMajor -ge 17 -and $ClusterConnectionOption) {
-                    $ag.ClusterConnectionOptions = $ClusterConnectionOption
-                }
-
-                if ($PassThru) {
-                    $defaults = 'LocalReplicaRole', 'Name as AvailabilityGroup', 'PrimaryReplicaServerName as PrimaryReplica', 'AutomatedBackupPreference', 'AvailabilityReplicas', 'AvailabilityDatabases', 'AvailabilityGroupListeners'
-                    Write-Progress -Activity "Adding new availability group" -Completed
-                    return (Select-DefaultView -InputObject $ag -Property $defaults)
-                }
-
-                $replicaparams = @{
-                    InputObject                   = $ag
-                    ClusterType                   = $ClusterType
-                    AvailabilityMode              = $AvailabilityMode
-                    FailoverMode                  = $FailoverMode
-                    BackupPriority                = $BackupPriority
-                    ConnectionModeInPrimaryRole   = $ConnectionModeInPrimaryRole
-                    ConnectionModeInSecondaryRole = $ConnectionModeInSecondaryRole
-                    Endpoint                      = $Endpoint
-                    Certificate                   = $Certificate
-                    ConfigureXESession            = $ConfigureXESession
-                }
-
-                if ($EndpointUrl) {
-                    $epUrl, $EndpointUrl = $EndpointUrl
-                    $replicaparams += @{EndpointUrl = $epUrl }
-                }
-
-                if ($server.VersionMajor -ge 13) {
-                    $replicaparams += @{SeedingMode = $SeedingMode }
-                }
-
-                $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $server
+                # something is up with .net create(), force a stop
+                Invoke-Create -Object $ag
             } catch {
                 $msg = $_.Exception.InnerException.InnerException.Message
                 if (-not $msg) {
                     $msg = $_
                 }
-                Write-Progress -Activity "Adding new availability group" -Completed
                 Stop-Function -Message $msg -ErrorRecord $_ -Target $Primary
                 return
             }
-        }
 
-        # Add replicas
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding secondary replicas"
+            # Add listener
+            if ($IPAddress -or $Dhcp) {
+                $progressmsg = "Adding listener"
+            } else {
+                $progressmsg = "Joining availability group"
+            }
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message $progressmsg
 
-        foreach ($second in $secondaries) {
-            if ($Pscmdlet.ShouldProcess($second.Name, "Adding replica to availability group named $Name")) {
-                try {
-                    # Add replicas
-                    if ($EndpointUrl) {
-                        $epUrl, $EndpointUrl = $EndpointUrl
-                        $replicaparams['EndpointUrl'] = $epUrl
-                    }
-
-                    $null = Add-DbaAgReplica @replicaparams -EnableException -SqlInstance $second
-                } catch {
-                    Write-Progress -Activity "Adding new availability group" -Completed
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
+            if ($IPAddress) {
+                if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the primary replica")) {
+                    $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port
+                }
+            } elseif ($Dhcp) {
+                if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to the primary replica")) {
+                    $null = Add-DbaAgListener -InputObject $ag -Port $Port -Dhcp
                 }
             }
-        }
 
-        try {
-            # something is up with .net create(), force a stop
-            Invoke-Create -Object $ag
-        } catch {
-            $msg = $_.Exception.InnerException.InnerException.Message
-            if (-not $msg) {
-                $msg = $_
-            }
-            Write-Progress -Activity "Adding new availability group" -Completed
-            Stop-Function -Message $msg -ErrorRecord $_ -Target $Primary
-            return
-        }
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Joining availability group"
 
-        # Add listener
-        if ($IPAddress -or $Dhcp) {
-            $progressmsg = "Adding listener"
-        } else {
-            $progressmsg = "Joining availability group"
-        }
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message $progressmsg
-
-        if ($IPAddress) {
-            if ($Pscmdlet.ShouldProcess($Primary, "Adding static IP listener for $Name to the primary replica")) {
-                $null = Add-DbaAgListener -InputObject $ag -IPAddress $IPAddress -SubnetMask $SubnetMask -Port $Port
-            }
-        } elseif ($Dhcp) {
-            if ($Pscmdlet.ShouldProcess($Primary, "Adding DHCP listener for $Name to the primary replica")) {
-                $null = Add-DbaAgListener -InputObject $ag -Port $Port -Dhcp
-            }
-        }
-
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Joining availability group"
-
-        foreach ($second in $secondaries) {
-            if ($Pscmdlet.ShouldProcess("Joining $($second.Name) to $Name")) {
-                try {
-                    # join replicas to ag
-                    Join-DbaAvailabilityGroup -SqlInstance $second -InputObject $ag -EnableException
-                } catch {
-                    Write-Progress -Activity "Adding new availability group" -Completed
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
-                }
-                $second.AvailabilityGroups.Refresh()
-            }
-        }
-
-        # Wait for the availability group to be ready
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Waiting for replicas to be connected and ready"
-        do {
-            Start-Sleep -Milliseconds 500
-            $wait++
-            $ready = $true
-            $states = Get-DbaAgReplica -SqlInstance $secondaries | Where-Object Role -notin "Primary", "Unknown"
-            foreach ($state in $states) {
-                if ($state.ConnectionState -ne "Connected") {
-                    $ready = $false
-                }
-            }
-        } until ($ready -or $wait -gt 40) # wait up to 20 seconds (500ms * 40)
-
-        if (-not $ready -or $wait -gt 40) {
-            Write-Message -Level Warning -Message "One or more replicas are still not connected and ready. If you encounter this error often, please let us know and we'll increase the timeout. Moving on and trying the next step."
-        }
-
-        $wait = 0
-
-        # This can not be moved to Add-DbaAgReplica, as the AG has to be existing to grant this permission
-        if ($SeedingMode -eq "Automatic") {
-            if ($Pscmdlet.ShouldProcess($second.Name, "Granting CreateAnyDatabase permission to the availability group on every replica")) {
-                try {
-                    $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $Name -Permission CreateAnyDatabase -EnableException
-                    foreach ($second in $secondaries) {
-                        $null = Grant-DbaAgPermission -SqlInstance $second -Type AvailabilityGroup -AvailabilityGroup $Name -Permission CreateAnyDatabase -EnableException
-                    }
-                } catch {
-                    Write-Progress -Activity "Adding new availability group" -Completed
-                    Stop-Function -Message "Failure" -ErrorRecord $_
-                }
-            }
-        }
-
-        # Add databases
-        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
-        if ($Database) {
-            if ($Pscmdlet.ShouldProcess($server.Name, "Adding databases to Availability Group.")) {
-                if ($Force) {
+            foreach ($second in $secondaries) {
+                if ($Pscmdlet.ShouldProcess("Joining $($second.Name) to $Name")) {
                     try {
-                        Get-DbaDatabase -SqlInstance $secondaries -Database $Database -EnableException | Remove-DbaDatabase -EnableException
+                        # join replicas to ag
+                        Join-DbaAvailabilityGroup -SqlInstance $second -InputObject $ag -EnableException
                     } catch {
-                        Write-Progress -Activity "Adding new availability group" -Completed
-                        Stop-Function -Message "Failed to remove databases from secondary replicas." -ErrorRecord $_
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $second -Continue
                     }
-                }
-
-                $addDatabaseParams = @{
-                    SqlInstance       = $server
-                    AvailabilityGroup = $Name
-                    Database          = $Database
-                    Secondary         = $secondaries
-                    UseLastBackup     = $UseLastBackup
-                    EnableException   = $true
-                }
-                if ($SeedingMode) { $addDatabaseParams['SeedingMode'] = $SeedingMode }
-                if ($SharedPath) { $addDatabaseParams['SharedPath'] = $SharedPath }
-                if ($MasterKeySecurePassword) { $addDatabaseParams['MasterKeySecurePassword'] = $MasterKeySecurePassword }
-                try {
-                    $null = Add-DbaAgDatabase @addDatabaseParams
-                } catch {
-                    Write-Progress -Activity "Adding new availability group" -Completed
-                    Stop-Function -Message "Failed to add databases to Availability Group." -ErrorRecord $_
+                    $second.AvailabilityGroups.Refresh()
                 }
             }
+
+            # Wait for the availability group to be ready
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Waiting for replicas to be connected and ready"
+            do {
+                Start-Sleep -Milliseconds 500
+                $wait++
+                $ready = $true
+                $states = Get-DbaAgReplica -SqlInstance $secondaries | Where-Object Role -notin "Primary", "Unknown"
+                foreach ($state in $states) {
+                    if ($state.ConnectionState -ne "Connected") {
+                        $ready = $false
+                    }
+                }
+            } until ($ready -or $wait -gt 40) # wait up to 20 seconds (500ms * 40)
+
+            if (-not $ready -or $wait -gt 40) {
+                Write-Message -Level Warning -Message "One or more replicas are still not connected and ready. If you encounter this error often, please let us know and we'll increase the timeout. Moving on and trying the next step."
+            }
+
+            $wait = 0
+
+            # This can not be moved to Add-DbaAgReplica, as the AG has to be existing to grant this permission
+            if ($SeedingMode -eq "Automatic") {
+                if ($Pscmdlet.ShouldProcess($second.Name, "Granting CreateAnyDatabase permission to the availability group on every replica")) {
+                    try {
+                        $null = Grant-DbaAgPermission -SqlInstance $server -Type AvailabilityGroup -AvailabilityGroup $Name -Permission CreateAnyDatabase -EnableException
+                        foreach ($second in $secondaries) {
+                            $null = Grant-DbaAgPermission -SqlInstance $second -Type AvailabilityGroup -AvailabilityGroup $Name -Permission CreateAnyDatabase -EnableException
+                        }
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_
+                    }
+                }
+            }
+
+            # Add databases
+            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding databases"
+            if ($Database) {
+                if ($Pscmdlet.ShouldProcess($server.Name, "Adding databases to Availability Group.")) {
+                    if ($Force) {
+                        try {
+                            Get-DbaDatabase -SqlInstance $secondaries -Database $Database -EnableException | Remove-DbaDatabase -EnableException
+                        } catch {
+                            Stop-Function -Message "Failed to remove databases from secondary replicas." -ErrorRecord $_
+                        }
+                    }
+
+                    $addDatabaseParams = @{
+                        SqlInstance       = $server
+                        AvailabilityGroup = $Name
+                        Database          = $Database
+                        Secondary         = $secondaries
+                        UseLastBackup     = $UseLastBackup
+                        EnableException   = $true
+                    }
+                    if ($SeedingMode) { $addDatabaseParams['SeedingMode'] = $SeedingMode }
+                    if ($SharedPath) { $addDatabaseParams['SharedPath'] = $SharedPath }
+                    if ($MasterKeySecurePassword) { $addDatabaseParams['MasterKeySecurePassword'] = $MasterKeySecurePassword }
+                    try {
+                        $null = Add-DbaAgDatabase @addDatabaseParams
+                    } catch {
+                        Stop-Function -Message "Failed to add databases to Availability Group." -ErrorRecord $_
+                    }
+                }
+            }
+        } finally {
+            Write-Progress -Activity "Adding new availability group" -Completed
         }
-        Write-Progress -Activity "Adding new availability group" -Completed
 
         # Get results
         Get-DbaAvailabilityGroup -SqlInstance $Primary -SqlCredential $PrimarySqlCredential -AvailabilityGroup $Name
