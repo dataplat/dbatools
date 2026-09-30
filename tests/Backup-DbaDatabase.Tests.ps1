@@ -69,7 +69,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the cleanup fails.
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         $PSDefaultParameterValues.Remove('Backup-DbaDatabase:Path')
 
@@ -192,6 +192,10 @@ param(`$ModulePath, `$Splat)
 Import-Module -Name `$ModulePath -ErrorAction Stop
 Backup-DbaDatabase @Splat
 "@
+            # The runspace imports the manifest, not the psm1 that Get-Module reports as the path of the module.
+            # The psm1 adds the type data with the Query method of the server only when the import line itself
+            # names a .psm1 file, which a path in a variable does not, so the backup would fail at its first query.
+            $progressManifest = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
             $progressRunspace = [runspacefactory]::CreateRunspace()
             $progressRunspace.Open()
 
@@ -202,7 +206,7 @@ Backup-DbaDatabase @Splat
                 $progressShell = [powershell]::Create()
                 try {
                     $progressShell.Runspace = $progressRunspace
-                    $null = $progressShell.AddScript($progressScript).AddArgument((Get-Module -Name $ModuleName | Select-Object -First 1).Path).AddArgument($Splat)
+                    $null = $progressShell.AddScript($progressScript).AddArgument($progressManifest).AddArgument($Splat)
                     $progressOutput = @($progressShell.Invoke())
                     [PSCustomObject]@{
                         Records  = @($progressShell.Streams.Progress)
@@ -339,7 +343,7 @@ Backup-DbaDatabase @Splat
         }
     }
 
-    Context "CreateFolder switch should append the databasename to the backup path even striping" {
+    Context "CreateFolder switch should append the databasename to the backup path even when striping" {
         It "Should have appended master to all backup paths" {
             $backupPaths = "$DestBackupDir\stripewithdb1", "$DestBackupDir\stripewithdb2"
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -Path $backupPaths -CreateFolder
