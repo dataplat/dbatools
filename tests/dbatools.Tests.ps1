@@ -1052,6 +1052,134 @@ function Get-Fixture {
             & $findingsOf $code "1" | Should -HaveCount 1
         }
 
+        It "reports a splat whose key is changed after the literal, and does not read the literal" {
+            $code = @'
+function Get-Fixture {
+    process {
+        $splatStop = @{ Message = "x"; Continue = $false }
+        $splatStop.Continue = $true
+        Stop-Function @splatStop
+    }
+}
+'@
+            $argumentFindings = & $findingsOf $code "Arguments"
+            $argumentFindings | Should -HaveCount 1
+            $argumentFindings[0].Line | Should -Be 5
+            & $findingsOf $code "1" | Should -HaveCount 1
+        }
+
+        It "reports a splat changed by an index, a method, [ref], ++ or a variable cmdlet" {
+            $code = @'
+function Get-Fixture1 {
+    $splatStop = @{ Message = "x" }
+    $splatStop["Continue"] = $true
+    Stop-Function @splatStop
+}
+function Get-Fixture2 {
+    $splatStop = @{ Message = "x" }
+    $splatStop.Add("Continue", $true)
+    Stop-Function @splatStop
+}
+function Get-Fixture3 {
+    $splatStop = @{ Message = "x" }
+    Update-Splat -Reference ([ref]$splatStop)
+    Stop-Function @splatStop
+}
+function Get-Fixture4 {
+    $splatStop = @{ Message = "x"; Continue = 0 }
+    $splatStop.Continue++
+    Stop-Function @splatStop
+}
+function Get-Fixture5 {
+    $splatStop = @{ Message = "x" }
+    Set-Variable -Name splatStop -Value @{ Message = "x"; Continue = $true }
+    Stop-Function @splatStop
+}
+function Get-Fixture6 {
+    $splatStop = @{ Message = "x" }
+    $alias = $splatStop
+    $alias.Continue = $true
+    Stop-Function @splatStop
+}
+'@
+            $argumentFindings = & $findingsOf $code "Arguments"
+            $argumentFindings | Should -HaveCount 6
+            $argumentFindings.Function | Should -Be @("Get-Fixture1", "Get-Fixture2", "Get-Fixture3", "Get-Fixture4", "Get-Fixture5", "Get-Fixture6")
+        }
+
+        It "reports a splat assigned only under a condition or in an uncalled nested helper" {
+            $conditional = @'
+function Get-Fixture {
+    process {
+        $splatStop = @{ Message = "x"; Continue = $false }
+        if ($Force) {
+            $splatStop = @{ Message = "x"; Continue = $true }
+        }
+        Stop-Function @splatStop
+    }
+}
+'@
+            $helperAssignment = @'
+function Get-Fixture {
+    process {
+        function Set-Splat {
+            $splatStop = @{ Message = "x"; Continue = $false }
+        }
+        Stop-Function @splatStop
+    }
+}
+'@
+            $helperMutation = @'
+function Get-Fixture {
+    process {
+        function Update-Splat {
+            $splatStop.Continue = $true
+        }
+        $splatStop = @{ Message = "x"; Continue = $false }
+        Update-Splat
+        Stop-Function @splatStop
+    }
+}
+'@
+            & $findingsOf $conditional "Arguments" | Should -HaveCount 1
+            & $findingsOf $helperAssignment "Arguments" | Should -HaveCount 1
+            & $findingsOf $helperMutation "Arguments" | Should -HaveCount 1
+        }
+
+        It "reports a splat changed later in the loop around the call" {
+            $code = @'
+function Get-Fixture {
+    process {
+        $splatStop = @{ Message = "x"; Continue = $false }
+        foreach ($item in $InputObject) {
+            Stop-Function @splatStop
+            $splatStop.Continue = $true
+        }
+    }
+}
+'@
+            & $findingsOf $code "Arguments" | Should -HaveCount 1
+        }
+
+        It "resolves a splat name reused for several literals, each directly before its call" {
+            $code = @'
+function Get-Fixture {
+    process {
+        foreach ($item in $InputObject) {
+            $splatStop = @{ Message = "x"; Continue = $true }
+            Write-Message -Level Verbose -Message "$splatStop $($splatStop.Message)"
+            Stop-Function @splatStop
+        }
+        $splatStop = @{ Message = "x"; Continue = $false }
+        Stop-Function @splatStop
+        return
+    }
+}
+'@
+            & $findingsOf $code "Arguments" | Should -BeNullOrEmpty
+            & $findingsOf $code "1" | Should -BeNullOrEmpty
+        }
+
         It "accepts a label that names an enclosing loop and reports one that does not" {
             $code = @'
 function Get-Fixture {
@@ -1242,6 +1370,108 @@ function Get-Fixture {
 }
 '@
             & $findingsOf $code "3" | Should -BeNullOrEmpty
+        }
+
+        It "requires the guard for -Continue whose exception a catch in begin swallows" {
+            $caughtThrow = @'
+function Get-Fixture {
+    begin {
+        foreach ($item in $Path) {
+            try { Stop-Function -Message "x" -Continue -EnableException $true } catch { }
+        }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            $callerMode = @'
+function Get-Fixture {
+    begin {
+        foreach ($item in $Path) {
+            try { Stop-Function -Message "x" -Continue -EnableException:$EnableException } catch { }
+        }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            $trap = @'
+function Get-Fixture {
+    begin {
+        trap { continue }
+        foreach ($item in $Path) { Stop-Function -Message "x" -Continue }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            $findings = & $findingsOf $caughtThrow "3"
+            $findings | Should -HaveCount 1
+            $findings[0].Message | Should -BeLike "*(line 4)*"
+            & $findingsOf $callerMode "3" | Should -HaveCount 1
+            & $findingsOf $trap "3" | Should -HaveCount 1
+        }
+
+        It "does not require the guard for a caught -Continue that cannot throw" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        foreach ($item in $Path) {
+            try { Stop-Function -Message "x" -Continue -EnableException $false } catch { }
+            try { Stop-Function -Message "x" -Continue -SilentlyContinue } catch { }
+        }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            & $findingsOf $code "3" | Should -BeNullOrEmpty
+        }
+
+        It "rejects a guard whose result is redirected, or that passes arguments" {
+            $redirected = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x"
+        return
+    }
+    process {
+        if (Test-FunctionInterrupt > $null) { return }
+        "work"
+    }
+}
+'@
+            $withArgument = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x"
+        return
+    }
+    process {
+        if (Test-FunctionInterrupt -Force) { return }
+        "work"
+    }
+}
+'@
+            $allStreams = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x"
+        return
+    }
+    process {
+        if (Test-FunctionInterrupt *> $null) { return }
+        "work"
+    }
+}
+'@
+            & $findingsOf $redirected "3" | Should -HaveCount 1
+            & $findingsOf $withArgument "3" | Should -HaveCount 1
+            & $findingsOf $allStreams "3" | Should -HaveCount 1
         }
 
         It "does not count a helper function or a scriptblock run in a new scope" {
