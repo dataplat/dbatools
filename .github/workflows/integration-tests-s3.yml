@@ -17,6 +17,8 @@ on:
       - "private/functions/Invoke-DbaAdvancedRestore.ps1"
       - ".github/workflows/integration-tests-s3.yml"
       - ".github/scripts/gh-s3actions.ps1"
+      - ".github/scripts/Build-MinioCiImage.sh"
+      - ".github/docker/minio/**"
       - "tests/Test-DbaBackupStorageCompatibility.Tests.ps1"
   pull_request:
     paths:
@@ -31,6 +33,8 @@ on:
       - "private/functions/Invoke-DbaAdvancedRestore.ps1"
       - ".github/workflows/integration-tests-s3.yml"
       - ".github/scripts/gh-s3actions.ps1"
+      - ".github/scripts/Build-MinioCiImage.sh"
+      - ".github/docker/minio/**"
       - "tests/Test-DbaBackupStorageCompatibility.Tests.ps1"
   workflow_dispatch:
 
@@ -60,6 +64,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install pinned Go toolchain for MinIO
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.24.8"
+          cache: false
+
+      - name: Build MinIO CI image from official source
+        shell: bash
+        run: bash ./.github/scripts/Build-MinioCiImage.sh
 
       - name: Read dbatools.library version
         id: get-version
@@ -118,15 +132,16 @@ jobs:
         shell: bash
         run: |
           docker run -d \
+            --pull=never \
             --name minio \
             --hostname minio \
             --network localnet \
-            -p 9000:9000 \
-            -p 9001:9001 \
+            -p 127.0.0.1:9000:9000 \
+            -p 127.0.0.1:9001:9001 \
             -v $HOME/.minio/certs:/root/.minio/certs:ro \
             -e "MINIO_ROOT_USER=${{ env.MINIO_ROOT_USER }}" \
             -e "MINIO_ROOT_PASSWORD=${{ env.MINIO_ROOT_PASSWORD }}" \
-            quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z server /data --console-address ":9001"
+            dbatools/minio-ci:RELEASE.2025-10-15T17-29-55Z server /data --console-address ":9001"
 
           # Wait for MinIO to be ready (now using HTTPS)
           echo "Waiting for MinIO to start with TLS..."
@@ -144,6 +159,7 @@ jobs:
         run: |
           # Install MinIO client
           curl -sSL https://github.com/minio/mc/releases/download/RELEASE.2025-08-13T08-35-41Z/mc.linux-amd64.RELEASE.2025-08-13T08-35-41Z -o $HOME/mc
+          echo "01f866e9c5f9b87c2b09116fa5d7c06695b106242d829a8bb32990c00312e891  $HOME/mc" | sha256sum --check
           chmod +x $HOME/mc
 
           # Configure MinIO client (with --insecure for self-signed cert)
@@ -243,4 +259,7 @@ jobs:
           S3_BUCKET: sqlbackups
         run: |
           Import-Module ./dbatools.psd1 -Force
-          $null = Invoke-Pester .github/scripts/gh-s3actions.ps1 -Output Detailed -PassThru
+          $result = Invoke-Pester .github/scripts/gh-s3actions.ps1 -Output Detailed -PassThru
+          if ($result.Result -ne "Passed" -or $result.FailedCount -gt 0) {
+              throw "S3 integration failed with result $($result.Result) and $($result.FailedCount) failed test(s)."
+          }

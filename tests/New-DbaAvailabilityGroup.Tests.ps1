@@ -152,4 +152,55 @@ Describe $CommandName -Tag IntegrationTests {
             $results.AvailabilityDatabases.Count | Should -Be 0 -Because "No database was named"
         }
     }
+
+    Context "When the pipeline is stopped" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id with records but without a completed one. The pipeline is stopped as soon as the first
+            # record arrives, which is what Ctrl+C does. WhatIf keeps the instance unchanged.
+            $splatStopAg = @{
+                Primary      = $TestConfig.InstanceHadr
+                Name         = $agName
+                ClusterType  = "None"
+                FailoverMode = "Manual"
+                Certificate  = "dbatoolsci_AGCert"
+                WhatIf       = $true
+            }
+            if ($TestConfig.SqlCred) {
+                $splatStopAg.PrimarySqlCredential = $TestConfig.SqlCred
+            }
+            $stopRunspace = [runspacefactory]::CreateRunspace()
+            $stopRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $stopRunspace
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", (Get-Module -Name $ModuleName | Select-Object -First 1).Path).Invoke()
+            $importShell.Dispose()
+
+            $stopShell = [powershell]::Create()
+            $stopShell.Runspace = $stopRunspace
+            $null = $stopShell.AddCommand("New-DbaAvailabilityGroup").AddParameters($splatStopAg)
+            $stopAsync = $stopShell.BeginInvoke()
+            $stopWatch = [System.Diagnostics.Stopwatch]::StartNew()
+            while ($stopShell.Streams.Progress.Count -eq 0 -and -not $stopAsync.IsCompleted -and $stopWatch.Elapsed.TotalSeconds -lt 60) {
+                Start-Sleep -Milliseconds 10
+            }
+            $stopShell.Stop()
+            $stopState = $stopShell.InvocationStateInfo.State
+            $stopRecords = @($stopShell.Streams.Progress)
+            $stopShell.Dispose()
+            $stopRunspace.Dispose()
+        }
+
+        It "Was stopped while it was running" {
+            $stopState | Should -Be "Stopped"
+        }
+
+        It "Completes its progress bar" {
+            $completedIds = @($stopRecords | Where-Object RecordType -eq "Completed" | Select-Object -ExpandProperty ActivityId -Unique)
+            $openIds = $stopRecords | Where-Object RecordType -eq "Processing" | Select-Object -ExpandProperty ActivityId -Unique | Where-Object { $PSItem -notin $completedIds }
+            $stopRecords | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }
