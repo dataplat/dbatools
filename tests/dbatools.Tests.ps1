@@ -887,6 +887,12 @@ Describe "$ModuleName command structure" -Tag Compliance {
                 Function = "Invoke-DbaPfRelog"
                 Sites    = 9
                 Reason   = "in the relog scriptblock that is invoked once per file inside the foreach; documented at the sites (#10643)"
+            },
+            [PSCustomObject]@{
+                File     = "Test-ElevationRequirement.ps1"
+                Function = "Test-ElevationRequirement"
+                Sites    = 1
+                Reason   = "private; forwards -Continue, -ContinueLabel and -SilentlyContinue of its caller, and the callers that pass them call it inside their loops, except Install-DbaSqlPackage (open defect, fixed separately)"
             }
         )
 
