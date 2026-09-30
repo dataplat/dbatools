@@ -234,7 +234,7 @@ foreach ($relativeWorkflowPath in $workflowPaths) {
         "--name minio \",
         '--hostname minio \',
         '--network localnet \',
-        '-p 9000:9000 \',
+        "-p 127.0.0.1:9000:9000 \",
         '-v $HOME/.minio/certs:/root/.minio/certs:ro \'
     )
 
@@ -242,6 +242,18 @@ foreach ($relativeWorkflowPath in $workflowPaths) {
         if ($minioRunLines -cnotcontains $requiredLine) {
             throw "$relativeWorkflowPath MinIO docker run block is missing: $requiredLine"
         }
+    }
+
+    # The pinned release has unfixed advisories, so every published port must stay on the runner's loopback interface.
+    # The match is case-insensitive on purpose: it also catches -P and --publish-all.
+    foreach ($publishLine in ($minioRunLines -match "^(?:-p|--publish)\b")) {
+        if ($publishLine -cnotmatch "^-p 127\.0\.0\.1:\d+:\d+ \\$") {
+            throw "$relativeWorkflowPath MinIO docker run block publishes a port beyond loopback: $publishLine"
+        }
+    }
+
+    if ($minioRunLines -match "^--net(?:work)?[ =]host\b") {
+        throw "$relativeWorkflowPath MinIO docker run block must not use the host network."
     }
 
     foreach ($environmentVariable in @("MINIO_ROOT_USER", "MINIO_ROOT_PASSWORD")) {

@@ -136,8 +136,8 @@ jobs:
             --name minio \
             --hostname minio \
             --network localnet \
-            -p 9000:9000 \
-            -p 9001:9001 \
+            -p 127.0.0.1:9000:9000 \
+            -p 127.0.0.1:9001:9001 \
             -v $HOME/.minio/certs:/root/.minio/certs:ro \
             -e "MINIO_ROOT_USER=${{ env.MINIO_ROOT_USER }}" \
             -e "MINIO_ROOT_PASSWORD=${{ env.MINIO_ROOT_PASSWORD }}" \
@@ -259,4 +259,7 @@ jobs:
           S3_BUCKET: sqlbackups
         run: |
           Import-Module ./dbatools.psd1 -Force
-          $null = Invoke-Pester .github/scripts/gh-s3actions.ps1 -Output Detailed -PassThru
+          $result = Invoke-Pester .github/scripts/gh-s3actions.ps1 -Output Detailed -PassThru
+          if ($result.Result -ne "Passed" -or $result.FailedCount -gt 0) {
+              throw "S3 integration failed with result $($result.Result) and $($result.FailedCount) failed test(s)."
+          }
