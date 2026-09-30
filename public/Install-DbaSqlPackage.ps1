@@ -160,9 +160,10 @@ function Install-DbaSqlPackage {
 
             # Check for admin privileges when using MSI or AllUsers scope
             if ($Type -eq "Msi" -or $Scope -eq "AllUsers") {
-                try {
-                    $null = Test-ElevationRequirement -ComputerName $env:COMPUTERNAME -Continue
-                } catch {
+                # -NoStop only reports the result. With -Continue the helper ran continue itself, which is no loop of this
+                # command: without EnableException it left the command and skipped an item of the caller's loop, or ended
+                # the calling script. Only with EnableException did its exception reach the catch this stop replaced.
+                if (-not (Test-ElevationRequirement -ComputerName $env:COMPUTERNAME -NoStop)) {
                     Write-Progress -Activity "Installing SqlPackage" -Completed
                     Stop-Function -Message "MSI installation and AllUsers scope require administrative privileges. Please run as administrator or use CurrentUser scope with Zip type."
                     return
