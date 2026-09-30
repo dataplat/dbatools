@@ -440,6 +440,8 @@ WHERE j.job_id = @jobId"
                                             $copyJobStatus.Notes = (Get-ErrorMessage -Record $_).Message
                                             $copyJobStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                             Write-Message -Level Verbose -Message "Issue updating enabled state for job $destJobName on $destinstance | $PSItem"
+                                            # Destination is not in sync; skip the -DisableOnSource tail so the job is not left disabled on both sides
+                                            continue
                                         }
                                     }
                                     # Nothing to create; fall through so -DisableOnSource still applies
