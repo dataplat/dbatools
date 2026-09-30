@@ -69,7 +69,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     AfterAll {
-        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
         $PSDefaultParameterValues.Remove('Backup-DbaDatabase:Path')
 
@@ -189,7 +189,7 @@ ALTER DATABASE model SET RECOVERY $($modelStateBefore.RecoveryModel) WITH NO_WAI
             # as an Id with records but without a completed one.
             $progressScript = @"
 param(`$ModulePath, `$Splat)
-Import-Module -Name `$ModulePath
+Import-Module -Name `$ModulePath -ErrorAction Stop
 Backup-DbaDatabase @Splat
 "@
             $progressRunspace = [runspacefactory]::CreateRunspace()
@@ -205,9 +205,10 @@ Backup-DbaDatabase @Splat
                     $null = $progressShell.AddScript($progressScript).AddArgument((Get-Module -Name $ModuleName | Select-Object -First 1).Path).AddArgument($Splat)
                     $progressOutput = @($progressShell.Invoke())
                     [PSCustomObject]@{
-                        Records = @($progressShell.Streams.Progress)
-                        Errors  = @($progressShell.Streams.Error)
-                        Output  = $progressOutput
+                        Records  = @($progressShell.Streams.Progress)
+                        Errors   = @($progressShell.Streams.Error)
+                        Warnings = @($progressShell.Streams.Warning)
+                        Output   = $progressOutput
                     }
                 } finally {
                     $progressShell.Dispose()
@@ -230,13 +231,15 @@ Backup-DbaDatabase @Splat
 
         It "Completes the bars with -WhatIf" {
             $splatWhatIf = @{
-                SqlInstance = $TestConfig.InstanceCopy1
-                Database    = "master", "msdb"
-                Path        = $DestBackupDir
-                WhatIf      = $true
+                SqlInstance     = $TestConfig.InstanceCopy1
+                Database        = "master", "msdb"
+                Path            = $DestBackupDir
+                WhatIf          = $true
+                EnableException = $true
             }
             $whatIfResult = Get-BackupProgressRecord -Splat $splatWhatIf
             $whatIfResult.Errors | Should -BeNullOrEmpty
+            $whatIfResult.Warnings | Should -BeNullOrEmpty
             $whatIfResult.Output | Should -BeNullOrEmpty
             $whatIfResult.Records | Should -Not -BeNullOrEmpty
             foreach ($progressDatabase in $splatWhatIf.Database) {
@@ -249,12 +252,14 @@ Backup-DbaDatabase @Splat
 
         It "Completes the bars of a backup" {
             $splatBackup = @{
-                SqlInstance = $TestConfig.InstanceCopy1
-                Database    = "master"
-                Path        = $DestBackupDir
+                SqlInstance     = $TestConfig.InstanceCopy1
+                Database        = "master"
+                Path            = $DestBackupDir
+                EnableException = $true
             }
             $backupResult = Get-BackupProgressRecord -Splat $splatBackup
             $backupResult.Errors | Should -BeNullOrEmpty
+            $backupResult.Warnings | Should -BeNullOrEmpty
             $backupResult.Output | Should -HaveCount 1
             $backupResult.Output[0].DatabaseName | Should -Be "master"
             $backupResult.Output[0].BackupComplete | Should -BeTrue
@@ -334,7 +339,7 @@ Backup-DbaDatabase @Splat
         }
     }
 
-    Context "CreateFolder switch should append the databasename to the backup path even when striping" {
+    Context "CreateFolder switch should append the databasename to the backup path even striping" {
         It "Should have appended master to all backup paths" {
             $backupPaths = "$DestBackupDir\stripewithdb1", "$DestBackupDir\stripewithdb2"
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -Path $backupPaths -CreateFolder
