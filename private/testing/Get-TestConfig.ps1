@@ -34,6 +34,13 @@ function Get-TestConfig {
         AzureSqlDbServer = $null
         AzureSqlDbName   = $null
         AzureSqlDbCred   = $null
+        # The Active Directory CA that the tests of a pending certificate request need, and a certificate template on it
+        # that holds every request as pending until a CA manager approves it. The account that runs the tests must be
+        # allowed to enroll with that template and to approve requests on that CA. No CI environment has a CA, so these
+        # stay empty there and those tests skip themselves. A local configuration whose lab has such a CA sets all three.
+        CaServer         = $null
+        CaName           = $null
+        ApprovalTemplate = $null
     }
 
     if (Test-Path $LocalConfigPath) {
