@@ -24,9 +24,9 @@ function Get-DbaDbQueryStoreOption {
         - QueryCaptureMode: Query capture mode (All, Auto, None, or Custom)
         - SizeBasedCleanupMode: Cleanup mode when max storage is exceeded (Off, Auto)
         - StaleQueryThresholdInDays: Number of days after which a query is considered stale for cleanup
+        - MaxPlansPerQuery: Maximum number of plans tracked per query
 
         Additional properties for SQL Server 2017 (v14) and later:
-        - MaxPlansPerQuery: Maximum number of plans tracked per query
         - WaitStatsCaptureMode: Wait statistics capture mode (Off, On)
 
         Additional properties for SQL Server 2019 (v15) and later:
@@ -107,6 +107,16 @@ function Get-DbaDbQueryStoreOption {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
+            # Which options exist depends on the engine, not only on the version, so this asks the feature rules
+            # instead of comparing VersionMajor. See #10600.
+            try {
+                $supportsMaxPlansPerQuery = Test-DbaFeatureSupport -Server $server -Feature QueryStoreMaxPlansPerQuery
+                $supportsWaitStats = Test-DbaFeatureSupport -Server $server -Feature QueryStoreWaitStats
+                $supportsCustomCapturePolicy = Test-DbaFeatureSupport -Server $server -Feature QueryStoreCustomCapturePolicy
+            } catch {
+                Stop-Function -Message "Cannot tell which Query Store options $instance supports" -ErrorRecord $_ -Target $instance -Continue
+            }
+
             # We have to exclude the system databases that cannot have the Query Store feature enabled. Get-DbaDatabase
             # lets -ExcludeDatabase win over -Database, so this is worked out per instance and warns about anything the
             # caller named on purpose instead of dropping it silently.
@@ -135,7 +145,7 @@ function Get-DbaDbQueryStoreOption {
                 # 2017 it was added over the real property, which turns it into a note property that no
                 # longer follows a Refresh of the object. SMO is the single source for those two now, on
                 # every version. See #10562.
-                if ($server.VersionMajor -ge 15) {
+                if ($supportsCustomCapturePolicy) {
                     $QueryStoreOptions = Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query "SELECT capture_policy_execution_count AS CustomCapturePolicyExecutionCount, capture_policy_stale_threshold_hours AS CustomCapturePolicyStaleThresholdHours, capture_policy_total_compile_cpu_time_ms AS CustomCapturePolicyTotalCompileCPUTimeMS, capture_policy_total_execution_cpu_time_ms AS CustomCapturePolicyTotalExecutionCPUTimeMS FROM sys.database_query_store_options;" -As PSObject
                 }
 
@@ -144,17 +154,36 @@ function Get-DbaDbQueryStoreOption {
                 Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 Add-Member -Force -InputObject $qso -MemberType NoteProperty Database -Value $db.Name
 
-                if ($server.VersionMajor -eq 13) {
-                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays
-                } elseif ($server.VersionMajor -eq 14) {
-                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode
-                } elseif ($server.VersionMajor -ge 15) {
+                # The default view shows the options the engine has, each asked for on its own: MaxPlansPerQuery
+                # exists from SQL Server 2016 on, WaitStatsCaptureMode from 2017 on.
+                $defaultProperties = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Database",
+                    "ActualState",
+                    "DataFlushIntervalInSeconds",
+                    "StatisticsCollectionIntervalInMinutes",
+                    "MaxStorageSizeInMB",
+                    "CurrentStorageSizeInMB",
+                    "QueryCaptureMode",
+                    "SizeBasedCleanupMode",
+                    "StaleQueryThresholdInDays"
+                )
+                if ($supportsMaxPlansPerQuery) {
+                    $defaultProperties += "MaxPlansPerQuery"
+                }
+                if ($supportsWaitStats) {
+                    $defaultProperties += "WaitStatsCaptureMode"
+                }
+                if ($supportsCustomCapturePolicy) {
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyExecutionCount -Value $QueryStoreOptions.CustomCapturePolicyExecutionCount
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyTotalCompileCPUTimeMS -Value $QueryStoreOptions.CustomCapturePolicyTotalCompileCPUTimeMS
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyTotalExecutionCPUTimeMS -Value $QueryStoreOptions.CustomCapturePolicyTotalExecutionCPUTimeMS
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyStaleThresholdHours -Value $QueryStoreOptions.CustomCapturePolicyStaleThresholdHours
-                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode, CustomCapturePolicyExecutionCount, CustomCapturePolicyTotalCompileCPUTimeMS, CustomCapturePolicyTotalExecutionCPUTimeMS, CustomCapturePolicyStaleThresholdHours
+                    $defaultProperties += "CustomCapturePolicyExecutionCount", "CustomCapturePolicyTotalCompileCPUTimeMS", "CustomCapturePolicyTotalExecutionCPUTimeMS", "CustomCapturePolicyStaleThresholdHours"
                 }
+                Select-DefaultView -InputObject $qso -Property $defaultProperties
             }
         }
     }

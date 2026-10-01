@@ -86,11 +86,11 @@ for (let i = lines.length - 1; i >= 0; i--) {
 LAST_MSG=$(last_assistant_text)
 [[ -z "$LAST_MSG" ]] && exit 0
 
-# Deflection phrases to catch
+# Deflection phrases to catch. Fact-shaped phrases (how old a defect is, which
+# change introduced it, "separate PR") are deliberately absent: they are
+# ordinary triage and PR-topology vocabulary in this repo (one PR per command)
+# and blocked accurate reports, see #10654.
 DEFLECTION_PATTERNS=(
-    'pre-existing'
-    'pre existing'
-    'preexisting'
     'not from (my|our) changes'
     'not related to (my|our) changes'
     'outside (the |my |our )?scope'
@@ -98,15 +98,11 @@ DEFLECTION_PATTERNS=(
     'out-of-scope'
     'bigger refactor'
     'larger refactor'
-    'separate (refactor|effort|task|ticket|issue|PR)'
+    'separate (refactor|effort)'
     'defer(red)? (to|for) (a )?(later|future|separate|another)'
     'address(ed)? (later|separately|in a future)'
     'beyond the scope'
     'not (my|our) (responsibility|concern)'
-    'existed before'
-    'was already (broken|failing|there)'
-    'already existed'
-    'not introduced by'
     'I did not (introduce|cause|create)'
     'this (error|bug|issue|failure|problem) (is|was) not'
     'leave (this|that|it) for (now|later|a separate)'

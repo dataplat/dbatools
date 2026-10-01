@@ -11,7 +11,8 @@ function Get-QueryStoreUnsupportedDatabase {
         model depends on the version. Before SQL Server 2022 the ALTER is accepted but
         sys.database_query_store_options stays empty and SMO reports nothing back, so there is no state to read
         or verify. From SQL Server 2022 (v16) on, Query Store is enabled on model by default, which is how newly
-        created databases get it, and model reports its configuration like any other database.
+        created databases get it, and model reports its configuration like any other database. Azure SQL Database
+        has no model a user can reach. The feature rule QueryStoreOnModel in Test-DbaFeatureSupport holds this.
 
         Even where model works it stays out of the automatic sweep, because -AllDatabases means the user
         databases and changing Query Store on model changes the default for every database created afterwards.
@@ -47,7 +48,10 @@ function Get-QueryStoreUnsupportedDatabase {
 
     $unsupportedDatabase = @("master", "tempdb")
 
-    if ($Database -notcontains "model" -or $SqlInstance.VersionMajor -lt 16) {
+    # Whether model is eligible here stays the question of this function. Whether the engine can have Query Store
+    # on model at all is a feature rule. See #10600.
+    $supportsModel = Test-DbaFeatureSupport -Server $SqlInstance -Feature QueryStoreOnModel
+    if ($Database -notcontains "model" -or -not $supportsModel) {
         $unsupportedDatabase += "model"
     }
 
@@ -56,7 +60,9 @@ function Get-QueryStoreUnsupportedDatabase {
             continue
         }
 
-        if ($unsupportedName -eq "model") {
+        if ($unsupportedName -eq "model" -and $SqlInstance.DatabaseEngineType -eq "SqlAzureDatabase") {
+            $warningMessage = "Azure SQL Database has no model database to read Query Store on. Skipping model on $SqlInstance."
+        } elseif ($unsupportedName -eq "model") {
             $warningMessage = "Query Store cannot be read on model before SQL Server 2022. Skipping model on $SqlInstance."
         } else {
             $warningMessage = "Query Store cannot be enabled on system database $unsupportedName. Skipping $unsupportedName on $SqlInstance."

@@ -11,6 +11,8 @@ on:
       - "tests/Copy-DbaDbTableData.Tests.ps1"
       - ".github/scripts/gh-external-table-actions.ps1"
       - ".github/docker/sql2025-polybase/Dockerfile"
+      - ".github/scripts/Build-MinioCiImage.sh"
+      - ".github/docker/minio/**"
       - ".github/workflows/integration-tests-external-table.yml"
   pull_request:
     paths:
@@ -18,6 +20,8 @@ on:
       - "tests/Copy-DbaDbTableData.Tests.ps1"
       - ".github/scripts/gh-external-table-actions.ps1"
       - ".github/docker/sql2025-polybase/Dockerfile"
+      - ".github/scripts/Build-MinioCiImage.sh"
+      - ".github/docker/minio/**"
       - ".github/workflows/integration-tests-external-table.yml"
   workflow_dispatch:
 
@@ -39,6 +43,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install pinned Go toolchain for MinIO
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: "1.24.8"
+          cache: false
+
+      - name: Build MinIO CI image from official source
+        shell: bash
+        run: bash ./.github/scripts/Build-MinioCiImage.sh
 
       - name: Read dbatools.library version
         id: get-version
@@ -87,14 +101,15 @@ jobs:
         shell: bash
         run: |
           docker run -d \
+            --pull=never \
             --name minio \
             --hostname minio \
             --network localnet \
-            -p 9000:9000 \
+            -p 127.0.0.1:9000:9000 \
             -v $HOME/.minio/certs:/root/.minio/certs:ro \
             -e MINIO_ROOT_USER=minioadmin \
             -e MINIO_ROOT_PASSWORD=minioadmin \
-            quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z server /data
+            dbatools/minio-ci:RELEASE.2025-10-15T17-29-55Z server /data
 
           minio_ready=false
           for i in {1..30}; do
@@ -110,6 +125,7 @@ jobs:
           fi
 
           curl -sSL https://github.com/minio/mc/releases/download/RELEASE.2025-08-13T08-35-41Z/mc.linux-amd64.RELEASE.2025-08-13T08-35-41Z -o $HOME/mc
+          echo "01f866e9c5f9b87c2b09116fa5d7c06695b106242d829a8bb32990c00312e891  $HOME/mc" | sha256sum --check
           chmod +x $HOME/mc
           $HOME/mc alias set dbatoolsci https://localhost:9000 minioadmin minioadmin --insecure
           $HOME/mc mb dbatoolsci/sqlbackups --insecure
@@ -135,7 +151,8 @@ jobs:
 
           sql_ready=false
           for i in {1..60}; do
-            if docker logs mssql1 2>&1 | grep -q "SQL Server is now ready for client connections"; then
+            # Not grep -q: it exits on the first match, and under pipefail the broken pipe in docker logs fails the test.
+            if docker logs mssql1 2>&1 | grep "SQL Server is now ready for client connections" > /dev/null; then
               sql_ready=true
               break
             fi

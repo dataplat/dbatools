@@ -30,6 +30,9 @@ Describe $CommandName -Tag UnitTests {
                 "Reattach",
                 "SetSourceReadOnly",
                 "ReuseSourceFolderStructure",
+                "DestinationDataDirectory",
+                "DestinationLogDirectory",
+                "DestinationFileStreamDirectory",
                 "IncludeSupportDbs",
                 "UseLastBackup",
                 "Continue",
@@ -44,6 +47,18 @@ Describe $CommandName -Tag UnitTests {
                 "KeepReplication"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+
+        It "Rejects the destination directories with -DetachAttach before anything runs" {
+            # Detach/attach moves the files itself, so the directories belong to the backup/restore parameter set only (#10587)
+            $splatDetachWithDirectory = @{
+                Source                   = "dbatoolsci_nosuchsource"
+                Destination              = "dbatoolsci_nosuchdestination"
+                Database                 = "dbatoolsci_nosuchdb"
+                DetachAttach             = $true
+                DestinationDataDirectory = "C:\dbatoolsci_nosuchdirectory"
+            }
+            { Copy-DbaDatabase @splatDetachWithDirectory } | Should -Throw -ExceptionType ([System.Management.Automation.ParameterBindingException])
         }
     }
 }
@@ -870,6 +885,174 @@ Describe $CommandName -Tag IntegrationTests {
                 $results[0].DestinationDatabase | Should -Be "djkhgfkjghfdjgd"
                 $results[0].Status | Should -BeLike "Successful*"
             }
+        }
+    }
+
+    Context "Custom destination directories for issue #10587" {
+        BeforeDiscovery {
+            $rejectedDirectoryCases = @(
+                @{
+                    Label           = "a log directory without a data directory"
+                    DataName        = ""
+                    LogName         = "rejected_log"
+                    FileStreamName  = ""
+                    Reuse           = $false
+                    ExpectedWarning = "*-DestinationLogDirectory can only be used together with -DestinationDataDirectory*"
+                }
+                @{
+                    Label           = "a FILESTREAM directory without a data directory"
+                    DataName        = ""
+                    LogName         = ""
+                    FileStreamName  = "rejected_filestream"
+                    Reuse           = $false
+                    ExpectedWarning = "*-DestinationFileStreamDirectory can only be used together with -DestinationDataDirectory*"
+                }
+                @{
+                    Label           = "a data directory together with -ReuseSourceFolderStructure"
+                    DataName        = "rejected_data"
+                    LogName         = ""
+                    FileStreamName  = ""
+                    Reuse           = $true
+                    ExpectedWarning = "*-ReuseSourceFolderStructure cannot be combined with -DestinationDataDirectory*"
+                }
+            )
+        }
+
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatStopProcess = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Program     = "dbatools PowerShell module - dbatools.io"
+            }
+            Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
+
+            $directoryDb = "dbatoolsci_directories_$(Get-Random)"
+            $serverDirectories = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
+            $serverDirectories.Query("CREATE DATABASE $directoryDb; ALTER DATABASE $directoryDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+            $serverDirectories.Query("CREATE TABLE dbo.dbatoolsci_rows (id int NOT NULL); INSERT INTO dbo.dbatoolsci_rows (id) VALUES (10587);", $directoryDb)
+
+            # The directories live below the folder of this test file, which both instances can write to and which
+            # the AfterAll of the Describe removes. They are not created here: the restore has to create them.
+            $directoryRoot = Join-Path -Path $NetworkPath -ChildPath "directories"
+            $destinationDefaultPath = Get-DbaDefaultPath -SqlInstance $TestConfig.InstanceCopy2
+
+            # A rejected call must not start a backup, so it gets a backup folder of its own that has to stay empty.
+            $rejectedSharedPath = Join-Path -Path $NetworkPath -ChildPath "rejected"
+            $null = New-Item -Path $rejectedSharedPath -ItemType Directory -Force
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $directoryDb -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Restores to the default directories of the destination when no directory is given" {
+            $splatCopyDefault = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                Database      = $directoryDb
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+            }
+            $results = Copy-DbaDatabase @splatCopyDefault
+            $results.Status | Should -Be "Successful"
+
+            $files = Get-DbaDbFile -SqlInstance $TestConfig.InstanceCopy2 -Database $directoryDb
+            ($files | Where-Object TypeDescription -eq "ROWS").PhysicalName | Split-Path -Parent | Should -Be $destinationDefaultPath.Data.TrimEnd("\")
+            ($files | Where-Object TypeDescription -eq "LOG").PhysicalName | Split-Path -Parent | Should -Be $destinationDefaultPath.Log.TrimEnd("\")
+        }
+
+        It "Restores a fresh backup into the given data and log directories" {
+            $dataDirectory = Join-Path -Path $directoryRoot -ChildPath "fresh\$directoryDb\data"
+            $logDirectory = Join-Path -Path $directoryRoot -ChildPath "fresh\$directoryDb\log"
+            $splatCopyFresh = @{
+                Source                   = $TestConfig.InstanceCopy1
+                Destination              = $TestConfig.InstanceCopy2
+                Database                 = $directoryDb
+                BackupRestore            = $true
+                SharedPath               = $NetworkPath
+                DestinationDataDirectory = $dataDirectory
+                DestinationLogDirectory  = $logDirectory
+                Force                    = $true
+            }
+            $results = Copy-DbaDatabase @splatCopyFresh
+            $results.Status | Should -Be "Successful"
+
+            $files = Get-DbaDbFile -SqlInstance $TestConfig.InstanceCopy2 -Database $directoryDb
+            ($files | Where-Object TypeDescription -eq "ROWS").PhysicalName | Split-Path -Parent | Should -Be $dataDirectory
+            ($files | Where-Object TypeDescription -eq "LOG").PhysicalName | Split-Path -Parent | Should -Be $logDirectory
+
+            $restoredRows = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Database $directoryDb -Query "SELECT id FROM dbo.dbatoolsci_rows"
+            $restoredRows.id | Should -Be 10587
+        }
+
+        It "Restores the last backup with the log files in the data directory when only that is given" {
+            $splatBackup = @{
+                SqlInstance     = $TestConfig.InstanceCopy1
+                Database        = $directoryDb
+                BackupDirectory = $NetworkPath
+            }
+            $null = Backup-DbaDatabase @splatBackup
+
+            $dataDirectory = Join-Path -Path $directoryRoot -ChildPath "last\$directoryDb"
+            $splatCopyLast = @{
+                Source                   = $TestConfig.InstanceCopy1
+                Destination              = $TestConfig.InstanceCopy2
+                Database                 = $directoryDb
+                BackupRestore            = $true
+                UseLastBackup            = $true
+                DestinationDataDirectory = $dataDirectory
+                Force                    = $true
+            }
+            $results = Copy-DbaDatabase @splatCopyLast
+            $results.Status | Should -Be "Successful"
+
+            $files = Get-DbaDbFile -SqlInstance $TestConfig.InstanceCopy2 -Database $directoryDb
+            $files.PhysicalName | Split-Path -Parent | Should -Be $dataDirectory, $dataDirectory
+
+            $restoredRows = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Database $directoryDb -Query "SELECT id FROM dbo.dbatoolsci_rows"
+            $restoredRows.id | Should -Be 10587
+        }
+
+        It "Rejects <Label> before dropping the destination or taking a backup" -ForEach $rejectedDirectoryCases {
+            # -Force would drop the existing destination database first, so it has to survive a rejected call,
+            # and the rejected call must not have written a backup either.
+            $splatCopyRejected = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                Database      = $directoryDb
+                BackupRestore = $true
+                SharedPath    = $rejectedSharedPath
+                Force         = $true
+                WarningAction = "SilentlyContinue"
+            }
+            if ($DataName) {
+                $splatCopyRejected.DestinationDataDirectory = Join-Path -Path $directoryRoot -ChildPath $DataName
+            }
+            if ($LogName) {
+                $splatCopyRejected.DestinationLogDirectory = Join-Path -Path $directoryRoot -ChildPath $LogName
+            }
+            if ($FileStreamName) {
+                $splatCopyRejected.DestinationFileStreamDirectory = Join-Path -Path $directoryRoot -ChildPath $FileStreamName
+            }
+            if ($Reuse) {
+                $splatCopyRejected.ReuseSourceFolderStructure = $true
+            }
+            $results = Copy-DbaDatabase @splatCopyRejected
+
+            $results | Should -BeNullOrEmpty
+            $WarnVar | Should -BeLike $ExpectedWarning
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $directoryDb | Should -Not -BeNullOrEmpty
+            Get-ChildItem -Path $rejectedSharedPath | Should -BeNullOrEmpty
         }
     }
 

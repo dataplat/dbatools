@@ -72,13 +72,15 @@ function Test-ElevationRequirement {
     } elseif ($PSCmdlet.ParameterSetName -like "Stop") {
         if ($testResult) { return $testResult }
 
+        # Forwards the switches of the caller. Stop-Function only tests them for truth, so an unbound
+        # switch or an empty label behaves as if it was not passed. The continue deliberately binds to
+        # the loop of the command that calls this helper (allowlisted in the command structure test).
         $splatStopFunction = @{
-            Message = "Console not elevated, but elevation is required to perform some actions on localhost for this command."
+            Message          = "Console not elevated, but elevation is required to perform some actions on localhost for this command."
+            Continue         = $Continue
+            ContinueLabel    = $ContinueLabel
+            SilentlyContinue = $SilentlyContinue
         }
-
-        if (Test-Bound "Continue") { $splatStopFunction["Continue"] = $Continue }
-        if (Test-Bound "ContinueLabel") { $splatStopFunction["ContinueLabel"] = $ContinueLabel }
-        if (Test-Bound "SilentlyContinue") { $splatStopFunction["SilentlyContinue"] = $SilentlyContinue }
 
         . Stop-Function @splatStopFunction -FunctionName (Get-PSCallStack)[1].Command
         return $testResult

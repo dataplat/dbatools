@@ -13,12 +13,18 @@ function New-DbaComputerCertificate {
 
         It makes a lot of assumptions - namely, that your account is allowed to auto-enroll and that you have permission to do everything it needs to do ;)
 
+        When the CA holds the request as pending, for example because the template requires the approval of a CA manager, no certificate
+        is returned. The warning names the request ID and the certreq commands that install the certificate once it is issued; the request
+        and its private key stay in LocalMachine\REQUEST of the computer that runs the command until then.
+
         References:
         https://www.itprotoday.com/sql-server/7-steps-ssl-encryption
         https://azurebi.jppp.org/2016/01/23/using-lets-encrypt-certificates-for-secure-sql-server-connections/
         https://blogs.msdn.microsoft.com/sqlserverfaq/2016/09/26/creating-and-registering-ssl-certificates/
 
         The certificate is generated using AD's webserver SSL template on the client machine and pushed to the remote machine.
+
+        The command leaves nothing behind on the computer it runs on: the copy of a self-signed certificate that certreq puts into the intermediate CA store is removed right away, a request the CA did not answer is removed from the REQUEST store together with its key, and a certificate created for another computer is removed from the local store together with its key once it has been exported.
 
     .PARAMETER ComputerName
         Specifies the target computer or computers where the certificate will be created and installed. Defaults to localhost.
@@ -381,20 +387,20 @@ function New-DbaComputerCertificate {
                     }
                 }
 
-                $certDir = "$tempDir\$fqdn"
+                # A folder of its own for every call. A folder named only after the computer was shared by concurrent calls
+                # for the same computer: one call deleted the request files of the other, and a failed call could then read
+                # the request of the other call and remove that one instead of its own.
+                # The name must not start with dbatools: the maintenance task tempcleanup deletes everything in the temp folder
+                # that does, one minute after the module is imported, and would take the folder away while certreq writes to it.
+                $certDir = "$tempDir\certreq-$fqdn-$([System.Guid]::NewGuid())"
                 $certCfg = "$certDir\request.inf"
                 $certCsr = "$certDir\$fqdn.csr"
                 $certCrt = "$certDir\$fqdn.crt"
                 $certPfx = "$certDir\$fqdn.pfx"
                 $tempPfx = "$certDir\temp-$fqdn.pfx"
 
-                if (Test-Path($certDir)) {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Deleting files from $certDir"
-                    $null = Remove-Item "$certDir\*.*"
-                } else {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating $certDir"
-                    $null = New-Item -Path $certDir -ItemType Directory -Force
-                }
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating $certDir"
+                $null = New-Item -Path $certDir -ItemType Directory -Force
 
                 # Make sure output is compat with clusters
                 $shortName = $fqdn.Split(".")[0]
@@ -456,34 +462,100 @@ function New-DbaComputerCertificate {
                 Add-Content $certCfg $san
                 Add-Content $certCfg "Critical=2.5.29.17"
 
+                $ownRequests = @()
                 if ($PScmdlet.ShouldProcess("local", "Creating certificate for $computer")) {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Running: certreq -new $certCfg $certCsr"
-                    $create = certreq -new $certCfg $certCsr
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Running: certreq -q -new $certCfg $certCsr"
+                    $create = certreq -q -new $certCfg $certCsr
+
+                    # The pending request of this call, recorded now: its public key is in the request file certreq just wrote,
+                    # and every request has its own key. Should the CA not issue the certificate, exactly this request goes.
+                    if (-not $SelfSigned -and (Test-Path -Path $certCsr)) {
+                        $requestFileBase64 = (Get-Content -Path $certCsr | Where-Object { $PSItem -notmatch "^-----" }) -join ""
+                        $requestFileHex = [System.BitConverter]::ToString([System.Convert]::FromBase64String($requestFileBase64))
+                        $ownRequests = @(Get-ChildItem -Path Cert:\LocalMachine\REQUEST -ErrorAction SilentlyContinue | Where-Object { $requestFileHex.Contains([System.BitConverter]::ToString($PSItem.PublicKey.EncodedKeyValue.RawData)) } | ForEach-Object { $PSItem.Thumbprint })
+                    }
                 }
 
                 if ($SelfSigned) {
                     $serial = (($create -Split "Serial Number:" -Split "Subject")[2]).Trim() # D:
                     $storedCert = Get-ChildItem Cert:\LocalMachine\My -Recurse | Where-Object SerialNumber -eq $serial
 
+                    # certreq installs a self-signed certificate twice: with its key in LocalMachine\My, and without the key in
+                    # LocalMachine\CA, the intermediate CA store. The copy serves no purpose, a self-signed certificate is its own
+                    # root, and it stays behind when the certificate is removed later. So it goes right away.
+                    if ($storedCert) {
+                        $caStore = New-Object System.Security.Cryptography.X509Certificates.X509Store -ArgumentList "CA", "LocalMachine"
+                        $caStore.Open("ReadWrite")
+                        foreach ($caCopy in $caStore.Certificates.Find("FindByThumbprint", $storedCert.Thumbprint, $false)) {
+                            $caStore.Remove($caCopy)
+                        }
+                        $caStore.Close()
+                    }
+
                     if ($computer.IsLocalHost) {
                         $storedCert | Select-Object * | Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
                     }
                 } else {
+                    $submit = $null
+                    $submitExitCode = $null
                     if ($PScmdlet.ShouldProcess("local", "Submitting certificate request for $computer to $CaServer\$CaName")) {
-                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certCsr $certCrt $certPfx"
-                        $submit = certreq -submit -config "$CaServer\$CaName" -attrib $certTemplate $certCsr $certCrt $certPfx
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -q -submit -config `"$CaServer\$CaName`" -attrib $certTemplate $certCsr $certCrt $certPfx"
+                        $submit = certreq -q -submit -config "$CaServer\$CaName" -attrib $certTemplate $certCsr $certCrt $certPfx
+                        $submitExitCode = $LASTEXITCODE
                     }
 
-                    if ($submit -match "ssued") {
-                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -accept -machine $certCrt"
-                        $null = certreq -accept -machine $certCrt
+                    # The outcome comes from the exit code and the certificate file, not from the messages: they are localized,
+                    # and "Certificate not issued" of a refused request contains "issued" as well. certreq ends with 0 when the
+                    # CA took the request, and writes the certificate file only when the CA issued the certificate right away.
+                    # A CA may also hold a request as pending, for example until a CA manager approves it.
+                    if ($submitExitCode -eq 0 -and (Test-Path -Path $certCrt)) {
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "certreq -q -accept -machine $certCrt"
+                        $null = certreq -q -accept -machine $certCrt
                         $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2 ($certCrt, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
                         $storedCert = Get-ChildItem "Cert:\$store\$folder" -Recurse | Where-Object { $_.Thumbprint -eq $cert.Thumbprint }
-                    } elseif ($submit) {
+                    } elseif ($submitExitCode -eq 0) {
+                        # The request is pending at the CA. It stays in LocalMachine\REQUEST with its private key, because the
+                        # certificate the CA issues later can only be installed with that key. The request files are not needed for that.
+                        Write-Message -Level Verbose -Message "$submit"
+                        $requestId = ([regex]::Match("$submit", "RequestId:\s*(\d+)")).Groups[1].Value
+                        if (-not $requestId) {
+                            $requestId = "<RequestId from the CA>"
+                        }
+                        $requestCrt = "$computer-$requestId.crt"
+                        $pendingMessage = "The CA $CaServer\$CaName holds the certificate request $requestId for $computer as pending, for example until a CA manager approves it. The request and its private key stay in LocalMachine\REQUEST on $env:COMPUTERNAME. Once the CA has issued the certificate, install it on $env:COMPUTERNAME with: certreq -retrieve -config `"$CaServer\$CaName`" $requestId $requestCrt, then certreq -accept -machine $requestCrt."
+                        if (-not $computer.IsLocalHost) {
+                            $pendingMessage += " Then export it with its private key and import it on $computer with Add-DbaComputerCertificate."
+                        }
+                        Remove-Item -Path $certDir -Recurse -Force -ErrorAction SilentlyContinue
+                        Stop-Function -Message $pendingMessage -Target $computer -Continue
+                    } elseif ($null -ne $submitExitCode) {
                         Write-Message -Level Warning -Message "Something went wrong"
                         Write-Message -Level Warning -Message "$create"
                         Write-Message -Level Warning -Message "$submit"
-                        Stop-Function -Message "Failure when attempting to create the cert on $computer. Exception: $_" -Target $computer -Continue
+                        # The CA did not issue the certificate, so the pending request and its key would stay in
+                        # LocalMachine\REQUEST forever. They go with the failure.
+                        # Other requests may have been created in the meantime by someone else, so only the request of this
+                        # call goes: the one whose public key is in the request file certreq wrote. Every request has its own key.
+                        # The request was recorded right after certreq -new, not read back from the file now.
+                        $pendingRequests = @(Get-ChildItem -Path Cert:\LocalMachine\REQUEST -ErrorAction SilentlyContinue | Where-Object Thumbprint -in $ownRequests | ForEach-Object { $PSItem.Thumbprint })
+                        foreach ($pendingRequest in $pendingRequests) {
+                            Write-Message -Level Verbose -Message "Removing the pending request $pendingRequest and its key from LocalMachine\REQUEST"
+                            $splatRemoveRequest = @{
+                                Thumbprint      = $pendingRequest
+                                Folder          = "REQUEST"
+                                DeleteKey       = $true
+                                Confirm         = $false
+                                EnableException = $true
+                            }
+                            try {
+                                $null = Remove-DbaComputerCertificate @splatRemoveRequest
+                            } catch {
+                                Write-Message -Level Warning -Message "The pending request $pendingRequest could not be removed from LocalMachine\REQUEST: $PSItem"
+                            }
+                        }
+                        # The -Continue skips the removal of the request folder at the end, and every call has a folder of its own.
+                        Remove-Item -Path $certDir -Recurse -Force -ErrorAction SilentlyContinue
+                        Stop-Function -Message "Failure when attempting to create the cert on $computer. $($submit | Select-Object -Last 1)" -Target $computer -Continue
                     }
 
                     if ($Computer.IsLocalHost) {
@@ -501,7 +573,23 @@ function New-DbaComputerCertificate {
                     }
 
                     if ($PScmdlet.ShouldProcess("local", "Removing cert from disk but keeping it in memory")) {
-                        $storedCert | Remove-Item
+                        # The certificate now lives in the PFX data and belongs to the target computer. Removing only the store entry
+                        # would leave its private key on this computer, so the key is deleted with it.
+                        $splatRemoveLocal = @{
+                            Thumbprint      = $storedCert.Thumbprint
+                            DeleteKey       = $true
+                            Confirm         = $false
+                            EnableException = $true
+                        }
+                        try {
+                            $localRemoval = Remove-DbaComputerCertificate @splatRemoveLocal
+                            if ($localRemoval.PrivateKey -ne "Deleted") {
+                                Write-Message -Level Warning -Message "The private key of the certificate $($storedCert.Thumbprint) is still on $env:COMPUTERNAME: $($localRemoval.PrivateKey)"
+                            }
+                        } catch {
+                            # The PFX data is there, so the import on the target still goes ahead.
+                            Write-Message -Level Warning -Message "The certificate $($storedCert.Thumbprint) could not be removed from LocalMachine\My on $env:COMPUTERNAME: $PSItem"
+                        }
                     }
 
                     if ($ClusterInstanceName) { $secondaryNode = $true }
@@ -527,12 +615,14 @@ function New-DbaComputerCertificate {
 
                 if ($PScmdlet.ShouldProcess($computer, "Attempting to import new cert")) {
                     if ($flags -contains "UserProtected" -and -not $computer.IsLocalHost) {
+                        Remove-Item -Path $certDir -Recurse -Force -ErrorAction SilentlyContinue
                         Stop-Function -Message "UserProtected flag is only valid for localhost because it causes a prompt, skipping for $computer" -Continue
                     }
                     try {
                         $thumbprint = (Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $SecurePassword, $Store, $Folder, $flags -ScriptBlock $scriptBlock -ErrorAction Stop -Verbose).Thumbprint
                         Get-DbaComputerCertificate -ComputerName $computer -Credential $Credential -Thumbprint $thumbprint
                     } catch {
+                        Remove-Item -Path $certDir -Recurse -Force -ErrorAction SilentlyContinue
                         Stop-Function -Message "Issue importing new cert on $computer" -ErrorRecord $_ -Target $computer -Continue
                     }
                 }
@@ -541,7 +631,7 @@ function New-DbaComputerCertificate {
                 try {
                     Remove-Item -Force -Recurse $certDir -ErrorAction SilentlyContinue
                 } catch {
-                    Stop-Function "Isue removing files from $certDir" -Target $certDir -ErrorRecord $_
+                    Stop-Function -Message "Issue removing files from $certDir" -Target $certDir -ErrorRecord $PSItem
                 }
             }
             Write-ProgressHelper -Completed

@@ -78,6 +78,17 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should show trace flag 7745 meets best practice" {
             ($results | Where-Object Name -eq "Trace Flag 7745 Enabled").IsBestPractice | Should -Be $true
         }
+
+        It "Asks for trace flag 7752 only before SQL Server 2019, which loads Query Store asynchronously by default" {
+            # Until #10600 this read the nonexistent property MajorVersion, so 7752 was reported as missing on
+            # every version.
+            $traceFlag7752 = $results | Where-Object Name -eq "Trace Flag 7752 Enabled"
+            if ($svr.VersionMajor -ge 15) {
+                $traceFlag7752 | Should -BeNullOrEmpty
+            } else {
+                $traceFlag7752 | Should -Not -BeNullOrEmpty
+            }
+        }
     }
 
     Context "Exclude database works" {

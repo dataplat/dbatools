@@ -43,6 +43,7 @@ $patternHereStringDoubleEnd = "^`"@"
 $patternBacktick = "``\s*$"
 $patternBoolAttribute = "\[\s*(Parameter|CmdletBinding|OutputType|ValidateSet)\s*\([^]]*=\s*\`$(true|false)"
 $patternStaticNew = "::new\s*\("
+$patternDoubleQuotedString = "`"(?:[^`"``]|``.)*`""
 $patternSingleQuote = "(?<![@])'.+'"
 $patternPlainSplat = "\`$splat\s*="
 $patternNamedSplat = "\`$splat[A-Z][a-zA-Z0-9]*\s*="
@@ -90,7 +91,10 @@ for ($i = 0; $i -lt $lines.Count; $i++) {
         }
 
         # 4. No single quotes (except here-strings already handled above)
-        if ($line -match $patternSingleQuote) {
+        # Double-quoted spans are stripped first, so T-SQL literals nested in a
+        # double-quoted PowerShell string are not reported.
+        $lineWithoutDoubleQuoted = $line -replace $patternDoubleQuotedString, "`"`""
+        if ($lineWithoutDoubleQuoted -match $patternSingleQuote) {
             $violations += "Line ${lineNum}: Use double quotes instead of single quotes."
         }
 
@@ -116,7 +120,20 @@ for ($i = 0; $i -lt $lines.Count; $i++) {
         }
 
         # 8. Track hashtables for alignment check
+        # A hashtable that closes on its own line (@{ } or @{ Name = 1 }) is not
+        # tracked: the end pattern needs a line starting with a brace, so it would
+        # collect every later line with = until an unrelated closing brace. Inside
+        # a tracked hashtable such a line is an ordinary entry.
+        $opensHashtable = $false
         if ($line -match $patternHashtableStart) {
+            $braceDepth = 0
+            foreach ($character in $line.Substring($line.IndexOf("@{") + 1).ToCharArray()) {
+                if ($character -eq "{") { $braceDepth++ }
+                if ($character -eq "}") { $braceDepth-- }
+            }
+            $opensHashtable = $braceDepth -gt 0
+        }
+        if ($opensHashtable) {
             $inHashtable = $true
             $hashtableLines = @()
             $hashtableStart = $lineNum

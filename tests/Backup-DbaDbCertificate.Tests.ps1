@@ -154,4 +154,28 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Certificate | Should -Contain $cert3.Name
         }
     }
+
+    Context "When the instance cannot access the path" {
+        It "Warns once per certificate, attempts no export and keeps the caller loop" {
+            # The path check called Stop-Function without -Continue or return, so the export was attempted anyway
+            # and failed with a second warning per certificate.
+            $splatBackupNoAccess = @{
+                SqlInstance        = $TestConfig.InstanceSingle
+                Database           = $db1Name
+                EncryptionPassword = $pw
+                DecryptionPassword = $pw
+                Path               = "$($TestConfig.Temp)\dbatoolsci_noaccess_$(Get-Random)\sub"
+                WarningAction      = "SilentlyContinue"
+            }
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $results = Backup-DbaDbCertificate @splatBackupNoAccess
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $results | Should -BeNullOrEmpty
+            @($WarnVar -like "*cannot access*") | Should -HaveCount 2
+            @($WarnVar -like "*cannot be exported*") | Should -HaveCount 0
+        }
+    }
 }

@@ -81,11 +81,18 @@ function Get-DbaXEObject {
         [switch]$EnableException
     )
     begin {
+        # -Type is applied to the raw names of sys.dm_xe_objects after the query. It used to be pasted into the
+        # query, and the translation of the two predicate names was discarded - and written to the output - so
+        # both predicate types matched nothing. Filtering here also ignores the case of the names, whatever the
+        # server collation.
         if ($Type) {
-            $join = $Type -join "','"
-            $where = "AND o.object_type in ('$join')"
-            $where.Replace("PredicateComparator", "pred_compare")
-            $where.Replace("PredicateSource", "pred_source")
+            $rawType = foreach ($typeName in $Type) {
+                switch ($typeName) {
+                    "PredicateComparator" { "pred_compare" }
+                    "PredicateSource" { "pred_source" }
+                    default { $typeName }
+                }
+            }
         }
         $sql = "SELECT  SERVERPROPERTY('MachineName') AS ComputerName,
                 ISNULL(SERVERPROPERTY('InstanceName'), 'MSSQLSERVER') AS InstanceName,
@@ -109,7 +116,6 @@ function Get-DbaXEObject {
                 FROM sys.dm_xe_packages AS p
                 JOIN sys.dm_xe_objects AS o ON p.guid = o.package_guid
                 WHERE (p.capabilities IS NULL OR p.capabilities & 1 = 0)
-                $where
                 AND (o.capabilities IS NULL OR o.capabilities & 1 = 0)
                 ORDER BY o.object_type
                 "
@@ -117,15 +123,16 @@ function Get-DbaXEObject {
     process {
         foreach ($instance in $SqlInstance) {
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                # sys.dm_xe_packages and sys.dm_xe_objects arrived with SQL Server 2008. See #10600.
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
             try {
-                $server.Query($sql) | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ObjectTypeRaw
+                $server.Query($sql) | Where-Object { -not $Type -or $PSItem.ObjectTypeRaw -in $rawType } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, ObjectTypeRaw
             } catch {
-                Stop-Function -Message "Issue collecting trace data on $server." -Target $server -ErrorRecord $_
+                Stop-Function -Message "Issue collecting trace data on $server." -Target $server -ErrorRecord $_ -Continue
             }
         }
     }

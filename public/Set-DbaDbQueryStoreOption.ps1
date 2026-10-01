@@ -61,7 +61,7 @@ function Set-DbaDbQueryStoreOption {
         Set to 30-90 days for most environments; longer retention helps with historical analysis but consumes more space, shorter retention frees space faster.
 
     .PARAMETER MaxPlansPerQuery
-        Limits how many execution plans Query Store retains for each individual query. Default is 200 plans per query (SQL Server 2017+).
+        Limits how many execution plans Query Store retains for each individual query. Default is 200 plans per query.
         Higher values help track plan variations in dynamic environments but consume more space; lower values reduce storage but may miss important plan changes.
 
     .PARAMETER WaitStatsCaptureMode
@@ -128,9 +128,9 @@ function Set-DbaDbQueryStoreOption {
         - QueryCaptureMode: Query capture mode (All, Auto, None, or Custom)
         - SizeBasedCleanupMode: Cleanup mode when max storage is exceeded (Off, Auto)
         - StaleQueryThresholdInDays: Number of days after which a query is considered stale for cleanup
+        - MaxPlansPerQuery: Maximum number of plans tracked per query
 
         Additional properties for SQL Server 2017 (v14) and later:
-        - MaxPlansPerQuery: Maximum number of plans tracked per query
         - WaitStatsCaptureMode: Wait statistics capture mode (Off, On)
 
         Additional properties for SQL Server 2019 (v15) and later:
@@ -208,11 +208,21 @@ function Set-DbaDbQueryStoreOption {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($CaptureMode -contains "Custom" -and $server.VersionMajor -lt 15) {
-                Stop-Function -Message "Custom capture mode can onlly be set in SQL Server 2019 and above" -Continue
+            # Which options exist depends on the engine, not only on the version, so this asks the feature rules
+            # instead of comparing VersionMajor. See #10600.
+            try {
+                $supportsWaitStats = Test-DbaFeatureSupport -Server $server -Feature QueryStoreWaitStats
+                $supportsMaxPlansPerQuery = Test-DbaFeatureSupport -Server $server -Feature QueryStoreMaxPlansPerQuery
+                $supportsCustomCapturePolicy = Test-DbaFeatureSupport -Server $server -Feature QueryStoreCustomCapturePolicy
+            } catch {
+                Stop-Function -Message "Cannot tell which Query Store options $instance supports" -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if (($CustomCapturePolicyExecutionCount -or $CustomCapturePolicyTotalCompileCPUTimeMS -or $CustomCapturePolicyTotalExecutionCPUTimeMS -or $CustomCapturePolicyStaleThresholdHours) -and $server.VersionMajor -lt 15) {
+            if ($CaptureMode -contains "Custom" -and -not $supportsCustomCapturePolicy) {
+                Stop-Function -Message "Custom capture mode can only be set in SQL Server 2019 and above" -Continue
+            }
+
+            if (($CustomCapturePolicyExecutionCount -or $CustomCapturePolicyTotalCompileCPUTimeMS -or $CustomCapturePolicyTotalExecutionCPUTimeMS -or $CustomCapturePolicyStaleThresholdHours) -and -not $supportsCustomCapturePolicy) {
                 Write-Message -Level Warning -Message "Custom Capture Policies can only be set in SQL Server 2019 and above. These options will be skipped for $instance"
             }
 
@@ -293,13 +303,15 @@ function Set-DbaDbQueryStoreOption {
 
                 $query = ""
 
-                if ($server.VersionMajor -ge 14) {
+                if ($supportsMaxPlansPerQuery) {
                     if ($MaxPlansPerQuery) {
                         if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing MaxPlansPerQuery to $($MaxPlansPerQuery)")) {
                             $query += "ALTER DATABASE [$dbName] SET QUERY_STORE = ON (MAX_PLANS_PER_QUERY = $($MaxPlansPerQuery)); "
                         }
                     }
+                }
 
+                if ($supportsWaitStats) {
                     if ($WaitStatsCaptureMode) {
                         if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing WaitStatsCaptureMode to $($WaitStatsCaptureMode)")) {
                             if ($WaitStatsCaptureMode -eq "ON" -or $WaitStatsCaptureMode -eq "OFF") {
@@ -309,7 +321,7 @@ function Set-DbaDbQueryStoreOption {
                     }
                 }
 
-                if ($server.VersionMajor -ge 15) {
+                if ($supportsCustomCapturePolicy) {
                     if ($db.QueryStoreOptions.QueryCaptureMode -eq "CUSTOM") {
                         if ($CustomCapturePolicyStaleThresholdHours) {
                             if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing CustomCapturePolicyStaleThresholdHours to $($CustomCapturePolicyStaleThresholdHours)")) {

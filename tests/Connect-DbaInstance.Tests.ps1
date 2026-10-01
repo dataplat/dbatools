@@ -34,6 +34,8 @@ Describe $CommandName -Tag UnitTests {
                 "AzureUnsupported",
                 "BatchSeparator",
                 "ClientName",
+                "ConnectRetryCount",
+                "ConnectRetryInterval",
                 "ConnectTimeout",
                 "EncryptConnection",
                 "FailoverPartner",
@@ -64,6 +66,20 @@ Describe $CommandName -Tag UnitTests {
                 "DisableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+
+        It "rejects ConnectRetryCount values outside 0 to 255" {
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryCount -1 } | Should -Throw -ErrorId "ParameterArgumentValidationError,Connect-DbaInstance"
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryCount 256 } | Should -Throw -ErrorId "ParameterArgumentValidationError,Connect-DbaInstance"
+        }
+
+        It "rejects ConnectRetryInterval values outside 1 to 60" {
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryInterval 0 } | Should -Throw -ErrorId "ParameterArgumentValidationError,Connect-DbaInstance"
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryInterval 61 } | Should -Throw -ErrorId "ParameterArgumentValidationError,Connect-DbaInstance"
+        }
+
+        It "rejects negative ConnectTimeout values" {
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectTimeout -1 } | Should -Throw -ErrorId "ParameterArgumentValidationError,Connect-DbaInstance"
         }
     }
 
@@ -217,6 +233,89 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 
+    Context "Ignored parameter warnings" {
+        BeforeAll {
+            function New-MockIgnoredParameterServer {
+                param(
+                    $Connection
+                )
+
+                $connectionString = $Connection.ConnectionString
+                $sqlConnectionObject = [PSCustomObject]@{
+                    ConnectionString = $connectionString
+                }
+                $connectionContext = [PSCustomObject]@{
+                    ConnectionString    = $connectionString
+                    SqlConnectionObject = $sqlConnectionObject
+                    StatementTimeout    = 0
+                }
+
+                Add-Member -InputObject $connectionContext -Name ExecuteWithResults -MemberType ScriptMethod -Value {
+                    param($Query)
+                } -Force
+
+                [PSCustomObject]@{
+                    ConnectionContext = $connectionContext
+                }
+            }
+
+            Mock Add-ConnectionHashValue { } -ModuleName dbatools
+            Mock New-Object { & (Get-Command -Name "New-Object" -CommandType Cmdlet) @PesterBoundParameters } -ModuleName dbatools
+            Mock New-Object {
+                New-MockIgnoredParameterServer -Connection $ArgumentList[0]
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.SqlServer.Management.Smo.Server"
+            }
+        }
+
+        It "warns when a connection-string input ignores ConnectRetryCount" {
+            $warnings = @()
+            $splatConnection = @{
+                SqlInstance       = "Server=sqlretry;Integrated Security=true"
+                ConnectRetryCount = 2
+                SqlConnectionOnly = $true
+                WarningAction     = "SilentlyContinue"
+                WarningVariable   = "warnings"
+            }
+
+            $null = Connect-DbaInstance @splatConnection
+
+            $warnings | Should -Match "Additional parameters are passed in, but they will be ignored"
+        }
+
+        It "still warns when TrustServerCertificate is honored alongside an ignored parameter" {
+            $warnings = @()
+            $splatConnection = @{
+                SqlInstance            = "Server=sqlretry;Integrated Security=true"
+                ConnectRetryCount      = 2
+                SqlConnectionOnly      = $true
+                TrustServerCertificate = $true
+                WarningAction          = "SilentlyContinue"
+                WarningVariable        = "warnings"
+            }
+
+            $null = Connect-DbaInstance @splatConnection
+
+            $warnings | Should -Match "Additional parameters are passed in, but they will be ignored"
+        }
+
+        It "warns when a SqlConnection input ignores ConnectRetryInterval" {
+            $warnings = @()
+            $connection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList "Server=sqlretry;Integrated Security=true"
+            $splatConnection = @{
+                SqlInstance          = $connection
+                ConnectRetryInterval = 2
+                SqlConnectionOnly    = $true
+                WarningAction        = "SilentlyContinue"
+                WarningVariable      = "warnings"
+            }
+
+            $null = Connect-DbaInstance @splatConnection
+
+            $warnings | Should -Match "Additional parameters are passed in, but they will be ignored"
+        }
+    }
+
     Context "AuthenticationType behavior" {
         BeforeAll {
             function New-MockAuthenticationServer {
@@ -291,6 +390,23 @@ Describe $CommandName -Tag UnitTests {
             $result.ConnectionString | Should -Not -Match "Integrated Security=True"
             $script:lastServerConnection.ConnectAsUser | Should -Be $false
             $script:lastServerConnection.ConnectAsUserName | Should -BeNullOrEmpty
+        }
+
+        It "uses explicit connection resiliency values instead of AppendConnectionString values" {
+            $splatConnection = @{
+                SqlInstance            = "sqlretry"
+                ConnectRetryCount      = 0
+                ConnectRetryInterval   = 2
+                ConnectTimeout         = 0
+                AppendConnectionString = "ConnectRetryCount=8;ConnectRetryInterval=9;Connect Timeout=60"
+                SqlConnectionOnly      = $true
+            }
+            $result = Connect-DbaInstance @splatConnection
+            $connectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $result.ConnectionString
+
+            $connectionStringBuilder.ConnectRetryCount | Should -Be 0
+            $connectionStringBuilder.ConnectRetryInterval | Should -Be 2
+            $connectionStringBuilder.ConnectTimeout | Should -Be 0
         }
 
         It "uses the SqlClient SSPI provider for explicit Windows credentials" -Skip:(-not $script:hasCredentialSspiProvider) {
@@ -382,6 +498,8 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $params = @{
                 BatchSeparator           = "GO"
+                ConnectRetryCount        = 2
+                ConnectRetryInterval     = 1
                 ConnectTimeout           = 1
                 Database                 = "tempdb"
                 LockTimeout              = 1
@@ -404,6 +522,9 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "sets connectioncontext parameters that are provided" {
             foreach ($param in $params.GetEnumerator()) {
+                if ($param.Key -in "ConnectRetryCount", "ConnectRetryInterval") {
+                    continue
+                }
                 if ($param.Key -eq "Database") {
                     $propName = "DatabaseName"
                 } else {
@@ -411,6 +532,28 @@ Describe $CommandName -Tag IntegrationTests {
                 }
                 $server.ConnectionContext.PSObject.Properties[$propName].Value | Should -Be $param.Value
             }
+        }
+
+        It "sets connection retry parameters in the connection string" {
+            $retryConnectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $server.ConnectionContext.ConnectionString
+            $retryConnectionStringBuilder.ConnectRetryCount | Should -Be 2
+            $retryConnectionStringBuilder.ConnectRetryInterval | Should -Be 1
+        }
+
+        It "gives explicit connection parameters precedence over AppendConnectionString" {
+            $splatConnection = @{
+                SqlInstance            = $TestConfig.InstanceMulti1
+                ConnectRetryCount      = 3
+                ConnectRetryInterval   = 2
+                ConnectTimeout         = 5
+                AppendConnectionString = "ConnectRetryCount=8;ConnectRetryInterval=9;Connect Timeout=60"
+            }
+            $precedenceServer = Connect-DbaInstance @splatConnection
+            $precedenceConnectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $precedenceServer.ConnectionContext.ConnectionString
+
+            $precedenceConnectionStringBuilder.ConnectRetryCount | Should -Be 3
+            $precedenceConnectionStringBuilder.ConnectRetryInterval | Should -Be 2
+            $precedenceConnectionStringBuilder.ConnectTimeout | Should -Be 5
         }
 
         It "returns more than one database" {
@@ -534,6 +677,85 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $server.Databases["msdb"].Tables.Count
             # This currently fails!
             #$server.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+        }
+    }
+
+    Context "ignored retry parameters for existing connection inputs" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $retryConnectionString = "Data Source=$($TestConfig.InstanceMulti1);Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True;ConnectRetryCount=7;ConnectRetryInterval=8"
+            $sqlRetryConnection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList $retryConnectionString
+            $registeredRetryServer = New-Object -TypeName Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer -ArgumentList "dbatoolsci_retry"
+            $registeredRetryServer.ConnectionString = $retryConnectionString
+            $connectionStringWarnings = @()
+            $sqlConnectionWarnings = @()
+            $registeredServerWarnings = @()
+
+            $splatConnectionString = @{
+                SqlInstance            = $retryConnectionString
+                ConnectRetryCount      = 2
+                TrustServerCertificate = $true
+                WarningAction          = "SilentlyContinue"
+                WarningVariable        = "connectionStringWarnings"
+            }
+            $serverFromConnectionString = Connect-DbaInstance @splatConnectionString
+
+            $splatSqlConnection = @{
+                SqlInstance          = $sqlRetryConnection
+                ConnectRetryInterval = 2
+                WarningAction        = "SilentlyContinue"
+                WarningVariable      = "sqlConnectionWarnings"
+            }
+            $serverFromSqlConnection = Connect-DbaInstance @splatSqlConnection
+
+            $splatRegisteredServer = @{
+                SqlInstance       = $registeredRetryServer
+                ConnectRetryCount = 3
+                WarningAction     = "SilentlyContinue"
+                WarningVariable   = "registeredServerWarnings"
+            }
+            $serverFromRegisteredServer = Connect-DbaInstance @splatRegisteredServer
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $serversToDisconnect = @(
+                $serverFromConnectionString
+                $serverFromSqlConnection
+                $serverFromRegisteredServer
+            ) | Where-Object { $null -ne $PSItem }
+            $null = $serversToDisconnect | Disconnect-DbaInstance -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "warns for an ignored retry count on a connection-string input" {
+            $connectionStringWarnings | Should -Match "Additional parameters are passed in, but they will be ignored"
+        }
+
+        It "keeps the retry count from the connection-string input" {
+            $connectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $serverFromConnectionString.ConnectionContext.ConnectionString
+            $connectionStringBuilder.ConnectRetryCount | Should -Be 7
+        }
+
+        It "warns for an ignored retry interval on a SqlConnection input" {
+            $sqlConnectionWarnings | Should -Match "Additional parameters are passed in, but they will be ignored"
+        }
+
+        It "keeps the retry interval from the SqlConnection input" {
+            $sqlConnectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $serverFromSqlConnection.ConnectionContext.ConnectionString
+            $sqlConnectionStringBuilder.ConnectRetryInterval | Should -Be 8
+        }
+
+        It "warns for an ignored retry count on a RegisteredServer input" {
+            $registeredServerWarnings | Should -Match "Additional parameters are passed in, but they will be ignored"
+        }
+
+        It "keeps the retry count from the RegisteredServer input" {
+            $registeredServerStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $serverFromRegisteredServer.ConnectionContext.ConnectionString
+            $registeredServerStringBuilder.ConnectRetryCount | Should -Be 7
         }
     }
 
