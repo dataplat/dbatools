@@ -284,6 +284,191 @@ Get-Content -Path $ResultPath -ErrorAction SilentlyContinue | ForEach-Object { "
     }
 }
 
+Describe "$ModuleName maintenance task tempcleanup" -Tag UnitTests {
+    <#
+    The task runs one minute after every import, in every process, and removes dbatools* items from the temp folder.
+    Items that are still in use by a running command or test of any process must survive it, and so must the export
+    folder that falls back to the temp folder when the account has no Documents folder.
+
+    A fresh PowerShell points TEMP at a scenario folder and runs the registered task there, so the real temp folder
+    and the maintenance task of this process stay out of it. The probe folder must not be named dbatools* itself.
+    Every Context is one run of the task in a scenario folder of its own, with the export path in another spelling.
+    #>
+    BeforeAll {
+        $ModulePath = Split-Path $PSScriptRoot -Parent
+
+        $cleanupProbePath = Join-Path ([System.IO.Path]::GetTempPath()) "tempcleanup_dbatoolsci_$(Get-Random)"
+        $null = New-Item -Path $cleanupProbePath -ItemType Directory
+        $cleanupStaleTime = (Get-Date).AddDays(-2)
+
+        $cleanupProbeScript = Join-Path $cleanupProbePath "cleanup-probe.ps1"
+        Set-Content -Path $cleanupProbeScript -Value @'
+param(
+    $ModulePath,
+    $TempPath,
+    $ExportPath
+)
+
+$Env:TEMP = $TempPath
+Import-Module (Join-Path $ModulePath "dbatools.psd1") -ErrorAction Stop
+Set-DbatoolsConfig -FullName "Path.DbatoolsExport" -Value $ExportPath
+& ([Dataplat.Dbatools.Maintenance.MaintenanceHost]::Tasks["tempcleanup"].ScriptBlock)
+"Done"
+'@
+
+        $cleanupProbeHost = (Get-Process -Id $PID).Path
+
+        function Invoke-TempCleanupProbe {
+            param (
+                [string]$TempPath,
+                [string]$ExportPath
+            )
+            $splatProbe = @{
+                ModulePath = $ModulePath
+                TempPath   = $TempPath
+                ExportPath = $ExportPath
+            }
+            & $cleanupProbeHost -NoProfile -NonInteractive -File $cleanupProbeScript @splatProbe 2>&1
+        }
+
+        # A folder with a stale file in it, the way a user export or a crashed run leaves it behind.
+        function New-TempCleanupStaleFolder {
+            param (
+                [string]$Path
+            )
+            $staleFolder = New-Item -Path $Path -ItemType Directory -Force
+            $staleFile = New-Item -Path (Join-Path $staleFolder.FullName "export.sql") -ItemType File
+            $staleFile.LastWriteTime = $cleanupStaleTime
+            $staleFolder.LastWriteTime = $cleanupStaleTime
+            $staleFolder
+        }
+    }
+
+    AfterAll {
+        Remove-Item -Path $cleanupProbePath -Recurse -ErrorAction SilentlyContinue
+    }
+
+    Context "The export folder is spelled like the temp folder" {
+        BeforeAll {
+            $samePath = Join-Path $cleanupProbePath "same-spelling"
+            $null = New-Item -Path $samePath -ItemType Directory
+
+            $freshFolder = New-Item -Path (Join-Path $samePath "dbatools-fresh-folder") -ItemType Directory
+            $null = New-Item -Path (Join-Path $freshFolder.FullName "in-use.txt") -ItemType File
+            $freshFile = New-Item -Path (Join-Path $samePath "dbatools-fresh.sql") -ItemType File
+
+            $staleFolder = New-TempCleanupStaleFolder -Path (Join-Path $samePath "dbatools-stale-folder")
+            $staleFile = New-Item -Path (Join-Path $samePath "dbatools-stale.sql") -ItemType File
+            $staleFile.LastWriteTime = $cleanupStaleTime
+
+            # The same folder the fallback of paths.ps1 picks when the account has no Documents folder.
+            $exportFolder = New-TempCleanupStaleFolder -Path (Join-Path $samePath "DbatoolsExport")
+
+            $otherFile = New-Item -Path (Join-Path $samePath "other-stale.txt") -ItemType File
+            $otherFile.LastWriteTime = $cleanupStaleTime
+
+            $sameOutput = Invoke-TempCleanupProbe -TempPath $samePath -ExportPath $exportFolder.FullName
+        }
+
+        It "runs the task" {
+            $sameOutput | Should -Contain "Done" -Because "the probe reported: $sameOutput"
+        }
+
+        It "keeps dbatools* items that were written to recently" {
+            Join-Path $freshFolder.FullName "in-use.txt" | Should -Exist
+            $freshFile.FullName | Should -Exist
+        }
+
+        It "removes dbatools* items that were not written to for more than a day" {
+            $staleFolder.FullName | Should -Not -Exist
+            $staleFile.FullName | Should -Not -Exist
+        }
+
+        It "keeps the export folder even when it is stale" {
+            Join-Path $exportFolder.FullName "export.sql" | Should -Exist
+        }
+
+        It "keeps items that are not named dbatools*" {
+            $otherFile.FullName | Should -Exist
+        }
+    }
+
+    Context "The export path is spelled with forward slashes" {
+        BeforeAll {
+            $slashPath = Join-Path $cleanupProbePath "forward-slashes"
+            $slashExportFolder = New-TempCleanupStaleFolder -Path (Join-Path $slashPath "DbatoolsExport")
+            $slashStaleFolder = New-TempCleanupStaleFolder -Path (Join-Path $slashPath "dbatools-stale-folder")
+
+            $slashOutput = Invoke-TempCleanupProbe -TempPath $slashPath -ExportPath ($slashExportFolder.FullName -replace "\\", "/")
+        }
+
+        It "keeps the export folder" {
+            Join-Path $slashExportFolder.FullName "export.sql" | Should -Exist -Because "the probe reported: $slashOutput"
+        }
+
+        It "removes the other stale dbatools* items" {
+            $slashStaleFolder.FullName | Should -Not -Exist -Because "the probe reported: $slashOutput"
+        }
+    }
+
+    Context "The export folder is below a stale dbatools* folder" {
+        BeforeAll {
+            $nestedPath = Join-Path $cleanupProbePath "nested"
+            $nestedExportFolder = New-TempCleanupStaleFolder -Path (Join-Path $nestedPath "dbatools-work\exports")
+            $nestedParentFolder = $nestedExportFolder.Parent
+            $nestedParentFolder.LastWriteTime = $cleanupStaleTime
+            $nestedStaleFolder = New-TempCleanupStaleFolder -Path (Join-Path $nestedPath "dbatools-stale-folder")
+
+            $nestedOutput = Invoke-TempCleanupProbe -TempPath $nestedPath -ExportPath $nestedExportFolder.FullName
+        }
+
+        It "keeps the dbatools* folder that holds the export folder" {
+            Join-Path $nestedExportFolder.FullName "export.sql" | Should -Exist -Because "the probe reported: $nestedOutput"
+        }
+
+        It "removes the other stale dbatools* items" {
+            $nestedStaleFolder.FullName | Should -Not -Exist -Because "the probe reported: $nestedOutput"
+        }
+    }
+
+    Context "The export path is spelled with short 8.3 names" {
+        BeforeAll {
+            # TEMP often holds a short name like C:\Users\ADMIN~1.ORD, so an export path built from it has one too,
+            # while Get-ChildItem reports the long names. The space makes Windows give the folder a short name of its own.
+            $shortLongPath = Join-Path $cleanupProbePath "short name probe"
+            $shortExportFolder = New-TempCleanupStaleFolder -Path (Join-Path $shortLongPath "DbatoolsExport")
+            $shortStaleFolder = New-TempCleanupStaleFolder -Path (Join-Path $shortLongPath "dbatools-stale-folder")
+
+            $shortPath = $null
+            try {
+                $shortPath = (New-Object -ComObject Scripting.FileSystemObject).GetFolder($shortLongPath).ShortPath
+            } catch {
+                # No FileSystemObject outside of Windows, and no short names there either.
+            }
+            $shortNamesExist = $shortPath -and $shortPath -ne $shortLongPath
+            if ($shortNamesExist) {
+                $shortOutput = Invoke-TempCleanupProbe -TempPath $shortLongPath -ExportPath (Join-Path $shortPath "DbatoolsExport")
+            }
+        }
+
+        It "keeps the export folder" {
+            if (-not $shortNamesExist) {
+                Set-ItResult -Skipped -Because "the volume of the temp folder creates no short 8.3 names"
+                return
+            }
+            Join-Path $shortExportFolder.FullName "export.sql" | Should -Exist -Because "the probe reported: $shortOutput"
+        }
+
+        It "removes the other stale dbatools* items" {
+            if (-not $shortNamesExist) {
+                Set-ItResult -Skipped -Because "the volume of the temp folder creates no short 8.3 names"
+                return
+            }
+            $shortStaleFolder.FullName | Should -Not -Exist -Because "the probe reported: $shortOutput"
+        }
+    }
+}
+
 Describe "$ModuleName style" -Tag Compliance {
     <#
     Ensures common formatting standards are applied:
