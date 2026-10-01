@@ -489,6 +489,18 @@ Two things keep that skip honest, and both are worth copying:
 - **Assert the engine first.** The Azure tests begin with an `It` that fails unless `DatabaseEngineEdition` is `SqlDatabase`. Pointed at anything else the rest would pass while proving nothing, because every other engine simply takes the `USE`.
 - **Assert the message, not just the failure.** Where the command has to refuse, the test also asserts that the error is *not* the raw "USE statement is not supported" - that is what fails if the code ever reaches `ChangeDatabase` again.
 
+## STRUCTURAL CHECKS OF THE COMMANDS
+
+The "command structure" Describe in `dbatools.Tests.ps1` enforces rules 1 and 3 of the command invariants in the repository `CLAUDE.md` (COMMAND INVARIANTS), which explains why they exist. It parses `public/` and `private/functions/` without SQL Server, so it runs with the Compliance tag:
+
+```powershell
+Invoke-Pester -Path .\tests\dbatools.Tests.ps1 -TagFilter Compliance
+```
+
+- The analyzer lives in `dbatools.CommandStructure.ps1`. A change to it needs a positive or negative fixture in the "command structure analyzer" Describe.
+- A new rule 1 exception (a helper that deliberately continues its caller's loop) needs the reason in the exception list, a comment at the site and a behavioral test of the calling command. Prefer restructuring the helper.
+- The structural checks do not replace behavioral coverage. A fix for a flow-control defect still gets a command-level regression test that fails on the old code, such as a caller loop that counts its iterations.
+
 ## TEST MANAGEMENT GUIDELINES
 
 The dbatools test suite must remain manageable in size while ensuring adequate coverage for important functionality.

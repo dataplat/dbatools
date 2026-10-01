@@ -105,6 +105,19 @@ $results = New-Object System.Collections.ArrayList
 $results
 ```
 
+## COMMAND INVARIANTS
+
+Structural rules for every function in `public/` and `private/functions/`. Rules 1 and 3 are enforced by the "command structure" Describe in `tests/dbatools.Tests.ps1`, which reports file, function and line; the rest is guidance a reviewer checks.
+
+**Stop-Function flow control, in short:** without EnableException, `-Continue` executes `continue` and every other call sets the caller's interrupt flag and returns. With EnableException, `-SilentlyContinue` executes `continue` and every other call sets the flag and throws. The flag is set in the scope that called Stop-Function.
+
+1. **(enforced) A Stop-Function that can continue needs a local target.** A call with `-Continue` or `-SilentlyContinue` must sit inside a loop or `switch` of the same function or scriptblock, and `-ContinueLabel` must name a label of one of them. Without a local target the `continue` leaves the command and silently skips an item of the caller's loop; with a label that matches nothing it ends the caller's whole script. A loop around a helper definition or a `ForEach-Object` callback is no target. Helpers that deliberately continue their caller's loop are listed as exceptions in the test, with the reason and the exact number of sites.
+2. **Stop, then stop working.** When a Stop-Function call abandons the current operation, prevent further work against the invalid state explicitly, usually with `return` (or `continue` in a loop). Falling through is fine when it is the design and keeps the error and output contract: a failure row emitted after the warning, cleanup followed by flow control, a `$failed` flag that gates the rest.
+3. **(enforced) A begin block that can stop guards process.** When `begin` can set the command's interrupt flag, the first statement of `process` is `if (Test-FunctionInterrupt) { return }`. A call counts when it runs in the command's own scope: directly in `begin`, or in a scriptblock that is dot-sourced or handed to `ForEach-Object`, `Where-Object`, `.ForEach()` or `.Where()`. `-SilentlyContinue` alone counts, because it sets the flag without EnableException. `-Continue` counts inside a `try` with a `catch` (or under a `trap`) in `begin`, because under EnableException it sets the flag and throws, and the catch lets `begin` go on. Calls in helper functions do not count - their flag lands in the helper.
+4. **Guard the work in `end`, never the cleanup.** An `end` block that does the command's main work starts with the guard; one that disconnects or disposes runs unguarded so it also runs after a stop.
+5. **Release the temporary connections you own, preserve the ones the caller owns or shares.** Cleanup must be reachable on error and early-exit paths, preferably in `finally` where the resource lifetime allows it. An unguarded `end` block alone is no cleanup guarantee.
+6. **No `continue` semantics in handed-off scriptblocks.** A `-Continue` inside a scriptblock passed to `ForEach-Object` or `Invoke-Command` binds to whatever loop is running when it executes. Intentional dynamic binding needs a comment at the site, an entry in the rule 1 exceptions and a behavioral test; everything else gets restructured.
+
 ## COMMENT PRESERVATION REQUIREMENT
 
 **ABSOLUTE MANDATE**: ALL COMMENTS MUST BE PRESERVED EXACTLY as they appear in the original code including:
@@ -279,6 +292,7 @@ The dbatools.library version used by CI and local development is pinned in **`.g
 **dbatools Patterns:**
 - [ ] SMO used first, T-SQL only when appropriate
 - [ ] Pipeline output emitted immediately
+- [ ] Command invariants kept (Stop-Function flow control, process guard, connection cleanup)
 - [ ] No `-Detailed`/`-Simple` output mode switches
 - [ ] Command names use singular nouns
 
