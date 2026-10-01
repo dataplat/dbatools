@@ -122,12 +122,25 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            # Create a test job on both source and destination with same modification date
             $testJobModified = "dbatoolsci_copyjob_modified"
+            $testScheduleName = "dbatoolsci_copyjob_schedule"
+
+            # Source job with a schedule, so schedule-only changes can be exercised
             $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $testJobModified
+            $splatSchedule = @{
+                SqlInstance       = $TestConfig.InstanceCopy1
+                Job               = $testJobModified
+                Schedule          = $testScheduleName
+                FrequencyType     = "Daily"
+                FrequencyInterval = "EveryDay"
+                StartDate         = (Get-Date).ToString("yyyyMMdd")
+                StartTime         = "080000"
+                Force             = $true
+            }
+            $null = New-DbaAgentSchedule @splatSchedule
             Start-Sleep -Seconds 2
 
-            # Copy to destination first time
+            # Initial copy: destination now carries a later date_modified than the source
             $splatInitialCopy = @{
                 Source      = $TestConfig.InstanceCopy1
                 Destination = $TestConfig.InstanceCopy2
@@ -135,57 +148,178 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $null = Copy-DbaAgentJob @splatInitialCopy
 
-            # Ensure both jobs have the exact same date_modified by setting destination to match source
-            $escapedJobName = $testJobModified.Replace("'", "''")
-            $sourceDate = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Database msdb -Query "SELECT date_modified FROM dbo.sysjobs WHERE name = '$escapedJobName'" | Select-Object -ExpandProperty date_modified
-            $updateQuery = "UPDATE msdb.dbo.sysjobs SET date_modified = '$($sourceDate.ToString("yyyy-MM-dd HH:mm:ss.fff"))' WHERE name = '$escapedJobName'"
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $updateQuery
+            # Read msdb directly so assertions don't depend on cached SMO objects
+            $queryJobRow = "SELECT job_id, enabled, date_modified FROM dbo.sysjobs WHERE name = @jobName"
+            $queryScheduleTime = "
+SELECT s.active_start_time
+FROM dbo.sysjobs AS j
+INNER JOIN dbo.sysjobschedules AS js ON js.job_id = j.job_id
+INNER JOIN dbo.sysschedules AS s ON s.schedule_id = js.schedule_id
+WHERE j.name = @jobName AND s.name = @scheduleName"
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job dbatoolsci_copyjob_modified -ErrorAction SilentlyContinue
-            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job dbatoolsci_copyjob_modified -ErrorAction SilentlyContinue
+            # Pipe from Get so a job that never got created (failed setup) doesn't turn cleanup into a second failure
+            $null = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Job dbatoolsci_copyjob_modified | Remove-DbaAgentJob
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
-        It "skips job when dates are equal" {
+        It "skips job when definitions are identical even though date_modified differs" {
+            $sourceRow = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Database msdb -Query $queryJobRow -SqlParameter @{ jobName = $testJobModified }
+            $destRow = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Database msdb -Query $queryJobRow -SqlParameter @{ jobName = $testJobModified }
+            $sourceRow.date_modified | Should -Not -Be $destRow.date_modified
+
             $splatUseModified = @{
                 Source          = $TestConfig.InstanceCopy1
                 Destination     = $TestConfig.InstanceCopy2
-                Job             = "dbatoolsci_copyjob_modified"
+                Job             = $testJobModified
                 UseLastModified = $true
             }
             $result = Copy-DbaAgentJob @splatUseModified
 
-            $result.Name | Should -Be "dbatoolsci_copyjob_modified"
+            $result.Name | Should -Be $testJobModified
             $result.Status | Should -Be "Skipped"
-            $result.Notes | Should -BeLike "*same modification date*"
+            $result.Notes | Should -BeLike "*identical*"
         }
 
         It "updates job when source is newer" {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-
-            # Modify the source job to make it newer
-            $sourceJob = Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job "dbatoolsci_copyjob_modified"
-            $sourceJob.Description = "Modified description"
-            $sourceJob.Alter()
+            $null = Set-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $testJobModified -Description "Modified description"
             Start-Sleep -Seconds 2
-
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
             $splatUseModified = @{
                 Source          = $TestConfig.InstanceCopy1
                 Destination     = $TestConfig.InstanceCopy2
-                Job             = "dbatoolsci_copyjob_modified"
+                Job             = $testJobModified
                 UseLastModified = $true
             }
             $result = Copy-DbaAgentJob @splatUseModified
 
-            $result.Name | Should -Be "dbatoolsci_copyjob_modified"
+            $result.Name | Should -Be $testJobModified
             $result.Status | Should -Be "Successful"
+            (Get-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job $testJobModified).Description | Should -Be "Modified description"
+        }
+
+        It "aligns enabled state in place without recreating the job" {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $destJobIdBefore = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Database msdb -Query $queryJobRow -SqlParameter @{ jobName = $testJobModified }).job_id
+            $null = Set-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $testJobModified -Disabled
+            Start-Sleep -Seconds 2
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatUseModified = @{
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
+                Job             = $testJobModified
+                UseLastModified = $true
+            }
+            $result = Copy-DbaAgentJob @splatUseModified
+
+            $result.Status | Should -Be "Successful"
+            $result.Notes | Should -BeLike "*in place*"
+            $destRow = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Database msdb -Query $queryJobRow -SqlParameter @{ jobName = $testJobModified }
+            $destRow.enabled | Should -Be 0
+            $destRow.job_id | Should -Be $destJobIdBefore
+        }
+
+        It "recreates job when only the schedule changed on the source" {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            # sp_update_schedule touches sysschedules.date_modified only, never sysjobs.date_modified
+            $splatUpdateSchedule = @{
+                SqlInstance  = $TestConfig.InstanceCopy1
+                Database     = "msdb"
+                Query        = "EXEC dbo.sp_update_schedule @name = @scheduleName, @active_start_time = 100000"
+                SqlParameter = @{ scheduleName = $testScheduleName }
+            }
+            $null = Invoke-DbaQuery @splatUpdateSchedule
+            Start-Sleep -Seconds 2
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatUseModified = @{
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
+                Job             = $testJobModified
+                UseLastModified = $true
+            }
+            $result = Copy-DbaAgentJob @splatUseModified
+
+            $result.Status | Should -Be "Successful"
+            $splatCheck = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Database     = "msdb"
+                Query        = $queryScheduleTime
+                SqlParameter = @{ jobName = $testJobModified; scheduleName = $testScheduleName }
+            }
+            (Invoke-DbaQuery @splatCheck).active_start_time | Should -Be 100000
+        }
+
+        It "does not churn a job kept disabled with -DisableOnDestination" {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Set-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy1 -Job $testJobModified -Enabled
+            $splatForceDisabled = @{
+                Source               = $TestConfig.InstanceCopy1
+                Destination          = $TestConfig.InstanceCopy2
+                Job                  = $testJobModified
+                Force                = $true
+                DisableOnDestination = $true
+            }
+            $null = Copy-DbaAgentJob @splatForceDisabled
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatUseModified = @{
+                Source               = $TestConfig.InstanceCopy1
+                Destination          = $TestConfig.InstanceCopy2
+                Job                  = $testJobModified
+                UseLastModified      = $true
+                DisableOnDestination = $true
+            }
+            $result = Copy-DbaAgentJob @splatUseModified
+
+            $result.Status | Should -Be "Skipped"
+            $result.Notes | Should -BeLike "*identical*"
+        }
+
+        It "applies -DisableOnSource when the job is identical on the destination" {
+            $splatUseModified = @{
+                Source               = $TestConfig.InstanceCopy1
+                Destination          = $TestConfig.InstanceCopy2
+                Job                  = $testJobModified
+                UseLastModified      = $true
+                DisableOnDestination = $true
+                DisableOnSource      = $true
+            }
+            $result = Copy-DbaAgentJob @splatUseModified
+
+            $result.Status | Should -Be "Skipped"
+            $result.Notes | Should -BeLike "*identical*"
+            $sourceRow = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Database msdb -Query $queryJobRow -SqlParameter @{ jobName = $testJobModified }
+            $sourceRow.enabled | Should -Be 0
+        }
+
+        It "skips job when definition differs but destination is newer" {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            # Guarantee the destination edit lands after the source's last change
+            Start-Sleep -Seconds 2
+            $null = Set-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job $testJobModified -Description "Changed on destination"
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatUseModified = @{
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
+                Job             = $testJobModified
+                UseLastModified = $true
+                WarningVariable = "warn"
+                WarningAction   = "SilentlyContinue"
+            }
+            $result = Copy-DbaAgentJob @splatUseModified
+
+            $result.Status | Should -Be "Skipped"
+            $result.Notes | Should -BeLike "*destination job is newer than source*"
+            ($warn -join " ") | Should -Match "newer on destination"
         }
     }
 
