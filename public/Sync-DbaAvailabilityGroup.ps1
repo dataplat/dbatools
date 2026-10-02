@@ -90,6 +90,16 @@ function Sync-DbaAvailabilityGroup {
         Disables all synchronized jobs on secondary replicas after copying them from the primary.
         Use this when jobs should only run on the primary replica or when you need to manually control which jobs run on each replica after failover.
 
+    .PARAMETER UseJobLastModified
+        Passed through as -UseLastModified to Copy-DbaAgentJob for the AgentJob sync only; no other object type is affected.
+        Instead of skipping every job that already exists on a secondary (or recreating all of them with -Force), jobs are compared
+        by definition - properties, enabled state, steps and schedules - and only those that actually differ are updated, with the
+        primary winning when it is not older than the secondary. Jobs that differ only in enabled state are updated in place.
+        When combined with -Force, this switch takes precedence for jobs: existing jobs are still only updated when their definition
+        differs, and -Force only suppresses prompts and remaps missing job owners to sa, while -Force continues to drop and recreate
+        all other object types as usual.
+        See Copy-DbaAgentJob for the full behaviour.
+
     .PARAMETER InputObject
         Accepts availability group objects from Get-DbaAvailabilityGroup for pipeline processing.
         Use this to sync multiple availability groups at once or to process specific AGs returned by filtering commands.
@@ -102,6 +112,7 @@ function Sync-DbaAvailabilityGroup {
     .PARAMETER Force
         Drops and recreates existing objects on secondary replicas instead of skipping them.
         Use this when you need to update objects that already exist on secondaries or when objects have configuration differences that need to be synchronized.
+        For agent jobs, -UseJobLastModified takes precedence when both are specified.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -154,6 +165,12 @@ function Sync-DbaAvailabilityGroup {
         PS C:\> Get-DbaAvailabilityGroup -SqlInstance sql2016a | Sync-DbaAvailabilityGroup -WhatIf
 
         Shows what would happen if the command were to run but doesn't actually perform the action.
+
+    .EXAMPLE
+        PS C:\> Sync-DbaAvailabilityGroup -Primary sql2016a -AvailabilityGroup db3 -UseJobLastModified
+
+        Syncs all object types to the replicas in the db3 AG. Agent jobs that already exist on a secondary are only updated when their
+        definition differs from the primary; identical jobs are left untouched. All other object types sync as they normally would.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
@@ -171,6 +188,7 @@ function Sync-DbaAvailabilityGroup {
         [string[]]$Job,
         [string[]]$ExcludeJob,
         [switch]$DisableJobOnDestination,
+        [switch]$UseJobLastModified,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
         [switch]$ExcludePassword,
@@ -419,6 +437,7 @@ function Sync-DbaAvailabilityGroup {
                     Destination          = $secondaries
                     Force                = $force
                     DisableOnDestination = $DisableJobOnDestination
+                    UseLastModified      = $UseJobLastModified
                     InputObject          = $jobsToSync
                 }
                 Copy-DbaAgentJob @splatCopyJob
