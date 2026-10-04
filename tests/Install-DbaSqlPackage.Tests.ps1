@@ -115,7 +115,10 @@ Describe $CommandName -Tag IntegrationTests {
                         }
                         $null = Install-DbaSqlPackage @splatInstall
                         $probeLines += "after round $round"
-                        $probeLines += "warning $installWarning"
+                        # One line per warning: a missing SqlPackage adds a warning that spans several lines.
+                        foreach ($warningRecord in $installWarning) {
+                            $probeLines += "warning $round $("$warningRecord" -replace "\s+", " ")"
+                        }
                     }
                 } catch {
                     $probeLines += "error $PSItem"
@@ -171,9 +174,11 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Warns that administrative privileges are needed" {
-            $probeWarnings = @($elevationProbeLines | Where-Object { $PSItem -like "warning *" })
-            $probeWarnings | Should -HaveCount 2 -Because "the probe reported: $elevationProbeLines"
-            $probeWarnings | Where-Object { $PSItem -notmatch "require administrative privileges" } | Should -BeNullOrEmpty
+            # Without SqlPackage, Get-DbaSqlPackagePath warns first that it is missing; only the elevation warning counts here.
+            foreach ($round in 1, 2) {
+                $elevationWarnings = @($elevationProbeLines | Where-Object { $PSItem -like "warning $round *" -and $PSItem -match "require administrative privileges" })
+                $elevationWarnings | Should -HaveCount 1 -Because "round $round should warn once; the probe reported: $elevationProbeLines"
+            }
         }
 
         It "Installs nothing" {
