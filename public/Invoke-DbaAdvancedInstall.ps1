@@ -228,161 +228,164 @@ function Invoke-DbaAdvancedInstall {
     }
     $activity = "Installing SQL Server ($Version) components on $ComputerName"
     try {
-        $restartNeeded = Test-PendingReboot -ComputerName $ComputerName -Credential $Credential -NoPendingRename:$NoPendingRenameCheck
-    } catch {
-        $restartNeeded = $false
-        Stop-Function -Message "Failed to get reboot status from $computer" -ErrorRecord $_
-    }
-    if ($restartNeeded -and $Restart) {
-        # Restart the computer prior to doing anything
-        $msgPending = "Restarting computer $($ComputerName) due to pending restart"
-        Write-ProgressHelper -ExcludePercent -Activity $activity -Message $msgPending
-        Write-Message -Level Verbose $msgPending
         try {
-            $null = Restart-Computer @restartParams
-            $output.Restarted = $true
+            $restartNeeded = Test-PendingReboot -ComputerName $ComputerName -Credential $Credential -NoPendingRename:$NoPendingRenameCheck
         } catch {
-            Stop-Function -Message "Failed to restart computer $($ComputerName)" -ErrorRecord $_
+            $restartNeeded = $false
+            Stop-Function -Message "Failed to get reboot status from $computer" -ErrorRecord $_
         }
-    }
-    # save config if needed
-    if ($SaveConfiguration) {
-        try {
-            $null = Copy-Item $ConfigurationPath -Destination $SaveConfiguration -ErrorAction Stop
-        } catch {
-            $msg = "Could not save configuration file to $SaveConfiguration"
-            Stop-Function -Message $msg -ErrorRecord $_
-            $output.Notes += $msg
-        }
-    }
-    $connectionParams = @{
-        ComputerName = $ComputerName
-        ErrorAction  = "Stop"
-        UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
-    }
-
-    [nullable[int]]$WinRMPort = Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.Port' -Fallback $null
-    if (($null -ne $WinRMPort) -and ($WinRMPort -gt 0)) {
-        $connectionParams.Port = $WinRMPort
-        Write-Message -Level Verbose -Message "Using Port: $($connectionParams.Port)"
-    }
-
-    if ($Credential) { $connectionParams.Credential = $Credential }
-    # need to figure out where to store the config file
-    if ($isLocalHost) {
-        $remoteConfig = $ConfigurationPath
-    } else {
-        try {
-            Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Copying configuration file to $ComputerName"
-            $session = New-PSSession @connectionParams
-            $chosenPath = Invoke-Command -Session $session -ScriptBlock { (Get-Item ([System.IO.Path]::GetTempPath())).FullName } -ErrorAction Stop
-            $remoteConfig = Join-DbaPath $chosenPath.TrimEnd('\') (Split-Path $ConfigurationPath -Leaf)
-            Write-Message -Level Verbose -Message "Copying $($ConfigurationPath) to remote machine into $chosenPath"
-            $null = Send-File -Path $ConfigurationPath -Destination $chosenPath -Session $session -ErrorAction Stop
-            $session | Remove-PSSession
-        } catch {
-            Stop-Function -Message "Failed to copy file $($ConfigurationPath) to $remoteConfig on $($ComputerName), exiting" -ErrorRecord $_
-            return
-        }
-    }
-    $installParams = $ArgumentList
-    $installParams += "/q"
-    $installParams += "/CONFIGURATIONFILE=`"$remoteConfig`""
-    Write-Message -Level Verbose -Message "Setup starting from $($InstallationPath)"
-    $execParams = @{
-        ComputerName   = $ComputerName
-        ErrorAction    = 'Stop'
-        Authentication = $Authentication
-    }
-    if ($Credential) {
-        $execParams.Credential = $Credential
-    } else {
-        if (Test-Bound -Not Authentication) {
-            # Use Default authentication instead of CredSSP when Authentication is not specified and Credential is null
-            $execParams.Authentication = "Default"
-        }
-    }
-    try {
-        Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Installing SQL Server on $ComputerName from $InstallationPath"
-        $installResult = Invoke-Program @execParams -Path $InstallationPath -ArgumentList $installParams -Fallback
-        $output.ExitCode = $installResult.ExitCode
-        # Get setup log summary contents
-        try {
-            $summary = Get-SqlInstallSummary -ComputerName $ComputerName -Credential $Credential -Version $Version
-            $output.ExitMessage = $summary.ExitMessage
-            $output.Log = $summary.Content
-            $output.LogFile = $summary.Path
-            $output.ConfigurationFile = $summary.ConfigurationFile
-        } catch {
-            Write-Message -Level Warning -Message "Could not get the contents of the summary file from $($ComputerName). Related properties will be empty" -ErrorRecord $_
-        }
-    } catch {
-        Stop-Function -Message "Installation failed" -ErrorRecord $_
-        $output.Notes += $_.Exception.Message
-        return $output
-    } finally {
-        try {
-            # Cleanup remote temp
-            Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Cleaning up temporary files on $ComputerName"
-            if (-not $isLocalHost) {
-                $null = Invoke-Command2 @connectionParams -ScriptBlock {
-                    if ($args[0] -like '*\Configuration_*.ini' -and (Test-Path $args[0])) {
-                        Remove-Item -LiteralPath $args[0] -ErrorAction Stop
-                    }
-                } -Raw -ArgumentList $remoteConfig
-            }
-            # cleanup local temp config file
-            Remove-Item $ConfigurationPath
-        } catch {
-            Stop-Function -Message "Temp cleanup failed" -ErrorRecord $_
-        }
-    }
-    if ($installResult.Successful) {
-        $output.Successful = $true
-    } else {
-        $msg = "Installation failed with exit code $($installResult.ExitCode). Expand 'ExitMessage' and 'Log' property to find more details."
-        $output.Notes += $msg
-        Stop-Function -Message $msg
-        return $output
-    }
-    # perform volume maintenance tasks if requested
-    if ($PerformVolumeMaintenanceTasks) {
-        $null = Set-DbaPrivilege -ComputerName $ComputerName -Credential $Credential -Type IFI -EnableException:$EnableException
-    }
-    # change port after the installation
-    if ($Port) {
-        $null = Set-DbaTcpPort -SqlInstance "$($ComputerName)\$($InstanceName)" -Credential $Credential -Port $Port -EnableException:$EnableException -Confirm:$false
-        try {
-            $null = Restart-DbaService -ComputerName $ComputerName -InstanceName $InstanceName -Credential $Credential -Type Engine -Force -EnableException:$EnableException -Confirm:$false
-        } catch {
-            $output.Notes += "Port for $($ComputerName)\$($InstanceName) has been changed, but instance restart failed ($_). Restart of instance is necessary for the new settings to become effective."
-        }
-
-    }
-    # restart if necessary
-    try {
-        $restartNeeded = Test-PendingReboot -ComputerName $ComputerName -Credential $Credential -NoPendingRename:$NoPendingRenameCheck
-    } catch {
-        $restartNeeded = $false
-        Stop-Function -Message "Failed to get reboot status from $($ComputerName)" -ErrorRecord $_
-    }
-    if ($installResult.ExitCode -eq 3010 -or $restartNeeded) {
-        if ($Restart) {
-            # Restart the computer
-            $restartMsg = "Restarting computer $($ComputerName) and waiting for it to come back online"
-            Write-ProgressHelper -ExcludePercent -Activity $activity -Message $restartMsg
-            Write-Message -Level Verbose -Message $restartMsg
+        if ($restartNeeded -and $Restart) {
+            # Restart the computer prior to doing anything
+            $msgPending = "Restarting computer $($ComputerName) due to pending restart"
+            Write-ProgressHelper -ExcludePercent -Activity $activity -Message $msgPending
+            Write-Message -Level Verbose $msgPending
             try {
                 $null = Restart-Computer @restartParams
                 $output.Restarted = $true
             } catch {
                 Stop-Function -Message "Failed to restart computer $($ComputerName)" -ErrorRecord $_
+            }
+        }
+        # save config if needed
+        if ($SaveConfiguration) {
+            try {
+                $null = Copy-Item $ConfigurationPath -Destination $SaveConfiguration -ErrorAction Stop
+            } catch {
+                $msg = "Could not save configuration file to $SaveConfiguration"
+                Stop-Function -Message $msg -ErrorRecord $_
+                $output.Notes += $msg
+            }
+        }
+        $connectionParams = @{
+            ComputerName = $ComputerName
+            ErrorAction  = "Stop"
+            UseSSL       = (Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.UseSSL' -Fallback $false)
+        }
+
+        [nullable[int]]$WinRMPort = Get-DbatoolsConfigValue -FullName 'PSRemoting.PsSession.Port' -Fallback $null
+        if (($null -ne $WinRMPort) -and ($WinRMPort -gt 0)) {
+            $connectionParams.Port = $WinRMPort
+            Write-Message -Level Verbose -Message "Using Port: $($connectionParams.Port)"
+        }
+
+        if ($Credential) { $connectionParams.Credential = $Credential }
+        # need to figure out where to store the config file
+        if ($isLocalHost) {
+            $remoteConfig = $ConfigurationPath
+        } else {
+            try {
+                Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Copying configuration file to $ComputerName"
+                $session = New-PSSession @connectionParams
+                $chosenPath = Invoke-Command -Session $session -ScriptBlock { (Get-Item ([System.IO.Path]::GetTempPath())).FullName } -ErrorAction Stop
+                $remoteConfig = Join-DbaPath $chosenPath.TrimEnd('\') (Split-Path $ConfigurationPath -Leaf)
+                Write-Message -Level Verbose -Message "Copying $($ConfigurationPath) to remote machine into $chosenPath"
+                $null = Send-File -Path $ConfigurationPath -Destination $chosenPath -Session $session -ErrorAction Stop
+                $session | Remove-PSSession
+            } catch {
+                Stop-Function -Message "Failed to copy file $($ConfigurationPath) to $remoteConfig on $($ComputerName), exiting" -ErrorRecord $_
+                return
+            }
+        }
+        $installParams = $ArgumentList
+        $installParams += "/q"
+        $installParams += "/CONFIGURATIONFILE=`"$remoteConfig`""
+        Write-Message -Level Verbose -Message "Setup starting from $($InstallationPath)"
+        $execParams = @{
+            ComputerName   = $ComputerName
+            ErrorAction    = 'Stop'
+            Authentication = $Authentication
+        }
+        if ($Credential) {
+            $execParams.Credential = $Credential
+        } else {
+            if (Test-Bound -Not Authentication) {
+                # Use Default authentication instead of CredSSP when Authentication is not specified and Credential is null
+                $execParams.Authentication = "Default"
+            }
+        }
+        try {
+            Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Installing SQL Server on $ComputerName from $InstallationPath"
+            $installResult = Invoke-Program @execParams -Path $InstallationPath -ArgumentList $installParams -Fallback
+            $output.ExitCode = $installResult.ExitCode
+            # Get setup log summary contents
+            try {
+                $summary = Get-SqlInstallSummary -ComputerName $ComputerName -Credential $Credential -Version $Version
+                $output.ExitMessage = $summary.ExitMessage
+                $output.Log = $summary.Content
+                $output.LogFile = $summary.Path
+                $output.ConfigurationFile = $summary.ConfigurationFile
+            } catch {
+                Write-Message -Level Warning -Message "Could not get the contents of the summary file from $($ComputerName). Related properties will be empty" -ErrorRecord $_
+            }
+        } catch {
+            Stop-Function -Message "Installation failed" -ErrorRecord $_
+            $output.Notes += $_.Exception.Message
+            return $output
+        } finally {
+            try {
+                # Cleanup remote temp
+                Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Cleaning up temporary files on $ComputerName"
+                if (-not $isLocalHost) {
+                    $null = Invoke-Command2 @connectionParams -ScriptBlock {
+                        if ($args[0] -like '*\Configuration_*.ini' -and (Test-Path $args[0])) {
+                            Remove-Item -LiteralPath $args[0] -ErrorAction Stop
+                        }
+                    } -Raw -ArgumentList $remoteConfig
+                }
+                # cleanup local temp config file
+                Remove-Item $ConfigurationPath
+            } catch {
+                Stop-Function -Message "Temp cleanup failed" -ErrorRecord $_
+            }
+        }
+        if ($installResult.Successful) {
+            $output.Successful = $true
+        } else {
+            $msg = "Installation failed with exit code $($installResult.ExitCode). Expand 'ExitMessage' and 'Log' property to find more details."
+            $output.Notes += $msg
+            Stop-Function -Message $msg
+            return $output
+        }
+        # perform volume maintenance tasks if requested
+        if ($PerformVolumeMaintenanceTasks) {
+            $null = Set-DbaPrivilege -ComputerName $ComputerName -Credential $Credential -Type IFI -EnableException:$EnableException
+        }
+        # change port after the installation
+        if ($Port) {
+            $null = Set-DbaTcpPort -SqlInstance "$($ComputerName)\$($InstanceName)" -Credential $Credential -Port $Port -EnableException:$EnableException -Confirm:$false
+            try {
+                $null = Restart-DbaService -ComputerName $ComputerName -InstanceName $InstanceName -Credential $Credential -Type Engine -Force -EnableException:$EnableException -Confirm:$false
+            } catch {
+                $output.Notes += "Port for $($ComputerName)\$($InstanceName) has been changed, but instance restart failed ($_). Restart of instance is necessary for the new settings to become effective."
+            }
+
+        }
+        # restart if necessary
+        try {
+            $restartNeeded = Test-PendingReboot -ComputerName $ComputerName -Credential $Credential -NoPendingRename:$NoPendingRenameCheck
+        } catch {
+            $restartNeeded = $false
+            Stop-Function -Message "Failed to get reboot status from $($ComputerName)" -ErrorRecord $_
+        }
+        if ($installResult.ExitCode -eq 3010 -or $restartNeeded) {
+            if ($Restart) {
+                # Restart the computer
+                $restartMsg = "Restarting computer $($ComputerName) and waiting for it to come back online"
+                Write-ProgressHelper -ExcludePercent -Activity $activity -Message $restartMsg
+                Write-Message -Level Verbose -Message $restartMsg
+                try {
+                    $null = Restart-Computer @restartParams
+                    $output.Restarted = $true
+                } catch {
+                    Stop-Function -Message "Failed to restart computer $($ComputerName)" -ErrorRecord $_
+                    $output.Notes += "Restart is required for computer $($ComputerName) to finish the installation of Sql Server version $Version"
+                }
+            } else {
                 $output.Notes += "Restart is required for computer $($ComputerName) to finish the installation of Sql Server version $Version"
             }
-        } else {
-            $output.Notes += "Restart is required for computer $($ComputerName) to finish the installation of Sql Server version $Version"
         }
+        $output | Select-DefaultView -Property ComputerName, InstanceName, Version, Port, Successful, Restarted, Installer, ExitCode, LogFile, Notes
+    } finally {
+        Write-Progress -Activity $activity -Completed
     }
-    $output | Select-DefaultView -Property ComputerName, InstanceName, Version, Port, Successful, Restarted, Installer, ExitCode, LogFile, Notes
-    Write-Progress -Activity $activity -Completed
 }
