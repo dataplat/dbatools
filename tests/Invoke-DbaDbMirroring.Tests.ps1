@@ -77,4 +77,58 @@ Describe $CommandName -Tag IntegrationTests {
         $WarnVar | Should -BeNullOrEmpty
         $results.Status | Should -Be "Success"
     }
+
+    Context "When the pipeline is stopped" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. The pipeline is stopped as soon as the first
+            # mirroring record arrives, which is what Ctrl+C does. WhatIf keeps the instances unchanged. The
+            # runspace imports the manifest: an import of the psm1 without a command line skips the type data.
+            $splatStopMirroring = @{
+                Primary    = $TestConfig.InstanceCopy1
+                Mirror     = $TestConfig.InstanceCopy2
+                Database   = $dbName
+                SharedPath = $TestConfig.Temp
+                WhatIf     = $true
+            }
+            if ($TestConfig.SqlCred) {
+                $splatStopMirroring.PrimarySqlCredential = $TestConfig.SqlCred
+                $splatStopMirroring.MirrorSqlCredential = $TestConfig.SqlCred
+            }
+            $stopRunspace = [runspacefactory]::CreateRunspace()
+            $stopRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $stopRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $stopShell = [powershell]::Create()
+            $stopShell.Runspace = $stopRunspace
+            $null = $stopShell.AddCommand("Invoke-DbaDbMirroring").AddParameters($splatStopMirroring)
+            $stopAsync = $stopShell.BeginInvoke()
+            $stopWatch = [System.Diagnostics.Stopwatch]::StartNew()
+            while (-not ($stopShell.Streams.Progress | Where-Object Activity -eq "Setting up mirroring") -and -not $stopAsync.IsCompleted -and $stopWatch.Elapsed.TotalSeconds -lt 60) {
+                Start-Sleep -Milliseconds 10
+            }
+            $stopShell.Stop()
+            $stopState = $stopShell.InvocationStateInfo.State
+            $stopRecords = @($stopShell.Streams.Progress)
+            $stopShell.Dispose()
+            $stopRunspace.Dispose()
+        }
+
+        It "Was stopped while it was running" {
+            $stopState | Should -Be "Stopped"
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $stopRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $stopRecords | Where-Object Activity -eq "Setting up mirroring" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }
