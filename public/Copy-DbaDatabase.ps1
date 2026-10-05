@@ -404,161 +404,164 @@ function Copy-DbaDatabase {
             };
             $databaseProgressbar = 0
 
-            foreach ($db in $databaseList) {
-                Write-Progress -Id 1 -Activity "Processing database file structure" -PercentComplete ($databaseProgressbar / $dbCount * 100) -Status "Processing $databaseProgressbar of $dbCount."
-                $dbName = $db.Name
-                Write-Message -Level Verbose -Message $dbName
+            try {
+                foreach ($db in $databaseList) {
+                    Write-Progress -Id 1 -Activity "Processing database file structure" -PercentComplete ($databaseProgressbar / $dbCount * 100) -Status "Processing $databaseProgressbar of $dbCount."
+                    $dbName = $db.Name
+                    Write-Message -Level Verbose -Message $dbName
 
-                $databaseProgressbar++
-                $dbStatus = $db.status.toString()
-                if ($dbStatus.StartsWith("Normal") -eq $false) {
-                    continue
-                }
-                $destinstancefiles = @{
-                }; $sourcefiles = @{
-                }
-
-                $where = "Filetype <> 'LOG' and Filetype <> 'FULLTEXT'"
-
-                $datarows = $dbFileTable.Tables.Select("dbname = '$dbName' and $where")
-
-                # Data Files
-                foreach ($file in $datarows) {
-                    # Destination File Structure
-                    $d = @{
+                    $databaseProgressbar++
+                    $dbStatus = $db.status.toString()
+                    if ($dbStatus.StartsWith("Normal") -eq $false) {
+                        continue
                     }
-                    if ($ReuseSourceFolderStructure) {
-                        $d.physical = $file.filename
-                    } elseif ($WithReplace) {
-                        $name = $file.Name
-                        $destfile = $remoteDbFileTable.Tables[0].Select("dbname = '$dbName' and name = '$name'")
-                        $d.physical = $destfile.filename
+                    $destinstancefiles = @{
+                    }; $sourcefiles = @{
+                    }
 
-                        if ($null -eq $d.physical) {
+                    $where = "Filetype <> 'LOG' and Filetype <> 'FULLTEXT'"
+
+                    $datarows = $dbFileTable.Tables.Select("dbname = '$dbName' and $where")
+
+                    # Data Files
+                    foreach ($file in $datarows) {
+                        # Destination File Structure
+                        $d = @{
+                        }
+                        if ($ReuseSourceFolderStructure) {
+                            $d.physical = $file.filename
+                        } elseif ($WithReplace) {
+                            $name = $file.Name
+                            $destfile = $remoteDbFileTable.Tables[0].Select("dbname = '$dbName' and name = '$name'")
+                            $d.physical = $destfile.filename
+
+                            if ($null -eq $d.physical) {
+                                $directory = Get-SqlDefaultPaths $destServer data
+                                $fileName = Split-Path $file.filename -Leaf
+                                $d.physical = "$directory\$fileName"
+                            }
+                        } else {
                             $directory = Get-SqlDefaultPaths $destServer data
                             $fileName = Split-Path $file.filename -Leaf
                             $d.physical = "$directory\$fileName"
                         }
-                    } else {
-                        $directory = Get-SqlDefaultPaths $destServer data
-                        $fileName = Split-Path $file.filename -Leaf
-                        $d.physical = "$directory\$fileName"
-                    }
-                    $d.logical = $file.Name
+                        $d.logical = $file.Name
 
-                    $d.remotefilename = Join-AdminUNC $destFullComputerName $d.physical
-                    $destinstancefiles.add($file.Name, $d)
-
-                    # Source File Structure
-                    $s = @{
-                    }
-                    $s.logical = $file.Name
-                    $s.physical = $file.filename
-                    $s.remotefilename = Join-AdminUNC $sourceFullComputerName $s.physical
-                    $sourcefiles.add($file.Name, $s)
-                }
-
-                # Add support for Full Text Catalogs in SQL Server 2005 and below
-                if ($sourceServer.VersionMajor -lt 10) {
-                    try {
-                        # This used to read "$fttable = $null = ...", which assigns $null to $fttable, so
-                        # $allrows was always empty and no full text catalog was ever copied.
-                        # The Query script method runs the procedure in that database like ExecuteWithResults
-                        # of SMO does, by issuing a USE on the connection context of the parent server, which
-                        # belongs to the caller - but it puts the previous database back. It returns the rows,
-                        # so there is no table to unwrap. See #10555.
-                        $fttable = $sourceServer.Databases[$dbName].Query("sp_help_fulltext_catalogs")
-                        $allrows = $fttable
-                    } catch {
-                        # Nothing, it's just not enabled
-                        # here to avoid an empty catch
-                        $null = 1
-                    }
-
-                    foreach ($ftc in $allrows) {
-                        # Destination File Structure
-                        $d = @{
-                        }
-                        $pre = "sysft_"
-                        $name = $ftc.Name
-                        $physical = $ftc.Path # RootPath
-                        $logical = "$pre$name"
-                        if ($ReuseSourceFolderStructure) {
-                            $d.physical = $physical
-                        } else {
-                            $directory = Get-SqlDefaultPaths $destServer data
-                            if ($destServer.VersionMajor -lt 10) {
-                                $directory = "$directory\FTDATA"
-                            }
-                            $fileName = Split-Path($physical) -Leaf
-                            $d.physical = "$directory\$fileName"
-                        }
-                        $d.logical = $logical
                         $d.remotefilename = Join-AdminUNC $destFullComputerName $d.physical
-                        $destinstancefiles.add($logical, $d)
+                        $destinstancefiles.add($file.Name, $d)
 
                         # Source File Structure
                         $s = @{
                         }
-                        $pre = "sysft_"
-                        $name = $ftc.Name
-                        $physical = $ftc.Path # RootPath
-                        $logical = "$pre$name"
-
-                        $s.logical = $logical
-                        $s.physical = $physical
+                        $s.logical = $file.Name
+                        $s.physical = $file.filename
                         $s.remotefilename = Join-AdminUNC $sourceFullComputerName $s.physical
-                        $sourcefiles.add($logical, $s)
+                        $sourcefiles.add($file.Name, $s)
                     }
-                }
 
-                $where = "Filetype = 'LOG'"
-                $datarows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and $where")
+                    # Add support for Full Text Catalogs in SQL Server 2005 and below
+                    if ($sourceServer.VersionMajor -lt 10) {
+                        try {
+                            # This used to read "$fttable = $null = ...", which assigns $null to $fttable, so
+                            # $allrows was always empty and no full text catalog was ever copied.
+                            # The Query script method runs the procedure in that database like ExecuteWithResults
+                            # of SMO does, by issuing a USE on the connection context of the parent server, which
+                            # belongs to the caller - but it puts the previous database back. It returns the rows,
+                            # so there is no table to unwrap. See #10555.
+                            $fttable = $sourceServer.Databases[$dbName].Query("sp_help_fulltext_catalogs")
+                            $allrows = $fttable
+                        } catch {
+                            # Nothing, it's just not enabled
+                            # here to avoid an empty catch
+                            $null = 1
+                        }
 
-                # Log Files
-                foreach ($file in $datarows) {
-                    $d = @{
+                        foreach ($ftc in $allrows) {
+                            # Destination File Structure
+                            $d = @{
+                            }
+                            $pre = "sysft_"
+                            $name = $ftc.Name
+                            $physical = $ftc.Path # RootPath
+                            $logical = "$pre$name"
+                            if ($ReuseSourceFolderStructure) {
+                                $d.physical = $physical
+                            } else {
+                                $directory = Get-SqlDefaultPaths $destServer data
+                                if ($destServer.VersionMajor -lt 10) {
+                                    $directory = "$directory\FTDATA"
+                                }
+                                $fileName = Split-Path($physical) -Leaf
+                                $d.physical = "$directory\$fileName"
+                            }
+                            $d.logical = $logical
+                            $d.remotefilename = Join-AdminUNC $destFullComputerName $d.physical
+                            $destinstancefiles.add($logical, $d)
+
+                            # Source File Structure
+                            $s = @{
+                            }
+                            $pre = "sysft_"
+                            $name = $ftc.Name
+                            $physical = $ftc.Path # RootPath
+                            $logical = "$pre$name"
+
+                            $s.logical = $logical
+                            $s.physical = $physical
+                            $s.remotefilename = Join-AdminUNC $sourceFullComputerName $s.physical
+                            $sourcefiles.add($logical, $s)
+                        }
                     }
-                    if ($ReuseSourceFolderStructure) {
-                        $d.physical = $file.filename
-                    } elseif ($WithReplace) {
-                        $name = $file.Name
-                        $destfile = $remoteDbFileTable.Tables[0].Select("dbname = '$dbName' and name = '$name'")
-                        $d.physical = $destfile.filename
 
-                        if ($null -eq $d.physical) {
+                    $where = "Filetype = 'LOG'"
+                    $datarows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and $where")
+
+                    # Log Files
+                    foreach ($file in $datarows) {
+                        $d = @{
+                        }
+                        if ($ReuseSourceFolderStructure) {
+                            $d.physical = $file.filename
+                        } elseif ($WithReplace) {
+                            $name = $file.Name
+                            $destfile = $remoteDbFileTable.Tables[0].Select("dbname = '$dbName' and name = '$name'")
+                            $d.physical = $destfile.filename
+
+                            if ($null -eq $d.physical) {
+                                $directory = Get-SqlDefaultPaths $destServer log
+                                $fileName = Split-Path $file.filename -Leaf
+                                $d.physical = "$directory\$fileName"
+                            }
+                        } else {
                             $directory = Get-SqlDefaultPaths $destServer log
                             $fileName = Split-Path $file.filename -Leaf
                             $d.physical = "$directory\$fileName"
                         }
-                    } else {
-                        $directory = Get-SqlDefaultPaths $destServer log
-                        $fileName = Split-Path $file.filename -Leaf
-                        $d.physical = "$directory\$fileName"
-                    }
-                    $d.logical = $file.Name
-                    $d.remotefilename = Join-AdminUNC $destFullComputerName $d.physical
-                    $destinstancefiles.add($file.Name, $d)
+                        $d.logical = $file.Name
+                        $d.remotefilename = Join-AdminUNC $destFullComputerName $d.physical
+                        $destinstancefiles.add($file.Name, $d)
 
-                    $s = @{
+                        $s = @{
+                        }
+                        $s.logical = $file.Name
+                        $s.physical = $file.filename
+                        $s.remotefilename = Join-AdminUNC $sourceFullComputerName $s.physical
+                        $sourcefiles.add($file.Name, $s)
                     }
-                    $s.logical = $file.Name
-                    $s.physical = $file.filename
-                    $s.remotefilename = Join-AdminUNC $sourceFullComputerName $s.physical
-                    $sourcefiles.add($file.Name, $s)
-                }
 
-                $location = @{
+                    $location = @{
+                    }
+                    $location.add("Destination", $destinstancefiles)
+                    $location.add("Source", $sourcefiles)
+                    $dbcollection.Add($($db.Name), $location)
                 }
-                $location.add("Destination", $destinstancefiles)
-                $location.add("Source", $sourcefiles)
-                $dbcollection.Add($($db.Name), $location)
+            } finally {
+                Write-Progress -Id 1 -Activity "Processing database file structure" -Status "Completed" -Completed
             }
 
             $fileStructure = [PSCustomObject]@{
                 "databases" = $dbcollection
             }
-            Write-Progress -Id 1 -Activity "Processing database file structure" -Status "Completed" -Completed
             return $fileStructure
         }
 
