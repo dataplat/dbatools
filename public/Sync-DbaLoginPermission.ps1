@@ -183,8 +183,8 @@ function Sync-DbaLoginPermission {
                             Stop-Function -Message "Issue syncing permissions for login" -Target $loginName -ErrorRecord $_ -Continue
                         }
                     }
-                    Write-ProgressHelper -Completed
                 } finally {
+                    Write-ProgressHelper -Completed
                     Restore-DatabaseContext -Server $destServer -Database $destCallerDatabase
                 }
             }
