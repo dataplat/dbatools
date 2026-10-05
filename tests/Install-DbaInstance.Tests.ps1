@@ -376,4 +376,51 @@ Describe $CommandName -Tag IntegrationTests {
             Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true; ExitCode = 0 } } -ModuleName dbatools
         }
     }
+
+    Context "When the computer cannot be reached" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id with records but without a completed one. The runspace imports its own copy of the
+            # module, so the mocks above do not reach it: this is the real command.
+            # The top level domain invalid never resolves, so the check for a pending reboot fails, the command
+            # warns and installs nothing; WhatIf is only a guard. The local computer is no target here: when it
+            # has a reboot pending, as the CI runners can, the command stops at that check with another warning.
+            $emptySetupPath = "$TestDrive\EmptySetup"
+            $null = New-Item -Path $emptySetupPath -ItemType Directory -Force
+            $splatUnreachableInstall = @{
+                SqlInstance = "progressleak$(Get-Random).invalid"
+                Version     = "2022"
+                Path        = $emptySetupPath
+                WhatIf      = $true
+            }
+            $installRunspace = [runspacefactory]::CreateRunspace()
+            $installRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $installRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $installShell = [powershell]::Create()
+            $installShell.Runspace = $installRunspace
+            $null = $installShell.AddCommand("Install-DbaInstance").AddParameters($splatUnreachableInstall).Invoke()
+            $installWarnings = @($installShell.Streams.Warning | ForEach-Object { $PSItem.Message })
+            $installRecords = @($installShell.Streams.Progress)
+            $installShell.Dispose()
+            $installRunspace.Dispose()
+        }
+
+        It "Warns that it cannot check for a pending reboot" {
+            ($installWarnings -join " ") | Should -Match "Failed to get reboot status"
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $installRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $installRecords | Where-Object Activity -like "Preparing to install*" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }

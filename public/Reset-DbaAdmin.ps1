@@ -287,168 +287,171 @@ function Reset-DbaAdmin {
                 $clusterResource = Get-DbaCmObject -ClassName "MSCluster_Resource" -Namespace "root\mscluster" -ComputerName $hostName | Where-Object { $_.Name.StartsWith("SQL Server") -and $_.OwnerGroup -eq "SQL Server ($instanceName)" }
             }
 
-            if ($pscmdlet.ShouldProcess($baseaddress, "Stop $instance to restart in single-user mode")) {
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Stopping $instance to restart in single-user mode"
-                # Take SQL Server offline so that it can be started in single-user mode
-                if ($clusterResource.count -gt 0) {
-                    $isClustered = $true
-                    try {
-                        $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.TakeOffline(60) }
-                    } catch {
-                        $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
-                        $clusterResource | Where-Object { $_.Name -ne "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
-                        Stop-Function -Message "Could not stop the SQL Service. Restarted SQL Service and quit." -ErrorRecord $_ -Target $instance
-                        return
-                    }
-                } else {
-                    try {
-                        Stop-Service -InputObject $sqlservice -Force -ErrorAction Stop
-                        Write-Message -Level Verbose -Message "Successfully stopped SQL service."
-                    } catch {
-                        Start-Service -InputObject $instanceServices -ErrorAction Stop
-                        Stop-Function -Message "Could not stop the SQL Service. Restarted SQL service and quit." -ErrorRecord $_ -Target $instance
-                        return
-                    }
-                }
-            }
-
-            # /mReset-DbaAdmin Starts an instance of SQL Server in single-user mode and only allows this script to connect.
-            if ($pscmdlet.ShouldProcess($baseaddress, "Starting $instance in single-user mode")) {
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting $instance in single-user mode"
-                try {
-                    if ($instance.IsLocalHost) {
-                        $netstart = net start ""$displayName"" /mReset-DbaAdmin 2>&1
-                        if ("$netstart" -notmatch "success") {
-                            Stop-Function -Message "Restart failure" -Continue
+            try {
+                if ($pscmdlet.ShouldProcess($baseaddress, "Stop $instance to restart in single-user mode")) {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Stopping $instance to restart in single-user mode"
+                    # Take SQL Server offline so that it can be started in single-user mode
+                    if ($clusterResource.count -gt 0) {
+                        $isClustered = $true
+                        try {
+                            $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.TakeOffline(60) }
+                        } catch {
+                            $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
+                            $clusterResource | Where-Object { $_.Name -ne "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
+                            Stop-Function -Message "Could not stop the SQL Service. Restarted SQL Service and quit." -ErrorRecord $_ -Target $instance
+                            return
                         }
                     } else {
-                        $netstart = Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $displayName -ScriptBlock { net start ""$args"" /mReset-DbaAdmin } 2>&1
-                        foreach ($line in $netstart) {
-                            if ($line.length -gt 0) {
-                                Write-Message -Level Verbose -Message $line
+                        try {
+                            Stop-Service -InputObject $sqlservice -Force -ErrorAction Stop
+                            Write-Message -Level Verbose -Message "Successfully stopped SQL service."
+                        } catch {
+                            Start-Service -InputObject $instanceServices -ErrorAction Stop
+                            Stop-Function -Message "Could not stop the SQL Service. Restarted SQL service and quit." -ErrorRecord $_ -Target $instance
+                            return
+                        }
+                    }
+                }
+
+                # /mReset-DbaAdmin Starts an instance of SQL Server in single-user mode and only allows this script to connect.
+                if ($pscmdlet.ShouldProcess($baseaddress, "Starting $instance in single-user mode")) {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting $instance in single-user mode"
+                    try {
+                        if ($instance.IsLocalHost) {
+                            $netstart = net start ""$displayName"" /mReset-DbaAdmin 2>&1
+                            if ("$netstart" -notmatch "success") {
+                                Stop-Function -Message "Restart failure" -Continue
+                            }
+                        } else {
+                            $netstart = Invoke-Command -ErrorAction Stop -Session $session -ArgumentList $displayName -ScriptBlock { net start ""$args"" /mReset-DbaAdmin } 2>&1
+                            foreach ($line in $netstart) {
+                                if ($line.length -gt 0) {
+                                    Write-Message -Level Verbose -Message $line
+                                }
                             }
                         }
-                    }
-                } catch {
-                    Stop-Service -InputObject $sqlservice -Force -ErrorAction SilentlyContinue
-                    if ($isClustered) {
-                        $clusterResource | Where-Object Name -EQ "SQL Server" | ForEach-Object { $_.BringOnline(60) }
-                        $clusterResource | Where-Object Name -NE "SQL Server" | ForEach-Object { $_.BringOnline(60) }
-                    } else {
-                        Start-Service -InputObject $instanceServices -ErrorAction SilentlyContinue
-                    }
-                    Stop-Function -Message "Couldn't execute net start command. Restarted services and quit." -ErrorRecord $_
-                    return
-                }
-            }
-
-            if ($pscmdlet.ShouldProcess($baseaddress, "Testing $instance to ensure it's back up")) {
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Testing $instance to ensure it's back up"
-                try {
-                    $null = Invoke-ResetSqlCmd -instance $instance -Sql "SELECT 1" -EnableException
-                } catch {
-                    try {
-                        Start-Sleep 3
-                        $null = Invoke-ResetSqlCmd -instance $instance -Sql "SELECT 1" -EnableException
                     } catch {
                         Stop-Service -InputObject $sqlservice -Force -ErrorAction SilentlyContinue
                         if ($isClustered) {
-                            $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
-                            $clusterResource | Where-Object { $_.Name -ne "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
+                            $clusterResource | Where-Object Name -EQ "SQL Server" | ForEach-Object { $_.BringOnline(60) }
+                            $clusterResource | Where-Object Name -NE "SQL Server" | ForEach-Object { $_.BringOnline(60) }
                         } else {
                             Start-Service -InputObject $instanceServices -ErrorAction SilentlyContinue
                         }
-                        Stop-Function -Message "Could not stop the SQL Service. Restarted SQL Service and quit." -ErrorRecord $_
+                        Stop-Function -Message "Couldn't execute net start command. Restarted services and quit." -ErrorRecord $_
+                        return
                     }
                 }
-            }
 
-            # Get login. If it doesn't exist, create it.
-            if ($pscmdlet.ShouldProcess($instance, "Adding login $Login if it doesn't exist")) {
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding login $Login if it doesn't exist"
-                if ($windowslogin) {
-                    $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$Login')
-                    BEGIN CREATE LOGIN [$Login] FROM WINDOWS END"
-                    if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
-                        Write-Message -Level Warning -Message "Couldn't create Windows login."
-                    }
-
-                } elseif ($Login -ne "sa") {
-                    # Create new sql user
-                $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$Login')
-                    BEGIN CREATE LOGIN [$Login] WITH PASSWORD = '$(ConvertTo-PlainText $password)', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF END"
-                    if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
-                        Write-Message -Level Warning -Message "Couldn't create SQL login."
-                    }
-                }
-            }
-
-            # If $Login is a SQL Login, Mixed mode authentication is required.
-            if ($windowslogin -ne $true) {
-                if ($pscmdlet.ShouldProcess($instance, "Enabling mixed mode authentication for $Login and ensuring account is unlocked")) {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Enabling mixed mode authentication for $Login and ensuring account is unlocked"
-                    $sql = "EXEC xp_instance_regwrite N'HKEY_LOCAL_MACHINE', N'Software\Microsoft\MSSQLServer\MSSQLServer', N'LoginMode', REG_DWORD, 2"
-                    if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
-                        Write-Message -Level Warning -Message "Couldn't set to Mixed Mode."
-                    }
-
-                    $sql = "ALTER LOGIN [$Login] WITH CHECK_POLICY = OFF
-                    ALTER LOGIN [$Login] WITH PASSWORD = '$(ConvertTo-PlainText $password)' UNLOCK"
-                    if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
-                        Write-Message -Level Warning -Message "Couldn't unlock account."
-                    }
-                }
-            }
-
-            if ($pscmdlet.ShouldProcess($instance, "Enabling $Login")) {
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Ensuring login is enabled"
-                $sql = "ALTER LOGIN [$Login] ENABLE"
-                if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
-                    Write-Message -Level Warning -Message "Couldn't enable login."
-                }
-            }
-
-            if ($Login -ne "sa") {
-                if ($pscmdlet.ShouldProcess($instance, "Ensuring $Login exists within sysadmin role")) {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Ensuring $Login exists within sysadmin role"
-                    $sql = "EXEC sp_addsrvrolemember '$Login', 'sysadmin'"
-                    if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
-                        Write-Message -Level Warning -Message "Couldn't add to sysadmin role."
-                    }
-                }
-            }
-
-            if ($pscmdlet.ShouldProcess($instance, "Finished with login tasks. Restarting")) {
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Finished with login tasks. Restarting."
-                try {
-                    Stop-Service -InputObject $sqlservice -Force -ErrorAction Stop
-                    if ($isClustered -eq $true) {
-                        $clusterResource | Where-Object Name -EQ "SQL Server" | ForEach-Object { $_.BringOnline(60) }
-                        $clusterResource | Where-Object Name -NE "SQL Server" | ForEach-Object { $_.BringOnline(60) }
-                    } else {
-                        Start-Service -InputObject $instanceServices -ErrorAction Stop
-                    }
-                } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_
-                }
-            }
-
-            if ($pscmdlet.ShouldProcess($instance, "Logging in to get account information")) {
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Logging in to get account information"
-                if ($SecurePassword) {
-                    $cred = New-Object System.Management.Automation.PSCredential ($Login, $SecurePassword)
-                    Get-DbaLogin -SqlInstance $instance -SqlCredential $cred -Login $Login
-                } elseif ($SqlCredential) {
-                    Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
-                } else {
+                if ($pscmdlet.ShouldProcess($baseaddress, "Testing $instance to ensure it's back up")) {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Testing $instance to ensure it's back up"
                     try {
-                        Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login -EnableException
+                        $null = Invoke-ResetSqlCmd -instance $instance -Sql "SELECT 1" -EnableException
                     } catch {
-                        Stop-Function -Message "Password not supplied, tried logging in with Integrated authentication and it failed. Either way, $Login should work now on $instance." -Continue
+                        try {
+                            Start-Sleep 3
+                            $null = Invoke-ResetSqlCmd -instance $instance -Sql "SELECT 1" -EnableException
+                        } catch {
+                            Stop-Service -InputObject $sqlservice -Force -ErrorAction SilentlyContinue
+                            if ($isClustered) {
+                                $clusterResource | Where-Object { $_.Name -eq "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
+                                $clusterResource | Where-Object { $_.Name -ne "SQL Server" } | ForEach-Object { $_.BringOnline(60) }
+                            } else {
+                                Start-Service -InputObject $instanceServices -ErrorAction SilentlyContinue
+                            }
+                            Stop-Function -Message "Could not stop the SQL Service. Restarted SQL Service and quit." -ErrorRecord $_
+                        }
                     }
                 }
+
+                # Get login. If it doesn't exist, create it.
+                if ($pscmdlet.ShouldProcess($instance, "Adding login $Login if it doesn't exist")) {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding login $Login if it doesn't exist"
+                    if ($windowslogin) {
+                        $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$Login')
+                    BEGIN CREATE LOGIN [$Login] FROM WINDOWS END"
+                        if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
+                            Write-Message -Level Warning -Message "Couldn't create Windows login."
+                        }
+
+                    } elseif ($Login -ne "sa") {
+                        # Create new sql user
+                    $sql = "IF NOT EXISTS (SELECT name FROM master.sys.server_principals WHERE name = '$Login')
+                    BEGIN CREATE LOGIN [$Login] WITH PASSWORD = '$(ConvertTo-PlainText $password)', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF END"
+                        if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
+                            Write-Message -Level Warning -Message "Couldn't create SQL login."
+                        }
+                    }
+                }
+
+                # If $Login is a SQL Login, Mixed mode authentication is required.
+                if ($windowslogin -ne $true) {
+                    if ($pscmdlet.ShouldProcess($instance, "Enabling mixed mode authentication for $Login and ensuring account is unlocked")) {
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Enabling mixed mode authentication for $Login and ensuring account is unlocked"
+                        $sql = "EXEC xp_instance_regwrite N'HKEY_LOCAL_MACHINE', N'Software\Microsoft\MSSQLServer\MSSQLServer', N'LoginMode', REG_DWORD, 2"
+                        if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
+                            Write-Message -Level Warning -Message "Couldn't set to Mixed Mode."
+                        }
+
+                        $sql = "ALTER LOGIN [$Login] WITH CHECK_POLICY = OFF
+                    ALTER LOGIN [$Login] WITH PASSWORD = '$(ConvertTo-PlainText $password)' UNLOCK"
+                        if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
+                            Write-Message -Level Warning -Message "Couldn't unlock account."
+                        }
+                    }
+                }
+
+                if ($pscmdlet.ShouldProcess($instance, "Enabling $Login")) {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Ensuring login is enabled"
+                    $sql = "ALTER LOGIN [$Login] ENABLE"
+                    if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
+                        Write-Message -Level Warning -Message "Couldn't enable login."
+                    }
+                }
+
+                if ($Login -ne "sa") {
+                    if ($pscmdlet.ShouldProcess($instance, "Ensuring $Login exists within sysadmin role")) {
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Ensuring $Login exists within sysadmin role"
+                        $sql = "EXEC sp_addsrvrolemember '$Login', 'sysadmin'"
+                        if (-not (Invoke-ResetSqlCmd -instance $instance -Sql $sql)) {
+                            Write-Message -Level Warning -Message "Couldn't add to sysadmin role."
+                        }
+                    }
+                }
+
+                if ($pscmdlet.ShouldProcess($instance, "Finished with login tasks. Restarting")) {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Finished with login tasks. Restarting."
+                    try {
+                        Stop-Service -InputObject $sqlservice -Force -ErrorAction Stop
+                        if ($isClustered -eq $true) {
+                            $clusterResource | Where-Object Name -EQ "SQL Server" | ForEach-Object { $_.BringOnline(60) }
+                            $clusterResource | Where-Object Name -NE "SQL Server" | ForEach-Object { $_.BringOnline(60) }
+                        } else {
+                            Start-Service -InputObject $instanceServices -ErrorAction Stop
+                        }
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_
+                    }
+                }
+
+                if ($pscmdlet.ShouldProcess($instance, "Logging in to get account information")) {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Logging in to get account information"
+                    if ($SecurePassword) {
+                        $cred = New-Object System.Management.Automation.PSCredential ($Login, $SecurePassword)
+                        Get-DbaLogin -SqlInstance $instance -SqlCredential $cred -Login $Login
+                    } elseif ($SqlCredential) {
+                        Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
+                    } else {
+                        try {
+                            Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login -EnableException
+                        } catch {
+                            Stop-Function -Message "Password not supplied, tried logging in with Integrated authentication and it failed. Either way, $Login should work now on $instance." -Continue
+                        }
+                    }
+                }
+            } finally {
+                Write-ProgressHelper -Completed
             }
-            Write-ProgressHelper -Completed
 
         }
     }

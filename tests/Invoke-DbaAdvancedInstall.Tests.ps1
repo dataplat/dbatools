@@ -506,4 +506,50 @@ Describe $CommandName -Tag IntegrationTests {
             $result.Notes | Should -BeNullOrEmpty
         }
     }
+
+    Context "When the computer cannot be reached" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. The runspace imports its own copy of the
+            # module, so the mocks above do not reach it: this is the real command. The top level domain
+            # invalid never resolves, so copying the configuration file fails and nothing is installed.
+            $missingInstallConfig = "$TestDrive\Configuration_progress.ini"
+            Set-Content -Path $missingInstallConfig -Value "[OPTIONS]"
+            $splatMissingInstall = @{
+                ComputerName      = "progressleak$(Get-Random).invalid"
+                InstanceName      = "progress"
+                InstallationPath  = "$TestDrive\MissingSetup\setup.exe"
+                ConfigurationPath = $missingInstallConfig
+                Version           = [version]"16.0"
+            }
+            $installRunspace = [runspacefactory]::CreateRunspace()
+            $installRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $installRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $installShell = [powershell]::Create()
+            $installShell.Runspace = $installRunspace
+            $null = $installShell.AddCommand("Invoke-DbaAdvancedInstall").AddParameters($splatMissingInstall).Invoke()
+            $installWarnings = @($installShell.Streams.Warning | ForEach-Object { $PSItem.Message })
+            $installRecords = @($installShell.Streams.Progress)
+            $installShell.Dispose()
+            $installRunspace.Dispose()
+        }
+
+        It "Warns that the configuration file cannot be copied" {
+            ($installWarnings -join " ") | Should -Match "Failed to copy file"
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $installRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $installRecords | Where-Object Activity -like "Installing SQL Server*" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }

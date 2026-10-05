@@ -45,12 +45,50 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
     }
 
     Context "When adding a sql login" {
-        It "Should add the login as sysadmin" {
+        BeforeAll {
+            # The reset runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. Select-Object -First 1 stops the command at
+            # its only output, the login, so the same restart also shows whether the bar survives a pipeline
+            # that ends early. The runspace imports the manifest: an import of the psm1 without a command
+            # line skips the type data.
             $password = ConvertTo-SecureString -Force -AsPlainText resetadmin1
-            $cred = New-Object System.Management.Automation.PSCredential ("dbatoolsci_resetadmin", $password)
-            $results = Reset-DbaAdmin -SqlInstance $TestConfig.InstanceRestart -Login dbatoolsci_resetadmin -SecurePassword $password
+            $splatReset = @{
+                SqlInstance    = $TestConfig.InstanceRestart
+                Login          = "dbatoolsci_resetadmin"
+                SecurePassword = $password
+                Confirm        = $false
+            }
+            if ($TestConfig.SqlCred) {
+                $splatReset.SqlCredential = $TestConfig.SqlCred
+            }
+            $resetRunspace = [runspacefactory]::CreateRunspace()
+            $resetRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $resetRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $resetShell = [powershell]::Create()
+            $resetShell.Runspace = $resetRunspace
+            $results = $resetShell.AddCommand("Reset-DbaAdmin").AddParameters($splatReset).AddCommand("Select-Object").AddParameter("First", 1).Invoke()
+            $resetRecords = @($resetShell.Streams.Progress)
+            $resetShell.Dispose()
+            $resetRunspace.Dispose()
+        }
+
+        It "Should add the login as sysadmin" {
             $results.Name | Should -Be dbatoolsci_resetadmin
             $results.IsMember("sysadmin") | Should -Be $true
+        }
+
+        It "Completes its progress bar when the pipeline ends at the login" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $resetRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $resetRecords | Where-Object Activity -eq "Executing Reset-DbaAdmin" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
         }
     }
 }

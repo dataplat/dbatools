@@ -196,4 +196,62 @@ Describe $CommandName -Tag IntegrationTests {
             Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true } } -ModuleName dbatools
         }
     }
+
+    Context "When the installer cannot be started" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. The runspace imports its own copy of the
+            # module, so the mocks above do not reach it: this is the real command on the local computer. The
+            # installer does not exist, so the extraction fails and nothing is installed.
+            $missingUpdateAction = [PSCustomObject]@{
+                ComputerName = $env:COMPUTERNAME
+                MajorVersion = "2022"
+                Build        = "16.0.1000"
+                Architecture = "x64"
+                TargetLevel  = "CU1"
+                KB           = "5022375"
+                Successful   = $false
+                Restarted    = $false
+                InstanceName = ""
+                Installer    = "$TestDrive\MissingUpdate\update.exe"
+                ExtractPath  = $null
+                Notes        = @()
+                ExitCode     = $null
+                Log          = $null
+            }
+            $splatMissingUpdate = @{
+                ComputerName = $env:COMPUTERNAME
+                Action       = $missingUpdateAction
+                ExtractPath  = $TestDrive
+            }
+            $updateRunspace = [runspacefactory]::CreateRunspace()
+            $updateRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $updateRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $updateShell = [powershell]::Create()
+            $updateShell.Runspace = $updateRunspace
+            $missingUpdateResult = $updateShell.AddCommand("Invoke-DbaAdvancedUpdate").AddParameters($splatMissingUpdate).Invoke()
+            $updateRecords = @($updateShell.Streams.Progress)
+            $updateShell.Dispose()
+            $updateRunspace.Dispose()
+        }
+
+        It "Reports the update as failed" {
+            $missingUpdateResult.Successful | Should -Be $false
+            $missingUpdateResult.Notes | Should -Match "Extraction failed"
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $updateRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $updateRecords | Where-Object Activity -like "Updating SQL Server components*" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }
