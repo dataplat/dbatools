@@ -320,3 +320,83 @@ Describe $CommandName -Tag IntegrationTests -Skip {
         }
     }
 }
+
+# The integration tests above are skipped as a whole. This Describe only checks that a scan completes its progress
+# bar when it is stopped, which does not depend on what the scan finds.
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # Three tables with a few columns each, so that the scan runs a query per column for a while.
+        $stopScanDb = "dbatoolsci_piistop_$(Get-Random)"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $stopScanDb
+        $stopScanSql = @"
+CREATE TABLE dbo.Person1 (Id INT IDENTITY(1,1) NOT NULL, FirstName VARCHAR(50) NULL, LastName VARCHAR(50) NULL, Email VARCHAR(100) NULL, Phone VARCHAR(30) NULL, City VARCHAR(50) NULL);
+INSERT dbo.Person1 (FirstName, LastName, Email, Phone, City)
+SELECT TOP (100) 'Jane', 'Doe', 'jane.doe@example.com', '555-0100', 'Springfield' FROM sys.all_columns;
+SELECT * INTO dbo.Person2 FROM dbo.Person1;
+SELECT * INTO dbo.Person3 FROM dbo.Person1;
+"@
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $stopScanDb -Query $stopScanSql
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+        # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+        # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+        # as an Id whose last record is not a completed one. The pipeline is stopped as soon as the first
+        # scan record arrives, which is what Ctrl+C does. The runspace imports the manifest: an import of the
+        # psm1 without a command line skips the type data.
+        $splatStopScan = @{
+            SqlInstance = $TestConfig.InstanceSingle
+            Database    = $stopScanDb
+        }
+        if ($TestConfig.SqlCred) {
+            $splatStopScan.SqlCredential = $TestConfig.SqlCred
+        }
+        $stopRunspace = [runspacefactory]::CreateRunspace()
+        $stopRunspace.Open()
+        $importShell = [powershell]::Create()
+        $importShell.Runspace = $stopRunspace
+        $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+        $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+        $importShell.Dispose()
+
+        $stopShell = [powershell]::Create()
+        $stopShell.Runspace = $stopRunspace
+        $null = $stopShell.AddCommand("Invoke-DbaDbPiiScan").AddParameters($splatStopScan)
+        $stopAsync = $stopShell.BeginInvoke()
+        $stopWatch = [System.Diagnostics.Stopwatch]::StartNew()
+        while (-not ($stopShell.Streams.Progress | Where-Object Activity -eq "Scanning databases for PII") -and -not $stopAsync.IsCompleted -and $stopWatch.Elapsed.TotalSeconds -lt 60) {
+            Start-Sleep -Milliseconds 10
+        }
+        $stopShell.Stop()
+        $stopState = $stopShell.InvocationStateInfo.State
+        $stopRecords = @($stopShell.Streams.Progress)
+        $stopShell.Dispose()
+        $stopRunspace.Dispose()
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $stopScanDb
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "When the pipeline is stopped" {
+        It "Was stopped while it was running" {
+            $stopState | Should -Be "Stopped"
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $stopRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $stopRecords | Where-Object Activity -eq "Scanning databases for PII" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
+}
