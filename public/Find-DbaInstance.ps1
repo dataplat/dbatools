@@ -292,312 +292,314 @@ function Find-DbaInstance {
                     } else {
                         $null = $computersScanned.Add($computer.ComputerName)
                     }
-                    Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Starting"
-                    Write-Message -Level Verbose -Message "Processing: $($computer)"
+                    try {
+                        Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Starting"
+                        Write-Message -Level Verbose -Message "Processing: $($computer)"
 
-                    #region Null variables to prevent scope lookup on conditional existence
-                    $resolution = $null
-                    $pingReply = $null
-                    $sPNs = @()
-                    $ports = @()
-                    $browserFallbackPorts = @()
-                    $browseResult = $null
-                    $services = @()
-                    #Variable marked as unused by PSScriptAnalyzer
-                    #$serverObject = $null
-                    #$browseFailed = $false
-                    #endregion Null variables to prevent scope lookup on conditional existence
+                        #region Null variables to prevent scope lookup on conditional existence
+                        $resolution = $null
+                        $pingReply = $null
+                        $sPNs = @()
+                        $ports = @()
+                        $browserFallbackPorts = @()
+                        $browseResult = $null
+                        $services = @()
+                        #Variable marked as unused by PSScriptAnalyzer
+                        #$serverObject = $null
+                        #$browseFailed = $false
+                        #endregion Null variables to prevent scope lookup on conditional existence
 
-                    #region Gather data
-                    if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::DNSResolve) {
-                        try {
-                            Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Performing DNS resolution"
-                            $resolution = [System.Net.Dns]::GetHostEntry($computer.ComputerName)
-                        } catch {
-                            # here to avoid an empty catch
-                            $null = 1
-                        }
-                    }
-
-                    if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::Ping) {
-                        $ping = New-Object System.Net.NetworkInformation.Ping
-                        try {
-                            Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Waiting for ping response"
-                            $pingReply = $ping.Send($computer.ComputerName)
-                        } catch {
-                            # here to avoid an empty catch
-                            $null = 1
-                        }
-                    }
-
-                    if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::SPN) {
-                        $computerByName = $computer.ComputerName
-                        if ($resolution.HostName) { $computerByName = $resolution.HostName }
-                        if ($computerByName -notmatch "$([dbargx]::IPv4)|$([dbargx]::IPv6)") {
+                        #region Gather data
+                        if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::DNSResolve) {
                             try {
-                                Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Finding SPNs"
-                                $sPNs = Get-DomainSPN -DomainController $DomainController -Credential $Credential -ComputerName $computerByName -GetSPN
+                                Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Performing DNS resolution"
+                                $resolution = [System.Net.Dns]::GetHostEntry($computer.ComputerName)
                             } catch {
                                 # here to avoid an empty catch
                                 $null = 1
                             }
                         }
-                    }
 
-                    # $ports required for all scans
-                    Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Testing TCP ports"
-
-                    if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::Browser) {
-                        try {
-                            Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Probing Browser service"
-                            $browseResult = Get-SQLInstanceBrowserUDP -ComputerName $computer -EnableException
-                            Write-Message -Level Verbose -Message "Browser returned $($browseResult.Count) instance(s): $(($browseResult | ForEach-Object { "$($_.InstanceName):$($_.TCPPort)" }) -join ', ')"
-                            $portsToScan = @()
-                            $browserReportedPorts = $browseResult.TCPPort | Where-Object { $_ -gt 0 }
-                            if ($browserReportedPorts) {
-                                $portsToScan += $browserReportedPorts
-                            }
-                            if ($browseResult | Where-Object { -not $_.TCPPort }) {
-                                $browserFallbackPorts = $TCPPort | Select-Object -Unique
-                                Write-Message -Level Verbose -Message "Browser has instance(s) without TCPPort, adding fallback ports: $($browserFallbackPorts -join ', ')"
-                                $portsToScan += $browserFallbackPorts
-                            }
-                            if ($portsToScan) {
-                                $ports = $portsToScan | Select-Object -Unique | Test-TcpPort -ComputerName $computer
-                            }
-                            Write-Message -Level Verbose -Message "Port test results from Browser: $(($ports | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
-                        } catch {
-                            Write-Message -Level Verbose -Message "Browser scan failed: $_"
-                            # here to avoid an empty catch
-                            $null = 1
-                        }
-                        # Fall back to default port testing if Browser returned no port info
-                        # (e.g. SQL Server 2022+ where Browser is deprecated, or default instances
-                        # which don't report a TCP port via Browser UDP)
-                        if (-not $ports) {
-                            $browserFallbackPorts = $TCPPort | Select-Object -Unique
-                            Write-Message -Level Verbose -Message "No port info from Browser, falling back to default ports: $($browserFallbackPorts -join ', ')"
-                            $ports = $browserFallbackPorts | Test-TcpPort -ComputerName $computer
-                            Write-Message -Level Verbose -Message "Fallback port test results: $(($ports | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
-                        }
-                    } else {
-                        $ports = $TCPPort | Test-TcpPort -ComputerName $computer
-                    }
-
-                    if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::SqlService) {
-                        Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Finding SQL services using SQL WMI"
-                        if ($Credential) {
-                            $services = Get-DbaService -ComputerName $computer -Credential $Credential -EnableException -ErrorAction Ignore -WarningAction SilentlyCOntinue
-                        } else {
-                            $services = Get-DbaService -ComputerName $computer -ErrorAction Ignore -WarningAction SilentlyContinue
-                        }
-                    }
-                    #endregion Gather data
-
-                    #region Gather list of found instance indicators
-                    $instanceNames = @()
-                    if ($Services) {
-                        $Services | Select-Object -ExpandProperty InstanceName -Unique | Where-Object { $_ -and ($instanceNames -notcontains $_) } | ForEach-Object {
-                            $instanceNames += $_
-                        }
-                    }
-                    if ($browseResult) {
-                        $browseResult | Select-Object -ExpandProperty InstanceName -Unique | Where-Object { $_ -and ($instanceNames -notcontains $_) } | ForEach-Object {
-                            $instanceNames += $_
-                        }
-                    }
-
-                    $portsDetected = @()
-                    foreach ($portResult in $ports) {
-                        if ($portResult.IsOpen) { $portsDetected += $portResult.Port }
-                    }
-                    foreach ($sPN in $sPNs) {
-                        try { $inst = $sPN.Split(':')[1] }
-                        catch { continue }
-
-                        try {
-                            [int]$portNumber = $inst
-                            if ($portNumber -and ($portsDetected -notcontains $portNumber)) {
-                                $portsDetected += $portNumber
-                            }
-                        } catch {
-                            if ($inst -and ($instanceNames -notcontains $inst)) {
-                                $instanceNames += $inst
-                            }
-                        }
-                    }
-                    #endregion Gather list of found instance indicators
-
-                    #region Case: Nothing found
-                    if ((-not $instanceNames) -and (-not $portsDetected)) {
-                        if ($resolution -or ($pingReply.Status -like "Success")) {
-                            if ($MinimumConfidence -eq [Dataplat.Dbatools.Discovery.DbaInstanceConfidenceLevel]::None) {
-                                New-Object Dataplat.Dbatools.Discovery.DbaInstanceReport -Property @{
-                                    MachineName  = $computer.ComputerName
-                                    ComputerName = $computer.ComputerName
-                                    Ping         = $pingReply.Status -like 'Success'
-                                }
-                            } else {
-                                Write-Message -Level Verbose -Message "Computer $computer could be contacted, but no trace of an SQL Instance was found. Skipping..."
-                            }
-                        } else {
-                            Write-Message -Level Verbose -Message "Computer $computer could not be contacted, skipping."
-                        }
-
-                        continue
-                    }
-                    #endregion Case: Nothing found
-
-                    [System.Collections.ArrayList]$masterList = @()
-
-                    #region Case: Named instance found
-                    foreach ($instance in $instanceNames) {
-                        Write-Message -Level Verbose -Message "Processing named instance: $instance"
-                        $object = New-Object Dataplat.Dbatools.Discovery.DbaInstanceReport
-                        $object.MachineName = $computer.ComputerName
-                        $object.ComputerName = $computer.ComputerName
-                        $object.InstanceName = $instance
-                        $object.DnsResolution = $resolution
-                        $object.Ping = $pingReply.Status -like 'Success'
-                        $object.ScanTypes = $ScanType
-                        $object.Services = $services | Where-Object InstanceName -EQ $instance
-                        $object.SystemServices = $services | Where-Object { -not $_.InstanceName }
-                        $object.SPNs = $sPNs
-
-                        if ($result = $browseResult | Where-Object InstanceName -EQ $instance) {
-                            $object.BrowseReply = $result
-                        }
-                        if ($ports) {
-                            $object.PortsScanned = $ports
-                        }
-
-                        if ($object.BrowseReply) {
-                            $object.Confidence = 'Medium'
-                            if ($object.BrowseReply.TCPPort) {
-                                $object.Port = $object.BrowseReply.TCPPort
-                                Write-Message -Level Verbose -Message "Browser reported TCPPort $($object.Port), checking PortsScanned: $(($object.PortsScanned | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
-
-                                $object.PortsScanned | Where-Object Port -EQ $object.Port | ForEach-Object {
-                                    $object.TcpConnected = $_.IsOpen
-                                    Write-Message -Level Verbose -Message "Port $($_.Port) IsOpen=$($_.IsOpen), TcpConnected set to $($object.TcpConnected)"
-                                }
-                            } else {
-                                # Default instance - Browser doesn't report a specific TCP port,
-                                # check if any of the fallback ports we tested is open
-                                $defaultPortResults = $object.PortsScanned | Where-Object { $_.Port -in $browserFallbackPorts }
-                                Write-Message -Level Verbose -Message "Browser has no TCPPort (default instance), checking fallback PortsScanned for any open port: $(($defaultPortResults | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
-                                $defaultPortResults | Where-Object IsOpen | Select-Object -First 1 | ForEach-Object {
-                                    $object.Port = $_.Port
-                                    $object.TcpConnected = $true
-                                    Write-Message -Level Verbose -Message "Found open port $($_.Port), TcpConnected set to True"
-                                }
-                            }
-                        }
-                        if ($object.Services) {
-                            $object.Confidence = 'High'
-
-                            $engine = $object.Services | Where-Object ServiceType -EQ "Engine"
-                            switch ($engine.State) {
-                                "Running" { $object.Availability = 'Available' }
-                                "Stopped" { $object.Availability = 'Unavailable' }
-                                default { $object.Availability = 'Unknown' }
-                            }
-                        }
-
-                        $object.Timestamp = Get-Date
-
-                        $masterList += $object
-                    }
-                    #endregion Case: Named instance found
-
-                    #region Case: Port number found
-                    foreach ($port in $portsDetected) {
-                        if ($masterList.Port -contains $port) { continue }
-
-                        $object = New-Object Dataplat.Dbatools.Discovery.DbaInstanceReport
-                        $object.MachineName = $computer.ComputerName
-                        $object.ComputerName = $computer.ComputerName
-                        $object.Port = $port
-                        $object.DnsResolution = $resolution
-                        $object.Ping = $pingReply.Status -like 'Success'
-                        $object.ScanTypes = $ScanType
-                        $object.SystemServices = $services | Where-Object { -not $_.InstanceName }
-                        $object.SPNs = $sPNs
-                        $object.Confidence = 'Low'
-                        if ($ports) {
-                            $object.PortsScanned = $ports
-
-                            if (($ports | Where-Object IsOpen).Port -eq 1433) {
-                                $object.Confidence = 'Medium'
-                            }
-                        }
-
-                        if (($ports.Port -contains $port) -and ($sPNs | Where-Object { $_ -like "*:$port" })) {
-                            $object.Confidence = 'Medium'
-                        }
-
-                        $object.PortsScanned | Where-Object Port -EQ $object.Port | ForEach-Object {
-                            $object.TcpConnected = $_.IsOpen
-                        }
-                        $object.Timestamp = Get-Date
-
-                        if ($masterList.SqlInstance -contains $object.SqlInstance) {
-                            continue
-                        }
-
-                        $masterList += $object
-                    }
-                    #endregion Case: Port number found
-
-                    if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::SqlConnect) {
-                        $instanceHash = @{ }
-                        $toDelete = @()
-                        foreach ($dataSet in $masterList) {
+                        if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::Ping) {
+                            $ping = New-Object System.Net.NetworkInformation.Ping
                             try {
-                                $server = Connect-DbaInstance -SqlInstance $dataSet.SqlInstance -SqlCredential $SqlCredential
-                                $dataSet.SqlConnected = $true
-                                $dataSet.Confidence = 'High'
+                                Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Waiting for ping response"
+                                $pingReply = $ping.Send($computer.ComputerName)
+                            } catch {
+                                # here to avoid an empty catch
+                                $null = 1
+                            }
+                        }
 
-                                # Remove duplicates
-                                if ($instanceHash.ContainsKey($server.DomainInstanceName)) {
-                                    $toDelete += $dataSet
-                                } else {
-                                    $instanceHash[$server.DomainInstanceName] = $dataSet
+                        if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::SPN) {
+                            $computerByName = $computer.ComputerName
+                            if ($resolution.HostName) { $computerByName = $resolution.HostName }
+                            if ($computerByName -notmatch "$([dbargx]::IPv4)|$([dbargx]::IPv6)") {
+                                try {
+                                    Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Finding SPNs"
+                                    $sPNs = Get-DomainSPN -DomainController $DomainController -Credential $Credential -ComputerName $computerByName -GetSPN
+                                } catch {
+                                    # here to avoid an empty catch
+                                    $null = 1
+                                }
+                            }
+                        }
 
-                                    try {
-                                        $dataSet.MachineName = $server.ComputerNamePhysicalNetBIOS
-                                    } catch {
-                                        # here to avoid an empty catch
-                                        $null = 1
-                                    }
+                        # $ports required for all scans
+                        Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Testing TCP ports"
+
+                        if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::Browser) {
+                            try {
+                                Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Probing Browser service"
+                                $browseResult = Get-SQLInstanceBrowserUDP -ComputerName $computer -EnableException
+                                Write-Message -Level Verbose -Message "Browser returned $($browseResult.Count) instance(s): $(($browseResult | ForEach-Object { "$($_.InstanceName):$($_.TCPPort)" }) -join ', ')"
+                                $portsToScan = @()
+                                $browserReportedPorts = $browseResult.TCPPort | Where-Object { $_ -gt 0 }
+                                if ($browserReportedPorts) {
+                                    $portsToScan += $browserReportedPorts
+                                }
+                                if ($browseResult | Where-Object { -not $_.TCPPort }) {
+                                    $browserFallbackPorts = $TCPPort | Select-Object -Unique
+                                    Write-Message -Level Verbose -Message "Browser has instance(s) without TCPPort, adding fallback ports: $($browserFallbackPorts -join ', ')"
+                                    $portsToScan += $browserFallbackPorts
+                                }
+                                if ($portsToScan) {
+                                    $ports = $portsToScan | Select-Object -Unique | Test-TcpPort -ComputerName $computer
+                                }
+                                Write-Message -Level Verbose -Message "Port test results from Browser: $(($ports | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
+                            } catch {
+                                Write-Message -Level Verbose -Message "Browser scan failed: $_"
+                                # here to avoid an empty catch
+                                $null = 1
+                            }
+                            # Fall back to default port testing if Browser returned no port info
+                            # (e.g. SQL Server 2022+ where Browser is deprecated, or default instances
+                            # which don't report a TCP port via Browser UDP)
+                            if (-not $ports) {
+                                $browserFallbackPorts = $TCPPort | Select-Object -Unique
+                                Write-Message -Level Verbose -Message "No port info from Browser, falling back to default ports: $($browserFallbackPorts -join ', ')"
+                                $ports = $browserFallbackPorts | Test-TcpPort -ComputerName $computer
+                                Write-Message -Level Verbose -Message "Fallback port test results: $(($ports | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
+                            }
+                        } else {
+                            $ports = $TCPPort | Test-TcpPort -ComputerName $computer
+                        }
+
+                        if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::SqlService) {
+                            Write-ProgressHelper -Activity "Processing: $($computer)" -StepNumber ($stepCounter++) -Message "Finding SQL services using SQL WMI"
+                            if ($Credential) {
+                                $services = Get-DbaService -ComputerName $computer -Credential $Credential -EnableException -ErrorAction Ignore -WarningAction SilentlyCOntinue
+                            } else {
+                                $services = Get-DbaService -ComputerName $computer -ErrorAction Ignore -WarningAction SilentlyContinue
+                            }
+                        }
+                        #endregion Gather data
+
+                        #region Gather list of found instance indicators
+                        $instanceNames = @()
+                        if ($Services) {
+                            $Services | Select-Object -ExpandProperty InstanceName -Unique | Where-Object { $_ -and ($instanceNames -notcontains $_) } | ForEach-Object {
+                                $instanceNames += $_
+                            }
+                        }
+                        if ($browseResult) {
+                            $browseResult | Select-Object -ExpandProperty InstanceName -Unique | Where-Object { $_ -and ($instanceNames -notcontains $_) } | ForEach-Object {
+                                $instanceNames += $_
+                            }
+                        }
+
+                        $portsDetected = @()
+                        foreach ($portResult in $ports) {
+                            if ($portResult.IsOpen) { $portsDetected += $portResult.Port }
+                        }
+                        foreach ($sPN in $sPNs) {
+                            try { $inst = $sPN.Split(':')[1] }
+                            catch { continue }
+
+                            try {
+                                [int]$portNumber = $inst
+                                if ($portNumber -and ($portsDetected -notcontains $portNumber)) {
+                                    $portsDetected += $portNumber
                                 }
                             } catch {
-                                # Error class definitions
-                                # https://docs.microsoft.com/en-us/sql/relational-databases/errors-events/database-engine-error-severities
-                                # 24 or less means an instance was found, but had some issues
-
-                                #region Processing error (Access denied, server error, ...)
-                                if ($_.Exception.InnerException.Errors.Class -lt 25) {
-                                    # There IS an SQL Instance and it listened to network traffic
-                                    $dataSet.SqlConnected = $true
-                                    $dataSet.Confidence = 'High'
+                                if ($inst -and ($instanceNames -notcontains $inst)) {
+                                    $instanceNames += $inst
                                 }
-                                #endregion Processing error (Access denied, server error, ...)
-
-                                #region Other connection errors
-                                else {
-                                    $dataSet.SqlConnected = $false
-                                }
-                                #endregion Other connection errors
                             }
                         }
+                        #endregion Gather list of found instance indicators
 
-                        foreach ($item in $toDelete) {
-                            $masterList.Remove($item)
+                        #region Case: Nothing found
+                        if ((-not $instanceNames) -and (-not $portsDetected)) {
+                            if ($resolution -or ($pingReply.Status -like "Success")) {
+                                if ($MinimumConfidence -eq [Dataplat.Dbatools.Discovery.DbaInstanceConfidenceLevel]::None) {
+                                    New-Object Dataplat.Dbatools.Discovery.DbaInstanceReport -Property @{
+                                        MachineName  = $computer.ComputerName
+                                        ComputerName = $computer.ComputerName
+                                        Ping         = $pingReply.Status -like 'Success'
+                                    }
+                                } else {
+                                    Write-Message -Level Verbose -Message "Computer $computer could be contacted, but no trace of an SQL Instance was found. Skipping..."
+                                }
+                            } else {
+                                Write-Message -Level Verbose -Message "Computer $computer could not be contacted, skipping."
+                            }
+
+                            continue
                         }
-                    }
+                        #endregion Case: Nothing found
 
-                    Write-ProgressHelper -Activity "Processing: $($computer)" -Completed
+                        [System.Collections.ArrayList]$masterList = @()
+
+                        #region Case: Named instance found
+                        foreach ($instance in $instanceNames) {
+                            Write-Message -Level Verbose -Message "Processing named instance: $instance"
+                            $object = New-Object Dataplat.Dbatools.Discovery.DbaInstanceReport
+                            $object.MachineName = $computer.ComputerName
+                            $object.ComputerName = $computer.ComputerName
+                            $object.InstanceName = $instance
+                            $object.DnsResolution = $resolution
+                            $object.Ping = $pingReply.Status -like 'Success'
+                            $object.ScanTypes = $ScanType
+                            $object.Services = $services | Where-Object InstanceName -EQ $instance
+                            $object.SystemServices = $services | Where-Object { -not $_.InstanceName }
+                            $object.SPNs = $sPNs
+
+                            if ($result = $browseResult | Where-Object InstanceName -EQ $instance) {
+                                $object.BrowseReply = $result
+                            }
+                            if ($ports) {
+                                $object.PortsScanned = $ports
+                            }
+
+                            if ($object.BrowseReply) {
+                                $object.Confidence = 'Medium'
+                                if ($object.BrowseReply.TCPPort) {
+                                    $object.Port = $object.BrowseReply.TCPPort
+                                    Write-Message -Level Verbose -Message "Browser reported TCPPort $($object.Port), checking PortsScanned: $(($object.PortsScanned | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
+
+                                    $object.PortsScanned | Where-Object Port -EQ $object.Port | ForEach-Object {
+                                        $object.TcpConnected = $_.IsOpen
+                                        Write-Message -Level Verbose -Message "Port $($_.Port) IsOpen=$($_.IsOpen), TcpConnected set to $($object.TcpConnected)"
+                                    }
+                                } else {
+                                    # Default instance - Browser doesn't report a specific TCP port,
+                                    # check if any of the fallback ports we tested is open
+                                    $defaultPortResults = $object.PortsScanned | Where-Object { $_.Port -in $browserFallbackPorts }
+                                    Write-Message -Level Verbose -Message "Browser has no TCPPort (default instance), checking fallback PortsScanned for any open port: $(($defaultPortResults | ForEach-Object { "Port $($_.Port)=$($_.IsOpen)" }) -join ', ')"
+                                    $defaultPortResults | Where-Object IsOpen | Select-Object -First 1 | ForEach-Object {
+                                        $object.Port = $_.Port
+                                        $object.TcpConnected = $true
+                                        Write-Message -Level Verbose -Message "Found open port $($_.Port), TcpConnected set to True"
+                                    }
+                                }
+                            }
+                            if ($object.Services) {
+                                $object.Confidence = 'High'
+
+                                $engine = $object.Services | Where-Object ServiceType -EQ "Engine"
+                                switch ($engine.State) {
+                                    "Running" { $object.Availability = 'Available' }
+                                    "Stopped" { $object.Availability = 'Unavailable' }
+                                    default { $object.Availability = 'Unknown' }
+                                }
+                            }
+
+                            $object.Timestamp = Get-Date
+
+                            $masterList += $object
+                        }
+                        #endregion Case: Named instance found
+
+                        #region Case: Port number found
+                        foreach ($port in $portsDetected) {
+                            if ($masterList.Port -contains $port) { continue }
+
+                            $object = New-Object Dataplat.Dbatools.Discovery.DbaInstanceReport
+                            $object.MachineName = $computer.ComputerName
+                            $object.ComputerName = $computer.ComputerName
+                            $object.Port = $port
+                            $object.DnsResolution = $resolution
+                            $object.Ping = $pingReply.Status -like 'Success'
+                            $object.ScanTypes = $ScanType
+                            $object.SystemServices = $services | Where-Object { -not $_.InstanceName }
+                            $object.SPNs = $sPNs
+                            $object.Confidence = 'Low'
+                            if ($ports) {
+                                $object.PortsScanned = $ports
+
+                                if (($ports | Where-Object IsOpen).Port -eq 1433) {
+                                    $object.Confidence = 'Medium'
+                                }
+                            }
+
+                            if (($ports.Port -contains $port) -and ($sPNs | Where-Object { $_ -like "*:$port" })) {
+                                $object.Confidence = 'Medium'
+                            }
+
+                            $object.PortsScanned | Where-Object Port -EQ $object.Port | ForEach-Object {
+                                $object.TcpConnected = $_.IsOpen
+                            }
+                            $object.Timestamp = Get-Date
+
+                            if ($masterList.SqlInstance -contains $object.SqlInstance) {
+                                continue
+                            }
+
+                            $masterList += $object
+                        }
+                        #endregion Case: Port number found
+
+                        if ($ScanType -band [Dataplat.Dbatools.Discovery.DbaInstanceScanType]::SqlConnect) {
+                            $instanceHash = @{ }
+                            $toDelete = @()
+                            foreach ($dataSet in $masterList) {
+                                try {
+                                    $server = Connect-DbaInstance -SqlInstance $dataSet.SqlInstance -SqlCredential $SqlCredential
+                                    $dataSet.SqlConnected = $true
+                                    $dataSet.Confidence = 'High'
+
+                                    # Remove duplicates
+                                    if ($instanceHash.ContainsKey($server.DomainInstanceName)) {
+                                        $toDelete += $dataSet
+                                    } else {
+                                        $instanceHash[$server.DomainInstanceName] = $dataSet
+
+                                        try {
+                                            $dataSet.MachineName = $server.ComputerNamePhysicalNetBIOS
+                                        } catch {
+                                            # here to avoid an empty catch
+                                            $null = 1
+                                        }
+                                    }
+                                } catch {
+                                    # Error class definitions
+                                    # https://docs.microsoft.com/en-us/sql/relational-databases/errors-events/database-engine-error-severities
+                                    # 24 or less means an instance was found, but had some issues
+
+                                    #region Processing error (Access denied, server error, ...)
+                                    if ($_.Exception.InnerException.Errors.Class -lt 25) {
+                                        # There IS an SQL Instance and it listened to network traffic
+                                        $dataSet.SqlConnected = $true
+                                        $dataSet.Confidence = 'High'
+                                    }
+                                    #endregion Processing error (Access denied, server error, ...)
+
+                                    #region Other connection errors
+                                    else {
+                                        $dataSet.SqlConnected = $false
+                                    }
+                                    #endregion Other connection errors
+                                }
+                            }
+
+                            foreach ($item in $toDelete) {
+                                $masterList.Remove($item)
+                            }
+                        }
+                    } finally {
+                        Write-ProgressHelper -Activity "Processing: $($computer)" -Completed
+                    }
                     $masterList | Where-Object { $_.Confidence -ge $MinimumConfidence }
                 }
             }
