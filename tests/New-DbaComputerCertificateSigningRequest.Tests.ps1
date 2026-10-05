@@ -35,6 +35,7 @@ Describe $CommandName -Tag IntegrationTests {
         $null = New-Item -Path $requestPath -ItemType Directory
         $requestFriendlyName = "dbatoolsci_csr_$(Get-Random)"
         $kspRequestFriendlyName = "dbatoolsci_csr_ksp_$(Get-Random)"
+        $progressRequestFriendlyName = "dbatoolsci_csr_progress_$(Get-Random)"
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -47,7 +48,7 @@ Describe $CommandName -Tag IntegrationTests {
         # certreq -new leaves the pending request with its private key in the REQUEST store of the local machine.
         $requestStore = New-Object System.Security.Cryptography.X509Certificates.X509Store("REQUEST", "LocalMachine")
         $requestStore.Open("ReadWrite")
-        foreach ($pendingRequest in ($requestStore.Certificates | Where-Object FriendlyName -in $requestFriendlyName, $kspRequestFriendlyName)) {
+        foreach ($pendingRequest in ($requestStore.Certificates | Where-Object FriendlyName -in $requestFriendlyName, $kspRequestFriendlyName, $progressRequestFriendlyName)) {
             $requestStore.Remove($pendingRequest)
         }
         $requestStore.Close()
@@ -83,5 +84,45 @@ Describe $CommandName -Tag IntegrationTests {
         $privateKey = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($pendingRequest)
         $privateKey.Key.Provider.Provider | Should -Be "Microsoft Software Key Storage Provider"
         $WarnVar | Should -BeNullOrEmpty
+    }
+
+    Context "When the pipeline ends at the first file" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. Select-Object -First 1 stops the command at
+            # the first of the two files it returns. The request goes to a folder of its own, and the AfterAll
+            # above removes it from the REQUEST store by its friendly name.
+            $splatFirstFile = @{
+                Path         = "$requestPath\progress"
+                FriendlyName = $progressRequestFriendlyName
+            }
+            $requestRunspace = [runspacefactory]::CreateRunspace()
+            $requestRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $requestRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $requestShell = [powershell]::Create()
+            $requestShell.Runspace = $requestRunspace
+            $firstFile = $requestShell.AddCommand("New-DbaComputerCertificateSigningRequest").AddParameters($splatFirstFile).AddCommand("Select-Object").AddParameter("First", 1).Invoke()
+            $requestRecords = @($requestShell.Streams.Progress)
+            $requestShell.Dispose()
+            $requestRunspace.Dispose()
+        }
+
+        It "Returns the first file" {
+            @($firstFile).Count | Should -Be 1
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $requestRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $requestRecords | Where-Object Activity -eq "Executing New-DbaComputerCertificateSigningRequest" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
     }
 }
