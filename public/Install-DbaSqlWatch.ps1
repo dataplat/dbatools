@@ -151,51 +151,54 @@ function Install-DbaSqlWatch {
             return
         }
         $totalSteps = $stepCounter + $SqlInstance.Count * 2
-        foreach ($instance in $SqlInstance) {
-            if ($PSCmdlet.ShouldProcess($instance, "Installing SqlWatch on $Database")) {
-                try {
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+        try {
+            foreach ($instance in $SqlInstance) {
+                if ($PSCmdlet.ShouldProcess($instance, "Installing SqlWatch on $Database")) {
+                    try {
+                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                    } catch {
+                        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                    }
+
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting installing/updating SqlWatch in $database on $instance" -TotalSteps $totalSteps
+
+
+                    try {
+                        # create a publish profile and publish DACPAC
+                        $DacPacPath = Get-ChildItem -Filter "SqlWatch.dacpac" -Path $localCachedCopy -Recurse | Select-Object -ExpandProperty FullName
+                        $PublishOptions = @{
+                            RegisterDataTierApplication = $true
+                        }
+
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Publishing SqlWatch dacpac to $database on $instance" -TotalSteps $totalSteps
+                        $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $localCachedCopy -PublishOptions $PublishOptions -EnableException | Select-Object -ExpandProperty FileName
+                        $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile -EnableException
+
+                        # parse results
+                        $parens = Select-String -InputObject $PublishResults.Result -Pattern "\(([^\)]+)\)" -AllMatches
+                        if ($parens.matches) {
+                            $ExtractedResult = $parens.matches | Select-Object -Last 1
+                        }
+
+                        [PSCustomObject]@{
+                            ComputerName  = $PublishResults.ComputerName
+                            InstanceName  = $PublishResults.InstanceName
+                            SqlInstance   = $PublishResults.SqlInstance
+                            Database      = $PublishResults.Database
+                            Status        = $ExtractedResult
+                            DashboardPath = $localCachedCopy + '\SqlWatch.Dashboard'
+                        }
+                    } catch {
+                        Stop-Function -Message "DACPAC failed to publish to $database on $instance." -ErrorRecord $_ -Target $instance -Continue
+                    } finally {
+                        Remove-Item -Path $DacProfile -ErrorAction SilentlyContinue
+                    }
+
+                    Write-Message -Level Verbose -Message "Finished installing/updating SqlWatch in $database on $instance."
                 }
-
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Starting installing/updating SqlWatch in $database on $instance" -TotalSteps $totalSteps
-
-
-                try {
-                    # create a publish profile and publish DACPAC
-                    $DacPacPath = Get-ChildItem -Filter "SqlWatch.dacpac" -Path $localCachedCopy -Recurse | Select-Object -ExpandProperty FullName
-                    $PublishOptions = @{
-                        RegisterDataTierApplication = $true
-                    }
-
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Publishing SqlWatch dacpac to $database on $instance" -TotalSteps $totalSteps
-                    $DacProfile = New-DbaDacProfile -SqlInstance $server -Database $Database -Path $localCachedCopy -PublishOptions $PublishOptions -EnableException | Select-Object -ExpandProperty FileName
-                    $PublishResults = Publish-DbaDacPackage -SqlInstance $server -Database $Database -Path $DacPacPath -PublishXml $DacProfile -EnableException
-
-                    # parse results
-                    $parens = Select-String -InputObject $PublishResults.Result -Pattern "\(([^\)]+)\)" -AllMatches
-                    if ($parens.matches) {
-                        $ExtractedResult = $parens.matches | Select-Object -Last 1
-                    }
-
-                    [PSCustomObject]@{
-                        ComputerName  = $PublishResults.ComputerName
-                        InstanceName  = $PublishResults.InstanceName
-                        SqlInstance   = $PublishResults.SqlInstance
-                        Database      = $PublishResults.Database
-                        Status        = $ExtractedResult
-                        DashboardPath = $localCachedCopy + '\SqlWatch.Dashboard'
-                    }
-                } catch {
-                    Stop-Function -Message "DACPAC failed to publish to $database on $instance." -ErrorRecord $_ -Target $instance -Continue
-                } finally {
-                    Remove-Item -Path $DacProfile -ErrorAction SilentlyContinue
-                }
-
-                Write-Message -Level Verbose -Message "Finished installing/updating SqlWatch in $database on $instance."
             }
+        } finally {
+            Write-ProgressHelper -Completed
         }
-        Write-ProgressHelper -Completed
     }
 }

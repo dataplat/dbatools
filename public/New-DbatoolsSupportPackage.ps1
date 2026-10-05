@@ -169,39 +169,41 @@ Please submit this file to the team, to help with troubleshooting whatever issue
 Ideally start a new console, perform the minimal steps required to reproduce the issue, then run this command. This will make it easier for us to troubleshoot and you won't be sending us the keys to your castle.
 "@
 
-            $hash = @{ }
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting dbatools logged messages (Get-DbatoolsLog)"
-            $hash["Messages"] = Get-DbatoolsLog
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting dbatools logged errors (Get-DbatoolsLog -Errors)"
-            $hash["Errors"] = Get-DbatoolsLog -Errors
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting copy of console buffer (what you can see on your console)"
-            $hash["ConsoleBuffer"] = Get-ShellBuffer
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting Operating System information (Win32_OperatingSystem)"
-            $hash["OperatingSystem"] = Get-DbaCmObject -ClassName Win32_OperatingSystem
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting CPU information (Win32_Processor)"
-            $hash["CPU"] = Get-DbaCmObject -ClassName Win32_Processor
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting Ram information (Win32_PhysicalMemory)"
-            $hash["Ram"] = Get-DbaCmObject -ClassName Win32_PhysicalMemory
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting PowerShell & .NET Version (`$PSVersionTable)"
-            $hash["PSVersion"] = $PSVersionTable
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting Input history (Get-History)"
-            $hash["History"] = Get-History
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting list of loaded modules (Get-Module)"
-            $hash["Modules"] = Get-Module
-            # Snapins not supported in Core: https://github.com/PowerShell/PowerShell/issues/6135
-            if ($PSVersionTable.PSEdition -ne 'Core') {
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting list of loaded snapins (Get-PSSnapin)"
-                $hash["SnapIns"] = Get-PSSnapin
-            }
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting list of loaded assemblies (Name, Version, and Location)"
-            $hash["Assemblies"] = [appdomain]::CurrentDomain.GetAssemblies() | Select-Object CodeBase, FullName, Location, ImageRuntimeVersion, GlobalAssemblyCache, IsDynamic
+            try {
+                $hash = @{ }
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting dbatools logged messages (Get-DbatoolsLog)"
+                $hash["Messages"] = Get-DbatoolsLog
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting dbatools logged errors (Get-DbatoolsLog -Errors)"
+                $hash["Errors"] = Get-DbatoolsLog -Errors
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting copy of console buffer (what you can see on your console)"
+                $hash["ConsoleBuffer"] = Get-ShellBuffer
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting Operating System information (Win32_OperatingSystem)"
+                $hash["OperatingSystem"] = Get-DbaCmObject -ClassName Win32_OperatingSystem
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting CPU information (Win32_Processor)"
+                $hash["CPU"] = Get-DbaCmObject -ClassName Win32_Processor
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting Ram information (Win32_PhysicalMemory)"
+                $hash["Ram"] = Get-DbaCmObject -ClassName Win32_PhysicalMemory
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting PowerShell & .NET Version (`$PSVersionTable)"
+                $hash["PSVersion"] = $PSVersionTable
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting Input history (Get-History)"
+                $hash["History"] = Get-History
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting list of loaded modules (Get-Module)"
+                $hash["Modules"] = Get-Module
+                # Snapins not supported in Core: https://github.com/PowerShell/PowerShell/issues/6135
+                if ($PSVersionTable.PSEdition -ne 'Core') {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting list of loaded snapins (Get-PSSnapin)"
+                    $hash["SnapIns"] = Get-PSSnapin
+                }
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Collecting list of loaded assemblies (Name, Version, and Location)"
+                $hash["Assemblies"] = [appdomain]::CurrentDomain.GetAssemblies() | Select-Object CodeBase, FullName, Location, ImageRuntimeVersion, GlobalAssemblyCache, IsDynamic
 
-            if (Test-Bound "Variables") {
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding variables specified for export: $($Variables -join ", ")"
-                $hash["Variables"] = $Variables | Get-Variable -ErrorAction Ignore
+                if (Test-Bound "Variables") {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Adding variables specified for export: $($Variables -join ", ")"
+                    $hash["Variables"] = $Variables | Get-Variable -ErrorAction Ignore
+                }
+            } finally {
+                Write-ProgressHelper -Completed
             }
-
-            Write-ProgressHelper -Completed
 
             $data = [PSCustomObject]$hash
 

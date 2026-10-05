@@ -116,17 +116,20 @@ function Disable-DbaDbEncryption {
                     $db.EncryptionEnabled = $false
                     $db.Alter()
                     $stepCounter = 0
-                    do {
-                        Start-Sleep 1
-                        $db.Refresh()
-                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Disabling encryption for $($db.Name) on $($server.Name)" -TotalSteps 100
-                        if ($stepCounter -eq 100) {
-                            $stepCounter = 0
+                    try {
+                        do {
+                            Start-Sleep 1
+                            $db.Refresh()
+                            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Disabling encryption for $($db.Name) on $($server.Name)" -TotalSteps 100
+                            if ($stepCounter -eq 100) {
+                                $stepCounter = 0
+                            }
+                            Write-Message -Level Verbose -Message "Database state for $($db.Name) on $($server.Name): $($db.DatabaseEncryptionKey.EncryptionState)"
                         }
-                        Write-Message -Level Verbose -Message "Database state for $($db.Name) on $($server.Name): $($db.DatabaseEncryptionKey.EncryptionState)"
+                        while ($db.DatabaseEncryptionKey.EncryptionState -notin "Unencrypted", "None")
+                    } finally {
+                        Write-ProgressHelper -Completed
                     }
-                    while ($db.DatabaseEncryptionKey.EncryptionState -notin "Unencrypted", "None")
-                    Write-ProgressHelper -Completed
 
                     if (-not $NoEncryptionKeyDrop) {
                         # https://www.sqlservercentral.com/steps/stairway-to-tde-removing-tde-from-a-database

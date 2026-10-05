@@ -206,21 +206,23 @@ function Save-DbaDiagnosticQueryScript {
 
     Write-Message -Level Verbose -Message "Found $($glenberrysql.Count) documents to download"
 
-    foreach ($doc in $glenberrysql) {
-        try {
-            $link = $doc.URL.ToString()
-            # Extra safety: clean HTML entities one more time before download
-            $link = $link -replace '&amp;', '&'
-            Write-Message -Level Verbose -Message "Downloading $link"
-            Write-ProgressHelper -Activity "Downloading Glenn Berry's most recent DMVs" -ExcludePercent -Message "Downloading $link" -StepNumber 1
-            $filename = Join-Path -Path $Path -ChildPath "SQLServerDiagnosticQueries_$($doc.SQLVersion).sql"
-            Invoke-TlsWebRequest -Uri $link -OutFile $filename -ErrorAction Stop
-            Get-ChildItem -Path $filename
-        } catch {
-            Write-ProgressHelper -Completed
-            Stop-Function -Message "Requesting and writing file failed: $_" -Target $filename -ErrorRecord $_
-            return
+    try {
+        foreach ($doc in $glenberrysql) {
+            try {
+                $link = $doc.URL.ToString()
+                # Extra safety: clean HTML entities one more time before download
+                $link = $link -replace '&amp;', '&'
+                Write-Message -Level Verbose -Message "Downloading $link"
+                Write-ProgressHelper -Activity "Downloading Glenn Berry's most recent DMVs" -ExcludePercent -Message "Downloading $link" -StepNumber 1
+                $filename = Join-Path -Path $Path -ChildPath "SQLServerDiagnosticQueries_$($doc.SQLVersion).sql"
+                Invoke-TlsWebRequest -Uri $link -OutFile $filename -ErrorAction Stop
+                Get-ChildItem -Path $filename
+            } catch {
+                Stop-Function -Message "Requesting and writing file failed: $_" -Target $filename -ErrorRecord $_
+                return
+            }
         }
+    } finally {
+        Write-ProgressHelper -Completed
     }
-    Write-ProgressHelper -Completed
 }

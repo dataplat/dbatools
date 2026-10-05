@@ -116,38 +116,41 @@ function Remove-DbaNetworkCertificate {
 
             if ([System.String]::IsNullOrEmpty($vsname)) { $vsname = $instance }
 
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Regroot: $regRoot"
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "ServiceAcct: $serviceAccount"
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instanceName"
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "VSNAME: $vsname"
+            try {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Regroot: $regRoot"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "ServiceAcct: $serviceAccount"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "InstanceName: $instanceName"
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "VSNAME: $vsname"
 
-            $scriptblock = {
-                $regRoot = $args[0]
-                $serviceAccount = $args[1]
-                $instanceName = $args[2]
-                $vsname = $args[3]
+                $scriptblock = {
+                    $regRoot = $args[0]
+                    $serviceAccount = $args[1]
+                    $instanceName = $args[2]
+                    $vsname = $args[3]
 
-                $regPath = "Registry::HKEY_LOCAL_MACHINE\$($regRoot)\MSSQLServer\SuperSocketNetLib"
-                $thumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
-                Set-ItemProperty -Path $regPath -Name Certificate -Value $null
+                    $regPath = "Registry::HKEY_LOCAL_MACHINE\$($regRoot)\MSSQLServer\SuperSocketNetLib"
+                    $thumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
+                    Set-ItemProperty -Path $regPath -Name Certificate -Value $null
 
-                [PSCustomObject]@{
-                    ComputerName      = $env:COMPUTERNAME
-                    InstanceName      = $instanceName
-                    SqlInstance       = $vsname
-                    ServiceAccount    = $serviceAccount
-                    RemovedThumbprint = $thumbprint
+                    [PSCustomObject]@{
+                        ComputerName      = $env:COMPUTERNAME
+                        InstanceName      = $instanceName
+                        SqlInstance       = $vsname
+                        ServiceAccount    = $serviceAccount
+                        RemovedThumbprint = $thumbprint
+                    }
                 }
-            }
 
-            if ($PScmdlet.ShouldProcess("local", "Connecting to $ComputerName to remove the cert")) {
-                try {
-                    Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regRoot, $serviceAccount, $instanceName, $vsname -ScriptBlock $scriptblock -ErrorAction Stop
-                } catch {
-                    Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
+                if ($PScmdlet.ShouldProcess("local", "Connecting to $ComputerName to remove the cert")) {
+                    try {
+                        Invoke-Command2 -ComputerName $resolved.fqdn -Credential $Credential -ArgumentList $regRoot, $serviceAccount, $instanceName, $vsname -ScriptBlock $scriptblock -ErrorAction Stop
+                    } catch {
+                        Stop-Function -Message "Failed to connect to $($resolved.fqdn) using PowerShell remoting." -ErrorRecord $_ -Target $instance -Continue
+                    }
                 }
+            } finally {
+                Write-ProgressHelper -Completed
             }
-            Write-ProgressHelper -Completed
         }
     }
 }

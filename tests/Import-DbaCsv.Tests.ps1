@@ -1130,4 +1130,73 @@ all,filled,here
             Remove-Item $filePath -ErrorAction SilentlyContinue
         }
     }
+
+    Context "When the pipeline is stopped during the type detection" {
+        BeforeAll {
+            # A file large enough that the full scan of -DetectColumnTypes reports its progress for a while.
+            $inferPath = "$TestDrive\progressinfer.csv"
+            $inferWriter = New-Object System.IO.StreamWriter -ArgumentList $inferPath
+            $inferWriter.WriteLine("Id,Name,Amount,Created,Flag")
+            for ($i = 0; $i -lt 200000; $i++) {
+                $inferWriter.WriteLine("$i,Name$i,$($i * 1.5),2024-01-01 10:00:00,1")
+            }
+            $inferWriter.Close()
+            $inferTable = "progressinfer_$(Get-Random)"
+
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. The pipeline is stopped as soon as the type
+            # detection reports its first progress, which is what Ctrl+C does; the table is not created yet.
+            # The runspace imports the manifest: an import of the psm1 without a command line skips the type data.
+            $splatStopImport = @{
+                Path              = $inferPath
+                SqlInstance       = $TestConfig.InstanceMulti1
+                Database          = "tempdb"
+                Table             = $inferTable
+                AutoCreateTable   = $true
+                DetectColumnTypes = $true
+            }
+            if ($TestConfig.SqlCred) {
+                $splatStopImport.SqlCredential = $TestConfig.SqlCred
+            }
+            $stopRunspace = [runspacefactory]::CreateRunspace()
+            $stopRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $stopRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $stopShell = [powershell]::Create()
+            $stopShell.Runspace = $stopRunspace
+            $null = $stopShell.AddCommand("Import-DbaCsv").AddParameters($splatStopImport)
+            $stopAsync = $stopShell.BeginInvoke()
+            $stopWatch = [System.Diagnostics.Stopwatch]::StartNew()
+            while (-not ($stopShell.Streams.Progress | Where-Object Activity -eq "Analyzing column types") -and -not $stopAsync.IsCompleted -and $stopWatch.Elapsed.TotalSeconds -lt 60) {
+                Start-Sleep -Milliseconds 10
+            }
+            $stopShell.Stop()
+            $stopState = $stopShell.InvocationStateInfo.State
+            $stopRecords = @($stopShell.Streams.Progress)
+            $stopShell.Dispose()
+            $stopRunspace.Dispose()
+        }
+
+        AfterAll {
+            # Only there if the run was not stopped in time.
+            Get-DbaDbTable -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb -Table $inferTable -ErrorAction SilentlyContinue | Remove-DbaDbTable -ErrorAction SilentlyContinue
+        }
+
+        It "Was stopped while it was running" {
+            $stopState | Should -Be "Stopped"
+        }
+
+        It "Completes the bar of the type detection" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $stopRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $stopRecords | Where-Object Activity -eq "Analyzing column types" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }

@@ -124,6 +124,51 @@ CREATE LOGIN [$stateTestLogin]
             $destLoginAfter.IsDisabled | Should -Be $true
         }
     }
+
+    Context "When the pipeline ends at the first login" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. Select-Object -First 1 stops the command at
+            # the result of the first login. The runspace imports the manifest: an import of the psm1 without a
+            # command line skips the type data.
+            $splatFirstLogin = @{
+                Source      = $TestConfig.InstanceMulti1
+                Destination = $TestConfig.InstanceMulti2
+                Login       = $DBUserName
+            }
+            if ($TestConfig.SqlCred) {
+                $splatFirstLogin.SourceSqlCredential = $TestConfig.SqlCred
+                $splatFirstLogin.DestinationSqlCredential = $TestConfig.SqlCred
+            }
+            $syncRunspace = [runspacefactory]::CreateRunspace()
+            $syncRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $syncRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $syncShell = [powershell]::Create()
+            $syncShell.Runspace = $syncRunspace
+            $firstLogin = $syncShell.AddCommand("Sync-DbaLoginPermission").AddParameters($splatFirstLogin).AddCommand("Select-Object").AddParameter("First", 1).Invoke()
+            $syncRecords = @($syncShell.Streams.Progress)
+            $syncShell.Dispose()
+            $syncRunspace.Dispose()
+        }
+
+        It "Syncs the login" {
+            $firstLogin.Status | Should -Be "Successful"
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $syncRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $syncRecords | Where-Object Activity -like "Executing Sync-DbaLoginPermission*" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
