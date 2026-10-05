@@ -377,17 +377,19 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
-    Context "When the setup folder is empty" {
+    Context "When the computer cannot be reached" {
         BeforeAll {
             # The command runs in a runspace of its own, created by the PowerShell API without a host. There
             # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
             # as an Id with records but without a completed one. The runspace imports its own copy of the
-            # module, so the mocks above do not reach it: this is the real command on the local computer.
-            # It finds no setup file in the empty folder, warns and installs nothing; WhatIf is only a guard.
+            # module, so the mocks above do not reach it: this is the real command.
+            # The top level domain invalid never resolves, so the check for a pending reboot fails, the command
+            # warns and installs nothing; WhatIf is only a guard. The local computer is no target here: when it
+            # has a reboot pending, as the CI runners can, the command stops at that check with another warning.
             $emptySetupPath = "$TestDrive\EmptySetup"
             $null = New-Item -Path $emptySetupPath -ItemType Directory -Force
-            $splatEmptyInstall = @{
-                SqlInstance = $env:COMPUTERNAME
+            $splatUnreachableInstall = @{
+                SqlInstance = "progressleak$(Get-Random).invalid"
                 Version     = "2022"
                 Path        = $emptySetupPath
                 WhatIf      = $true
@@ -402,15 +404,15 @@ Describe $CommandName -Tag IntegrationTests {
 
             $installShell = [powershell]::Create()
             $installShell.Runspace = $installRunspace
-            $null = $installShell.AddCommand("Install-DbaInstance").AddParameters($splatEmptyInstall).Invoke()
+            $null = $installShell.AddCommand("Install-DbaInstance").AddParameters($splatUnreachableInstall).Invoke()
             $installWarnings = @($installShell.Streams.Warning | ForEach-Object { $PSItem.Message })
             $installRecords = @($installShell.Streams.Progress)
             $installShell.Dispose()
             $installRunspace.Dispose()
         }
 
-        It "Warns that the setup file is missing" {
-            ($installWarnings -join " ") | Should -Match "Failed to find setup file for SQL2022"
+        It "Warns that it cannot check for a pending reboot" {
+            ($installWarnings -join " ") | Should -Match "Failed to get reboot status"
         }
 
         It "Completes its progress bar" {
