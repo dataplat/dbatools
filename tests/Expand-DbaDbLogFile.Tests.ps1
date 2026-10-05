@@ -169,4 +169,50 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "Completes its progress bars" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. The bar of the database and the bar of the
+            # growth below it used to stay even after a run that worked. The runspace imports the manifest: an
+            # import of the psm1 without a command line skips the type data.
+            $splatGrowAgain = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Database      = $db1Name
+                TargetLogSize = 160
+                Confirm       = $false
+            }
+            if ($TestConfig.SqlCred) {
+                $splatGrowAgain.SqlCredential = $TestConfig.SqlCred
+            }
+            $growRunspace = [runspacefactory]::CreateRunspace()
+            $growRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $growRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $growShell = [powershell]::Create()
+            $growShell.Runspace = $growRunspace
+            $growResult = $growShell.AddCommand("Expand-DbaDbLogFile").AddParameters($splatGrowAgain).Invoke()
+            $growRecords = @($growShell.Streams.Progress)
+            $growShell.Dispose()
+            $growRunspace.Dispose()
+        }
+
+        It "Grows the log file" {
+            $growResult.Database | Should -Be $db1Name
+        }
+
+        It "Completes the bar of the database and the bar of the growth" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $growRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $growRecords | Where-Object Activity -like "Using database: $db1Name*" | Should -Not -BeNullOrEmpty
+            $growRecords | Where-Object Activity -like "Growing file*" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }

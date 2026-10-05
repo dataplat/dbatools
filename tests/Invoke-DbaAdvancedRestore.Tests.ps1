@@ -325,4 +325,52 @@ Describe $CommandName -Tag IntegrationTests {
             $WarnVar | Should -BeNullOrEmpty
         }
     }
+
+    Context "When the pipeline ends at the first backup file" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. Select-Object -First 1 stops the command at
+            # the result of the full backup, before the log backup, which leaves the database restoring; the
+            # AfterAll of this file removes it. The runspace imports the manifest: an import of the psm1 without
+            # a command line skips the type data. It has none of the default parameter values of the tests, so
+            # Confirm is passed here.
+            $splatFirstFile = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                WithReplace = $true
+                Confirm     = $false
+            }
+            if ($TestConfig.SqlCred) {
+                $splatFirstFile.SqlCredential = $TestConfig.SqlCred
+            }
+            $restoreRunspace = [runspacefactory]::CreateRunspace()
+            $restoreRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $restoreRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $restoreShell = [powershell]::Create()
+            $restoreShell.Runspace = $restoreRunspace
+            $null = $restoreShell.AddCommand("Invoke-DbaAdvancedRestore").AddParameters($splatFirstFile).AddCommand("Select-Object").AddParameter("First", 1)
+            $firstFileResult = $restoreShell.Invoke($backupHistory)
+            $restoreRecords = @($restoreShell.Streams.Progress)
+            $restoreShell.Dispose()
+            $restoreRunspace.Dispose()
+        }
+
+        It "Returns the result of the full backup only" {
+            @($firstFileResult).Count | Should -Be 1
+            $firstFileResult.NoRecovery | Should -BeTrue
+        }
+
+        It "Completes the bar of the database and the bar of the backup file" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $restoreRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $restoreRecords | Where-Object Activity -like "Restoring $restoreDbName*" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }

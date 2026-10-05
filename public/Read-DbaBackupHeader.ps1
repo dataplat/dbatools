@@ -334,47 +334,50 @@ function Read-DbaBackupHeader {
                 Write-Message -Level Warning -Message "File $file does not exist or access denied. The SQL Server service account may not have access to the source directory."
             }
         }
-        #receive runspaces
-        while ($threads | Where-Object { $_.isRetrieved -eq $false }) {
-            $totalThreads = ($threads | Measure-Object).Count
-            $totalRetrievedThreads = ($threads | Where-Object { $_.isRetrieved -eq $true } | Measure-Object).Count
-            Write-Progress -Id 1 -Activity Updating -Status 'Progress' -CurrentOperation "Scanning Restore headers: $totalRetrievedThreads/$totalThreads" -PercentComplete ($totalRetrievedThreads / $totalThreads * 100)
-            foreach ($thread in ($threads | Where-Object { $_.isRetrieved -eq $false })) {
-                if ($thread.Handle.IsCompleted) {
-                    $dataTable = $thread.thread.EndInvoke($thread.handle)
-                    $thread.isRetrieved = $true
-                    #Check if thread had any errors
-                    if ($thread.thread.HadErrors) {
-                        if ($thread.deviceType -eq 'FILE') {
-                            Stop-Function -Message "Problem found with $($thread.file)." -Target $thread.file -ErrorRecord $thread.thread.Streams.Error -Continue
+        try {
+            #receive runspaces
+            while ($threads | Where-Object { $_.isRetrieved -eq $false }) {
+                $totalThreads = ($threads | Measure-Object).Count
+                $totalRetrievedThreads = ($threads | Where-Object { $_.isRetrieved -eq $true } | Measure-Object).Count
+                Write-Progress -Id 1 -Activity Updating -Status 'Progress' -CurrentOperation "Scanning Restore headers: $totalRetrievedThreads/$totalThreads" -PercentComplete ($totalRetrievedThreads / $totalThreads * 100)
+                foreach ($thread in ($threads | Where-Object { $_.isRetrieved -eq $false })) {
+                    if ($thread.Handle.IsCompleted) {
+                        $dataTable = $thread.thread.EndInvoke($thread.handle)
+                        $thread.isRetrieved = $true
+                        #Check if thread had any errors
+                        if ($thread.thread.HadErrors) {
+                            if ($thread.deviceType -eq 'FILE') {
+                                Stop-Function -Message "Problem found with $($thread.file)." -Target $thread.file -ErrorRecord $thread.thread.Streams.Error -Continue
+                            } else {
+                                Stop-Function -Message "Unable to read $($thread.file), check credential $StorageCredential and network connectivity." -Target $thread.file -ErrorRecord $thread.thread.Streams.Error -Continue
+                            }
+                        }
+                        #Process the result of this thread
+
+                        $dbVersion = $dataTable[0].DatabaseVersion
+                        $SqlVersion = (Convert-DbVersionToSqlVersion $dbVersion)
+                        foreach ($row in $dataTable) {
+                            $row.SqlVersion = $SqlVersion
+                            if ($row.BackupName -eq "*** INCOMPLETE ***") {
+                                Stop-Function -Message "$($thread.file) appears to be from a new version of SQL Server than $SqlInstance, skipping" -Target $thread.file -Continue
+                            }
+                        }
+                        if ($Simple) {
+                            $dataTable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSize, CompressedBackupSize, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
+                        } elseif ($FileList) {
+                            $dataTable.filelist
                         } else {
-                            Stop-Function -Message "Unable to read $($thread.file), check credential $StorageCredential and network connectivity." -Target $thread.file -ErrorRecord $thread.thread.Streams.Error -Continue
+                            $dataTable
                         }
-                    }
-                    #Process the result of this thread
 
-                    $dbVersion = $dataTable[0].DatabaseVersion
-                    $SqlVersion = (Convert-DbVersionToSqlVersion $dbVersion)
-                    foreach ($row in $dataTable) {
-                        $row.SqlVersion = $SqlVersion
-                        if ($row.BackupName -eq "*** INCOMPLETE ***") {
-                            Stop-Function -Message "$($thread.file) appears to be from a new version of SQL Server than $SqlInstance, skipping" -Target $thread.file -Continue
-                        }
+                        $thread.thread.Dispose()
                     }
-                    if ($Simple) {
-                        $dataTable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSize, CompressedBackupSize, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
-                    } elseif ($FileList) {
-                        $dataTable.filelist
-                    } else {
-                        $dataTable
-                    }
-
-                    $thread.thread.Dispose()
                 }
+                Start-Sleep -Milliseconds 500
             }
-            Start-Sleep -Milliseconds 500
+        } finally {
+            Write-Progress -Id 1 -Activity Updating -Completed
         }
-        Write-Progress -Id 1 -Activity Updating -Completed
         #Close the runspace pool
         $runspacePool.Close()
         [System.Management.Automation.Runspaces.Runspace]::DefaultRunspace = $defaultrunspace
