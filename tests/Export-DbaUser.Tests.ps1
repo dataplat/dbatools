@@ -319,4 +319,49 @@ Describe $CommandName -Tag IntegrationTests {
             $WarnVar | Should -Match "does not exist on the destination version"
         }
     }
+
+    Context "When the pipeline ends at the script" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. Select-Object -First 1 stops the command at
+            # the script of the user. The runspace imports the manifest: an import of the psm1 without a
+            # command line skips the type data.
+            $splatFirstUser = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbname
+                User        = $user
+                Passthru    = $true
+            }
+            if ($TestConfig.SqlCred) {
+                $splatFirstUser.SqlCredential = $TestConfig.SqlCred
+            }
+            $exportRunspace = [runspacefactory]::CreateRunspace()
+            $exportRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $exportRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $exportShell = [powershell]::Create()
+            $exportShell.Runspace = $exportRunspace
+            $firstUserScript = $exportShell.AddCommand("Export-DbaUser").AddParameters($splatFirstUser).AddCommand("Select-Object").AddParameter("First", 1).Invoke()
+            $exportRecords = @($exportShell.Streams.Progress)
+            $exportShell.Dispose()
+            $exportRunspace.Dispose()
+        }
+
+        It "Returns the script of the user" {
+            "$firstUserScript" | Should -Match "CREATE USER"
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $exportRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $exportRecords | Where-Object Activity -eq "Exporting from $dbname" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }

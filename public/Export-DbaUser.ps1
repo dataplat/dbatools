@@ -291,361 +291,364 @@ function Export-DbaUser {
             }
 
             $stepCounter = 0
-            foreach ($dbuser in $users) {
-                # Clear output for each user
-                $outsql = @()
-                $sql = ""
+            try {
+                foreach ($dbuser in $users) {
+                    # Clear output for each user
+                    $outsql = @()
+                    $sql = ""
 
-                if ($GenerateFilePerUser) {
-                    if ($null -eq $usersProcessed[$dbuser.Name]) {
-                        # If user and not specific output file, create file name without database name.
-                        $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $("$($db.Parent.Name)-$($dbuser.Name)") -Unique
-                        $usersProcessed[$dbuser.Name] = $FilePath
+                    if ($GenerateFilePerUser) {
+                        if ($null -eq $usersProcessed[$dbuser.Name]) {
+                            # If user and not specific output file, create file name without database name.
+                            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $("$($db.Parent.Name)-$($dbuser.Name)") -Unique
+                            $usersProcessed[$dbuser.Name] = $FilePath
+                        } else {
+                            $Append = $true
+                            $FilePath = $usersProcessed[$dbuser.Name]
+                        }
+                    }
+
+                    if ($Passthru) {
+                        $progressMessage = "Generating script for user $dbuser"
                     } else {
-                        $Append = $true
-                        $FilePath = $usersProcessed[$dbuser.Name]
+                        $progressMessage = "Generating script ($FilePath) for user $dbuser"
                     }
-                }
+                    Write-ProgressHelper -TotalSteps $users.Count -Activity "Exporting from $($db.Name)" -StepNumber ($stepCounter++) -Message $progressMessage
 
-                if ($Passthru) {
-                    $progressMessage = "Generating script for user $dbuser"
-                } else {
-                    $progressMessage = "Generating script ($FilePath) for user $dbuser"
-                }
-                Write-ProgressHelper -TotalSteps $users.Count -Activity "Exporting from $($db.Name)" -StepNumber ($stepCounter++) -Message $progressMessage
+                    #setting database
+                    if (((Test-Bound ScriptingOptionsObject) -and $ScriptingOptionsObject.IncludeDatabaseContext) -or - (Test-Bound ScriptingOptionsObject -Not)) {
+                        $useDatabase = "USE [" + $db.Name + "]"
+                    }
 
-                #setting database
-                if (((Test-Bound ScriptingOptionsObject) -and $ScriptingOptionsObject.IncludeDatabaseContext) -or - (Test-Bound ScriptingOptionsObject -Not)) {
-                    $useDatabase = "USE [" + $db.Name + "]"
-                }
+                    try {
+                        <#
+                        In this approach, we do not maintain a variable to track the roles that have been scripted. Our method involves a
+                        consistent verification process for each user against the complete list of roles. This ensures that we dynamically
+                        include only the roles to which a user belongs. For example, consider two users: user1 is associated with role1 and
+                        role2, while user2 is associated with role1 and role3.
 
-                try {
-                    <#
-                    In this approach, we do not maintain a variable to track the roles that have been scripted. Our method involves a
-                    consistent verification process for each user against the complete list of roles. This ensures that we dynamically
-                    include only the roles to which a user belongs. For example, consider two users: user1 is associated with role1 and
-                    role2, while user2 is associated with role1 and role3.
+                        Attempting to memorize the scripted roles could result in Transact-SQL (T-SQL) statements such as:
 
-                    Attempting to memorize the scripted roles could result in Transact-SQL (T-SQL) statements such as:
+                        IF NOT EXISTS (role1)
+                          CREATE ROLE role1
+                        IF NOT EXISTS (role2)
+                          CREATE ROLE role2
+                        IF NOT EXISTS (user1)
+                          CREATE USER user1
+                        ADD user1 TO role1
+                        ADD user1 TO role2
 
-                    IF NOT EXISTS (role1)
-                      CREATE ROLE role1
-                    IF NOT EXISTS (role2)
-                      CREATE ROLE role2
-                    IF NOT EXISTS (user1)
-                      CREATE USER user1
-                    ADD user1 TO role1
-                    ADD user1 TO role2
+                        -- And for another user:
 
-                    -- And for another user:
+                        IF NOT EXISTS (role3)
+                          CREATE ROLE role3
+                        IF NOT EXISTS (user2)
+                          CREATE USER user2
+                        ADD user2 TO role1
+                        ADD user2 TO role3
 
-                    IF NOT EXISTS (role3)
-                      CREATE ROLE role3
-                    IF NOT EXISTS (user2)
-                      CREATE USER user2
-                    ADD user2 TO role1
-                    ADD user2 TO role3
+                        However, this script inadvertently introduces a dependency issue. To ensure user2 is properly configured, the script
+                        segment for user1 must be executed first due to the shared role1. To circumvent this issue and remove interdependencies,
+                        we opt to match each user against all potential roles. Consequently, roles are scripted per user membership, resulting
+                        in T-SQL like:
 
-                    However, this script inadvertently introduces a dependency issue. To ensure user2 is properly configured, the script
-                    segment for user1 must be executed first due to the shared role1. To circumvent this issue and remove interdependencies,
-                    we opt to match each user against all potential roles. Consequently, roles are scripted per user membership, resulting
-                    in T-SQL like:
+                        IF NOT EXISTS (role1)
+                          CREATE ROLE role1
+                        IF NOT EXISTS (role2)
+                          CREATE ROLE role2
+                        IF NOT EXISTS (user1)
+                          CREATE USER user1
+                        ADD user1 TO role1
+                        ADD user1 TO role2
 
-                    IF NOT EXISTS (role1)
-                      CREATE ROLE role1
-                    IF NOT EXISTS (role2)
-                      CREATE ROLE role2
-                    IF NOT EXISTS (user1)
-                      CREATE USER user1
-                    ADD user1 TO role1
-                    ADD user1 TO role2
+                        -- And for another user:
 
-                    -- And for another user:
+                        IF NOT EXISTS (role1)
+                          CREATE ROLE role1
+                        IF NOT EXISTS (role3)
+                          CREATE ROLE role3
+                        IF NOT EXISTS (user2)
+                          CREATE USER user2
+                        ADD user2 TO role1
+                        ADD user2 TO role3
 
-                    IF NOT EXISTS (role1)
-                      CREATE ROLE role1
-                    IF NOT EXISTS (role3)
-                      CREATE ROLE role3
-                    IF NOT EXISTS (user2)
-                      CREATE USER user2
-                    ADD user2 TO role1
-                    ADD user2 TO role3
-
-                    While this method may produce some redundant code (e.g., checking and creating role1 twice), it guarantees that each
-                    portion of the script is self-sufficient and can be executed independently of others. Therefore, users can selectively
-                    execute any segment of the script without concern for execution order or dependencies.
-                    #>
-                    #Fixed Roles #Dependency Issue. Create Role, before add to role.
-                    foreach ($role in ($db.Roles | Where-Object { $_.IsFixedRole -eq $false })) {
-                        # Check if the user is a member of the role
-                        $isUserMember = $role.EnumMembers() | Where-Object { $_ -eq $dbuser.Name }
-                        if ($isUserMember) {
-                            foreach ($rolePermissionScript in $role.Script($ScriptingOptionsObject)) {
-                                $outsql += "$($rolePermissionScript.ToString())"
+                        While this method may produce some redundant code (e.g., checking and creating role1 twice), it guarantees that each
+                        portion of the script is self-sufficient and can be executed independently of others. Therefore, users can selectively
+                        execute any segment of the script without concern for execution order or dependencies.
+                        #>
+                        #Fixed Roles #Dependency Issue. Create Role, before add to role.
+                        foreach ($role in ($db.Roles | Where-Object { $_.IsFixedRole -eq $false })) {
+                            # Check if the user is a member of the role
+                            $isUserMember = $role.EnumMembers() | Where-Object { $_ -eq $dbuser.Name }
+                            if ($isUserMember) {
+                                foreach ($rolePermissionScript in $role.Script($ScriptingOptionsObject)) {
+                                    $outsql += "$($rolePermissionScript.ToString())"
+                                }
                             }
                         }
-                    }
 
-                    #Database Create User(s) and add to Role(s)
-                    foreach ($dbUserPermissionScript in $dbuser.Script($ScriptingOptionsObject)) {
-                        if ($dbuserPermissionScript.Contains("sp_addrolemember")) {
-                            $execute = "EXEC "
-                        } else {
-                            $execute = ""
+                        #Database Create User(s) and add to Role(s)
+                        foreach ($dbUserPermissionScript in $dbuser.Script($ScriptingOptionsObject)) {
+                            if ($dbuserPermissionScript.Contains("sp_addrolemember")) {
+                                $execute = "EXEC "
+                            } else {
+                                $execute = ""
+                            }
+                            $permissionScript = $dbUserPermissionScript.ToString()
+                            if ($Template) {
+                                $escapedUsername = [regex]::Escape($dbuser.Name)
+                                $permissionScript = $permissionScript -replace "\`[$escapedUsername\`]", '[{templateUser}]'
+                                $permissionScript = $permissionScript -replace "'$escapedUsername'", "'{templateUser}'"
+                                if ($dbuser.Login) {
+                                    $escapedLogin = [regex]::Escape($dbuser.Login)
+                                    $permissionScript = $permissionScript -replace "\`[$escapedLogin\`]", '[{templateLogin}]'
+                                    $permissionScript = $permissionScript -replace "'$escapedLogin'", "'{templateLogin}'"
+                                }
+
+                            }
+                            $outsql += "$execute$($permissionScript)"
                         }
-                        $permissionScript = $dbUserPermissionScript.ToString()
-                        if ($Template) {
-                            $escapedUsername = [regex]::Escape($dbuser.Name)
-                            $permissionScript = $permissionScript -replace "\`[$escapedUsername\`]", '[{templateUser}]'
-                            $permissionScript = $permissionScript -replace "'$escapedUsername'", "'{templateUser}'"
-                            if ($dbuser.Login) {
-                                $escapedLogin = [regex]::Escape($dbuser.Login)
-                                $permissionScript = $permissionScript -replace "\`[$escapedLogin\`]", '[{templateLogin}]'
-                                $permissionScript = $permissionScript -replace "'$escapedLogin'", "'{templateLogin}'"
+
+                        #Database Permissions
+                        foreach ($databasePermission in $db.EnumDatabasePermissions() | Where-Object { @("sa", "dbo", "information_schema", "sys") -notcontains $_.Grantee -and $_.Grantee -notlike "##*" -and ($dbuser.Name -contains $_.Grantee) }) {
+                            if ($databasePermission.PermissionState -eq "GrantWithGrant") {
+                                $withGrant = " WITH GRANT OPTION"
+                                $grantDatabasePermission = 'GRANT'
+                            } else {
+                                $withGrant = ""
+                                $grantDatabasePermission = $databasePermission.PermissionState.ToString().ToUpper()
+                            }
+                            if ($Template) {
+                                $grantee = "{templateUser}"
+                            } else {
+                                $grantee = $databasePermission.Grantee
                             }
 
-                        }
-                        $outsql += "$execute$($permissionScript)"
-                    }
-
-                    #Database Permissions
-                    foreach ($databasePermission in $db.EnumDatabasePermissions() | Where-Object { @("sa", "dbo", "information_schema", "sys") -notcontains $_.Grantee -and $_.Grantee -notlike "##*" -and ($dbuser.Name -contains $_.Grantee) }) {
-                        if ($databasePermission.PermissionState -eq "GrantWithGrant") {
-                            $withGrant = " WITH GRANT OPTION"
-                            $grantDatabasePermission = 'GRANT'
-                        } else {
-                            $withGrant = ""
-                            $grantDatabasePermission = $databasePermission.PermissionState.ToString().ToUpper()
-                        }
-                        if ($Template) {
-                            $grantee = "{templateUser}"
-                        } else {
-                            $grantee = $databasePermission.Grantee
+                            $outsql += "$($grantDatabasePermission) $($databasePermission.PermissionType) TO [$grantee]$withGrant AS [$($databasePermission.Grantor)];"
                         }
 
-                        $outsql += "$($grantDatabasePermission) $($databasePermission.PermissionType) TO [$grantee]$withGrant AS [$($databasePermission.Grantor)];"
-                    }
+                        #Database Object Permissions
+                        # NB: This is a bit of a mess for a couple of reasons
+                        # 1. $db.EnumObjectPermissions() doesn't enumerate all object types
+                        # 2. Some (x)Collection types can have EnumObjectPermissions() called
+                        #    on them directly (e.g. AssemblyCollection); others can't (e.g.
+                        #    ApplicationRoleCollection). Those that can't we iterate the
+                        #    collection explicitly and add each object's permission.
 
-                    #Database Object Permissions
-                    # NB: This is a bit of a mess for a couple of reasons
-                    # 1. $db.EnumObjectPermissions() doesn't enumerate all object types
-                    # 2. Some (x)Collection types can have EnumObjectPermissions() called
-                    #    on them directly (e.g. AssemblyCollection); others can't (e.g.
-                    #    ApplicationRoleCollection). Those that can't we iterate the
-                    #    collection explicitly and add each object's permission.
+                        $perms = New-Object System.Collections.ArrayList
 
-                    $perms = New-Object System.Collections.ArrayList
+                        $null = $perms.AddRange($db.EnumObjectPermissions($dbuser.Name))
 
-                    $null = $perms.AddRange($db.EnumObjectPermissions($dbuser.Name))
-
-                    foreach ($item in $db.ApplicationRoles) {
-                        $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
-                    }
-
-                    foreach ($item in $db.Assemblies) {
-                        $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
-                    }
-
-                    foreach ($item in $db.Certificates) {
-                        $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
-                    }
-
-                    foreach ($item in $db.DatabaseRoles) {
-                        $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
-                    }
-
-                    foreach ($item in $db.FullTextCatalogs) {
-                        $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
-                    }
-
-                    foreach ($item in $db.FullTextStopLists) {
-                        $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
-                    }
-
-                    foreach ($item in $db.SearchPropertyLists) {
-                        $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
-                    }
-
-                    foreach ($item in $db.ServiceBroker.MessageTypes) {
-                        $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
-                    }
-
-                    foreach ($item in $db.RemoteServiceBindings) {
-                        $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
-                    }
-
-                    foreach ($item in $db.ServiceBroker.Routes) {
-                        $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
-                    }
-
-                    foreach ($item in $db.ServiceBroker.ServiceContracts) {
-                        $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
-                    }
-
-                    foreach ($item in $db.ServiceBroker.Services) {
-                        $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
-                    }
-
-                    if ($scriptVersion -ne "Version80") {
-                        foreach ($item in $db.AsymmetricKeys) {
+                        foreach ($item in $db.ApplicationRoles) {
                             $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                         }
-                    }
 
-                    foreach ($item in $db.SymmetricKeys) {
-                        $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
-                    }
+                        foreach ($item in $db.Assemblies) {
+                            $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
+                        }
 
-                    foreach ($item in $db.XmlSchemaCollections) {
-                        $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
-                    }
+                        foreach ($item in $db.Certificates) {
+                            $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
+                        }
 
-                    foreach ($objectPermission in $perms | Where-Object { @("sa", "dbo", "information_schema", "sys") -notcontains $_.Grantee -and $_.Grantee -notlike "##*" -and $_.Grantee -eq $dbuser.Name }) {
-                        switch ($objectPermission.ObjectClass) {
-                            'ApplicationRole' {
-                                $object = 'APPLICATION ROLE::[{0}]' -f $objectPermission.ObjectName
+                        foreach ($item in $db.DatabaseRoles) {
+                            $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
+                        }
+
+                        foreach ($item in $db.FullTextCatalogs) {
+                            $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
+                        }
+
+                        foreach ($item in $db.FullTextStopLists) {
+                            $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
+                        }
+
+                        foreach ($item in $db.SearchPropertyLists) {
+                            $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
+                        }
+
+                        foreach ($item in $db.ServiceBroker.MessageTypes) {
+                            $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
+                        }
+
+                        foreach ($item in $db.RemoteServiceBindings) {
+                            $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
+                        }
+
+                        foreach ($item in $db.ServiceBroker.Routes) {
+                            $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
+                        }
+
+                        foreach ($item in $db.ServiceBroker.ServiceContracts) {
+                            $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
+                        }
+
+                        foreach ($item in $db.ServiceBroker.Services) {
+                            $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
+                        }
+
+                        if ($scriptVersion -ne "Version80") {
+                            foreach ($item in $db.AsymmetricKeys) {
+                                $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
                             }
-                            'AsymmetricKey' {
-                                $object = 'ASYMMETRIC KEY::[{0}]' -f $objectPermission.ObjectName
-                            }
-                            'Certificate' {
-                                $object = 'CERTIFICATE::[{0}]' -f $objectPermission.ObjectName
-                            }
-                            'DatabaseRole' {
-                                $object = 'ROLE::[{0}]' -f $objectPermission.ObjectName
-                            }
-                            'FullTextCatalog' {
-                                $object = 'FULLTEXT CATALOG::[{0}]' -f $objectPermission.ObjectName
-                            }
-                            'FullTextStopList' {
-                                $object = 'FULLTEXT STOPLIST::[{0}]' -f $objectPermission.ObjectName
-                            }
-                            'MessageType' {
-                                $object = 'Message Type::[{0}]' -f $objectPermission.ObjectName
-                            }
-                            'ObjectOrColumn' {
-                                if ($scriptVersion -ne "Version80") {
-                                    $object = 'OBJECT::[{0}].[{1}]' -f $objectPermission.ObjectSchema, $objectPermission.ObjectName
-                                    if ($null -ne $objectPermission.ColumnName) {
-                                        $object += '([{0}])' -f $objectPermission.ColumnName
+                        }
+
+                        foreach ($item in $db.SymmetricKeys) {
+                            $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
+                        }
+
+                        foreach ($item in $db.XmlSchemaCollections) {
+                            $null = $perms.AddRange($item.EnumObjectPermissions($dbuser.Name))
+                        }
+
+                        foreach ($objectPermission in $perms | Where-Object { @("sa", "dbo", "information_schema", "sys") -notcontains $_.Grantee -and $_.Grantee -notlike "##*" -and $_.Grantee -eq $dbuser.Name }) {
+                            switch ($objectPermission.ObjectClass) {
+                                'ApplicationRole' {
+                                    $object = 'APPLICATION ROLE::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'AsymmetricKey' {
+                                    $object = 'ASYMMETRIC KEY::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'Certificate' {
+                                    $object = 'CERTIFICATE::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'DatabaseRole' {
+                                    $object = 'ROLE::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'FullTextCatalog' {
+                                    $object = 'FULLTEXT CATALOG::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'FullTextStopList' {
+                                    $object = 'FULLTEXT STOPLIST::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'MessageType' {
+                                    $object = 'Message Type::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'ObjectOrColumn' {
+                                    if ($scriptVersion -ne "Version80") {
+                                        $object = 'OBJECT::[{0}].[{1}]' -f $objectPermission.ObjectSchema, $objectPermission.ObjectName
+                                        if ($null -ne $objectPermission.ColumnName) {
+                                            $object += '([{0}])' -f $objectPermission.ColumnName
+                                        }
+                                    }
+                                    #At SQL Server 2000 OBJECT did not exists
+                                    else {
+                                        $object = '[{0}].[{1}]' -f $objectPermission.ObjectSchema, $objectPermission.ObjectName
                                     }
                                 }
-                                #At SQL Server 2000 OBJECT did not exists
-                                else {
-                                    $object = '[{0}].[{1}]' -f $objectPermission.ObjectSchema, $objectPermission.ObjectName
+                                'RemoteServiceBinding' {
+                                    $object = 'REMOTE SERVICE BINDING::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'Schema' {
+                                    $object = 'SCHEMA::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'SearchPropertyList' {
+                                    $object = 'SEARCH PROPERTY LIST::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'Service' {
+                                    $object = 'SERVICE::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'ServiceContract' {
+                                    $object = 'CONTRACT::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'ServiceRoute' {
+                                    $object = 'ROUTE::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'SqlAssembly' {
+                                    $object = 'ASSEMBLY::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'SymmetricKey' {
+                                    $object = 'SYMMETRIC KEY::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'User' {
+                                    $object = 'USER::[{0}]' -f $objectPermission.ObjectName
+                                }
+                                'UserDefinedType' {
+                                    $object = 'TYPE::[{0}].[{1}]' -f $objectPermission.ObjectSchema, $objectPermission.ObjectName
+                                }
+                                'XmlNamespace' {
+                                    $object = 'XML SCHEMA COLLECTION::[{0}]' -f $objectPermission.ObjectName
                                 }
                             }
-                            'RemoteServiceBinding' {
-                                $object = 'REMOTE SERVICE BINDING::[{0}]' -f $objectPermission.ObjectName
+
+                            if ($objectPermission.PermissionState -eq "GrantWithGrant") {
+                                $withGrant = " WITH GRANT OPTION"
+                                $grantObjectPermission = 'GRANT'
+                            } else {
+                                $withGrant = ""
+                                $grantObjectPermission = $objectPermission.PermissionState.ToString().ToUpper()
                             }
-                            'Schema' {
-                                $object = 'SCHEMA::[{0}]' -f $objectPermission.ObjectName
+                            if ($Template) {
+                                $grantee = "{templateUser}"
+                            } else {
+                                $grantee = $objectPermission.Grantee
                             }
-                            'SearchPropertyList' {
-                                $object = 'SEARCH PROPERTY LIST::[{0}]' -f $objectPermission.ObjectName
-                            }
-                            'Service' {
-                                $object = 'SERVICE::[{0}]' -f $objectPermission.ObjectName
-                            }
-                            'ServiceContract' {
-                                $object = 'CONTRACT::[{0}]' -f $objectPermission.ObjectName
-                            }
-                            'ServiceRoute' {
-                                $object = 'ROUTE::[{0}]' -f $objectPermission.ObjectName
-                            }
-                            'SqlAssembly' {
-                                $object = 'ASSEMBLY::[{0}]' -f $objectPermission.ObjectName
-                            }
-                            'SymmetricKey' {
-                                $object = 'SYMMETRIC KEY::[{0}]' -f $objectPermission.ObjectName
-                            }
-                            'User' {
-                                $object = 'USER::[{0}]' -f $objectPermission.ObjectName
-                            }
-                            'UserDefinedType' {
-                                $object = 'TYPE::[{0}].[{1}]' -f $objectPermission.ObjectSchema, $objectPermission.ObjectName
-                            }
-                            'XmlNamespace' {
-                                $object = 'XML SCHEMA COLLECTION::[{0}]' -f $objectPermission.ObjectName
-                            }
+
+                            $outsql += "$grantObjectPermission $($objectPermission.PermissionType) ON $object TO [$grantee]$withGrant AS [$($objectPermission.Grantor)];"
                         }
 
-                        if ($objectPermission.PermissionState -eq "GrantWithGrant") {
-                            $withGrant = " WITH GRANT OPTION"
-                            $grantObjectPermission = 'GRANT'
-                        } else {
-                            $withGrant = ""
-                            $grantObjectPermission = $objectPermission.PermissionState.ToString().ToUpper()
-                        }
-                        if ($Template) {
-                            $grantee = "{templateUser}"
-                        } else {
-                            $grantee = $objectPermission.Grantee
-                        }
-
-                        $outsql += "$grantObjectPermission $($objectPermission.PermissionType) ON $object TO [$grantee]$withGrant AS [$($objectPermission.Grantor)];"
-                    }
-
-                    #Schema Ownership
-                    $ownedSchemas = @()
-                    if ($db.Parent.VersionMajor -gt 8) {
-                        $ownedSchemas = $db.Schemas | Where-Object { $_.Owner -eq $dbuser.Name -and @("sa", "dbo", "information_schema", "sys", "guest") -notcontains $_.Name }
-                    }
-
-                    if ($scriptVersion -eq "Version80" -and @($ownedSchemas).Count -gt 0) {
-                        Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -Target $db
+                        #Schema Ownership
                         $ownedSchemas = @()
-                    }
-
-                    foreach ($schema in $ownedSchemas) {
-                        if ($Template) {
-                            $ownerName = "{templateUser}"
-                        } else {
-                            $ownerName = $schema.Owner
+                        if ($db.Parent.VersionMajor -gt 8) {
+                            $ownedSchemas = $db.Schemas | Where-Object { $_.Owner -eq $dbuser.Name -and @("sa", "dbo", "information_schema", "sys", "guest") -notcontains $_.Name }
                         }
-                        $outsql += "ALTER AUTHORIZATION ON SCHEMA::[{0}] TO [{1}];" -f $schema.Name, $ownerName
+
+                        if ($scriptVersion -eq "Version80" -and @($ownedSchemas).Count -gt 0) {
+                            Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -Target $db
+                            $ownedSchemas = @()
+                        }
+
+                        foreach ($schema in $ownedSchemas) {
+                            if ($Template) {
+                                $ownerName = "{templateUser}"
+                            } else {
+                                $ownerName = $schema.Owner
+                            }
+                            $outsql += "ALTER AUTHORIZATION ON SCHEMA::[{0}] TO [{1}];" -f $schema.Name, $ownerName
+                        }
+
+                    } catch {
+                        Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -InnerErrorRecord $_ -Target $db
                     }
 
-                } catch {
-                    Stop-Function -Message "This user may be using functionality from $($versionName[$db.CompatibilityLevel.ToString()]) that does not exist on the destination version ($versionNameDesc)." -Continue -InnerErrorRecord $_ -Target $db
-                }
+                    if (@($outsql.Count) -gt 0) {
+                        if ($ExcludeGoBatchSeparator) {
+                            $sql = "$useDatabase $outsql"
+                        } else {
+                            if ($useDatabase) {
+                                $sql = "$useDatabase$($eol)GO$eol" + ($outsql -join "$($eol)GO$eol")
+                            } else {
+                                $sql = $outsql -join "$($eol)GO$eol"
+                            }
+                            #add the final GO
+                            $sql += "$($eol)GO"
+                        }
+                    }
 
-                if (@($outsql.Count) -gt 0) {
-                    if ($ExcludeGoBatchSeparator) {
-                        $sql = "$useDatabase $outsql"
+                    if (-not $Passthru) {
+                        # If generate a file per user, clean the collection to populate with next one
+                        if ($GenerateFilePerUser) {
+                            if (-not [string]::IsNullOrEmpty($sql)) {
+                                $sql | Out-File -Encoding:$Encoding -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                                Get-ChildItem -Path $FilePath
+                            }
+                        } else {
+                            $dbUserInstance = $dbuser.Parent.Parent.Name
+
+                            if ($instanceArray -notcontains $($dbUserInstance)) {
+                                $sql | Out-File -Encoding:$Encoding -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
+                                $instanceArray += $dbUserInstance
+                            } else {
+                                $sql | Out-File -Encoding:$Encoding -FilePath $FilePath -Append
+                            }
+                        }
                     } else {
-                        if ($useDatabase) {
-                            $sql = "$useDatabase$($eol)GO$eol" + ($outsql -join "$($eol)GO$eol")
-                        } else {
-                            $sql = $outsql -join "$($eol)GO$eol"
-                        }
-                        #add the final GO
-                        $sql += "$($eol)GO"
+                        $sql
                     }
                 }
-
-                if (-not $Passthru) {
-                    # If generate a file per user, clean the collection to populate with next one
-                    if ($GenerateFilePerUser) {
-                        if (-not [string]::IsNullOrEmpty($sql)) {
-                            $sql | Out-File -Encoding:$Encoding -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
-                            Get-ChildItem -Path $FilePath
-                        }
-                    } else {
-                        $dbUserInstance = $dbuser.Parent.Parent.Name
-
-                        if ($instanceArray -notcontains $($dbUserInstance)) {
-                            $sql | Out-File -Encoding:$Encoding -FilePath $FilePath -Append:$Append -NoClobber:$NoClobber
-                            $instanceArray += $dbUserInstance
-                        } else {
-                            $sql | Out-File -Encoding:$Encoding -FilePath $FilePath -Append
-                        }
-                    }
-                } else {
-                    $sql
-                }
+            } finally {
+                Write-ProgressHelper -Completed
             }
-            Write-ProgressHelper -Completed
         }
         # Just a single file, output path once here
         if (-Not $GenerateFilePerUser -and $FilePath) {
