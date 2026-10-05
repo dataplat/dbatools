@@ -96,21 +96,24 @@ function Stop-DbaDbEncryption {
         if (-not $Parallel) {
             # Sequential processing (original behavior)
             $stepCounter = 0
-            foreach ($db in $InputObject) {
-                $server = $db.Parent
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Disabling encryption for $($db.Name) on $($server.Name)" -TotalSteps $InputObject.Count
-                try {
-                    if ($db.EncryptionEnabled) {
-                        $db | Disable-DbaDbEncryption -Confirm:$false
-                    } else {
-                        Write-Message -Level Verbose "Encryption was not enabled for $($db.Name) on $($server.Name)"
-                        $db | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, "Name as DatabaseName", EncryptionEnabled
+            try {
+                foreach ($db in $InputObject) {
+                    $server = $db.Parent
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Disabling encryption for $($db.Name) on $($server.Name)" -TotalSteps $InputObject.Count
+                    try {
+                        if ($db.EncryptionEnabled) {
+                            $db | Disable-DbaDbEncryption -Confirm:$false
+                        } else {
+                            Write-Message -Level Verbose "Encryption was not enabled for $($db.Name) on $($server.Name)"
+                            $db | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, "Name as DatabaseName", EncryptionEnabled
+                        }
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                     }
-                } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
+            } finally {
+                Write-ProgressHelper -Completed
             }
-            Write-ProgressHelper -Completed
         } else {
             # Parallel processing using runspaces
             $disableScript = {
@@ -227,30 +230,33 @@ function Stop-DbaDbEncryption {
             }
 
             # Retrieve results from runspaces
-            while ($threads | Where-Object { $_.IsRetrieved -eq $false }) {
-                $totalThreads = ($threads | Measure-Object).Count
-                $totalRetrievedThreads = ($threads | Where-Object { $_.IsRetrieved -eq $true } | Measure-Object).Count
-                Write-Progress -Id 1 -Activity "Disabling encryption" -Status "Progress" -CurrentOperation "Processing: $totalRetrievedThreads/$totalThreads" -PercentComplete ($totalRetrievedThreads / $totalThreads * 100)
+            try {
+                while ($threads | Where-Object { $_.IsRetrieved -eq $false }) {
+                    $totalThreads = ($threads | Measure-Object).Count
+                    $totalRetrievedThreads = ($threads | Where-Object { $_.IsRetrieved -eq $true } | Measure-Object).Count
+                    Write-Progress -Id 1 -Activity "Disabling encryption" -Status "Progress" -CurrentOperation "Processing: $totalRetrievedThreads/$totalThreads" -PercentComplete ($totalRetrievedThreads / $totalThreads * 100)
 
-                foreach ($thread in ($threads | Where-Object { $_.IsRetrieved -eq $false })) {
-                    if ($thread.Handle.IsCompleted) {
-                        $result = $thread.Thread.EndInvoke($thread.Handle)
-                        $thread.IsRetrieved = $true
+                    foreach ($thread in ($threads | Where-Object { $_.IsRetrieved -eq $false })) {
+                        if ($thread.Handle.IsCompleted) {
+                            $result = $thread.Thread.EndInvoke($thread.Handle)
+                            $thread.IsRetrieved = $true
 
-                        if ($result) {
-                            if ($result.Status -eq "Failed") {
-                                Stop-Function -Message "Failed to disable encryption for $($result.DatabaseName) on $($result.SqlInstance): $($result.Error)" -Continue
-                            } else {
-                                $result | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, EncryptionEnabled
+                            if ($result) {
+                                if ($result.Status -eq "Failed") {
+                                    Stop-Function -Message "Failed to disable encryption for $($result.DatabaseName) on $($result.SqlInstance): $($result.Error)" -Continue
+                                } else {
+                                    $result | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, EncryptionEnabled
+                                }
                             }
-                        }
 
-                        $thread.Thread.Dispose()
+                            $thread.Thread.Dispose()
+                        }
                     }
+                    Start-Sleep -Milliseconds 500
                 }
-                Start-Sleep -Milliseconds 500
+            } finally {
+                Write-Progress -Id 1 -Activity "Disabling encryption" -Completed
             }
-            Write-Progress -Id 1 -Activity "Disabling encryption" -Completed
 
             $runspacePool.Close()
             $runspacePool.Dispose()

@@ -161,4 +161,51 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "When the pipeline ends at the first database" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. The contexts above decrypted every database,
+            # so the command returns the first one as not encrypted, and Select-Object -First 1 stops it there.
+            # The runspace imports the manifest: an import of the psm1 without a command line skips the type
+            # data. It has none of the default parameter values of the tests, so Confirm is passed here.
+            # The bar of -Parallel cannot be checked this way: the command runs its threads in a runspace pool
+            # on $Host, and once a thread has run there, the progress records of the calling pipeline no longer
+            # reach Streams.Progress.
+            $splatFirstDatabase = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Confirm     = $false
+            }
+            if ($TestConfig.SqlCred) {
+                $splatFirstDatabase.SqlCredential = $TestConfig.SqlCred
+            }
+            $stopRunspace = [runspacefactory]::CreateRunspace()
+            $stopRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $stopRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $stopShell = [powershell]::Create()
+            $stopShell.Runspace = $stopRunspace
+            $firstDatabase = $stopShell.AddCommand("Stop-DbaDbEncryption").AddParameters($splatFirstDatabase).AddCommand("Select-Object").AddParameter("First", 1).Invoke()
+            $stopRecords = @($stopShell.Streams.Progress)
+            $stopShell.Dispose()
+            $stopRunspace.Dispose()
+        }
+
+        It "Returns a database that is not encrypted" {
+            $firstDatabase.EncryptionEnabled | Should -BeFalse
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $stopRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $stopRecords | Where-Object Activity -eq "Executing Stop-DbaDbEncryption" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }
