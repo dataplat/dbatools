@@ -1,13 +1,16 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName = "dbatools",
-    $PSDefaultParameterValues = ($TestConfig = Get-TestConfig).Defaults
+    $ModuleName  = "dbatools",
+    $CommandName = "Find-DbaDbMissingIndex",
+    $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-Describe "Find-DbaDbMissingIndex" -Tag "UnitTests" {
+Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
-        BeforeDiscovery {
-            [object[]]$knownParameters = @(
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "SqlInstance",
                 "SqlCredential",
                 "Database",
@@ -17,69 +20,72 @@ Describe "Find-DbaDbMissingIndex" -Tag "UnitTests" {
                 "MinimumSeek",
                 "EnableException"
             )
-        }
-
-        It "Has parameter: <_>" -ForEach $knownParameters {
-            (Get-Command Find-DbaDbMissingIndex).Parameters.Keys | Should -Contain $PSItem
-        }
-
-        It "Should have exactly the expected parameters" {
-            $hasParams = (Get-Command Find-DbaDbMissingIndex).Parameters.Values.Name
-            $commonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
-            $comparison = Compare-Object -ReferenceObject $knownParameters -DifferenceObject ($hasParams | Where-Object { $PSItem -notin $commonParameters })
-            $comparison | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }
 
-Describe "Find-DbaDbMissingIndex" -Tag "IntegrationTests" {
+Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
-        $db = "dbatoolsci_missingindex_$(Get-Random)"
-        $server = Connect-DbaInstance -SqlInstance $TestConfig.instance2
-        $null = $server.Query("CREATE DATABASE [$db]")
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        # 20k rows, clustered PK only, so a non-trivial query produces a missing-index suggestion.
-        # A trivial plan never generates one, so the predicate is forced to full optimization
-        # with AND 1 = (SELECT 1), per the behavior confirmed in the maintainer's lab.
+        $db = "dbatoolsci_missingindex_$(Get-Random)"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $db
+
+        # A clustered PK only, then enough rows that a predicate on an unindexed column produces a
+        # missing-index suggestion. A trivial plan never generates one, so AND 1 = (SELECT 1) forces
+        # the predicate to full optimization (the behaviour the maintainer confirmed in #10770).
         $setup = @"
-USE [$db];
 CREATE TABLE dbo.Orders (OrderId int IDENTITY(1,1) PRIMARY KEY, CustomerId int, Amount money, Filler char(200) DEFAULT 'x');
 INSERT INTO dbo.Orders (CustomerId, Amount)
 SELECT TOP (20000) ABS(CHECKSUM(NEWID())) % 1000, ABS(CHECKSUM(NEWID())) % 10000
 FROM sys.all_objects a CROSS JOIN sys.all_objects b;
 "@
-        $null = $server.Query($setup)
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $db -Query $setup
 
-        $runWorkload = "USE [$db]; SELECT OrderId, Amount FROM dbo.Orders WHERE CustomerId = 42 AND 1 = (SELECT 1);"
-        1..5 | ForEach-Object { $null = $server.Query($runWorkload) }
+        $runWorkload = "SELECT OrderId, Amount FROM dbo.Orders WHERE CustomerId = 42 AND 1 = (SELECT 1);"
+        1..5 | ForEach-Object { $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $db -Query $runWorkload }
+
+        # Low thresholds so the single-seek fixture is not filtered out by the defaults.
+        $results = Find-DbaDbMissingIndex -SqlInstance $TestConfig.InstanceSingle -Database $db -MinimumImpact 0 -MinimumSeek 1
+        $suggestion = $results | Where-Object { $PSItem.EqualityColumns -match "CustomerId" } | Select-Object -First 1
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     AfterAll {
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $db -Confirm:$false
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $db -ErrorAction SilentlyContinue
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
     Context "Finds a seeded missing index" {
-        BeforeAll {
-            # Low thresholds so the single-seek fixture is not filtered out by the defaults.
-            $results = Find-DbaDbMissingIndex -SqlInstance $TestConfig.instance2 -Database $db -MinimumImpact 0 -MinimumSeek 1
+        It "Returns a suggestion keyed on CustomerId" {
+            $suggestion | Should -Not -BeNullOrEmpty
         }
 
-        It "Returns at least one suggestion" {
-            $results | Should -Not -BeNullOrEmpty
+        It "Generates the exact CREATE statement for the fixture" {
+            # The index name carries the index_handle (a per-table integer), so assert the stable
+            # parts around it rather than the whole handle value.
+            $suggestion.CreateStatement | Should -Match "^CREATE NONCLUSTERED INDEX \[IX_Orders_CustomerId_\d+\] ON \[dbo\]\.\[Orders\] \(\[CustomerId\]\) INCLUDE \(\[Amount\]\);$"
         }
 
-        It "Suggests an index keyed on CustomerId" {
-            ($results | Where-Object { $PSItem.EqualityColumns -match "CustomerId" }) | Should -Not -BeNullOrEmpty
-        }
-
-        It "Generates a CREATE NONCLUSTERED INDEX statement" {
-            $results[0].CreateStatement | Should -Match "CREATE NONCLUSTERED INDEX"
+        It "Does not emit an empty key list or empty INCLUDE" {
+            $suggestion.CreateStatement | Should -Not -Match "\(\s*\)"
+            $suggestion.CreateStatement | Should -Not -Match ",\s*\)"
         }
 
         It "Returns the impact-score inputs as properties" {
-            $results[0].PSObject.Properties.Name | Should -Contain "AvgTotalUserCost"
-            $results[0].PSObject.Properties.Name | Should -Contain "AvgUserImpact"
-            $results[0].PSObject.Properties.Name | Should -Contain "ImpactScore"
+            $suggestion.PSObject.Properties.Name | Should -Contain "AvgTotalUserCost"
+            $suggestion.PSObject.Properties.Name | Should -Contain "AvgUserImpact"
+            $suggestion.PSObject.Properties.Name | Should -Contain "ImpactScore"
+        }
+
+        It "Leaves the caller's connection in its original database" {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $before = $server.ConnectionContext.CurrentDatabase
+            $null = $server | Find-DbaDbMissingIndex -Database $db -MinimumImpact 0 -MinimumSeek 1
+            $server.ConnectionContext.CurrentDatabase | Should -Be $before
         }
     }
 }
