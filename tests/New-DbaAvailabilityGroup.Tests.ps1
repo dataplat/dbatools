@@ -159,6 +159,9 @@ Describe $CommandName -Tag IntegrationTests {
             # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
             # as an Id with records but without a completed one. The pipeline is stopped as soon as the first
             # record arrives, which is what Ctrl+C does. WhatIf keeps the instance unchanged.
+            # It waits for a record of the command itself: Windows PowerShell writes progress records of its own
+            # while it loads modules. The runspace imports the manifest: an import of the psm1 without a command
+            # line skips the type data.
             $splatStopAg = @{
                 Primary      = $TestConfig.InstanceHadr
                 Name         = $agName
@@ -174,7 +177,8 @@ Describe $CommandName -Tag IntegrationTests {
             $stopRunspace.Open()
             $importShell = [powershell]::Create()
             $importShell.Runspace = $stopRunspace
-            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", (Get-Module -Name $ModuleName | Select-Object -First 1).Path).Invoke()
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
             $importShell.Dispose()
 
             $stopShell = [powershell]::Create()
@@ -182,7 +186,7 @@ Describe $CommandName -Tag IntegrationTests {
             $null = $stopShell.AddCommand("New-DbaAvailabilityGroup").AddParameters($splatStopAg)
             $stopAsync = $stopShell.BeginInvoke()
             $stopWatch = [System.Diagnostics.Stopwatch]::StartNew()
-            while ($stopShell.Streams.Progress.Count -eq 0 -and -not $stopAsync.IsCompleted -and $stopWatch.Elapsed.TotalSeconds -lt 60) {
+            while (-not ($stopShell.Streams.Progress | Where-Object Activity -eq "Adding new availability group") -and -not $stopAsync.IsCompleted -and $stopWatch.Elapsed.TotalSeconds -lt 60) {
                 Start-Sleep -Milliseconds 10
             }
             $stopShell.Stop()
@@ -197,9 +201,10 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Completes its progress bar" {
-            $completedIds = @($stopRecords | Where-Object RecordType -eq "Completed" | Select-Object -ExpandProperty ActivityId -Unique)
-            $openIds = $stopRecords | Where-Object RecordType -eq "Processing" | Select-Object -ExpandProperty ActivityId -Unique | Where-Object { $PSItem -notin $completedIds }
-            $stopRecords | Should -Not -BeNullOrEmpty
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $stopRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $stopRecords | Where-Object Activity -eq "Adding new availability group" | Should -Not -BeNullOrEmpty
             $openIds | Should -BeNullOrEmpty
         }
     }
