@@ -4,11 +4,18 @@ function Export-DbaDbTableData {
         Generates INSERT statements from table data for migration and deployment scripts
 
     .DESCRIPTION
-        Creates executable INSERT statements from existing table data, making it easy to move data between SQL Server instances or environments. This is particularly useful for migrating reference tables, lookup data, or configuration tables where you need the actual data values rather than just the table structure. The generated scripts include proper USE database context and can be saved to files or piped to other commands for further processing.
+        Creates executable INSERT statements from existing table data, making it easy to move data between SQL Server instances or environments. This is particularly useful for migrating reference tables, lookup data, or configuration tables where you need the actual data values rather than just the table structure. By default the generated scripts start with a USE statement for the database of each table. They can be saved to files or piped to other commands for further processing.
+
+        Tables piped into one call that write to the same file all end up in that file, even without -Append.
 
     .PARAMETER InputObject
         Accepts table objects from Get-DbaDbTable through the pipeline.
         Use this to process specific tables you've already identified rather than specifying table names again.
+
+    .PARAMETER ScriptingOptionsObject
+        Accepts an SMO ScriptingOptions object created with New-DbaScriptingOption to control script generation.
+        Without it, the command scripts the data only (ScriptData = $true, ScriptSchema = $false) and includes the USE statement (IncludeDatabaseContext = $true).
+        An object you pass is used exactly as given, so set ScriptData = $true yourself. Set IncludeDatabaseContext = $false to omit the USE statement, or keep ScriptSchema = $true to script the table definition as well.
 
     .PARAMETER Path
         Sets the directory where output files will be created when not using FilePath.
@@ -37,12 +44,13 @@ function Export-DbaDbTableData {
         Useful for reviewing the script content before execution or when piping to other commands.
 
     .PARAMETER BatchSeparator
-        Adds batch separators (like GO) between INSERT statements in the output script.
-        Use this when creating deployment scripts that will be executed in SQL Server Management Studio or sqlcmd.
+        Adds a batch separator (like GO) after every statement in the output file.
+        Defaults to the Formatting.BatchSeparator configuration value, which is GO. Pass an empty string to write the statements without a separator.
+        With -Passthru, a separator is only added when the ScriptingOptionsObject has ScriptBatchTerminator set to $true.
 
     .PARAMETER NoPrefix
-        Excludes the USE database statement and other prefixes from the generated script.
-        Use this when combining output with other scripts or when the database context is already established.
+        Excludes the comment header with the creator, timestamp, and dbatools version from the generated script.
+        This does not remove the USE statement. To omit it, pass a ScriptingOptionsObject with IncludeDatabaseContext set to $false.
 
     .PARAMETER NoClobber
         Prevents overwriting existing files at the specified FilePath.
@@ -89,7 +97,7 @@ function Export-DbaDbTableData {
 
         System.String (when -Passthru is specified)
 
-        Returns the generated INSERT statements as string output. Multiple strings are returned for table data scripts, one per INSERT statement or batch. Use -BatchSeparator parameter to control statement separation with GO or other batch terminators.
+        Returns the generated INSERT statements as string output. Multiple strings are returned for table data scripts, one per INSERT statement or batch. A batch separator is only added when the ScriptingOptionsObject has ScriptBatchTerminator set to $true.
 
     .EXAMPLE
         PS C:\> Get-DbaDbTable -SqlInstance sql2017 -Database AdventureWorks2014 -Table EmployeePayHistory | Export-DbaDbTableData
@@ -100,23 +108,34 @@ function Export-DbaDbTableData {
         PS C:\> Get-DbaDbTable -SqlInstance sql2017 -Database AdventureWorks2014 -Table EmployeePayHistory | Export-DbaDbTableData -FilePath C:\temp\export.sql -Append
 
         Exports data from EmployeePayHistory in AdventureWorks2014 in sql2017 using a trusted connection - Will append the output to the file C:\temp\export.sql if it already exists
-        Script does not include Batch Separator and will not compile
+        Every statement is followed by the batch separator from the Formatting.BatchSeparator configuration value, which is GO
 
     .EXAMPLE
         PS C:\> Get-DbaDbTable -SqlInstance sql2016 -Database MyDatabase -Table 'dbo.Table1', 'dbo.Table2' -SqlCredential sqladmin | Export-DbaDbTableData -FilePath C:\temp\export.sql -Append
 
         Exports only data from 'dbo.Table1' and 'dbo.Table2' in MyDatabase to C:\temp\export.sql and uses the SQL login "sqladmin" to login to sql2016
+
+    .EXAMPLE
+        PS C:\> $options = New-DbaScriptingOption
+        PS C:\> $options.ScriptSchema = $false
+        PS C:\> $options.ScriptData = $true
+        PS C:\> $options.IncludeDatabaseContext = $false
+        PS C:\> Get-DbaDbTable -SqlInstance sql2017 -Database MyDatabase -Table dbo.Table1, dbo.Table2 | Export-DbaDbTableData -FilePath C:\temp\export.sql -ScriptingOptionsObject $options -NoPrefix
+
+        Exports the data of both tables to C:\temp\export.sql without the USE statement and without the comment header, so the script runs in whatever database it is executed in
     #>
     [CmdletBinding(SupportsShouldProcess)]
     param (
         [parameter(Mandatory, ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Table[]]$InputObject,
+        [Alias("ScriptingOptionObject")]
+        [Microsoft.SqlServer.Management.Smo.ScriptingOptions]$ScriptingOptionsObject,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [Alias("OutFile", "FileName")]
         [string]$FilePath,
         [ValidateSet('ASCII', 'BigEndianUnicode', 'Byte', 'String', 'Unicode', 'UTF7', 'UTF8', 'Unknown')]
         [string]$Encoding = 'UTF8',
-        [string]$BatchSeparator = '',
+        [string]$BatchSeparator = (Get-DbatoolsConfigValue -FullName "Formatting.BatchSeparator"),
         [switch]$NoPrefix,
         [switch]$Passthru,
         [switch]$NoClobber,
@@ -125,15 +144,43 @@ function Export-DbaDbTableData {
     )
 
     begin {
-        $ScriptingOptionsObject = New-DbaScriptingOption
-        $ScriptingOptionsObject.ScriptSchema = $false
-        $ScriptingOptionsObject.ScriptData = $true
-        $ScriptingOptionsObject.IncludeDatabaseContext = $true
+        if (Test-Bound -Not -ParameterName ScriptingOptionsObject) {
+            $ScriptingOptionsObject = New-DbaScriptingOption
+            $ScriptingOptionsObject.ScriptSchema = $false
+            $ScriptingOptionsObject.ScriptData = $true
+            $ScriptingOptionsObject.IncludeDatabaseContext = $true
+        }
+
+        # All tables go through one Export-DbaScript pipeline, so the tables after the first are appended
+        # to the file instead of overwriting it. Calling Export-DbaScript once per table restarted its file handling every time.
+        $splatExport = @{ }
+        foreach ($boundName in $PSBoundParameters.Keys) {
+            if ($boundName -ne "InputObject") {
+                $splatExport[$boundName] = $PSBoundParameters[$boundName]
+            }
+        }
+        $splatExport["ScriptingOptionsObject"] = $ScriptingOptionsObject
+        $splatExport["BatchSeparator"] = $BatchSeparator
+        $exportPipeline = $null
     }
 
     process {
         if ($Pscmdlet.ShouldProcess($env:computername, "Exporting $InputObject")) {
-            Export-DbaScript @PSBoundParameters -ScriptingOptionsObject $ScriptingOptionsObject
+            # Started on the first table, so -WhatIf never reaches Export-DbaScript
+            if ($null -eq $exportPipeline) {
+                $exportCommand = { Export-DbaScript @splatExport }
+                $exportPipeline = $exportCommand.GetSteppablePipeline()
+                $exportPipeline.Begin($true)
+            }
+            foreach ($table in $InputObject) {
+                $exportPipeline.Process($table)
+            }
+        }
+    }
+
+    end {
+        if ($null -ne $exportPipeline) {
+            $exportPipeline.End()
         }
     }
 }
