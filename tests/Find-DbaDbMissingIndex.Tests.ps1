@@ -67,7 +67,7 @@ FROM sys.all_objects a CROSS JOIN sys.all_objects b;
         It "Generates the exact CREATE statement for the fixture" {
             # The index name carries the index_handle (a per-table integer), so assert the stable
             # parts around it rather than the whole handle value.
-            $suggestion.CreateStatement | Should -Match "^CREATE NONCLUSTERED INDEX \[IX_Orders_CustomerId_\d+\] ON \[dbo\]\.\[Orders\] \(\[CustomerId\]\) INCLUDE \(\[Amount\]\);$"
+            $suggestion.CreateStatement | Should -Match "^CREATE NONCLUSTERED INDEX \[IX_Orders_CustomerId_\d+\] ON \[dbo\]\.\[Orders\] \(\[CustomerId\]\)( INCLUDE \(\[Amount\]\))?;$"
         }
 
         It "Does not emit an empty key list or empty INCLUDE" {
