@@ -314,176 +314,179 @@ function Set-DbaNetworkCertificate {
         foreach ($instance in $SqlInstance) {
             $newThumbprint = $null
             $stepCounter = 0
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Testing certificate configuration for $instance"
-            Write-Message -Level Verbose -Message "Processing $instance" -Target $instance
-            # Using Test-DbaNetworkCertificate without certificate will use Get-DbaNetworkConfiguration to get all the information we need.
-            # The commands also tests for elevation requirements and connectivity so we don't have to here.
             try {
-                $splatTest = @{
-                    SqlInstance     = $instance
-                    Credential      = $Credential
-                    EnableException = $true
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Testing certificate configuration for $instance"
+                Write-Message -Level Verbose -Message "Processing $instance" -Target $instance
+                # Using Test-DbaNetworkCertificate without certificate will use Get-DbaNetworkConfiguration to get all the information we need.
+                # The commands also tests for elevation requirements and connectivity so we don't have to here.
+                try {
+                    $splatTest = @{
+                        SqlInstance     = $instance
+                        Credential      = $Credential
+                        EnableException = $true
+                    }
+                    $certTest = Test-DbaNetworkCertificate @splatTest
+                    $oldThumbprint = $certTest.ConfiguredCertificateThumbprint
+                } catch {
+                    Stop-Function -Message "Failed to use Test-DbaNetworkCertificate to get information for $instance" -Target $instance -ErrorRecord $_ -Continue
                 }
-                $certTest = Test-DbaNetworkCertificate @splatTest
-                $oldThumbprint = $certTest.ConfiguredCertificateThumbprint
-            } catch {
-                Stop-Function -Message "Failed to use Test-DbaNetworkCertificate to get information for $instance" -Target $instance -ErrorRecord $_ -Continue
-            }
 
-            if ($UnsetCertificate) {
-                if (-not $certTest.ConfiguredCertificateThumbprint) {
-                    Write-Message -Level Verbose -Message "There is no certificate configured for $instance"
-                    [PSCustomObject]@{
-                        ComputerName          = $certTest.ComputerName
-                        InstanceName          = $certTest.InstanceName
-                        SqlInstance           = $certTest.SqlInstance
-                        ServiceAccount        = $null
-                        CertificateThumbprint = $null
-                        Notes                 = 'No changes needed'
-                    }
-                    continue
-                } else {
-                    Write-Message -Level Verbose -Message "Certificate $oldThumbprint will be unset for $instance"
-                    $newThumbprint = $null
-                }
-            } elseif ($Thumbprint) {
-                if ($Thumbprint -eq $oldThumbprint -and $certTest.ConfiguredCertificateValid) {
-                    Write-Message -Level Verbose -Message "Certificate $oldThumbprint was already configured for $instance"
-                    [PSCustomObject]@{
-                        ComputerName          = $certTest.ComputerName
-                        InstanceName          = $certTest.InstanceName
-                        SqlInstance           = $certTest.SqlInstance
-                        ServiceAccount        = $null
-                        CertificateThumbprint = $oldThumbprint
-                        Notes                 = 'No changes needed'
-                    }
-                    continue
-                } elseif ($Thumbprint -in $certTest.SuitableCertificates.Thumbprint) {
-                    Write-Message -Level Verbose -Message "Certificate $Thumbprint is suitable for $instance"
-                    $newThumbprint = $Thumbprint
-                } else {
-                    Write-Message -Level Verbose -Message "Validating certificate $Thumbprint for $instance using Test-DbaNetworkCertificate"
-                    try {
-                        $splatTest = @{
-                            SqlInstance     = $instance
-                            Credential      = $Credential
-                            Thumbprint      = $Thumbprint
-                            EnableException = $true
+                if ($UnsetCertificate) {
+                    if (-not $certTest.ConfiguredCertificateThumbprint) {
+                        Write-Message -Level Verbose -Message "There is no certificate configured for $instance"
+                        [PSCustomObject]@{
+                            ComputerName          = $certTest.ComputerName
+                            InstanceName          = $certTest.InstanceName
+                            SqlInstance           = $certTest.SqlInstance
+                            ServiceAccount        = $null
+                            CertificateThumbprint = $null
+                            Notes                 = 'No changes needed'
                         }
-                        $detailedCertTest = Test-DbaNetworkCertificate @splatTest
-                    } catch {
-                        Stop-Function -Message "Failed to validate certificate $Thumbprint for $instance" -Target $instance -ErrorRecord $_ -Continue
+                        continue
+                    } else {
+                        Write-Message -Level Verbose -Message "Certificate $oldThumbprint will be unset for $instance"
+                        $newThumbprint = $null
                     }
+                } elseif ($Thumbprint) {
+                    if ($Thumbprint -eq $oldThumbprint -and $certTest.ConfiguredCertificateValid) {
+                        Write-Message -Level Verbose -Message "Certificate $oldThumbprint was already configured for $instance"
+                        [PSCustomObject]@{
+                            ComputerName          = $certTest.ComputerName
+                            InstanceName          = $certTest.InstanceName
+                            SqlInstance           = $certTest.SqlInstance
+                            ServiceAccount        = $null
+                            CertificateThumbprint = $oldThumbprint
+                            Notes                 = 'No changes needed'
+                        }
+                        continue
+                    } elseif ($Thumbprint -in $certTest.SuitableCertificates.Thumbprint) {
+                        Write-Message -Level Verbose -Message "Certificate $Thumbprint is suitable for $instance"
+                        $newThumbprint = $Thumbprint
+                    } else {
+                        Write-Message -Level Verbose -Message "Validating certificate $Thumbprint for $instance using Test-DbaNetworkCertificate"
+                        try {
+                            $splatTest = @{
+                                SqlInstance     = $instance
+                                Credential      = $Credential
+                                Thumbprint      = $Thumbprint
+                                EnableException = $true
+                            }
+                            $detailedCertTest = Test-DbaNetworkCertificate @splatTest
+                        } catch {
+                            Stop-Function -Message "Failed to validate certificate $Thumbprint for $instance" -Target $instance -ErrorRecord $_ -Continue
+                        }
 
-                    $failedChecks = @()
-                    if (-not $detailedCertTest.CertificateFound) { $failedChecks += "CertificateNotFound" }
-                    if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.KeyUsagesValid) { $failedChecks += "KeyUsagesInvalid" }
-                    if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.DnsNamesValid) { $failedChecks += "DnsNamesInvalid" }
-                    if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.PrivateKeyValid) {
-                        # The private key has to allow key exchange (KeySpec AT_KEYEXCHANGE for a legacy CSP key, as the Microsoft
-                        # certificate requirements demand). Say what the key is, because "invalid" alone sends people looking at
-                        # permissions.
-                        if ($detailedCertTest.PrivateKeyType) {
-                            $privateKeyDescription = "a $($detailedCertTest.PrivateKeyProvider) key that allows signing only, SQL Server needs a key exchange key (KeySpec AT_KEYEXCHANGE for a legacy CSP key)"
+                        $failedChecks = @()
+                        if (-not $detailedCertTest.CertificateFound) { $failedChecks += "CertificateNotFound" }
+                        if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.KeyUsagesValid) { $failedChecks += "KeyUsagesInvalid" }
+                        if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.DnsNamesValid) { $failedChecks += "DnsNamesInvalid" }
+                        if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.PrivateKeyValid) {
+                            # The private key has to allow key exchange (KeySpec AT_KEYEXCHANGE for a legacy CSP key, as the Microsoft
+                            # certificate requirements demand). Say what the key is, because "invalid" alone sends people looking at
+                            # permissions.
+                            if ($detailedCertTest.PrivateKeyType) {
+                                $privateKeyDescription = "a $($detailedCertTest.PrivateKeyProvider) key that allows signing only, SQL Server needs a key exchange key (KeySpec AT_KEYEXCHANGE for a legacy CSP key)"
+                            } else {
+                                $privateKeyDescription = "not accessible"
+                            }
+                            $failedChecks += "PrivateKeyInvalid (the private key is $privateKeyDescription)"
+                        }
+                        if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.PublicKeyValid) { $failedChecks += "PublicKeyInvalid" }
+                        if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.SignatureAlgorithmValid) { $failedChecks += "SignatureAlgorithmInvalid" }
+                        if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.EnhancedKeyUsageValid) { $failedChecks += "EnhancedKeyUsageInvalid" }
+                        if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.ValidityPeriodOk) { $failedChecks += "ValidityPeriodExpiredOrInsufficient" }
+                        if ($failedChecks.Count -eq 0) {
+                            $newThumbprint = $Thumbprint
+                        } elseif ($Force -and $detailedCertTest.CertificateFound) {
+                            Write-Message -Level Warning -Message "Certificate $Thumbprint is not suitable for SQL Server network encryption on $instance, but Force was specified. Failed checks: $($failedChecks -join ', ')." -Target $instance
+                            $newThumbprint = $Thumbprint
                         } else {
-                            $privateKeyDescription = "not accessible"
+                            Stop-Function -Message "Certificate $Thumbprint is not suitable for SQL Server network encryption on $instance. Failed checks: $($failedChecks -join ', ')." -Target $instance -Continue
                         }
-                        $failedChecks += "PrivateKeyInvalid (the private key is $privateKeyDescription)"
                     }
-                    if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.PublicKeyValid) { $failedChecks += "PublicKeyInvalid" }
-                    if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.SignatureAlgorithmValid) { $failedChecks += "SignatureAlgorithmInvalid" }
-                    if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.EnhancedKeyUsageValid) { $failedChecks += "EnhancedKeyUsageInvalid" }
-                    if ($detailedCertTest.CertificateFound -and -not $detailedCertTest.ValidityPeriodOk) { $failedChecks += "ValidityPeriodExpiredOrInsufficient" }
-                    if ($failedChecks.Count -eq 0) {
-                        $newThumbprint = $Thumbprint
-                    } elseif ($Force -and $detailedCertTest.CertificateFound) {
-                        Write-Message -Level Warning -Message "Certificate $Thumbprint is not suitable for SQL Server network encryption on $instance, but Force was specified. Failed checks: $($failedChecks -join ', ')." -Target $instance
-                        $newThumbprint = $Thumbprint
+                } else {
+                    if ($certTest.ConfiguredCertificateValid) {
+                        Write-Message -Level Verbose -Message "Certificate $oldThumbprint was already configured for $instance"
+                        [PSCustomObject]@{
+                            ComputerName          = $certTest.ComputerName
+                            InstanceName          = $certTest.InstanceName
+                            SqlInstance           = $certTest.SqlInstance
+                            ServiceAccount        = $null
+                            CertificateThumbprint = $oldThumbprint
+                            Notes                 = 'No changes needed'
+                        }
+                        continue
+                    } elseif ($certTest.SuitableCertificateAvailable -and $certTest.SuitableCertificateCount -eq 1) {
+                        $newThumbprint = $certTest.SuitableCertificates.Thumbprint
+                        Write-Message -Level Verbose -Message "Certificate $newThumbprint was selected for $instance"
+                    } elseif ($certTest.SuitableCertificateAvailable) {
+                        Stop-Function -Message "More than one suitable certificate found on $instance. Please use -Thumbprint." -Target $instance -Continue
                     } else {
-                        Stop-Function -Message "Certificate $Thumbprint is not suitable for SQL Server network encryption on $instance. Failed checks: $($failedChecks -join ', ')." -Target $instance -Continue
+                        Stop-Function -Message "No suitable certificate found on $instance. Please use New-DbaComputerCertificate to create one." -Target $instance -Continue
                     }
                 }
-            } else {
-                if ($certTest.ConfiguredCertificateValid) {
-                    Write-Message -Level Verbose -Message "Certificate $oldThumbprint was already configured for $instance"
+
+                if ($UnsetCertificate) {
+                    $message = "Unsetting certificate $oldThumbprint"
+                } else {
+                    $message = "Configuring certificate $newThumbprint"
+                }
+                if ($PScmdlet.ShouldProcess($instance, $message)) {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "$message for $instance"
+                    $result = Invoke-Command2 -ScriptBlock $scriptBlock -ArgumentList $instance, $newThumbprint -ComputerName $($certTest.ComputerName) -Credential $Credential -ErrorAction Stop
+                    foreach ($verbose in $result.Verbose) {
+                        Write-Message -Level Verbose -Message $verbose
+                    }
+                    if ($result.Exception) {
+                        # The new code pattern for WMI calls is used where all exceptions are catched and return as part of an object.
+                        Write-Message -Level Verbose -Message "Execution against $($certTest.ComputerName) failed with: $($result.Exception)"
+                        if ($UnsetCertificate) {
+                            $message = "Failed to unset certificate $oldThumbprint for instance $instance."
+                        } else {
+                            $message = "Failed to configure certificate $newThumbprint for instance $instance."
+                        }
+                        Stop-Function -Message $message -Target $instance -ErrorRecord $result.Exception -Continue
+                    }
+
+                    $notes = $null
+                    if ($RestartService) {
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Restarting SQL Server service for $instance"
+                        try {
+                            $splatRestartService = @{
+                                SqlInstance     = $instance
+                                Type            = "Engine"
+                                Force           = $true
+                                EnableException = $true
+                            }
+                            if ($Credential) {
+                                $splatRestartService.Credential = $Credential
+                            }
+                            $null = Restart-DbaService @splatRestartService
+                        } catch {
+                            $notes = "Failed to restart service"
+                            Write-Message -Level Warning -Message "$notes for instance $instance."
+                        }
+                    } else {
+                        if ($UnsetCertificate) {
+                            $notes = "Certificate removal will not take effect until SQL Server service is restarted"
+                        } else {
+                            $notes = "New certificate will not take effect until SQL Server service is restarted"
+                        }
+                        Write-Message -Level Warning -Message "$notes for instance $instance"
+                    }
+
                     [PSCustomObject]@{
                         ComputerName          = $certTest.ComputerName
                         InstanceName          = $certTest.InstanceName
                         SqlInstance           = $certTest.SqlInstance
-                        ServiceAccount        = $null
-                        CertificateThumbprint = $oldThumbprint
-                        Notes                 = 'No changes needed'
+                        ServiceAccount        = $result.ServiceAccount
+                        CertificateThumbprint = $newThumbprint
+                        Notes                 = $notes
                     }
-                    continue
-                } elseif ($certTest.SuitableCertificateAvailable -and $certTest.SuitableCertificateCount -eq 1) {
-                    $newThumbprint = $certTest.SuitableCertificates.Thumbprint
-                    Write-Message -Level Verbose -Message "Certificate $newThumbprint was selected for $instance"
-                } elseif ($certTest.SuitableCertificateAvailable) {
-                    Stop-Function -Message "More than one suitable certificate found on $instance. Please use -Thumbprint." -Target $instance -Continue
-                } else {
-                    Stop-Function -Message "No suitable certificate found on $instance. Please use New-DbaComputerCertificate to create one." -Target $instance -Continue
                 }
+            } finally {
+                Write-ProgressHelper -Completed
             }
-
-            if ($UnsetCertificate) {
-                $message = "Unsetting certificate $oldThumbprint"
-            } else {
-                $message = "Configuring certificate $newThumbprint"
-            }
-            if ($PScmdlet.ShouldProcess($instance, $message)) {
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "$message for $instance"
-                $result = Invoke-Command2 -ScriptBlock $scriptBlock -ArgumentList $instance, $newThumbprint -ComputerName $($certTest.ComputerName) -Credential $Credential -ErrorAction Stop
-                foreach ($verbose in $result.Verbose) {
-                    Write-Message -Level Verbose -Message $verbose
-                }
-                if ($result.Exception) {
-                    # The new code pattern for WMI calls is used where all exceptions are catched and return as part of an object.
-                    Write-Message -Level Verbose -Message "Execution against $($certTest.ComputerName) failed with: $($result.Exception)"
-                    if ($UnsetCertificate) {
-                        $message = "Failed to unset certificate $oldThumbprint for instance $instance."
-                    } else {
-                        $message = "Failed to configure certificate $newThumbprint for instance $instance."
-                    }
-                    Stop-Function -Message $message -Target $instance -ErrorRecord $result.Exception -Continue
-                }
-
-                $notes = $null
-                if ($RestartService) {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Restarting SQL Server service for $instance"
-                    try {
-                        $splatRestartService = @{
-                            SqlInstance     = $instance
-                            Type            = "Engine"
-                            Force           = $true
-                            EnableException = $true
-                        }
-                        if ($Credential) {
-                            $splatRestartService.Credential = $Credential
-                        }
-                        $null = Restart-DbaService @splatRestartService
-                    } catch {
-                        $notes = "Failed to restart service"
-                        Write-Message -Level Warning -Message "$notes for instance $instance."
-                    }
-                } else {
-                    if ($UnsetCertificate) {
-                        $notes = "Certificate removal will not take effect until SQL Server service is restarted"
-                    } else {
-                        $notes = "New certificate will not take effect until SQL Server service is restarted"
-                    }
-                    Write-Message -Level Warning -Message "$notes for instance $instance"
-                }
-
-                [PSCustomObject]@{
-                    ComputerName          = $certTest.ComputerName
-                    InstanceName          = $certTest.InstanceName
-                    SqlInstance           = $certTest.SqlInstance
-                    ServiceAccount        = $result.ServiceAccount
-                    CertificateThumbprint = $newThumbprint
-                    Notes                 = $notes
-                }
-            }
-            Write-ProgressHelper -Completed
         }
     }
 }

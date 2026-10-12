@@ -538,353 +538,356 @@ function Install-DbaInstance {
             }
         }
 
-        # check if installation path(s) is a network path and try to access it from the local machine
-        Write-ProgressHelper -ExcludePercent -Activity "Looking for setup files" -StepNumber 0 -Message "Checking if installation is available locally"
-        $isNetworkPath = $true
-        foreach ($p in $Path) { if ($p -notlike '\\*') { $isNetworkPath = $false } }
-        if ($isNetworkPath) {
-            Write-Message -Level Verbose -Message "Looking for installation files in $($Path) on a local machine"
-            try {
-                $localSetupFile = Find-SqlInstanceSetup -Version $canonicVersion -Path $Path
-            } catch {
-                Write-Message -Level Verbose -Message "Failed to access $($Path) on a local machine, ignoring for now"
-            }
-        }
-
-        $actionPlan = @()
-        foreach ($computer in $SqlInstance) {
-            $stepCounter = 1
-            $totalSteps = 5
-            $activity = "Preparing to install SQL Server $Version on $computer"
-            # Test elevated console
-            $null = Test-ElevationRequirement -ComputerName $computer -Continue
-            # notify about credentials once
-            if (-not $computer.IsLocalHost -and -not $notifiedCredentials -and -not $Credential -and $isNetworkPath) {
-                Write-Message -Level Warning -Message "Explicit -Credential might be required when running agains remote hosts and -Path is a network folder"
-                $notifiedCredentials = $true
-            }
-            # resolve names
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Resolving computer name"
-            $resolvedName = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
-            if ($computer.IsLocalHost) {
-                # Don't add a domain to localhost as this might add a domain that is later not recognized by .IsLocalHost anymore (#6976).
-                $fullComputerName = $resolvedName.ComputerName
-            } else {
-                $fullComputerName = $resolvedName.FullComputerName
-            }
-            # test if the restart is needed
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Checking for pending restarts"
-            try {
-                $restartNeeded = Test-PendingReboot -ComputerName $fullComputerName -Credential $Credential -NoPendingRename:$NoPendingRenameCheck
-            } catch {
-                Stop-Function -Message "Failed to get reboot status from $fullComputerName" -Continue -ErrorRecord $_
-            }
-            if ($restartNeeded -and (-not $Restart -or $computer.IsLocalHost)) {
-                #Exit the actions loop altogether - nothing can be installed here anyways
-                Stop-Function -Message "$computer is pending a reboot. Reboot the computer before proceeding." -Continue
-            }
-            # test connection
-            if ($Credential -and -not ([DbaInstanceParameter]$computer).IsLocalHost) {
-                $totalSteps += 1
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Testing $Authentication protocol"
-                Write-Message -Level Verbose -Message "Attempting to test $Authentication protocol for remote connections"
+        try {
+            # check if installation path(s) is a network path and try to access it from the local machine
+            Write-ProgressHelper -ExcludePercent -Activity "Looking for setup files" -StepNumber 0 -Message "Checking if installation is available locally"
+            $isNetworkPath = $true
+            foreach ($p in $Path) { if ($p -notlike '\\*') { $isNetworkPath = $false } }
+            if ($isNetworkPath) {
+                Write-Message -Level Verbose -Message "Looking for installation files in $($Path) on a local machine"
                 try {
-                    $connectSuccess = Invoke-Command2 -ComputerName $fullComputerName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
+                    $localSetupFile = Find-SqlInstanceSetup -Version $canonicVersion -Path $Path
                 } catch {
-                    $connectSuccess = $false
+                    Write-Message -Level Verbose -Message "Failed to access $($Path) on a local machine, ignoring for now"
                 }
-                # if we use CredSSP, we might be able to configure it
-                if (-not $connectSuccess -and $Authentication -eq 'Credssp') {
+            }
+
+            $actionPlan = @()
+            foreach ($computer in $SqlInstance) {
+                $stepCounter = 1
+                $totalSteps = 5
+                $activity = "Preparing to install SQL Server $Version on $computer"
+                # Test elevated console
+                $null = Test-ElevationRequirement -ComputerName $computer -Continue
+                # notify about credentials once
+                if (-not $computer.IsLocalHost -and -not $notifiedCredentials -and -not $Credential -and $isNetworkPath) {
+                    Write-Message -Level Warning -Message "Explicit -Credential might be required when running agains remote hosts and -Path is a network folder"
+                    $notifiedCredentials = $true
+                }
+                # resolve names
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Resolving computer name"
+                $resolvedName = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
+                if ($computer.IsLocalHost) {
+                    # Don't add a domain to localhost as this might add a domain that is later not recognized by .IsLocalHost anymore (#6976).
+                    $fullComputerName = $resolvedName.ComputerName
+                } else {
+                    $fullComputerName = $resolvedName.FullComputerName
+                }
+                # test if the restart is needed
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Checking for pending restarts"
+                try {
+                    $restartNeeded = Test-PendingReboot -ComputerName $fullComputerName -Credential $Credential -NoPendingRename:$NoPendingRenameCheck
+                } catch {
+                    Stop-Function -Message "Failed to get reboot status from $fullComputerName" -Continue -ErrorRecord $_
+                }
+                if ($restartNeeded -and (-not $Restart -or $computer.IsLocalHost)) {
+                    #Exit the actions loop altogether - nothing can be installed here anyways
+                    Stop-Function -Message "$computer is pending a reboot. Reboot the computer before proceeding." -Continue
+                }
+                # test connection
+                if ($Credential -and -not ([DbaInstanceParameter]$computer).IsLocalHost) {
                     $totalSteps += 1
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Configuring CredSSP protocol"
-                    Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
+                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Testing $Authentication protocol"
+                    Write-Message -Level Verbose -Message "Attempting to test $Authentication protocol for remote connections"
                     try {
-                        Initialize-CredSSP -ComputerName $fullComputerName -Credential $Credential -EnableException $true
                         $connectSuccess = Invoke-Command2 -ComputerName $fullComputerName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
                     } catch {
                         $connectSuccess = $false
-                        # tell the user why we could not configure CredSSP
-                        Write-Message -Level Warning -Message $_
                     }
-                }
-                # in case we are still not successful, ask the user to use unsecure protocol once
-                if (-not $connectSuccess -and -not $notifiedUnsecure) {
-                    if ($PSCmdlet.ShouldProcess($fullComputerName, "Primary protocol ($Authentication) failed, sending credentials via potentially unsecure protocol")) {
-                        $notifiedUnsecure = $true
-                    } else {
-                        Stop-Function -Message "Failed to connect to $fullComputerName through $Authentication protocol. No actions will be performed on that computer." -Continue
-                    }
-                }
-            }
-            # find installation file
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Verifying access to setup files"
-            $setupFileIsAccessible = $false
-            if ($localSetupFile) {
-                $testSetupPathParams = @{
-                    ComputerName   = $fullComputerName
-                    Credential     = $Credential
-                    Authentication = $Authentication
-                    ScriptBlock    = {
-                        Param (
-                            [string]$Path
-                        )
+                    # if we use CredSSP, we might be able to configure it
+                    if (-not $connectSuccess -and $Authentication -eq 'Credssp') {
+                        $totalSteps += 1
+                        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Configuring CredSSP protocol"
+                        Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
                         try {
-                            return Test-Path $Path
+                            Initialize-CredSSP -ComputerName $fullComputerName -Credential $Credential -EnableException $true
+                            $connectSuccess = Invoke-Command2 -ComputerName $fullComputerName -Credential $Credential -Authentication $Authentication -ScriptBlock { $true } -Raw
                         } catch {
-                            return $false
+                            $connectSuccess = $false
+                            # tell the user why we could not configure CredSSP
+                            Write-Message -Level Warning -Message $_
                         }
                     }
-                    ArgumentList   = @($localSetupFile)
-                    ErrorAction    = 'Stop'
-                    Raw            = $true
-                }
-                try {
-                    $setupFileIsAccessible = Invoke-CommandWithFallback @testSetupPathParams
-                } catch {
-                    $setupFileIsAccessible = $false
-                }
-            }
-            if ($setupFileIsAccessible) {
-                Write-Message -Level Verbose -Message "Setup file $localSetupFile is reachable from remote machine $fullComputerName"
-                $setupFile = $localSetupFile
-            } else {
-                Write-Message -Level Verbose -Message "Looking for installation files in $($Path) on remote machine $fullComputerName"
-                $findSetupParams = @{
-                    ComputerName   = $fullComputerName
-                    Credential     = $Credential
-                    Authentication = $Authentication
-                    Version        = $canonicVersion
-                    Path           = $Path
-                }
-                try {
-                    $setupFile = Find-SqlInstanceSetup @findSetupParams
-                } catch {
-                    Stop-Function -Message "Failed to enumerate files in $Path" -ErrorRecord $_ -Continue
-                }
-            }
-            if (-not $setupFile) {
-                Stop-Function -Message "Failed to find setup file for SQL$Version in $Path on $fullComputerName" -Continue
-            }
-            Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Generating a configuration file"
-            $instance = if ($InstanceName) { $InstanceName } else { $computer.InstanceName }
-            # checking if we need to modify port after the installation
-            $portNumber = if ($Port) { $Port } elseif ($computer.Port -in 0, 1433) { $null } else { $computer.Port }
-            $mainKey = if ($canonicVersion -ge '11.0') { "OPTIONS" } else { "SQLSERVER2008" }
-            if (Test-Bound -ParameterName ConfigurationFile) {
-                try {
-                    $config = Read-IniFile -Path $ConfigurationFile
-                } catch {
-                    Stop-Function -Message "Failed to read config file $ConfigurationFile" -ErrorRecord $_
-                }
-            } elseif ($Configuration.ACTION) {
-                # build minimal config if a custom ACTION is provided
-                $config = @{
-                    $mainKey = @{
-                        INSTANCENAME = $instance
-                        FEATURES     = $featureList
-                        QUIET        = "True"
-                    }
-                }
-                # To support failover cluster instance:
-                if ($Configuration.ACTION -in 'AddNode', 'RemoveNode') {
-                    $config.$mainKey.Remove('FEATURES')
-                }
-            } else {
-                # determine a default user to assign sqladmin permissions
-                if ($Credential) {
-                    $defaultAdminAccount = $Credential.UserName
-                } else {
-                    if ($env:USERDOMAIN) {
-                        $defaultAdminAccount = "$env:USERDOMAIN\$env:USERNAME"
-                    } else {
-                        if ($computer.IsLocalHost) {
-                            $defaultAdminAccount = "$($resolvedName.ComputerName)\$env:USERNAME"
+                    # in case we are still not successful, ask the user to use unsecure protocol once
+                    if (-not $connectSuccess -and -not $notifiedUnsecure) {
+                        if ($PSCmdlet.ShouldProcess($fullComputerName, "Primary protocol ($Authentication) failed, sending credentials via potentially unsecure protocol")) {
+                            $notifiedUnsecure = $true
                         } else {
-                            $defaultAdminAccount = $env:USERNAME
+                            Stop-Function -Message "Failed to connect to $fullComputerName through $Authentication protocol. No actions will be performed on that computer." -Continue
                         }
                     }
                 }
-                # determine browser startup
-                if ($instance -eq 'MSSQLSERVER') { $browserStartup = 'Manual' }
-                else { $browserStartup = 'Automatic' }
-                # build generic config based on parameters
-                $config = @{
-                    $mainKey = @{
-                        ACTION                = "Install"
-                        AGTSVCSTARTUPTYPE     = "Automatic"
-                        BROWSERSVCSTARTUPTYPE = $browserStartup
-                        ENABLERANU            = "False"
-                        ERRORREPORTING        = "False"
-                        FEATURES              = $featureList
-                        FILESTREAMLEVEL       = "0"
-                        HELP                  = "False"
-                        INDICATEPROGRESS      = "False"
-                        INSTANCEID            = $instance
-                        INSTANCENAME          = $instance
-                        ISSVCSTARTUPTYPE      = "Automatic"
-                        QUIET                 = "True"
-                        QUIETSIMPLE           = "False"
-                        SQLSVCSTARTUPTYPE     = "Automatic"
-                        SQLSYSADMINACCOUNTS   = $defaultAdminAccount
-                        SQMREPORTING          = "False"
-                        TCPENABLED            = "1"
-                        UPDATEENABLED         = "False"
-                        X86                   = "False"
+                # find installation file
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Verifying access to setup files"
+                $setupFileIsAccessible = $false
+                if ($localSetupFile) {
+                    $testSetupPathParams = @{
+                        ComputerName   = $fullComputerName
+                        Credential     = $Credential
+                        Authentication = $Authentication
+                        ScriptBlock    = {
+                            Param (
+                                [string]$Path
+                            )
+                            try {
+                                return Test-Path $Path
+                            } catch {
+                                return $false
+                            }
+                        }
+                        ArgumentList   = @($localSetupFile)
+                        ErrorAction    = 'Stop'
+                        Raw            = $true
+                    }
+                    try {
+                        $setupFileIsAccessible = Invoke-CommandWithFallback @testSetupPathParams
+                    } catch {
+                        $setupFileIsAccessible = $false
                     }
                 }
-            }
-            $configNode = $config.$mainKey
-            if (-not $configNode) {
-                Stop-Function -Message "Incorrect configuration file. Main node $mainKey not found."
-                return
-            }
-            $execParams = @()
-            # collation-specific parameters
-            if ($AsCollation) {
-                $configNode.ASCOLLATION = $AsCollation
-            }
-            if ($SqlCollation) {
-                $configNode.SQLCOLLATION = $SqlCollation
-            }
-            # feature-specific parameters
-            # Python
-            foreach ($pythonFeature in 'SQL_INST_MPY', 'SQL_SHARED_MPY', 'AdvancedAnalytics') {
-                if ($pythonFeature -in $featureList) {
-                    $execParams += '/IACCEPTPYTHONLICENSETERMS'
-                    break
+                if ($setupFileIsAccessible) {
+                    Write-Message -Level Verbose -Message "Setup file $localSetupFile is reachable from remote machine $fullComputerName"
+                    $setupFile = $localSetupFile
+                } else {
+                    Write-Message -Level Verbose -Message "Looking for installation files in $($Path) on remote machine $fullComputerName"
+                    $findSetupParams = @{
+                        ComputerName   = $fullComputerName
+                        Credential     = $Credential
+                        Authentication = $Authentication
+                        Version        = $canonicVersion
+                        Path           = $Path
+                    }
+                    try {
+                        $setupFile = Find-SqlInstanceSetup @findSetupParams
+                    } catch {
+                        Stop-Function -Message "Failed to enumerate files in $Path" -ErrorRecord $_ -Continue
+                    }
                 }
-            }
-            # R
-            foreach ($rFeature in 'SQL_INST_MR', 'SQL_SHARED_MR', 'AdvancedAnalytics') {
-                if ($rFeature -in $featureList) {
-                    $execParams += '/IACCEPTROPENLICENSETERMS '
-                    break
+                if (-not $setupFile) {
+                    Stop-Function -Message "Failed to find setup file for SQL$Version in $Path on $fullComputerName" -Continue
                 }
-            }
-            # Reporting Services
-            if ('RS' -in $featureList) {
-                if (-Not $configNode.RSINSTALLMODE) { $configNode.RSINSTALLMODE = "DefaultNativeMode" }
-                if (-Not $configNode.RSSVCSTARTUPTYPE) { $configNode.RSSVCSTARTUPTYPE = "Automatic" }
-            }
-            # version-specific stuff
-            if ($canonicVersion -gt '10.0') {
-                $execParams += '/IACCEPTSQLSERVERLICENSETERMS'
-            }
-            if ($canonicVersion -ge '13.0' -and ($configNode.ACTION -in 'Install', 'CompleteImage', 'Rebuilddatabase', 'InstallFailoverCluster', 'CompleteFailoverCluster') -and (-not $configNode.SQLTEMPDBFILECOUNT)) {
-                # configure the number of cores
-                $cpuInfo = Get-DbaCmObject -ComputerName $fullComputerName -Credential $Credential -ClassName Win32_processor -EnableException:$EnableException
-                # trying to read NumberOfLogicalProcessors property. If it's not available, read NumberOfCores
-                try {
-                    [int]$cores = $cpuInfo | Measure-Object NumberOfLogicalProcessors -Sum -ErrorAction Stop | Select-Object -ExpandProperty sum
-                } catch {
-                    [int]$cores = $cpuInfo | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
-                }
-                if ($cores -gt 8) {
-                    $cores = 8
-                }
-                if ($cores) {
-                    $configNode.SQLTEMPDBFILECOUNT = $cores
-                }
-            }
-            if ($canonicVersion -ge '13.0' -and $PerformVolumeMaintenanceTasks) {
-                $configNode.SQLSVCINSTANTFILEINIT = 'True'
-                $PerformVolumeMaintenanceTasks = $false
-            }
-            if ($canonicVersion -ge '16.0') {
-                $null = $configNode.Remove('X86')
-            }
-            # Apply custom configuration keys if provided
-            if ($Configuration) {
-                foreach ($key in $Configuration.Keys) {
-                    if ($key -eq "SQLUSERDBDATADIR") {
-                        # fix for our book
-                        $key = "SQLUSERDBDIR"
-                        $configNode.$key = [string]$Configuration."SQLUSERDBDATADIR"
+                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Generating a configuration file"
+                $instance = if ($InstanceName) { $InstanceName } else { $computer.InstanceName }
+                # checking if we need to modify port after the installation
+                $portNumber = if ($Port) { $Port } elseif ($computer.Port -in 0, 1433) { $null } else { $computer.Port }
+                $mainKey = if ($canonicVersion -ge '11.0') { "OPTIONS" } else { "SQLSERVER2008" }
+                if (Test-Bound -ParameterName ConfigurationFile) {
+                    try {
+                        $config = Read-IniFile -Path $ConfigurationFile
+                    } catch {
+                        Stop-Function -Message "Failed to read config file $ConfigurationFile" -ErrorRecord $_
+                    }
+                } elseif ($Configuration.ACTION) {
+                    # build minimal config if a custom ACTION is provided
+                    $config = @{
+                        $mainKey = @{
+                            INSTANCENAME = $instance
+                            FEATURES     = $featureList
+                            QUIET        = "True"
+                        }
+                    }
+                    # To support failover cluster instance:
+                    if ($Configuration.ACTION -in 'AddNode', 'RemoveNode') {
+                        $config.$mainKey.Remove('FEATURES')
+                    }
+                } else {
+                    # determine a default user to assign sqladmin permissions
+                    if ($Credential) {
+                        $defaultAdminAccount = $Credential.UserName
                     } else {
-                        $configNode.$key = [string]$Configuration.$key
+                        if ($env:USERDOMAIN) {
+                            $defaultAdminAccount = "$env:USERDOMAIN\$env:USERNAME"
+                        } else {
+                            if ($computer.IsLocalHost) {
+                                $defaultAdminAccount = "$($resolvedName.ComputerName)\$env:USERNAME"
+                            } else {
+                                $defaultAdminAccount = $env:USERNAME
+                            }
+                        }
                     }
-                    if ($key -eq 'UpdateSource' -and $configNode.$key -and $Configuration.Keys -notcontains 'UPDATEENABLED') {
-                        #enable updates since now we have a source
-                        $configNode.UPDATEENABLED = "True"
+                    # determine browser startup
+                    if ($instance -eq 'MSSQLSERVER') { $browserStartup = 'Manual' }
+                    else { $browserStartup = 'Automatic' }
+                    # build generic config based on parameters
+                    $config = @{
+                        $mainKey = @{
+                            ACTION                = "Install"
+                            AGTSVCSTARTUPTYPE     = "Automatic"
+                            BROWSERSVCSTARTUPTYPE = $browserStartup
+                            ENABLERANU            = "False"
+                            ERRORREPORTING        = "False"
+                            FEATURES              = $featureList
+                            FILESTREAMLEVEL       = "0"
+                            HELP                  = "False"
+                            INDICATEPROGRESS      = "False"
+                            INSTANCEID            = $instance
+                            INSTANCENAME          = $instance
+                            ISSVCSTARTUPTYPE      = "Automatic"
+                            QUIET                 = "True"
+                            QUIETSIMPLE           = "False"
+                            SQLSVCSTARTUPTYPE     = "Automatic"
+                            SQLSYSADMINACCOUNTS   = $defaultAdminAccount
+                            SQMREPORTING          = "False"
+                            TCPENABLED            = "1"
+                            UPDATEENABLED         = "False"
+                            X86                   = "False"
+                        }
+                    }
+                }
+                $configNode = $config.$mainKey
+                if (-not $configNode) {
+                    Stop-Function -Message "Incorrect configuration file. Main node $mainKey not found."
+                    return
+                }
+                $execParams = @()
+                # collation-specific parameters
+                if ($AsCollation) {
+                    $configNode.ASCOLLATION = $AsCollation
+                }
+                if ($SqlCollation) {
+                    $configNode.SQLCOLLATION = $SqlCollation
+                }
+                # feature-specific parameters
+                # Python
+                foreach ($pythonFeature in 'SQL_INST_MPY', 'SQL_SHARED_MPY', 'AdvancedAnalytics') {
+                    if ($pythonFeature -in $featureList) {
+                        $execParams += '/IACCEPTPYTHONLICENSETERMS'
+                        break
+                    }
+                }
+                # R
+                foreach ($rFeature in 'SQL_INST_MR', 'SQL_SHARED_MR', 'AdvancedAnalytics') {
+                    if ($rFeature -in $featureList) {
+                        $execParams += '/IACCEPTROPENLICENSETERMS '
+                        break
+                    }
+                }
+                # Reporting Services
+                if ('RS' -in $featureList) {
+                    if (-Not $configNode.RSINSTALLMODE) { $configNode.RSINSTALLMODE = "DefaultNativeMode" }
+                    if (-Not $configNode.RSSVCSTARTUPTYPE) { $configNode.RSSVCSTARTUPTYPE = "Automatic" }
+                }
+                # version-specific stuff
+                if ($canonicVersion -gt '10.0') {
+                    $execParams += '/IACCEPTSQLSERVERLICENSETERMS'
+                }
+                if ($canonicVersion -ge '13.0' -and ($configNode.ACTION -in 'Install', 'CompleteImage', 'Rebuilddatabase', 'InstallFailoverCluster', 'CompleteFailoverCluster') -and (-not $configNode.SQLTEMPDBFILECOUNT)) {
+                    # configure the number of cores
+                    $cpuInfo = Get-DbaCmObject -ComputerName $fullComputerName -Credential $Credential -ClassName Win32_processor -EnableException:$EnableException
+                    # trying to read NumberOfLogicalProcessors property. If it's not available, read NumberOfCores
+                    try {
+                        [int]$cores = $cpuInfo | Measure-Object NumberOfLogicalProcessors -Sum -ErrorAction Stop | Select-Object -ExpandProperty sum
+                    } catch {
+                        [int]$cores = $cpuInfo | Measure-Object NumberOfCores -Sum | Select-Object -ExpandProperty sum
+                    }
+                    if ($cores -gt 8) {
+                        $cores = 8
+                    }
+                    if ($cores) {
+                        $configNode.SQLTEMPDBFILECOUNT = $cores
+                    }
+                }
+                if ($canonicVersion -ge '13.0' -and $PerformVolumeMaintenanceTasks) {
+                    $configNode.SQLSVCINSTANTFILEINIT = 'True'
+                    $PerformVolumeMaintenanceTasks = $false
+                }
+                if ($canonicVersion -ge '16.0') {
+                    $null = $configNode.Remove('X86')
+                }
+                # Apply custom configuration keys if provided
+                if ($Configuration) {
+                    foreach ($key in $Configuration.Keys) {
+                        if ($key -eq "SQLUSERDBDATADIR") {
+                            # fix for our book
+                            $key = "SQLUSERDBDIR"
+                            $configNode.$key = [string]$Configuration."SQLUSERDBDATADIR"
+                        } else {
+                            $configNode.$key = [string]$Configuration.$key
+                        }
+                        if ($key -eq 'UpdateSource' -and $configNode.$key -and $Configuration.Keys -notcontains 'UPDATEENABLED') {
+                            #enable updates since now we have a source
+                            $configNode.UPDATEENABLED = "True"
+                        }
+                    }
+                }
+
+                # Now apply credentials
+                $execParams += Update-ServiceCredential -Node $configNode -Credential $EngineCredential -AccountName SQLSVCACCOUNT
+                $execParams += Update-ServiceCredential -Node $configNode -Credential $AgentCredential -AccountName AGTSVCACCOUNT
+                $execParams += Update-ServiceCredential -Node $configNode -Credential $ASCredential -AccountName ASSVCACCOUNT
+                $execParams += Update-ServiceCredential -Node $configNode -Credential $ISCredential -AccountName ISSVCACCOUNT
+                $execParams += Update-ServiceCredential -Node $configNode -Credential $RSCredential -AccountName RSSVCACCOUNT
+                $execParams += Update-ServiceCredential -Node $configNode -Credential $FTCredential -AccountName FTSVCACCOUNT
+                $execParams += Update-ServiceCredential -Node $configNode -Credential $PBEngineCredential -AccountName PBENGSVCACCOUNT -PasswordName PBDMSSVCPASSWORD
+                $execParams += Update-ServiceCredential -Credential $SaCredential -PasswordName SAPWD
+                # And root folders and other variables
+                if (Test-Bound -ParameterName InstancePath) {
+                    if ($InstancePath.Length -eq 2 -and $InstancePath.Substring(1, 1) -eq ":") {
+                        $InstancePath = "$InstancePath\"
+                    }
+                    $configNode.INSTANCEDIR = $InstancePath
+                }
+                if (Test-Bound -ParameterName DataPath) {
+                    $configNode.SQLUSERDBDIR = $DataPath
+                }
+                if (Test-Bound -ParameterName LogPath) {
+                    $configNode.SQLUSERDBLOGDIR = $LogPath
+                }
+                if (Test-Bound -ParameterName TempPath) {
+                    $configNode.SQLTEMPDBDIR = $TempPath
+                }
+                if (Test-Bound -ParameterName BackupPath) {
+                    $configNode.SQLBACKUPDIR = $BackupPath
+                }
+                if (Test-Bound -ParameterName AdminAccount) {
+                    $configNode.SQLSYSADMINACCOUNTS = ($AdminAccount | ForEach-Object { '"{0}"' -f $_ }) -join ' '
+                }
+                if (Test-Bound -ParameterName ASAdminAccount) {
+                    $configNode.ASSYSADMINACCOUNTS = ($ASAdminAccount | ForEach-Object { '"{0}"' -f $_ }) -join ' '
+                }
+                if (Test-Bound -ParameterName UpdateSourcePath) {
+                    $configNode.UPDATESOURCE = $UpdateSourcePath
+                    $configNode.UPDATEENABLED = "True"
+                }
+                # PID
+                if (Test-Bound -ParameterName ProductID) {
+                    $configNode.PID = $ProductID
+                }
+                # Authentication
+                if ($AuthenticationMode -eq 'Mixed') {
+                    $configNode.SECURITYMODE = "SQL"
+                }
+
+                # save config file
+                $tempdir = Get-DbatoolsConfigValue -FullName path.dbatoolstemp
+                $configFile = "$tempdir\Configuration_$($fullComputerName)_$instance_$version.ini"
+                try {
+                    Write-IniFile -Content $config -Path $configFile
+                } catch {
+                    Stop-Function -Message "Failed to write config file to $configFile" -ErrorRecord $_
+                }
+                if ($PSCmdlet.ShouldProcess($fullComputerName, "Install $Version from $setupFile")) {
+                    $actionPlan += @{
+                        ComputerName                  = $fullComputerName
+                        InstanceName                  = $instance
+                        Port                          = $portNumber
+                        InstallationPath              = $setupFile
+                        ConfigurationPath             = $configFile
+                        ArgumentList                  = $execParams
+                        Restart                       = $Restart
+                        Version                       = $canonicVersion
+                        Configuration                 = $config
+                        SaveConfiguration             = $SaveConfiguration
+                        SaCredential                  = $SaCredential
+                        PerformVolumeMaintenanceTasks = $PerformVolumeMaintenanceTasks
+                        Credential                    = $Credential
+                        NoPendingRenameCheck          = $NoPendingRenameCheck
+                        EnableException               = $EnableException
                     }
                 }
             }
-
-            # Now apply credentials
-            $execParams += Update-ServiceCredential -Node $configNode -Credential $EngineCredential -AccountName SQLSVCACCOUNT
-            $execParams += Update-ServiceCredential -Node $configNode -Credential $AgentCredential -AccountName AGTSVCACCOUNT
-            $execParams += Update-ServiceCredential -Node $configNode -Credential $ASCredential -AccountName ASSVCACCOUNT
-            $execParams += Update-ServiceCredential -Node $configNode -Credential $ISCredential -AccountName ISSVCACCOUNT
-            $execParams += Update-ServiceCredential -Node $configNode -Credential $RSCredential -AccountName RSSVCACCOUNT
-            $execParams += Update-ServiceCredential -Node $configNode -Credential $FTCredential -AccountName FTSVCACCOUNT
-            $execParams += Update-ServiceCredential -Node $configNode -Credential $PBEngineCredential -AccountName PBENGSVCACCOUNT -PasswordName PBDMSSVCPASSWORD
-            $execParams += Update-ServiceCredential -Credential $SaCredential -PasswordName SAPWD
-            # And root folders and other variables
-            if (Test-Bound -ParameterName InstancePath) {
-                if ($InstancePath.Length -eq 2 -and $InstancePath.Substring(1, 1) -eq ":") {
-                    $InstancePath = "$InstancePath\"
-                }
-                $configNode.INSTANCEDIR = $InstancePath
-            }
-            if (Test-Bound -ParameterName DataPath) {
-                $configNode.SQLUSERDBDIR = $DataPath
-            }
-            if (Test-Bound -ParameterName LogPath) {
-                $configNode.SQLUSERDBLOGDIR = $LogPath
-            }
-            if (Test-Bound -ParameterName TempPath) {
-                $configNode.SQLTEMPDBDIR = $TempPath
-            }
-            if (Test-Bound -ParameterName BackupPath) {
-                $configNode.SQLBACKUPDIR = $BackupPath
-            }
-            if (Test-Bound -ParameterName AdminAccount) {
-                $configNode.SQLSYSADMINACCOUNTS = ($AdminAccount | ForEach-Object { '"{0}"' -f $_ }) -join ' '
-            }
-            if (Test-Bound -ParameterName ASAdminAccount) {
-                $configNode.ASSYSADMINACCOUNTS = ($ASAdminAccount | ForEach-Object { '"{0}"' -f $_ }) -join ' '
-            }
-            if (Test-Bound -ParameterName UpdateSourcePath) {
-                $configNode.UPDATESOURCE = $UpdateSourcePath
-                $configNode.UPDATEENABLED = "True"
-            }
-            # PID
-            if (Test-Bound -ParameterName ProductID) {
-                $configNode.PID = $ProductID
-            }
-            # Authentication
-            if ($AuthenticationMode -eq 'Mixed') {
-                $configNode.SECURITYMODE = "SQL"
-            }
-
-            # save config file
-            $tempdir = Get-DbatoolsConfigValue -FullName path.dbatoolstemp
-            $configFile = "$tempdir\Configuration_$($fullComputerName)_$instance_$version.ini"
-            try {
-                Write-IniFile -Content $config -Path $configFile
-            } catch {
-                Stop-Function -Message "Failed to write config file to $configFile" -ErrorRecord $_
-            }
-            if ($PSCmdlet.ShouldProcess($fullComputerName, "Install $Version from $setupFile")) {
-                $actionPlan += @{
-                    ComputerName                  = $fullComputerName
-                    InstanceName                  = $instance
-                    Port                          = $portNumber
-                    InstallationPath              = $setupFile
-                    ConfigurationPath             = $configFile
-                    ArgumentList                  = $execParams
-                    Restart                       = $Restart
-                    Version                       = $canonicVersion
-                    Configuration                 = $config
-                    SaveConfiguration             = $SaveConfiguration
-                    SaCredential                  = $SaCredential
-                    PerformVolumeMaintenanceTasks = $PerformVolumeMaintenanceTasks
-                    Credential                    = $Credential
-                    NoPendingRenameCheck          = $NoPendingRenameCheck
-                    EnableException               = $EnableException
-                }
-            }
-            Write-Progress -Activity $activity -Complete
+        } finally {
+            Write-ProgressHelper -Completed
         }
         # we need to know if authentication was explicitly defined
         $authBound = Test-Bound Authentication

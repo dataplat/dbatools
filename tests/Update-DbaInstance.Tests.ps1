@@ -1060,3 +1060,49 @@ InModuleScope dbatools {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "When the computer cannot be reached" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. The top level domain invalid never resolves, so
+            # the search for SQL Server installations fails, the command warns and updates nothing.
+            $emptyUpdatePath = "$TestDrive\EmptyUpdates"
+            $null = New-Item -Path $emptyUpdatePath -ItemType Directory -Force
+            $splatUnreachableUpdate = @{
+                ComputerName = "progressleak$(Get-Random).invalid"
+                Version      = "2022"
+                Path         = $emptyUpdatePath
+                WhatIf       = $true
+            }
+            $updateRunspace = [runspacefactory]::CreateRunspace()
+            $updateRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $updateRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $updateShell = [powershell]::Create()
+            $updateShell.Runspace = $updateRunspace
+            $null = $updateShell.AddCommand("Update-DbaInstance").AddParameters($splatUnreachableUpdate).Invoke()
+            $updateWarnings = @($updateShell.Streams.Warning | ForEach-Object { $PSItem.Message })
+            $updateRecords = @($updateShell.Streams.Progress)
+            $updateShell.Dispose()
+            $updateRunspace.Dispose()
+        }
+
+        It "Warns that it cannot look for SQL Server installations" {
+            ($updateWarnings -join " ") | Should -Match "Error while looking for SQL Server installations"
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $updateRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $updateRecords | Where-Object Activity -like "Preparing to update SQL Server*" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
+}
