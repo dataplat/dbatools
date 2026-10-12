@@ -420,99 +420,98 @@ function Install-DbaParquet {
             return
         }
 
-        Write-Progress -Activity "Installing Parquet.NET" -Status "Checking for existing installation..." -PercentComplete 0
-
-        if (-not $Path) {
-            # Path.DbatoolsParquet ships with a default, so this is the normal case and not a fallback.
-            $basePath = Get-DbatoolsConfigValue -FullName "Path.DbatoolsParquet"
-            if (-not $basePath) {
-                $dbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
-                $basePath = Join-Path -Path $dbatoolsData.TrimEnd("/", "\") -ChildPath "parquet"
-            }
-
-            # The assemblies are picked for the runtime this is running on, but both editions share
-            # the dbatools data directory, so each one installs into its own folder below the base
-            # path. Installing from PowerShell 7 used to leave net<major> assemblies that Windows
-            # PowerShell cannot load at all, and the failure looked like a missing installation.
-            $Path = Join-Path -Path $basePath.TrimEnd("/", "\") -ChildPath (Get-DbaParquetEditionFolder)
-        } else {
-            Set-DbatoolsConfig -FullName "Path.DbatoolsParquet" -Value $Path
-        }
-
-        # Only an installation in the folder this would write to counts as already installed. Asking
-        # Get-DbaParquetPath instead would report the assemblies of the *other* PowerShell edition as
-        # installed and then refuse to install the ones this edition can actually load, which left no
-        # way out of the failure except deleting the folder by hand.
-        $installedPath = Join-Path -Path $Path -ChildPath "Parquet.dll"
-        if (-not (Test-Path -Path $installedPath)) {
-            $installedPath = Join-Path -Path $Path -ChildPath "Parquet.Net.dll"
-        }
-
-        if ((Test-Path -Path $installedPath) -and -not $Force) {
-            Write-Progress -Activity "Installing Parquet.NET" -Completed
-            $notes = "Parquet.NET already exists at $installedPath. Skipped installation. Use -Force to overwrite."
-            Write-Message -Level Verbose -Message $notes
-            [PSCustomObject]@{
-                Name      = Split-Path -Path $installedPath -Leaf
-                Path      = $installedPath
-                Version   = (Get-Item -Path $installedPath).VersionInfo.FileVersion
-                Installed = $true
-                Notes     = $notes
-            }
-            return
-        }
-
-        $tempRoot = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatools-parquet-$([System.Guid]::NewGuid().ToString())"
         try {
-            if (-not $PSCmdlet.ShouldProcess($Path, "Install Parquet.NET assemblies")) {
-                Write-Progress -Activity "Installing Parquet.NET" -Completed
+            Write-Progress -Activity "Installing Parquet.NET" -Status "Checking for existing installation..." -PercentComplete 0
+
+            if (-not $Path) {
+                # Path.DbatoolsParquet ships with a default, so this is the normal case and not a fallback.
+                $basePath = Get-DbatoolsConfigValue -FullName "Path.DbatoolsParquet"
+                if (-not $basePath) {
+                    $dbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
+                    $basePath = Join-Path -Path $dbatoolsData.TrimEnd("/", "\") -ChildPath "parquet"
+                }
+
+                # The assemblies are picked for the runtime this is running on, but both editions share
+                # the dbatools data directory, so each one installs into its own folder below the base
+                # path. Installing from PowerShell 7 used to leave net<major> assemblies that Windows
+                # PowerShell cannot load at all, and the failure looked like a missing installation.
+                $Path = Join-Path -Path $basePath.TrimEnd("/", "\") -ChildPath (Get-DbaParquetEditionFolder)
+            } else {
+                Set-DbatoolsConfig -FullName "Path.DbatoolsParquet" -Value $Path
+            }
+
+            # Only an installation in the folder this would write to counts as already installed. Asking
+            # Get-DbaParquetPath instead would report the assemblies of the *other* PowerShell edition as
+            # installed and then refuse to install the ones this edition can actually load, which left no
+            # way out of the failure except deleting the folder by hand.
+            $installedPath = Join-Path -Path $Path -ChildPath "Parquet.dll"
+            if (-not (Test-Path -Path $installedPath)) {
+                $installedPath = Join-Path -Path $Path -ChildPath "Parquet.Net.dll"
+            }
+
+            if ((Test-Path -Path $installedPath) -and -not $Force) {
+                $notes = "Parquet.NET already exists at $installedPath. Skipped installation. Use -Force to overwrite."
+                Write-Message -Level Verbose -Message $notes
+                [PSCustomObject]@{
+                    Name      = Split-Path -Path $installedPath -Leaf
+                    Path      = $installedPath
+                    Version   = (Get-Item -Path $installedPath).VersionInfo.FileVersion
+                    Installed = $true
+                    Notes     = $notes
+                }
                 return
             }
 
-            Write-Progress -Activity "Installing Parquet.NET" -Status "Preparing installation directory..." -PercentComplete 10
-            if (-not (Test-Path -Path $Path)) {
-                $null = New-Item -Path $Path -ItemType Directory -Force
-            }
-
-            if (-not (Test-Path -Path $tempRoot)) {
-                $null = New-Item -Path $tempRoot -ItemType Directory -Force
-            }
-
-            if ($LocalFile) {
-                Write-Progress -Activity "Installing Parquet.NET" -Status "Installing local assemblies..." -PercentComplete 40
-                Install-LocalParquetAssemblies -SourcePath $LocalFile -DestinationPath $Path -ExtractRoot $tempRoot
-            } else {
-                Write-Progress -Activity "Installing Parquet.NET" -Status "Resolving NuGet dependencies..." -PercentComplete 35
-                $packageCache = Join-Path -Path $Path -ChildPath "packages"
-                $extractRoot = Join-Path -Path $tempRoot -ChildPath "packages"
-                $resolvedPackages = @{ }
-                Resolve-NuGetPackageGraph -PackageId "Parquet.Net" -PackageVersion $Version -PackageCache $packageCache -ExtractRoot $extractRoot -ResolvedPackages $resolvedPackages
-                Write-Progress -Activity "Installing Parquet.NET" -Status "Installing assemblies..." -PercentComplete 70
-                Copy-ResolvedAssemblies -ResolvedPackages $resolvedPackages -DestinationPath $Path
-            }
-
-            Write-Progress -Activity "Installing Parquet.NET" -Status "Verifying installation..." -PercentComplete 90
-            $parquetDllPath = Join-Path -Path $Path -ChildPath "Parquet.dll"
-            if (-not (Test-Path -Path $parquetDllPath)) {
-                $parquetDllPath = Join-Path -Path $Path -ChildPath "Parquet.Net.dll"
-            }
-            if (Test-Path -Path $parquetDllPath) {
-                Write-Progress -Activity "Installing Parquet.NET" -Completed
-                [PSCustomObject]@{
-                    Name      = Split-Path -Path $parquetDllPath -Leaf
-                    Path      = $parquetDllPath
-                    Version   = (Get-Item -Path $parquetDllPath).VersionInfo.FileVersion
-                    Installed = $true
+            $tempRoot = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "dbatools-parquet-$([System.Guid]::NewGuid().ToString())"
+            try {
+                if (-not $PSCmdlet.ShouldProcess($Path, "Install Parquet.NET assemblies")) {
+                    return
                 }
-            } else {
-                Write-Progress -Activity "Installing Parquet.NET" -Completed
-                Stop-Function -Message "Parquet.NET installation failed. Parquet.dll was not found in $Path."
+
+                Write-Progress -Activity "Installing Parquet.NET" -Status "Preparing installation directory..." -PercentComplete 10
+                if (-not (Test-Path -Path $Path)) {
+                    $null = New-Item -Path $Path -ItemType Directory -Force
+                }
+
+                if (-not (Test-Path -Path $tempRoot)) {
+                    $null = New-Item -Path $tempRoot -ItemType Directory -Force
+                }
+
+                if ($LocalFile) {
+                    Write-Progress -Activity "Installing Parquet.NET" -Status "Installing local assemblies..." -PercentComplete 40
+                    Install-LocalParquetAssemblies -SourcePath $LocalFile -DestinationPath $Path -ExtractRoot $tempRoot
+                } else {
+                    Write-Progress -Activity "Installing Parquet.NET" -Status "Resolving NuGet dependencies..." -PercentComplete 35
+                    $packageCache = Join-Path -Path $Path -ChildPath "packages"
+                    $extractRoot = Join-Path -Path $tempRoot -ChildPath "packages"
+                    $resolvedPackages = @{ }
+                    Resolve-NuGetPackageGraph -PackageId "Parquet.Net" -PackageVersion $Version -PackageCache $packageCache -ExtractRoot $extractRoot -ResolvedPackages $resolvedPackages
+                    Write-Progress -Activity "Installing Parquet.NET" -Status "Installing assemblies..." -PercentComplete 70
+                    Copy-ResolvedAssemblies -ResolvedPackages $resolvedPackages -DestinationPath $Path
+                }
+
+                Write-Progress -Activity "Installing Parquet.NET" -Status "Verifying installation..." -PercentComplete 90
+                $parquetDllPath = Join-Path -Path $Path -ChildPath "Parquet.dll"
+                if (-not (Test-Path -Path $parquetDllPath)) {
+                    $parquetDllPath = Join-Path -Path $Path -ChildPath "Parquet.Net.dll"
+                }
+                if (Test-Path -Path $parquetDllPath) {
+                    [PSCustomObject]@{
+                        Name      = Split-Path -Path $parquetDllPath -Leaf
+                        Path      = $parquetDllPath
+                        Version   = (Get-Item -Path $parquetDllPath).VersionInfo.FileVersion
+                        Installed = $true
+                    }
+                } else {
+                    Stop-Function -Message "Parquet.NET installation failed. Parquet.dll was not found in $Path."
+                }
+            } catch {
+                Stop-Function -Message "Failed to install Parquet.NET. $_" -ErrorRecord $_
+            } finally {
+                Remove-DbaParquetTempDirectory -TempPath $tempRoot
             }
-        } catch {
-            Write-Progress -Activity "Installing Parquet.NET" -Completed
-            Stop-Function -Message "Failed to install Parquet.NET. $_" -ErrorRecord $_
         } finally {
-            Remove-DbaParquetTempDirectory -TempPath $tempRoot
+            Write-Progress -Activity "Installing Parquet.NET" -Completed
         }
     }
 }
