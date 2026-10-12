@@ -565,4 +565,63 @@ Describe $CommandName -Tag IntegrationTests {
             $persistedCount | Should -Be 1
         }
     }
+
+    Context "When the pipeline ends at the first table" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $firstTablePath = "$backupPath\firsttable"
+            $null = New-Item -Path $firstTablePath -ItemType Directory
+            $splatFirstTableConfig = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $generatorDb
+                Table       = "people"
+                Path        = $firstTablePath
+                Rows        = 5
+            }
+            $firstTableConfig = New-DbaDbDataGeneratorConfig @splatFirstTableConfig
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. Select-Object -First 1 stops the command at
+            # the result of the first table. The runspace imports the manifest: an import of the psm1 without a
+            # command line skips the type data.
+            $splatFirstTable = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $generatorDb
+                FilePath    = $firstTableConfig.FullName
+                Confirm     = $false
+            }
+            if ($TestConfig.SqlCred) {
+                $splatFirstTable.SqlCredential = $TestConfig.SqlCred
+            }
+            $generatorRunspace = [runspacefactory]::CreateRunspace()
+            $generatorRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $generatorRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $generatorShell = [powershell]::Create()
+            $generatorShell.Runspace = $generatorRunspace
+            $firstTableResult = $generatorShell.AddCommand("Invoke-DbaDbDataGenerator").AddParameters($splatFirstTable).AddCommand("Select-Object").AddParameter("First", 1).Invoke()
+            $generatorRecords = @($generatorShell.Streams.Progress)
+            $generatorShell.Dispose()
+            $generatorRunspace.Dispose()
+        }
+
+        It "Generates the rows of the table" {
+            $firstTableResult.Table | Should -Be "people"
+            $firstTableResult.Rows | Should -Be 5
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $generatorRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $generatorRecords | Where-Object Activity -eq "Generating data" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }

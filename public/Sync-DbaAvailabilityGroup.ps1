@@ -298,156 +298,159 @@ function Sync-DbaAvailabilityGroup {
             $primaryserver = $server.Name
             $secondaryservers = $secondaries.Name -join ", "
 
-            if ($Exclude -notcontains "SpConfigure") {
-                Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing SQL Server Configuration"
-                Copy-DbaSpConfigure -Source $server -Destination $secondaries
-            }
+            try {
+                if ($Exclude -notcontains "SpConfigure") {
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing SQL Server Configuration"
+                    Copy-DbaSpConfigure -Source $server -Destination $secondaries
+                }
 
-            if ($Exclude -notcontains "Logins") {
-                Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing logins"
-                Copy-DbaLogin -Source $server -Destination $secondaries -Login $Login -ExcludeLogin $ExcludeLogin -Force:$Force
-            }
+                if ($Exclude -notcontains "Logins") {
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing logins"
+                    Copy-DbaLogin -Source $server -Destination $secondaries -Login $Login -ExcludeLogin $ExcludeLogin -Force:$Force
+                }
 
-            if ($Exclude -notcontains "DatabaseOwner") {
-                if ($PSCmdlet.ShouldProcess("Updating database owners to match newly migrated logins from $primaryserver to $secondaryservers")) {
-                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Updating database owners to match newly migrated logins"
-                    foreach ($sec in $secondaries) {
-                        $null = Update-SqlDbOwner -Source $server -Destination $sec
+                if ($Exclude -notcontains "DatabaseOwner") {
+                    if ($PSCmdlet.ShouldProcess("Updating database owners to match newly migrated logins from $primaryserver to $secondaryservers")) {
+                        Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Updating database owners to match newly migrated logins"
+                        foreach ($sec in $secondaries) {
+                            $null = Update-SqlDbOwner -Source $server -Destination $sec
+                        }
                     }
                 }
-            }
 
-            if ($Exclude -notcontains "CustomErrors") {
-                Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing custom errors (user defined messages)"
-                Copy-DbaCustomError -Source $server -Destination $secondaries -Force:$Force
-            }
+                if ($Exclude -notcontains "CustomErrors") {
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing custom errors (user defined messages)"
+                    Copy-DbaCustomError -Source $server -Destination $secondaries -Force:$Force
+                }
 
-            # Do we need a dedicated admin connection to the primary for password retrieval?
-            # If not all of the three are excluded, we do. If passwords are excluded, we don't.
-            $dacNeeded = -not $ExcludePassword -and ($Exclude -notcontains "Credentials" -or $Exclude -notcontains "DatabaseMail" -or $Exclude -notcontains "LinkedServers")
+                # Do we need a dedicated admin connection to the primary for password retrieval?
+                # If not all of the three are excluded, we do. If passwords are excluded, we don't.
+                $dacNeeded = -not $ExcludePassword -and ($Exclude -notcontains "Credentials" -or $Exclude -notcontains "DatabaseMail" -or $Exclude -notcontains "LinkedServers")
 
-            # We open the DAC as late as possible and close it as early as possible, because SQL Server only allows one DAC per instance.
-            $dacOpened = $false
-            if ($dacNeeded -and -not $serverDac) {
-                Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                $serverDac = Connect-DbaInstance -SqlInstance $server -SqlCredential $PrimarySqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
+                # We open the DAC as late as possible and close it as early as possible, because SQL Server only allows one DAC per instance.
+                $dacOpened = $false
+                if ($dacNeeded -and -not $serverDac) {
+                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                    $serverDac = Connect-DbaInstance -SqlInstance $server -SqlCredential $PrimarySqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
+                    if ($serverDac) {
+                        $dacOpened = $true
+                    } else {
+                        Write-Message -Level Warning -Message "Could not establish dedicated admin connection to $server, so the commands that copy passwords will try to open their own. Use -ExcludePassword to skip the passwords."
+                    }
+                }
+
+                # The commands that copy passwords use the dedicated admin connection, all the others use the normal connection.
                 if ($serverDac) {
-                    $dacOpened = $true
+                    $passwordServer = $serverDac
                 } else {
-                    Write-Message -Level Warning -Message "Could not establish dedicated admin connection to $server, so the commands that copy passwords will try to open their own. Use -ExcludePassword to skip the passwords."
+                    $passwordServer = $server
                 }
-            }
 
-            # The commands that copy passwords use the dedicated admin connection, all the others use the normal connection.
-            if ($serverDac) {
-                $passwordServer = $serverDac
-            } else {
-                $passwordServer = $server
-            }
+                if ($Exclude -notcontains "Credentials") {
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing SQL credentials"
+                    Copy-DbaCredential -Source $passwordServer -Destination $secondaries -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+                }
 
-            if ($Exclude -notcontains "Credentials") {
-                Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing SQL credentials"
-                Copy-DbaCredential -Source $passwordServer -Destination $secondaries -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
-            }
+                if ($Exclude -notcontains "DatabaseMail") {
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing database mail"
+                    Copy-DbaDbMail -Source $passwordServer -Destination $secondaries -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+                }
 
-            if ($Exclude -notcontains "DatabaseMail") {
-                Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing database mail"
-                Copy-DbaDbMail -Source $passwordServer -Destination $secondaries -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
-            }
+                if ($Exclude -notcontains "LinkedServers") {
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing linked servers"
+                    Copy-DbaLinkedServer -Source $passwordServer -Destination $secondaries -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+                }
 
-            if ($Exclude -notcontains "LinkedServers") {
-                Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing linked servers"
-                Copy-DbaLinkedServer -Source $passwordServer -Destination $secondaries -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
-            }
+                # Disconnect is important because it is a DAC, but only if we opened it ourselves.
+                if ($dacOpened) {
+                    $null = $serverDac | Disconnect-DbaInstance -WhatIf:$false
+                }
 
-            # Disconnect is important because it is a DAC, but only if we opened it ourselves.
-            if ($dacOpened) {
-                $null = $serverDac | Disconnect-DbaInstance -WhatIf:$false
-            }
+                if ($Exclude -notcontains "SystemTriggers") {
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing System Triggers"
+                    Copy-DbaInstanceTrigger -Source $server -Destination $secondaries -Force:$Force
+                }
 
-            if ($Exclude -notcontains "SystemTriggers") {
-                Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing System Triggers"
-                Copy-DbaInstanceTrigger -Source $server -Destination $secondaries -Force:$Force
-            }
-
-            if ($Exclude -notcontains "AgentCategory") {
-                Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Categories"
-                Copy-DbaAgentJobCategory -Source $server -Destination $secondaries -Force:$force
-                foreach ($sec in $secondaries) {
-                    if ($sec.JobServer) {
-                        $sec.JobServer.JobCategories.Refresh()
-                        $sec.JobServer.OperatorCategories.Refresh()
-                        $sec.JobServer.AlertCategories.Refresh()
+                if ($Exclude -notcontains "AgentCategory") {
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Categories"
+                    Copy-DbaAgentJobCategory -Source $server -Destination $secondaries -Force:$force
+                    foreach ($sec in $secondaries) {
+                        if ($sec.JobServer) {
+                            $sec.JobServer.JobCategories.Refresh()
+                            $sec.JobServer.OperatorCategories.Refresh()
+                            $sec.JobServer.AlertCategories.Refresh()
+                        }
                     }
                 }
-            }
 
-            if ($Exclude -notcontains "AgentOperator") {
-                Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Operators"
-                Copy-DbaAgentOperator -Source $server -Destination $secondaries -Force:$force
-                foreach ($sec in $secondaries) {
-                    if ($sec.JobServer) {
-                        $sec.JobServer.Operators.Refresh()
+                if ($Exclude -notcontains "AgentOperator") {
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Operators"
+                    Copy-DbaAgentOperator -Source $server -Destination $secondaries -Force:$force
+                    foreach ($sec in $secondaries) {
+                        if ($sec.JobServer) {
+                            $sec.JobServer.Operators.Refresh()
+                        }
                     }
                 }
-            }
 
-            if ($Exclude -notcontains "AgentAlert") {
-                Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Alerts"
-                Copy-DbaAgentAlert -Source $server -Destination $secondaries -Force:$force -IncludeDefaults
-            }
+                if ($Exclude -notcontains "AgentAlert") {
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Alerts"
+                    Copy-DbaAgentAlert -Source $server -Destination $secondaries -Force:$force -IncludeDefaults
+                }
 
-            if ($Exclude -notcontains "AgentProxy") {
-                Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Proxy Accounts"
-                Copy-DbaAgentProxy -Source $server -Destination $secondaries -Force:$force
-                foreach ($sec in $secondaries) {
-                    if ($sec.JobServer) {
-                        $sec.JobServer.ProxyAccounts.Refresh()
+                if ($Exclude -notcontains "AgentProxy") {
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Proxy Accounts"
+                    Copy-DbaAgentProxy -Source $server -Destination $secondaries -Force:$force
+                    foreach ($sec in $secondaries) {
+                        if ($sec.JobServer) {
+                            $sec.JobServer.ProxyAccounts.Refresh()
+                        }
                     }
                 }
-            }
 
-            if ($Exclude -notcontains "AgentSchedule") {
-                Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Schedules"
-                Copy-DbaAgentSchedule -Source $server -Destination $secondaries -Force:$force
-                foreach ($sec in $secondaries) {
-                    if ($sec.JobServer) {
-                        $sec.JobServer.SharedSchedules.Refresh()
-                        $sec.JobServer.Refresh()
+                if ($Exclude -notcontains "AgentSchedule") {
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Schedules"
+                    Copy-DbaAgentSchedule -Source $server -Destination $secondaries -Force:$force
+                    foreach ($sec in $secondaries) {
+                        if ($sec.JobServer) {
+                            $sec.JobServer.SharedSchedules.Refresh()
+                            $sec.JobServer.Refresh()
+                        }
+                        $sec.Refresh()
                     }
-                    $sec.Refresh()
                 }
-            }
 
-            if ($Exclude -notcontains "AgentJob") {
-                Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Jobs"
-                $splatGetJob = @{
-                    SqlInstance = $server
-                    Type        = "Local"
-                }
-                if (Test-Bound 'Job') {
-                    $splatGetJob['Job'] = $Job
-                }
-                if (Test-Bound 'ExcludeJob') {
-                    $splatGetJob['ExcludeJob'] = $ExcludeJob
-                }
-                $jobsToSync = Get-DbaAgentJob @splatGetJob
+                if ($Exclude -notcontains "AgentJob") {
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing Agent Jobs"
+                    $splatGetJob = @{
+                        SqlInstance = $server
+                        Type        = "Local"
+                    }
+                    if (Test-Bound 'Job') {
+                        $splatGetJob['Job'] = $Job
+                    }
+                    if (Test-Bound 'ExcludeJob') {
+                        $splatGetJob['ExcludeJob'] = $ExcludeJob
+                    }
+                    $jobsToSync = Get-DbaAgentJob @splatGetJob
 
-                $splatCopyJob = @{
-                    Destination          = $secondaries
-                    Force                = $force
-                    DisableOnDestination = $DisableJobOnDestination
-                    UseLastModified      = $UseJobLastModified
-                    InputObject          = $jobsToSync
+                    $splatCopyJob = @{
+                        Destination          = $secondaries
+                        Force                = $force
+                        DisableOnDestination = $DisableJobOnDestination
+                        UseLastModified      = $UseJobLastModified
+                        InputObject          = $jobsToSync
+                    }
+                    Copy-DbaAgentJob @splatCopyJob
                 }
-                Copy-DbaAgentJob @splatCopyJob
-            }
 
-            if ($Exclude -notcontains "LoginPermissions") {
-                Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing login permissions"
-                Sync-DbaLoginPermission -Source $server -Destination $secondaries -Login $Login -ExcludeLogin $ExcludeLogin
+                if ($Exclude -notcontains "LoginPermissions") {
+                    Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing login permissions"
+                    Sync-DbaLoginPermission -Source $server -Destination $secondaries -Login $Login -ExcludeLogin $ExcludeLogin
+                }
+            } finally {
+                Write-ProgressHelper -Activity $activity -Completed
             }
-            Write-ProgressHelper -Activity $activity -Completed
         }
     }
 }

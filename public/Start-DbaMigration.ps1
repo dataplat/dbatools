@@ -412,225 +412,228 @@ function Start-DbaMigration {
             return
         }
 
-        if ($Exclude -notcontains 'SpConfigure') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating SQL Server Configuration"
-            Write-Message -Level Verbose -Message "Migrating SQL Server Configuration"
-            Copy-DbaSpConfigure -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential
-        }
-
-        if ($Exclude -notcontains 'MasterCertificates') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Copying certificates in the master database"
-            Write-Message -Level Verbose -Message "Copying certificates in the master database"
-            Copy-DbaDbCertificate -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -EncryptionPassword (Get-RandomPassword) -MasterKeyPassword $MasterKeyPassword -Database master -SharedPath $SharedPath
-
-        }
-
-        if ($Exclude -notcontains 'CustomErrors') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating custom errors (user defined messages)"
-            Write-Message -Level Verbose -Message "Migrating custom errors (user defined messages)"
-            Copy-DbaCustomError -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
-        }
-
-        if ($Exclude -notcontains 'ServerRoles') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating server roles"
-            Write-Message -Level Verbose -Message "Migrating server roles"
-            Copy-DbaServerRole -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
-        }
-
-        if ($Exclude -notcontains 'Credentials') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating SQL credentials"
-            Write-Message -Level Verbose -Message "Migrating SQL credentials"
-            if ($dacNeeded) {
-                Copy-DbaCredential -Source $sourceServerDac -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
-            } else {
-                Copy-DbaCredential -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
-            }
-        }
-
-        if ($Exclude -notcontains 'DatabaseMail') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating database mail"
-            Write-Message -Level Verbose -Message "Migrating database mail"
-            if ($dacNeeded) {
-                Copy-DbaDbMail -Source $sourceServerDac -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
-            } else {
-                Copy-DbaDbMail -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
-            }
-        }
-
-        if ($Exclude -notcontains 'CentralManagementServer') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Central Management Server"
-            Write-Message -Level Verbose -Message "Migrating Central Management Server"
-            Copy-DbaRegServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
-        }
-
-        if ($Exclude -notcontains 'BackupDevices') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Backup Devices"
-            Write-Message -Level Verbose -Message "Migrating Backup Devices"
-            Copy-DbaBackupDevice -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
-        }
-
-        if ($Exclude -notcontains 'SystemTriggers') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating System Triggers"
-            Write-Message -Level Verbose -Message "Migrating System Triggers"
-            Copy-DbaInstanceTrigger -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
-        }
-
-        if ($Exclude -notcontains 'Databases') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating databases"
-            Write-Message -Level Verbose -Message "Migrating databases"
-
-            $CopyDatabaseSplat = @{
-                Source                     = $sourceserver
-                Destination                = $Destination
-                DestinationSqlCredential   = $DestinationSqlCredential
-                SetSourceReadOnly          = $SetSourceReadOnly
-                SetSourceOffline           = $SetSourceOffline
-                ReuseSourceFolderStructure = $ReuseSourceFolderStructure
-                AllDatabases               = $true
-                Force                      = $Force
-                IncludeSupportDbs          = $IncludeSupportDbs
+        try {
+            if ($Exclude -notcontains 'SpConfigure') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating SQL Server Configuration"
+                Write-Message -Level Verbose -Message "Migrating SQL Server Configuration"
+                Copy-DbaSpConfigure -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential
             }
 
-            if ($BackupRestore) {
-                $CopyDatabaseSplat += @{
-                    BackupRestore   = $true
-                    NoRecovery      = $NoRecovery
-                    WithReplace     = $WithReplace
-                    KeepCDC         = $KeepCDC
-                    KeepReplication = $KeepReplication
+            if ($Exclude -notcontains 'MasterCertificates') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Copying certificates in the master database"
+                Write-Message -Level Verbose -Message "Copying certificates in the master database"
+                Copy-DbaDbCertificate -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -EncryptionPassword (Get-RandomPassword) -MasterKeyPassword $MasterKeyPassword -Database master -SharedPath $SharedPath
+
+            }
+
+            if ($Exclude -notcontains 'CustomErrors') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating custom errors (user defined messages)"
+                Write-Message -Level Verbose -Message "Migrating custom errors (user defined messages)"
+                Copy-DbaCustomError -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            }
+
+            if ($Exclude -notcontains 'ServerRoles') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating server roles"
+                Write-Message -Level Verbose -Message "Migrating server roles"
+                Copy-DbaServerRole -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            }
+
+            if ($Exclude -notcontains 'Credentials') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating SQL credentials"
+                Write-Message -Level Verbose -Message "Migrating SQL credentials"
+                if ($dacNeeded) {
+                    Copy-DbaCredential -Source $sourceServerDac -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+                } else {
+                    Copy-DbaCredential -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
                 }
-                if ($UseLastBackup) {
+            }
+
+            if ($Exclude -notcontains 'DatabaseMail') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating database mail"
+                Write-Message -Level Verbose -Message "Migrating database mail"
+                if ($dacNeeded) {
+                    Copy-DbaDbMail -Source $sourceServerDac -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+                } else {
+                    Copy-DbaDbMail -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+                }
+            }
+
+            if ($Exclude -notcontains 'CentralManagementServer') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Central Management Server"
+                Write-Message -Level Verbose -Message "Migrating Central Management Server"
+                Copy-DbaRegServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            }
+
+            if ($Exclude -notcontains 'BackupDevices') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Backup Devices"
+                Write-Message -Level Verbose -Message "Migrating Backup Devices"
+                Copy-DbaBackupDevice -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            }
+
+            if ($Exclude -notcontains 'SystemTriggers') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating System Triggers"
+                Write-Message -Level Verbose -Message "Migrating System Triggers"
+                Copy-DbaInstanceTrigger -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            }
+
+            if ($Exclude -notcontains 'Databases') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating databases"
+                Write-Message -Level Verbose -Message "Migrating databases"
+
+                $CopyDatabaseSplat = @{
+                    Source                     = $sourceserver
+                    Destination                = $Destination
+                    DestinationSqlCredential   = $DestinationSqlCredential
+                    SetSourceReadOnly          = $SetSourceReadOnly
+                    SetSourceOffline           = $SetSourceOffline
+                    ReuseSourceFolderStructure = $ReuseSourceFolderStructure
+                    AllDatabases               = $true
+                    Force                      = $Force
+                    IncludeSupportDbs          = $IncludeSupportDbs
+                }
+
+                if ($BackupRestore) {
                     $CopyDatabaseSplat += @{
-                        UseLastBackup = $UseLastBackup
-                        Continue      = $Continue
+                        BackupRestore   = $true
+                        NoRecovery      = $NoRecovery
+                        WithReplace     = $WithReplace
+                        KeepCDC         = $KeepCDC
+                        KeepReplication = $KeepReplication
+                    }
+                    if ($UseLastBackup) {
+                        $CopyDatabaseSplat += @{
+                            UseLastBackup = $UseLastBackup
+                            Continue      = $Continue
+                        }
+                    } else {
+                        $CopyDatabaseSplat += @{
+                            SharedPath      = $SharedPath
+                            AzureCredential = $AzureCredential
+                        }
                     }
                 } else {
                     $CopyDatabaseSplat += @{
-                        SharedPath      = $SharedPath
-                        AzureCredential = $AzureCredential
+                        DetachAttach = $DetachAttach
+                        Reattach     = $Reattach
                     }
                 }
-            } else {
-                $CopyDatabaseSplat += @{
-                    DetachAttach = $DetachAttach
-                    Reattach     = $Reattach
+
+                Copy-DbaDatabase @CopyDatabaseSplat | ForEach-Object {
+                    $PSItem
                 }
             }
 
-            Copy-DbaDatabase @CopyDatabaseSplat | ForEach-Object {
-                $PSItem
-            }
-        }
-
-        if ($Exclude -notcontains 'Logins') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating logins"
-            Write-Message -Level Verbose -Message "Migrating logins"
-            $syncit = $ExcludeSaRename -eq $false
-            Copy-DbaLogin -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force -SyncSaName:$syncit
-        }
-
-        if ($Exclude -notcontains 'Logins' -and $Exclude -notcontains 'Databases' -and -not $NoRecovery) {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Updating database owners to match newly migrated logins"
-            Write-Message -Level Verbose -Message "Updating database owners to match newly migrated logins"
-            foreach ($dest in $Destination) {
-                $null = Update-SqlDbOwner -Source $sourceserver -Destination $dest -DestinationSqlCredential $DestinationSqlCredential
-            }
-        }
-
-        if ($Exclude -notcontains 'LinkedServers') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating linked servers"
-            Write-Message -Level Verbose -Message "Migrating linked servers"
-            if ($dacNeeded) {
-                Copy-DbaLinkedServer -Source $sourceServerDac -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
-            } else {
-                Copy-DbaLinkedServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
-            }
-        }
-
-        if ($Exclude -notcontains 'DataCollector') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Data Collector collection sets"
-            Write-Message -Level Verbose -Message "Migrating Data Collector collection sets"
-            Copy-DbaDataCollector -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
-        }
-
-        if ($Exclude -notcontains 'Audits') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Audits"
-            Write-Message -Level Verbose -Message "Migrating Audits"
-            Copy-DbaInstanceAudit -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
-        }
-
-        if ($Exclude -notcontains 'ServerAuditSpecifications') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Server Audit Specifications"
-            Write-Message -Level Verbose -Message "Migrating Server Audit Specifications"
-            Copy-DbaInstanceAuditSpecification -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
-        }
-
-        if ($Exclude -notcontains 'Endpoints') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Endpoints"
-            Write-Message -Level Verbose -Message "Migrating Endpoints"
-            Copy-DbaEndpoint -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
-        }
-
-        if ($Exclude -notcontains 'PolicyManagement') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Policy Management"
-            Write-Message -Level Verbose -Message "Migrating Policy Management"
-            Copy-DbaPolicyManagement -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
-        }
-
-        if ($Exclude -notcontains 'ResourceGovernor') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Resource Governor"
-            Write-Message -Level Verbose -Message "Migrating Resource Governor"
-            Copy-DbaResourceGovernor -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
-        }
-
-        if ($Exclude -notcontains 'SysDbUserObjects') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating user objects in system databases (this can take a second)"
-            Write-Message -Level Verbose -Message "Migrating user objects in system databases (this can take a second)."
-            If ($Pscmdlet.ShouldProcess($destination, "Copying user objects.")) {
-                Copy-DbaSystemDbUserObject -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$force
-            }
-        }
-
-        if ($Exclude -notcontains 'ExtendedEvents') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Extended Events"
-            Write-Message -Level Verbose -Message "Migrating Extended Events"
-            Copy-DbaXESession -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
-        }
-
-        if ($Exclude -notcontains 'AgentServer') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating job server"
-            Write-Message -Level Verbose -Message "Migrating job server"
-            $ExcludeAgentServerProperties = $Exclude -contains 'AgentServerProperties'
-            Copy-DbaAgentServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force -ExcludeServerProperties:$ExcludeAgentServerProperties
-        }
-
-        if ($Exclude -notcontains 'StartupProcedures') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating startup procedures"
-            Write-Message -Level Verbose -Message "Migrating startup procedures"
-            Copy-DbaStartupProcedure -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential
-        }
-
-        if ($Exclude -notcontains 'ExtendedStoredProcedures') {
-            Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Extended Stored Procedures"
-            Write-Message -Level Verbose -Message "Migrating Extended Stored Procedures"
-            Copy-DbaExtendedStoredProcedure -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential
-        }
-
-        if ($Exclude -notcontains "SsisCatalog") {
-            $sourceHasSsisCatalog = $sourceServer.VersionMajor -ge 11
-            if ($sourceHasSsisCatalog) {
-                $sourceHasSsisCatalog = $null -ne $sourceServer.Databases["SSISDB"]
+            if ($Exclude -notcontains 'Logins') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating logins"
+                Write-Message -Level Verbose -Message "Migrating logins"
+                $syncit = $ExcludeSaRename -eq $false
+                Copy-DbaLogin -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force -SyncSaName:$syncit
             }
 
-            if ($sourceHasSsisCatalog) {
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating SSIS catalog"
-                Write-Message -Level Verbose -Message "Migrating SSIS catalog"
-                Copy-DbaSsisCatalog -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
-            } else {
-                Write-Message -Level Verbose -Message "Skipping SSIS catalog migration because the source instance does not have an SSISDB catalog."
+            if ($Exclude -notcontains 'Logins' -and $Exclude -notcontains 'Databases' -and -not $NoRecovery) {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Updating database owners to match newly migrated logins"
+                Write-Message -Level Verbose -Message "Updating database owners to match newly migrated logins"
+                foreach ($dest in $Destination) {
+                    $null = Update-SqlDbOwner -Source $sourceserver -Destination $dest -DestinationSqlCredential $DestinationSqlCredential
+                }
             }
+
+            if ($Exclude -notcontains 'LinkedServers') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating linked servers"
+                Write-Message -Level Verbose -Message "Migrating linked servers"
+                if ($dacNeeded) {
+                    Copy-DbaLinkedServer -Source $sourceServerDac -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+                } else {
+                    Copy-DbaLinkedServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Credential $Credential -ExcludePassword:$ExcludePassword -Force:$Force
+                }
+            }
+
+            if ($Exclude -notcontains 'DataCollector') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Data Collector collection sets"
+                Write-Message -Level Verbose -Message "Migrating Data Collector collection sets"
+                Copy-DbaDataCollector -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            }
+
+            if ($Exclude -notcontains 'Audits') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Audits"
+                Write-Message -Level Verbose -Message "Migrating Audits"
+                Copy-DbaInstanceAudit -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            }
+
+            if ($Exclude -notcontains 'ServerAuditSpecifications') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Server Audit Specifications"
+                Write-Message -Level Verbose -Message "Migrating Server Audit Specifications"
+                Copy-DbaInstanceAuditSpecification -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            }
+
+            if ($Exclude -notcontains 'Endpoints') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Endpoints"
+                Write-Message -Level Verbose -Message "Migrating Endpoints"
+                Copy-DbaEndpoint -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            }
+
+            if ($Exclude -notcontains 'PolicyManagement') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Policy Management"
+                Write-Message -Level Verbose -Message "Migrating Policy Management"
+                Copy-DbaPolicyManagement -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            }
+
+            if ($Exclude -notcontains 'ResourceGovernor') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Resource Governor"
+                Write-Message -Level Verbose -Message "Migrating Resource Governor"
+                Copy-DbaResourceGovernor -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            }
+
+            if ($Exclude -notcontains 'SysDbUserObjects') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating user objects in system databases (this can take a second)"
+                Write-Message -Level Verbose -Message "Migrating user objects in system databases (this can take a second)."
+                If ($Pscmdlet.ShouldProcess($destination, "Copying user objects.")) {
+                    Copy-DbaSystemDbUserObject -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$force
+                }
+            }
+
+            if ($Exclude -notcontains 'ExtendedEvents') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Extended Events"
+                Write-Message -Level Verbose -Message "Migrating Extended Events"
+                Copy-DbaXESession -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+            }
+
+            if ($Exclude -notcontains 'AgentServer') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating job server"
+                Write-Message -Level Verbose -Message "Migrating job server"
+                $ExcludeAgentServerProperties = $Exclude -contains 'AgentServerProperties'
+                Copy-DbaAgentServer -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -DisableJobsOnDestination:$DisableJobsOnDestination -DisableJobsOnSource:$DisableJobsOnSource -Force:$Force -ExcludeServerProperties:$ExcludeAgentServerProperties
+            }
+
+            if ($Exclude -notcontains 'StartupProcedures') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating startup procedures"
+                Write-Message -Level Verbose -Message "Migrating startup procedures"
+                Copy-DbaStartupProcedure -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential
+            }
+
+            if ($Exclude -notcontains 'ExtendedStoredProcedures') {
+                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating Extended Stored Procedures"
+                Write-Message -Level Verbose -Message "Migrating Extended Stored Procedures"
+                Copy-DbaExtendedStoredProcedure -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential
+            }
+
+            if ($Exclude -notcontains "SsisCatalog") {
+                $sourceHasSsisCatalog = $sourceServer.VersionMajor -ge 11
+                if ($sourceHasSsisCatalog) {
+                    $sourceHasSsisCatalog = $null -ne $sourceServer.Databases["SSISDB"]
+                }
+
+                if ($sourceHasSsisCatalog) {
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating SSIS catalog"
+                    Write-Message -Level Verbose -Message "Migrating SSIS catalog"
+                    Copy-DbaSsisCatalog -Source $sourceserver -Destination $Destination -DestinationSqlCredential $DestinationSqlCredential -Force:$Force
+                } else {
+                    Write-Message -Level Verbose -Message "Skipping SSIS catalog migration because the source instance does not have an SSISDB catalog."
+                }
+            }
+        } finally {
+            Write-ProgressHelper -Completed
         }
-        Write-ProgressHelper -Completed
     }
     end {
         if ($dacOpened) {
