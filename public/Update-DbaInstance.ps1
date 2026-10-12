@@ -125,6 +125,13 @@ function Update-DbaInstance {
         Use this to control where temporary installation files are placed, especially on servers with limited C: drive space.
         Defaults to system temporary directory if not specified, but consider using a dedicated drive with sufficient space.
 
+    .PARAMETER KeepExtractedFiles
+        Leaves the extracted update files on the target computers instead of deleting them as soon as setup.exe has finished.
+        Use this when deleting them is slow, for example while endpoint protection scans them, and you prefer to remove them after the restart and recovery of the instance.
+        The files are kept whatever the outcome, including a failed installation or a partial extraction, and removing them is up to you.
+        Each update extracts to a folder dbatools_KB<KB>_Extract_<32 hex characters> below ExtractPath, which the ExtractPath property of the output reports.
+        Specify a dedicated ExtractPath so these folders can be found and removed even when no result came back, for example after a lost remote session.
+
     .OUTPUTS
         PSCustomObject
 
@@ -140,6 +147,7 @@ function Update-DbaInstance {
         - Successful (bool) - Boolean indicating whether the patch installation completed successfully
         - Restarted (bool) - Boolean indicating whether the server was restarted after patching
         - Notes (object[]) - Array of messages describing the installation process, any warnings, or errors encountered
+        - ExtractPath (string) - The folder on the target computer the update was extracted to. Not displayed by default, use Select-Object * to see it
 
     .LINK
         https://dbatools.io/Update-DbaInstance
@@ -199,6 +207,12 @@ function Update-DbaInstance {
         Extracts the files in local driver on Server1 C:\temp.
 
     .EXAMPLE
+        PS C:\> Update-DbaInstance -ComputerName Server1 -Path \\network\share -ExtractPath "D:\SqlUpdates" -KeepExtractedFiles -Confirm:$false
+
+        Updates all applicable SQL Server installations on Server1 with the most recent patch and leaves the extracted files in D:\SqlUpdates on Server1.
+        Remove the dbatools_KB*_Extract_* folders below D:\SqlUpdates once the instances are back and verified.
+
+    .EXAMPLE
         PS C:\> Update-DbaInstance -ComputerName Server1 -Path \\network\share -ArgumentList "/SkipRules=RebootRequiredCheck"
 
         Updates all applicable SQL Server installations on Server1 with the most recent patch.
@@ -246,6 +260,7 @@ function Update-DbaInstance {
         [switch]$UseSSL = (Get-DbatoolsConfigValue -FullName "PSRemoting.PsSession.UseSSL" -Fallback $false),
         [nullable[int]]$Port = (Get-DbatoolsConfigValue -FullName "PSRemoting.PsSession.Port" -Fallback $null),
         [string]$ExtractPath,
+        [switch]$KeepExtractedFiles,
         [string[]]$ArgumentList,
         [switch]$Download,
         [switch]$NoPendingRenameCheck = (Get-DbatoolsConfigValue -Name 'OS.PendingRename' -Fallback $false),
@@ -689,6 +704,7 @@ function Update-DbaInstance {
                 Credential           = $Credential
                 EnableException      = $EnableException
                 ExtractPath          = $ExtractPath
+                KeepExtractedFiles   = $KeepExtractedFiles
                 Authentication       = $Authentication
                 ArgumentList         = $ArgumentList
                 NoPendingRenameCheck = $NoPendingRenameCheck

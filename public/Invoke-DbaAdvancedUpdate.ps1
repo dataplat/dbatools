@@ -35,6 +35,13 @@ Function Invoke-DbaAdvancedUpdate {
         If not specified, automatically selects the drive with the most free space for extraction.
         Use this when you need to control extraction location for space management or security requirements.
 
+    .PARAMETER KeepExtractedFiles
+        Leaves the extracted update files on the target computer instead of deleting them as soon as setup.exe has finished.
+        Use this when deleting them is slow, for example while endpoint protection scans them, and you prefer to remove them after the restart and recovery of the instance.
+        The files are kept whatever the outcome, including a failed installation or a partial extraction, and removing them is up to you.
+        Each action extracts to a folder dbatools_KB<KB>_Extract_<32 hex characters> below ExtractPath, which the ExtractPath property of the output reports.
+        Specify a dedicated ExtractPath so these folders can be found and removed even when no result came back, for example after a lost remote session.
+
     .PARAMETER ArgumentList
         Additional command-line arguments passed to the SQL Server setup.exe during installation.
         Commonly used for setup customization like "/SkipRules=RebootRequiredCheck" to bypass reboot validation or "/Q" for quiet mode.
@@ -105,6 +112,7 @@ Function Invoke-DbaAdvancedUpdate {
         [string]$Authentication = 'Credssp',
         [PSCredential]$Credential,
         [string]$ExtractPath,
+        [switch]$KeepExtractedFiles,
         [string[]]$ArgumentList,
         [switch]$NoPendingRenameCheck,
         [switch]$EnableException
@@ -214,23 +222,25 @@ Function Invoke-DbaAdvancedUpdate {
                 }
                 $output.Log = $updateResult.stdout
             } catch {
-                Stop-Function -Message "Upgrade failed" -ErrorRecord $_
+                Stop-Function -Message "Upgrade failed" -ErrorRecord $_ -Target $output
                 $output.Notes += $_.Exception.Message
                 return $output
             } finally {
                 ## Cleanup temp
-                Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Cleaning up extracted files from $spExtractPath"
-                try {
-                    Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Removing temporary files"
-                    $null = Invoke-CommandWithFallBack @execParams -ScriptBlock {
-                        if ($args[0] -like '*\dbatools_KB*_Extract*' -and (Test-Path $args[0])) {
-                            Remove-Item -Recurse -Force -LiteralPath $args[0] -ErrorAction Stop
-                        }
-                    } -Raw -ArgumentList $spExtractPath
-                } catch {
-                    $message = "Failed to cleanup temp folder on computer $($computer)`: $($_.Exception.Message)"
-                    Write-Message -Level Verbose -Message $message
-                    $output.Notes += $message
+                if (-not $KeepExtractedFiles) {
+                    Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Cleaning up extracted files from $spExtractPath"
+                    try {
+                        Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Removing temporary files"
+                        $null = Invoke-CommandWithFallBack @execParams -ScriptBlock {
+                            if ($args[0] -like "*\dbatools_KB*_Extract*" -and (Test-Path $args[0])) {
+                                Remove-Item -Recurse -Force -LiteralPath $args[0] -ErrorAction Stop
+                            }
+                        } -Raw -ArgumentList $spExtractPath
+                    } catch {
+                        $message = "Failed to cleanup temp folder on computer $($computer)`: $($_.Exception.Message)"
+                        Write-Message -Level Verbose -Message $message
+                        $output.Notes += $message
+                    }
                 }
             }
             #double check if restart is needed

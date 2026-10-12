@@ -45,6 +45,7 @@ Describe $CommandName -Tag UnitTests {
                 "Port",
                 "EnableException",
                 "ExtractPath",
+                "KeepExtractedFiles",
                 "ArgumentList",
                 "Download",
                 "NoPendingRenameCheck"
@@ -320,6 +321,12 @@ Describe $CommandName -Tag UnitTests {
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2012-KB4018073-x64-ENU.exe')
             $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
+        }
+        It "Extracts nothing with WhatIf, even with KeepExtractedFiles" {
+            $extractRoot = "$TestDrive\WhatIf"
+            $null = Update-DbaInstance -Version 2017 -Path $exeDir -ExtractPath $extractRoot -KeepExtractedFiles -EnableException -WhatIf
+            Should -Invoke -CommandName Invoke-Program -Exactly 0 -Scope It -ModuleName dbatools
+            $extractRoot | Should -Not -Exist
         }
     }
     Context "Validate upgrades to a specific KB" {
@@ -908,6 +915,31 @@ Describe $CommandName -Tag UnitTests {
             $result.Notes | Should -BeLike '*failed with exit code 12345*'
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
             $warVar | Should -BeLike '*failed with exit code 12345*'
+        }
+        It "keeps the extracted files of a failed update and reports them in the error with EnableException" {
+            Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
+                [PSCustomObject]@{
+                    FullName = "c:\mocked\filename.exe"
+                }
+            }
+            Mock -CommandName Get-Item -ModuleName dbatools -MockWith { "c:\mocked" }
+            # The extraction creates the real folder, the installation fails
+            Mock -CommandName Invoke-Program -ModuleName dbatools -MockWith {
+                if ($ArgumentList[0] -like "/x:*") {
+                    $null = New-Item -Path ($ArgumentList[0] -replace "^/x:|`"", "") -ItemType Directory
+                    return [PSCustomObject]@{ Successful = $true; ExitCode = 0 }
+                }
+                [PSCustomObject]@{ Successful = $false; ExitCode = 12345 }
+            }
+            $extractRoot = "$TestDrive\KeepExtractedFiles"
+            $failedUpdate = $null
+            try {
+                $null = Update-DbaInstance -Version 2008SP3 -Path "mocked" -ExtractPath $extractRoot -KeepExtractedFiles -EnableException
+            } catch {
+                $failedUpdate = $PSItem.TargetObject
+            }
+            $failedUpdate.ExtractPath | Should -BeLike "$extractRoot\dbatools_KB2546951_Extract_*"
+            (Get-ChildItem -Path $extractRoot).FullName | Should -Be $failedUpdate.ExtractPath
         }
     }
 }
