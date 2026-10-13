@@ -203,7 +203,10 @@ SELECT
         FROM ix
         WHERE ix.object_id = mid.object_id
           AND (
-                ',' + REPLACE(REPLACE(REPLACE(ISNULL(mid.equality_columns, '') + ',' + ISNULL(mid.inequality_columns, ''), '[', ''), ']', ''), ' ', '')
+                -- Wrap the candidate key list in commas on BOTH ends so every column, including
+                -- the last one (e.g. an inequality-only key like '[OrderDate]'), is delimited on
+                -- both sides and can match the leading-column pattern below.
+                ',' + REPLACE(REPLACE(REPLACE(ISNULL(mid.equality_columns, '') + ',' + ISNULL(mid.inequality_columns, ''), '[', ''), ']', ''), ' ', '') + ','
                 LIKE '%,' + REPLACE(ix.leading_column, ' ', '') + ',%'
               )
         FOR XML PATH(''), TYPE).value('.', 'nvarchar(max)'), 1, 2, '') AS OverlappingIndex
