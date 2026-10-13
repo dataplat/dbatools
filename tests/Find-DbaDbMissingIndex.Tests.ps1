@@ -46,9 +46,27 @@ FROM sys.all_objects a CROSS JOIN sys.all_objects b;
         $runWorkload = "SELECT OrderId, Amount FROM dbo.Orders WHERE CustomerId = 42 AND 1 = (SELECT 1);"
         1..5 | ForEach-Object { $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $db -Query $runWorkload }
 
-        # Low thresholds so the single-seek fixture is not filtered out by the defaults.
+        # Second table for the overlap case: an index already leads on OrderDate, and a range query
+        # over OrderDate (projecting another column) produces an INEQUALITY-ONLY suggestion keyed on
+        # OrderDate. The command should then report that existing index in OverlappingIndex - this is
+        # the range-only overlap that the first fixture (equality-only, no secondary index) can't cover.
+        $overlapSetup = @"
+CREATE TABLE dbo.Events (EventId int IDENTITY(1,1) PRIMARY KEY, OrderDate datetime2 NOT NULL, Payload char(200) NOT NULL DEFAULT 'x');
+CREATE NONCLUSTERED INDEX IX_Events_OrderDate ON dbo.Events (OrderDate);
+INSERT INTO dbo.Events (OrderDate)
+SELECT TOP (20000) DATEADD(MINUTE, ABS(CHECKSUM(NEWID())) % 1000000, '2020-01-01')
+FROM sys.all_objects a CROSS JOIN sys.all_objects b;
+"@
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $db -Query $overlapSetup
+
+        # Range predicate on OrderDate + project Payload -> inequality-only suggestion on OrderDate.
+        $overlapWorkload = "SELECT Payload FROM dbo.Events WHERE OrderDate > '2020-06-01' AND 1 = (SELECT 1);"
+        1..5 | ForEach-Object { $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $db -Query $overlapWorkload }
+
+        # Low thresholds so the single-seek fixtures are not filtered out by the defaults.
         $results = Find-DbaDbMissingIndex -SqlInstance $TestConfig.InstanceSingle -Database $db -MinimumImpact 0 -MinimumSeek 1
         $suggestion = $results | Where-Object { $PSItem.EqualityColumns -match "CustomerId" } | Select-Object -First 1
+        $overlapSuggestion = $results | Where-Object { $PSItem.InequalityColumns -match "OrderDate" } | Select-Object -First 1
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -65,8 +83,11 @@ FROM sys.all_objects a CROSS JOIN sys.all_objects b;
         }
 
         It "Generates the exact CREATE statement for the fixture" {
-            # The index name carries the index_handle (a per-table integer), so assert the stable
-            # parts around it rather than the whole handle value.
+            # Assert the complete statement. The index name carries the index_handle (a per-table
+            # integer), so that one segment is matched as \d+. The optimizer may or may not add
+            # [Amount] as an included column for this small fixture, so the INCLUDE clause is
+            # optional; everything else - verb, name shape, schema, table and the single key
+            # column - must match exactly, which is what catches a malformed statement.
             $suggestion.CreateStatement | Should -Match "^CREATE NONCLUSTERED INDEX \[IX_Orders_CustomerId_\d+\] ON \[dbo\]\.\[Orders\] \(\[CustomerId\]\)( INCLUDE \(\[Amount\]\))?;$"
         }
 
@@ -86,6 +107,20 @@ FROM sys.all_objects a CROSS JOIN sys.all_objects b;
             $before = $server.ConnectionContext.CurrentDatabase
             $null = $server | Find-DbaDbMissingIndex -Database $db -MinimumImpact 0 -MinimumSeek 1
             $server.ConnectionContext.CurrentDatabase | Should -Be $before
+        }
+    }
+
+    Context "Flags an overlapping index for an inequality-only suggestion" {
+        It "Returns an inequality-only suggestion keyed on OrderDate" {
+            $overlapSuggestion | Should -Not -BeNullOrEmpty
+            $overlapSuggestion.InequalityColumns | Should -Match "OrderDate"
+            $overlapSuggestion.EqualityColumns | Should -BeNullOrEmpty
+        }
+
+        It "Names the existing OrderDate index in OverlappingIndex" {
+            # This is the regression for the overlap-matching fix: the final (here, only) key column
+            # of a range-only suggestion must still match an existing index leading on that column.
+            $overlapSuggestion.OverlappingIndex | Should -Match "IX_Events_OrderDate"
         }
     }
 }
