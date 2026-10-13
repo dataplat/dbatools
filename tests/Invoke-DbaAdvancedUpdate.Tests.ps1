@@ -17,6 +17,7 @@ Describe $CommandName -Tag UnitTests {
                 "Authentication",
                 "Credential",
                 "ExtractPath",
+                "KeepExtractedFiles",
                 "ArgumentList",
                 "NoPendingRenameCheck",
                 "EnableException"
@@ -194,6 +195,48 @@ Describe $CommandName -Tag IntegrationTests {
             $warVar | Should -BeLike "*failed with exit code 12345*"
             #revert default mock
             Mock -CommandName Invoke-Program -MockWith { [PSCustomObject]@{ Successful = $true } } -ModuleName dbatools
+        }
+    }
+
+    Context "Cleanup of the extracted files" {
+        BeforeAll {
+            # The extraction creates the real folder, so the cleanup that follows runs against the file system.
+            Mock -CommandName Invoke-Program -ModuleName dbatools -MockWith {
+                if ($ArgumentList[0] -like "/x:*") {
+                    $null = New-Item -Path ($ArgumentList[0] -replace "^/x:|`"", "") -ItemType Directory
+                }
+                [PSCustomObject]@{ Successful = $true; ExitCode = 0 }
+            }
+        }
+
+        BeforeEach {
+            $extractRoot = "$TestDrive\Extract$(Get-Random)"
+        }
+
+        It "Removes the extracted files by default" {
+            $results = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -Action $doubleAction -ExtractPath $extractRoot -EnableException
+            $results.ExtractPath | Should -HaveCount 2
+            # The extraction created the root, the cleanup removed everything below it
+            Get-ChildItem -Path $extractRoot -ErrorAction Stop | Should -BeNullOrEmpty
+        }
+
+        It "Keeps the extracted files with KeepExtractedFiles" {
+            $results = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -Action $doubleAction -ExtractPath $extractRoot -KeepExtractedFiles -EnableException
+            $results.ExtractPath | Should -HaveCount 2
+            (Get-ChildItem -Path $extractRoot).FullName | Should -Be $results.ExtractPath
+        }
+
+        It "Keeps the extracted files of a failed installation with KeepExtractedFiles" {
+            Mock -CommandName Invoke-Program -ModuleName dbatools -MockWith {
+                if ($ArgumentList[0] -like "/x:*") {
+                    $null = New-Item -Path ($ArgumentList[0] -replace "^/x:|`"", "") -ItemType Directory
+                    return [PSCustomObject]@{ Successful = $true; ExitCode = 0 }
+                }
+                [PSCustomObject]@{ Successful = $false; ExitCode = 1603 }
+            }
+            $result = Invoke-DbaAdvancedUpdate -ComputerName $env:COMPUTERNAME -Action $singleAction -ExtractPath $extractRoot -KeepExtractedFiles 3>$null
+            $result.Successful | Should -Be $false
+            (Get-ChildItem -Path $extractRoot).FullName | Should -Be $result.ExtractPath
         }
     }
 
