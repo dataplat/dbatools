@@ -1,7 +1,7 @@
 
 -- SQL Server 2022 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: August 12, 2026
+-- Last Modified: September 18, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -109,6 +109,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 16.0.4255.1		CU25								5/20/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2022/cumulativeupdate25
 -- 16.0.4262.2		CU25 + GDR							7/14/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2022/general-distribution-release/kb5101347-july
 -- 16.0.4265.3		CU26								7/16/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2022/cumulative-update/kb5093420-cu26
+-- 16.0.4275.2		CU26 + GDR							9/8/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2022/general-distribution-release/5122768
+-- 16.0.4295.3		CU27								9/15/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2022/cumulative-update/kb5104824-cu27
 
 
 -- SQL Server 2022 will fall out of Mainstream Support on Jan 11, 2028
@@ -407,8 +409,10 @@ ORDER BY CONVERT(INT, h.run_duration) DESC, [Last Start Date] DESC OPTION (RECOM
 
 
 -- Get SQL Server Agent Alert Information (Query 11) (SQL Server Agent Alerts)
-SELECT [name] AS [Alert Name], event_source, message_id, severity, [enabled], has_notification, 
-       delay_between_responses, occurrence_count, last_occurrence_date, last_occurrence_time
+SELECT [name] AS [SQL Agent Alert Name], event_source AS [Event Source], 
+		   message_id AS [Message ID], severity AS [Severity], [enabled] AS [Enabled?], has_notification AS [Has Notification?], 
+		   delay_between_responses AS [Delay between Responses (sec)], occurrence_count AS [Occurance Count], 
+		   last_occurrence_date AS [Last Occurrence Date], last_occurrence_time AS [Last Occurrence Time]
 FROM msdb.dbo.sysalerts WITH (NOLOCK)
 ORDER BY [name] OPTION (RECOMPILE);
 ------

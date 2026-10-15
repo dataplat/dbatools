@@ -1,7 +1,7 @@
 
 -- SQL Server 2025 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: Sept 15, 2026
+-- Last Modified: October 1, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -78,6 +78,9 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 17.0.4055.5		CU6									6/18/2026		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2025/cumulativeupdate6
 -- 17.0.4060.2		CU6 + GDR							7/14/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2025/general-distribution-release/kb5101346-july
 -- 17.0.4065.4		CU7									7/16/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2025/cumulative-update/kb5096981-cu7
+-- 17.0.4075.5		CU8									8/13/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2025/cumulative-update/kb5104822-cu8
+-- 17.0.4085.5		CU8 + GDR							9/8/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2025/general-distribution-release/5122769
+-- 17.0.5005.3		CU9									9/15/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2025/cumulative-update/kb5122048-cu9
 
 
 -- SQL Server 2025 will fall out of Mainstream Support on Jan 6, 2031
@@ -369,8 +372,10 @@ ORDER BY CONVERT(INT, h.run_duration) DESC, [Last Start Date] DESC OPTION (RECOM
 
 
 -- Get SQL Server Agent Alert Information (Query 11) (SQL Server Agent Alerts)
-SELECT [name] AS [Alert Name], event_source, message_id, severity, [enabled], has_notification, 
-       delay_between_responses, occurrence_count, last_occurrence_date, last_occurrence_time
+SELECT [name] AS [SQL Agent Alert Name], event_source AS [Event Source], 
+		   message_id AS [Message ID], severity AS [Severity], [enabled] AS [Enabled?], has_notification AS [Has Notification?], 
+		   delay_between_responses AS [Delay between Responses (sec)], occurrence_count AS [Occurance Count], 
+		   last_occurrence_date AS [Last Occurrence Date], last_occurrence_time AS [Last Occurrence Time]
 FROM msdb.dbo.sysalerts WITH (NOLOCK)
 ORDER BY [name] OPTION (RECOMPILE);
 ------
