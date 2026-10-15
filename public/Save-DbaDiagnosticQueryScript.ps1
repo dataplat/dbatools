@@ -87,8 +87,8 @@ function Save-DbaDiagnosticQueryScript {
 
     Write-Message -Level Verbose -Message "Downloading Glenn Berry Resources Page"
 
-    # The bot filter in front of the site can answer with a 403 challenge page (it does for PowerShell 7 on Windows),
-    # so a page that cannot be read falls back to the known links instead of failing the command
+    # The bot filter in front of the site can answer with a 403 challenge page. A page that cannot be read is retried
+    # with the request that passes the filter, and when that fails too the known links are used instead.
     $pageContent = $null
     try {
         try {
@@ -98,7 +98,26 @@ function Save-DbaDiagnosticQueryScript {
             $pageContent = (Invoke-TlsWebRequest -Uri $glennberryResources -UseBasicParsing -ErrorAction Stop)
         }
     } catch {
-        Write-Message -Level Verbose -Message "Reading Glenn Berry's resources page failed, using the script links known to dbatools: $($_.Exception.Message)"
+        Write-Message -Level Verbose -Message "Reading Glenn Berry's resources page failed: $($_.Exception.Message)"
+    }
+
+    # PowerShell 7 on Windows is always challenged, but passes with TLS 1.2 or HTTP/2. Windows PowerShell has
+    # neither parameter, and its challenges come and go regardless of the request.
+    $webRequestParameters = (Get-Command -Name Invoke-WebRequest).Parameters
+    if (-not $pageContent.Content -and $webRequestParameters.ContainsKey("SslProtocol")) {
+        $splatResourcesRetry = @{
+            Uri         = $glennberryResources
+            SslProtocol = "Tls12"
+        }
+        if ($webRequestParameters.ContainsKey("HttpVersion")) {
+            $splatResourcesRetry.HttpVersion = "2.0"
+        }
+        Write-Message -Level Verbose -Message "Retrying Glenn Berry's resources page with TLS 1.2 and HTTP/2"
+        try {
+            $pageContent = (Invoke-TlsWebRequest @splatResourcesRetry -UseBasicParsing -ErrorAction Stop)
+        } catch {
+            Write-Message -Level Verbose -Message "Reading Glenn Berry's resources page failed again: $($_.Exception.Message)"
+        }
     }
 
     $resourcesContent = ""
