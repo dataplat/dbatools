@@ -68,8 +68,28 @@ function Save-DbaDiagnosticQueryScript {
 
     $glennberryResources = "https://glennsqlperformance.com/resources/"
 
+    # The links of the resources page, used when the page cannot be read or lists no scripts
+    $knownScriptUrls = @(
+        "https://www.dropbox.com/scl/fi/8qtdi3w5ix2bra8ytk7oy/SQL-Server-2025-Diagnostic-Information-Queries.sql?rlkey=kv1t4fdwe60nkd7fl0jukhnnq&dl=1",
+        "https://www.dropbox.com/s/6rb2f97ocvkq7fw/SQL%20Server%202022%20Diagnostic%20Information%20Queries.sql?dl=1",
+        "https://www.dropbox.com/s/k1vauzxxhyh1fnb/SQL%20Server%202019%20Diagnostic%20Information%20Queries.sql?dl=1",
+        "https://www.dropbox.com/scl/fi/0q4sbb7xb3x3vmbhkdga3/SQL-Server-2017-Diagnostic-Information-Queries.sql?rlkey=nli5q22tgqqw7oxvoqyeujmmc&dl=1",
+        "https://www.dropbox.com/s/pkpxihdkq3odgbj/SQL%20Server%202016%20SP2%20Diagnostic%20Information%20Queries.sql?dl=1",
+        "https://www.dropbox.com/s/w6gi8j76k64fgbg/SQL%20Server%202016%20SP1%20Diagnostic%20Information%20Queries.sql?dl=1",
+        "https://www.dropbox.com/s/uttp0843e5078vs/SQL%20Server%202014%20Diagnostic%20Information%20Queries.sql?dl=1",
+        "https://www.dropbox.com/s/3l4yotzedk45xeh/SQL%20Server%202012%20Diagnostic%20Information%20Queries.sql?dl=1",
+        "https://www.dropbox.com/s/fq6hyw899fe3crv/SQL%20Server%202008%20R2%20Diagnostic%20Information%20Queries.sql?dl=1",
+        "https://www.dropbox.com/s/mjxw1w9tgw7eo6g/SQL%20Server%202008%20Diagnostic%20Information%20Queries.sql?dl=1",
+        "https://www.dropbox.com/s/3kkskuheyzauih9/SQL%20Server%202005%20Diagnostic%20Information%20Queries.sql?dl=1",
+        "https://www.dropbox.com/s/8y2fdgxfbjyiid8/Azure%20SQL%20Database%20Diagnostic%20Information%20Queries.sql?dl=1",
+        "https://www.dropbox.com/s/xwi4jzns4rcvnnk/SQL%20Managed%20Instance%20Diagnostic%20Information%20Queries.sql?dl=1"
+    )
+
     Write-Message -Level Verbose -Message "Downloading Glenn Berry Resources Page"
 
+    # The bot filter in front of the site can answer with a 403 challenge page (it does for PowerShell 7 on Windows),
+    # so a page that cannot be read falls back to the known links instead of failing the command
+    $pageContent = $null
     try {
         try {
             $pageContent = (Invoke-TlsWebRequest -Uri $glennberryResources -UseBasicParsing -ErrorAction Stop)
@@ -78,13 +98,12 @@ function Save-DbaDiagnosticQueryScript {
             $pageContent = (Invoke-TlsWebRequest -Uri $glennberryResources -UseBasicParsing -ErrorAction Stop)
         }
     } catch {
-        Stop-Function -Message "Invoke-TlsWebRequest failed: $_" -Target $pageContent -ErrorRecord $_
-        return
+        Write-Message -Level Verbose -Message "Reading Glenn Berry's resources page failed, using the script links known to dbatools: $($_.Exception.Message)"
     }
 
-    if (-not $pageContent.Content) {
-        Stop-Function -Message "Retrieved empty content from Glenn Berry's resources page"
-        return
+    $resourcesContent = ""
+    if ($pageContent.Content) {
+        $resourcesContent = $pageContent.Content
     }
 
     # Simplified approach: find ALL Dropbox .sql URLs and extract version from URL itself
@@ -92,7 +111,7 @@ function Save-DbaDiagnosticQueryScript {
 
     # Pattern to find any Dropbox SQL URL (both old and new formats)
     $urlPattern = '(https://www\.dropbox\.com/(?:s/[\w]+|scl/fi/[\w]+)/[^"\s]*\.sql[^"\s]*dl=0)'
-    $urlMatches = [regex]::Matches($pageContent.Content, $urlPattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    $urlMatches = [regex]::Matches($resourcesContent, $urlPattern, [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
 
     foreach ($match in $urlMatches) {
         $url = $match.Groups[1].Value
@@ -143,6 +162,11 @@ function Save-DbaDiagnosticQueryScript {
         }
 
         $allDropboxUrls += $downloadUrl
+    }
+
+    if ($allDropboxUrls.Count -eq 0) {
+        Write-Message -Level Verbose -Message "Found no script links on Glenn Berry's resources page, using the script links known to dbatools"
+        $allDropboxUrls = $knownScriptUrls
     }
 
     # Remove duplicates

@@ -61,4 +61,25 @@ Describe $CommandName -Tag IntegrationTests {
             $openIds | Should -BeNullOrEmpty
         }
     }
+
+    Context "When the scripts are downloaded" {
+        BeforeAll {
+            # The resources page sits behind a bot filter that answers some clients with a 403 challenge page.
+            # The command then falls back to the links it knows, so the download works either way.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $allScriptPath = "$TestDrive\AllDiagnosticQueries"
+            $null = New-Item -Path $allScriptPath -ItemType Directory -Force
+            $allScripts = Save-DbaDiagnosticQueryScript -Path $allScriptPath
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Saves the scripts of the current versions" {
+            $allScripts.Name | Should -Contain "SQLServerDiagnosticQueries_2022.sql"
+            $allScripts.Name | Should -Contain "SQLServerDiagnosticQueries_AzureDatabase.sql"
+        }
+
+        It "Names every script after a known version" {
+            $allScripts.Name | Should -Not -Contain "SQLServerDiagnosticQueries_Unknown.sql"
+        }
+    }
 }
