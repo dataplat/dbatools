@@ -519,9 +519,12 @@ function Start-DbaDbEncryption {
                     $server = $null
                     try {
                         # Create new connection for this thread
+                        # EnableException puts the reason of a failed connection into Error: a warning written
+                        # here would stay in the streams of the thread, which the caller does not read.
                         $splatConnection = @{
-                            SqlInstance   = $ServerName
-                            SqlCredential = $SqlCredential
+                            SqlInstance     = $ServerName
+                            SqlCredential   = $SqlCredential
+                            EnableException = $true
                         }
                         $server = Connect-DbaInstance @splatConnection
                         $db = $server.Databases[$DatabaseName]
@@ -563,40 +566,46 @@ function Start-DbaDbEncryption {
                 if ($dbatools) {
                     $initialSessionState.ImportPSModule($dbatools.Path)
                 }
-                $runspacePool = [runspacefactory]::CreateRunspacePool(1, 10, $initialSessionState, $Host)
+                # The pool gets no host. With $Host, the warnings, verbose messages and progress of the calling
+                # pipeline no longer reach the streams of a host created through the PowerShell API once a thread
+                # has run. The threads return their failures as objects, which are read from the thread itself.
+                $runspacePool = [runspacefactory]::CreateRunspacePool($initialSessionState)
+                $null = $runspacePool.SetMaxRunspaces(10)
                 $runspacePool.Open()
 
                 $threads = @()
 
-                foreach ($db in $databases) {
-                    $splatRunspace = @{
-                        ServerName      = $servername
-                        DatabaseName    = $db.Name
-                        EncryptorName   = $encryptorNameToUse
-                        EnableException = $EnableException
-                        SqlCredential   = $SqlCredential
-                    }
-
-                    Write-Message -Level Verbose -Message "Queuing database $($db.Name) on $servername for encryption"
-
-                    $thread = [powershell]::Create()
-                    $thread.RunspacePool = $runspacePool
-                    $null = $thread.AddScript($encryptionScript)
-                    $null = $thread.AddParameters($splatRunspace)
-
-                    $handle = $thread.BeginInvoke()
-                    $threads += [PSCustomObject]@{
-                        Handle      = $handle
-                        Thread      = $thread
-                        Database    = $db.Name
-                        Instance    = $servername
-                        IsRetrieved = $false
-                        Started     = Get-Date
-                    }
-                }
-
-                # Retrieve results
+                # The finally disposes the threads and closes the pool also when Stop-Function throws under
+                # EnableException and when the pipeline stops early (Ctrl+C, Select-Object -First).
                 try {
+                    foreach ($db in $databases) {
+                        $splatRunspace = @{
+                            ServerName      = $servername
+                            DatabaseName    = $db.Name
+                            EncryptorName   = $encryptorNameToUse
+                            EnableException = $EnableException
+                            SqlCredential   = $SqlCredential
+                        }
+
+                        Write-Message -Level Verbose -Message "Queuing database $($db.Name) on $servername for encryption"
+
+                        $thread = [powershell]::Create()
+                        $thread.RunspacePool = $runspacePool
+                        $null = $thread.AddScript($encryptionScript)
+                        $null = $thread.AddParameters($splatRunspace)
+
+                        $handle = $thread.BeginInvoke()
+                        $threads += [PSCustomObject]@{
+                            Handle      = $handle
+                            Thread      = $thread
+                            Database    = $db.Name
+                            Instance    = $servername
+                            IsRetrieved = $false
+                            Started     = Get-Date
+                        }
+                    }
+
+                    # Retrieve results
                     while ($threads | Where-Object { $_.IsRetrieved -eq $false }) {
                         $totalThreads = ($threads | Measure-Object).Count
                         $totalRetrievedThreads = ($threads | Where-Object { $_.IsRetrieved -eq $true } | Measure-Object).Count
@@ -622,10 +631,13 @@ function Start-DbaDbEncryption {
                     }
                 } finally {
                     Write-Progress -Id 1 -Activity "Enabling encryption on $servername" -Completed
+                    # A thread that is still running is stopped by Dispose().
+                    foreach ($threadEntry in $threads) {
+                        $threadEntry.Thread.Dispose()
+                    }
+                    $runspacePool.Close()
+                    $runspacePool.Dispose()
                 }
-
-                $runspacePool.Close()
-                $runspacePool.Dispose()
             }
         }
     }
