@@ -190,7 +190,13 @@ function Copy-DbaCredential {
             try {
                 $decryptedCredentials = Get-DecryptedObject -SqlInstance $sourceServer -Credential $Credential -Type Credential -EnableException
             } catch {
-                Stop-Function -Message "Failed to decrypt credentials on $($sourceServer.Name)" -ErrorRecord $_
+                # Under EnableException the Stop-Function throws, and then neither process nor end runs.
+                $decryptMessage = "Failed to decrypt credentials on $($sourceServer.Name)"
+                if ($dacOpened) {
+                    $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+                    $dacOpened = $false
+                }
+                Stop-Function -Message $decryptMessage -ErrorRecord $_
                 return
             }
         }
@@ -201,84 +207,93 @@ function Copy-DbaCredential {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($destinstance in $Destination) {
-            try {
-                $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
-            }
-
-            Write-Message -Level Verbose -Message "Starting migration"
-            $destServer.Credentials.Refresh()
-            foreach ($cred in $credentialList) {
-                $credentialName = $cred.Name
-
-                $copyCredentialStatus = [PSCustomObject]@{
-                    SourceServer      = $sourceServer.DomainInstanceName
-                    DestinationServer = $destServer.DomainInstanceName
-                    Type              = "Credential"
-                    Name              = $credentialName
-                    Status            = $null
-                    Notes             = $null
-                    DateTime          = [DbaDateTime](Get-Date)
+        # The dedicated admin connection is closed in the finally, not only in end: a throw under EnableException, Ctrl+C
+        # and Select-Object -First skip the end block, and SQL Server allows only one dedicated admin connection per instance.
+        try {
+            foreach ($destinstance in $Destination) {
+                try {
+                    $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+                } catch {
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
                 }
 
-                if ($null -ne $destServer.Credentials[$credentialName]) {
-                    if (!$force) {
-                        $copyCredentialStatus.Status = "Skipping"
-                        $copyCredentialStatus.Notes = "Already exists on destination"
-                        if ($Pscmdlet.ShouldProcess($destServer.Name, "Skipping $credentialName, already exists")) {
-                            $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        }
-                        continue
-                    } else {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Dropping $credentialName")) {
-                            try {
-                                $destServer.Credentials[$credentialName].Drop()
-                            } catch {
-                                $copyCredentialStatus.Status = "Failed"
-                                $copyCredentialStatus.Notes = "$PSItem"
-                                Write-Message -Level Verbose -Message "Issue dropping $credentialName on $destinstance | $PSItem"
-                                continue
+                Write-Message -Level Verbose -Message "Starting migration"
+                $destServer.Credentials.Refresh()
+                foreach ($cred in $credentialList) {
+                    $credentialName = $cred.Name
+
+                    $copyCredentialStatus = [PSCustomObject]@{
+                        SourceServer      = $sourceServer.DomainInstanceName
+                        DestinationServer = $destServer.DomainInstanceName
+                        Type              = "Credential"
+                        Name              = $credentialName
+                        Status            = $null
+                        Notes             = $null
+                        DateTime          = [DbaDateTime](Get-Date)
+                    }
+
+                    if ($null -ne $destServer.Credentials[$credentialName]) {
+                        if (!$force) {
+                            $copyCredentialStatus.Status = "Skipping"
+                            $copyCredentialStatus.Notes = "Already exists on destination"
+                            if ($Pscmdlet.ShouldProcess($destServer.Name, "Skipping $credentialName, already exists")) {
+                                $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            }
+                            continue
+                        } else {
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Dropping $credentialName")) {
+                                try {
+                                    $destServer.Credentials[$credentialName].Drop()
+                                } catch {
+                                    $copyCredentialStatus.Status = "Failed"
+                                    $copyCredentialStatus.Notes = "$PSItem"
+                                    Write-Message -Level Verbose -Message "Issue dropping $credentialName on $destinstance | $PSItem"
+                                    continue
+                                }
                             }
                         }
                     }
-                }
 
-                Write-Message -Level Verbose -Message "Attempting to migrate $credentialName"
-                try {
-                    $splatNewCredential = @{
-                        SqlInstance     = $destServer
-                        Name            = $cred.Name
-                        Identity        = $cred.Identity
-                        MappedClassType = $cred.MappedClassType
-                        EnableException = $true
-                    }
-                    if ($cred.mappedClassType -eq "CryptographicProvider") {
-                        $cryptoConfiguredOnDestination = $destServer.Query("SELECT is_enabled FROM sys.cryptographic_providers WHERE name = '$($cred.ProviderName)'")
-                        if (-not $cryptoConfiguredOnDestination.is_enabled) {
-                            throw "The cryptographic provider $($cred.ProviderName) needs to be configured and enabled on $destServer"
+                    Write-Message -Level Verbose -Message "Attempting to migrate $credentialName"
+                    try {
+                        $splatNewCredential = @{
+                            SqlInstance     = $destServer
+                            Name            = $cred.Name
+                            Identity        = $cred.Identity
+                            MappedClassType = $cred.MappedClassType
+                            EnableException = $true
                         }
-                        $splatNewCredential.ProviderName = $cred.ProviderName
-                    }
-                    if (-not $ExcludePassword) {
-                        $decryptedCred = $decryptedCredentials | Where-Object { $_.Name -eq $credentialName }
-                        $splatNewCredential.SecurePassword = ConvertTo-SecureString -String $decryptedCred.Password -AsPlainText -Force
-                    }
+                        if ($cred.mappedClassType -eq "CryptographicProvider") {
+                            $cryptoConfiguredOnDestination = $destServer.Query("SELECT is_enabled FROM sys.cryptographic_providers WHERE name = '$($cred.ProviderName)'")
+                            if (-not $cryptoConfiguredOnDestination.is_enabled) {
+                                throw "The cryptographic provider $($cred.ProviderName) needs to be configured and enabled on $destServer"
+                            }
+                            $splatNewCredential.ProviderName = $cred.ProviderName
+                        }
+                        if (-not $ExcludePassword) {
+                            $decryptedCred = $decryptedCredentials | Where-Object { $_.Name -eq $credentialName }
+                            $splatNewCredential.SecurePassword = ConvertTo-SecureString -String $decryptedCred.Password -AsPlainText -Force
+                        }
 
-                    if ($Pscmdlet.ShouldProcess($destinstance, "Copying $identity ($credentialName)")) {
-                        $null = New-DbaCredential @splatNewCredential
-                        Write-Message -Level Verbose -Message "$credentialName successfully copied"
-                        $copyCredentialStatus.Status = "Successful"
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Copying $identity ($credentialName)")) {
+                            $null = New-DbaCredential @splatNewCredential
+                            Write-Message -Level Verbose -Message "$credentialName successfully copied"
+                            $copyCredentialStatus.Status = "Successful"
+                            $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
+                    } catch {
+                        $copyCredentialStatus.Status = "Failed"
+                        $copyCredentialStatus.Notes = "$PSItem"
                         $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Write-Message -Level Verbose -Message "Issue creating $credentialName on $destinstance | $PSItem"
+                        continue
                     }
-                } catch {
-                    $copyCredentialStatus.Status = "Failed"
-                    $copyCredentialStatus.Notes = "$PSItem"
-                    $copyCredentialStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                    Write-Message -Level Verbose -Message "Issue creating $credentialName on $destinstance | $PSItem"
-                    continue
                 }
+            }
+        } finally {
+            if ($dacOpened) {
+                $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+                $dacOpened = $false
             }
         }
     }

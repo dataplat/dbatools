@@ -146,6 +146,26 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When the pipeline ends at the first credential" {
+        It "Closes the dedicated admin connection" {
+            # The name of the source makes the command open a dedicated admin connection of its own. It was closed in the
+            # end block only, which Select-Object -First 1 skips, and SQL Server allows only one per instance.
+            $firstCredential = Copy-DbaCredential -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Name thorcred | Select-Object -First 1
+            $firstCredential.Name | Should -Be "thorcred"
+
+            $dacSessionQuery = "SELECT COUNT(*) AS DacSessions FROM sys.dm_exec_sessions AS s INNER JOIN sys.endpoints AS e ON e.endpoint_id = s.endpoint_id WHERE e.is_admin_endpoint = 1"
+            # The session can take a moment to end on the server after the client closed the connection.
+            $dacWatch = [System.Diagnostics.Stopwatch]::StartNew()
+            do {
+                $dacSessions = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query $dacSessionQuery).DacSessions
+                if ($dacSessions -gt 0) {
+                    Start-Sleep -Milliseconds 200
+                }
+            } while ($dacSessions -gt 0 -and $dacWatch.Elapsed.TotalSeconds -lt 5)
+            $dacSessions | Should -Be 0
+        }
+    }
+
     # See https://github.com/dataplat/dbatools/issues/7896 and comments above in BeforeAll
     Context "Crypto provider cred" {
         It "ensure copied credential is using the same crypto provider" {
