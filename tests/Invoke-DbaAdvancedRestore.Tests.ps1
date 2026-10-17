@@ -326,6 +326,58 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When -VerifyOnly verifies more than one backup file" {
+        BeforeAll {
+            # The result of the first backup file was returned with a return, which left the whole end block, so the
+            # log backup was never verified.
+            $verifyResult = $backupHistory | Invoke-DbaAdvancedRestore -SqlInstance $TestConfig.InstanceSingle -VerifyOnly
+            $verifyWarning = $WarnVar
+        }
+
+        It "Verifies every backup file" {
+            $verifyWarning | Should -BeNullOrEmpty
+            @($verifyResult | Where-Object { $PSItem -is [string] }) | Should -Be @("Verify successful", "Verify successful")
+        }
+    }
+
+    Context "When the restore of a backup file fails" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            # A directory below a file cannot exist, so the restore of the full backup fails. The data file of master
+            # is a file on every instance.
+            $masterFile = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object TypeDescription -eq "ROWS" | Select-Object -First 1
+            $noDirectory = "$($masterFile.PhysicalName)\dbatoolsci_nodirectory"
+            $failDbName = "dbatoolsci_advrestorefail_$(Get-Random)"
+            $splatFailFormat = @{
+                ReplaceDatabaseName = $failDbName
+                DataFileDirectory   = $noDirectory
+                LogFileDirectory    = $noDirectory
+            }
+            $failHistory = Get-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -Path $backupPath | Select-DbaBackupInformation | Format-DbaBackupInformation @splatFailFormat
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The Stop-Function -Continue after the failure continued with the log backup of the database, so the break
+            # that was meant to stop the database was never reached.
+            $failResult = $failHistory | Invoke-DbaAdvancedRestore -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
+            $failWarning = $WarnVar
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $failDbName -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Warns once about the failed restore" {
+            @($failWarning | Where-Object { $PSItem -like "*Failed to restore db $failDbName, stopping*" }).Count | Should -Be 1
+        }
+
+        It "Stops with the backup file that failed" {
+            @($failResult).Count | Should -Be 1
+            $failResult.RestoreComplete | Should -BeFalse
+        }
+    }
+
     Context "When the pipeline ends at the first backup file" {
         BeforeAll {
             # The command runs in a runspace of its own, created by the PowerShell API without a host. There
