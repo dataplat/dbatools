@@ -362,18 +362,27 @@ function Copy-DbaLinkedServer {
     process {
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($destinstance in $Destination) {
-            try {
-                $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
-            }
-            if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $destinstance" -Target $destServer -Continue
-            }
+        # The dedicated admin connection is closed in the finally, not only in end: a throw under EnableException, Ctrl+C
+        # and Select-Object -First skip the end block, and SQL Server allows only one dedicated admin connection per instance.
+        try {
+            foreach ($destinstance in $Destination) {
+                try {
+                    $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                } catch {
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                }
+                if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
+                    Stop-Function -Message "Not a sysadmin on $destinstance" -Target $destServer -Continue
+                }
 
-            # Magic happens here
-            Copy-DbaLinkedServers $LinkedServer -Force:$force
+                # Magic happens here
+                Copy-DbaLinkedServers $LinkedServer -Force:$force
+            }
+        } finally {
+            if ($dacOpened) {
+                $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+                $dacOpened = $false
+            }
         }
     }
     end {
