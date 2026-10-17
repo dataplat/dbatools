@@ -300,6 +300,8 @@ function Export-DbaCsv {
 
             # The finally makes sure the connection is also closed when the export fails and the catch
             # continues with the next instance, and when -WhatIf skips the export altogether.
+            $cmd = $null
+            $reader = $null
             try {
                 $sqlToExecute = $null
 
@@ -355,6 +357,19 @@ function Export-DbaCsv {
                     }
                 }
             } finally {
+                # The reader is only closed inside the try after a successful write. When the writer fails, the reader
+                # stays open on the connection with the rest of the rows unread. A connection the caller passed in is
+                # not disconnected below, so their next query on it fails because of the open reader.
+                if ($reader -and -not $reader.IsClosed) {
+                    try {
+                        # Cancel the command first: closing a reader with unread rows would otherwise drain the whole
+                        # remaining result set from the server before it returns.
+                        $cmd.Cancel()
+                        $reader.Close()
+                    } catch {
+                        Write-Message -Level Debug -Message "Failed to close the reader: $PSItem"
+                    }
+                }
                 if ($isNewConnection) {
                     # -WhatIf:$false because this is ownership bookkeeping, not the user's operation:
                     # Disconnect-DbaInstance supports ShouldProcess, so a propagated $WhatIfPreference
