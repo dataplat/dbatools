@@ -222,8 +222,9 @@ function New-DbaEndpoint {
                     }
                     if ($Certificate) {
                         $outscript = $endpoint.Script()
-                        $outscript = $outscript.Replace("ROLE = ALL,", "ROLE = ALL, AUTHENTICATION = CERTIFICATE $cert,")
-                        $server.Query($outscript)
+                        # The script names the role of -Role, so the authentication goes behind whichever role it is
+                        $outscript = $outscript -replace "(ROLE = \w+),", "`$1, AUTHENTICATION = CERTIFICATE $cert,"
+                        $null = $server.Query($outscript)
                     } else {
                         $null = $endpoint.Create()
                     }
