@@ -628,15 +628,14 @@ function New-DbaComputerCertificate {
                         }
                     }
                 }
-                if ($PScmdlet.ShouldProcess("local", "Removing all files from $certDir")) {
-                    try {
-                        Remove-Item -Force -Recurse $certDir -ErrorAction SilentlyContinue
-                    } catch {
-                        Stop-Function -Message "Issue removing files from $certDir" -Target $certDir -ErrorRecord $PSItem
-                    }
-                }
             } finally {
                 Write-ProgressHelper -Completed
+                # The request folder is created before any ShouldProcess, so it is removed here and not inside one: with
+                # -WhatIf, a throw under EnableException and a stopped pipeline it stayed in the temp folder. The secondary
+                # nodes of a cluster use the certificate exported from the first node, which is held in memory.
+                if ($certDir) {
+                    Remove-Item -Path $certDir -Recurse -Force -ErrorAction SilentlyContinue
+                }
             }
         }
     }

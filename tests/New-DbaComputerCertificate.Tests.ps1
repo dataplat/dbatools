@@ -686,4 +686,30 @@ RequestType = PKCS10
             $openIds | Should -BeNullOrEmpty
         }
     }
+
+    Context "With -WhatIf" {
+        BeforeAll {
+            # The request folder and its request.inf are written before any ShouldProcess, and the folder was removed
+            # inside one, so -WhatIf left it in the temp folder. With CaServer and CaName given, nothing asks Active
+            # Directory, and with -WhatIf certreq never runs.
+            $requestFoldersBefore = @((Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Directory -Filter "certreq-*").Name)
+            $splatWhatIfCertificate = @{
+                CaServer = "nosuchca.dbatools.invalid"
+                CaName   = "NoSuchCA"
+                WhatIf   = $true
+            }
+            $whatIfResult = New-DbaComputerCertificate @splatWhatIfCertificate
+            $whatIfWarning = $WarnVar
+            $requestFoldersAfter = @((Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Directory -Filter "certreq-*").Name)
+        }
+
+        It "Creates no certificate and does not warn" {
+            $whatIfResult | Should -BeNullOrEmpty
+            $whatIfWarning | Should -BeNullOrEmpty
+        }
+
+        It "Leaves no request folder behind" {
+            $requestFoldersAfter | Where-Object { $PSItem -notin $requestFoldersBefore } | Should -BeNullOrEmpty
+        }
+    }
 }
