@@ -123,17 +123,13 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When the restore fails for another reason than a deadlock" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            # A login with a user in the database, and so in its snapshot, sees both, but has no permission to restore, so
-            # the restore fails at once and without a deadlock. A session that holds the database is no good trigger: the
-            # restore waits for its lock for an unpredictable time before it fails.
-            $deniedDb = "dbatoolsci_RestoreSnap3_$(Get-Random)"
-            $deniedSnap = "$($deniedDb)_snapshotted"
-            $deniedLogin = "dbatoolsci_snaprestore_$(Get-Random)"
-            $deniedPassword = ConvertTo-SecureString "dbatools.IO$(Get-Random)" -AsPlainText -Force
-            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $deniedDb
-            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $deniedLogin -SecurePassword $deniedPassword
-            $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $deniedDb -Login $deniedLogin
-            $null = New-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $deniedDb -Name $deniedSnap
+            $null = New-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db2 -Name $db2_snap1
+            # A session that stays in the database keeps the restore from getting exclusive access, so it fails without
+            # a deadlock. -Force would end that session, so the command runs without it.
+            # The restore waits about 20 seconds for the lock of that session before it fails with error 5070 (lab, SQL Server
+            # 2019): the fixed command warns once after that time, the old one warned every 20 seconds and never finished.
+            $holderServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -Database $db2 -NonPooledConnection
+            $null = $holderServer.ConnectionContext.ExecuteScalar("SELECT 1")
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
             # Only a deadlock counts the tries, and the -Continue after any other failure continued the retry loop, so
@@ -142,10 +138,12 @@ Describe $CommandName -Tag IntegrationTests {
             # the psm1 without a command line skips the type data. It has none of the default parameter values of the
             # tests, so Confirm is passed here.
             $splatFailingRestore = @{
-                SqlInstance   = $TestConfig.InstanceSingle
-                SqlCredential = New-Object System.Management.Automation.PSCredential($deniedLogin, $deniedPassword)
-                Snapshot      = $deniedSnap
-                Confirm       = $false
+                SqlInstance = $TestConfig.InstanceSingle
+                Snapshot    = $db2_snap1
+                Confirm     = $false
+            }
+            if ($TestConfig.SqlCred) {
+                $splatFailingRestore.SqlCredential = $TestConfig.SqlCred
             }
             $restoreRunspace = [runspacefactory]::CreateRunspace()
             $restoreRunspace.Open()
@@ -170,9 +168,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            Remove-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $deniedDb -ErrorAction SilentlyContinue
-            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $deniedDb -ErrorAction SilentlyContinue
-            Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $deniedLogin -ErrorAction SilentlyContinue
+            $holderServer.ConnectionContext.Disconnect()
+            Remove-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db2 -ErrorAction SilentlyContinue
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -181,7 +178,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Warns once about the failed restore" {
-            @($restoreWarnings | Where-Object { $PSItem -like "*Failure attempting to restore*" }).Count | Should -Be 1
+            # The old message spelled it Failiure.
+            @($restoreWarnings | Where-Object { $PSItem -like "*attempting to restore*" }).Count | Should -Be 1
         }
     }
 }
