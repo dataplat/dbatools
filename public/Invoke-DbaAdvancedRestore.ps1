@@ -542,14 +542,15 @@ function Invoke-DbaAdvancedRestore {
                                 Write-Progress -id 1 -activity "Verifying $database backup file on $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                                 $verify = $restore.SqlVerify($server)
                                 Write-Progress -id 1 -activity "Verifying $database backup file on $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                                # No return here: it left the whole end block, so only the first backup file was verified.
                                 if ($verify) {
                                     Write-Message -Message "VerifyOnly restore Succeeded" -Level Verbose
                                     $restoreComplete = $true
-                                    return "Verify successful"
+                                    "Verify successful"
                                 } else {
                                     Write-Message -Message "VerifyOnly restore Failed" -Level Warning
                                     $restoreComplete = $False
-                                    return "Verify failed"
+                                    "Verify failed"
                                 }
                             } else {
                                 $outerProgress = $BackupCnt / $Backups.Count * 100
@@ -616,7 +617,9 @@ function Invoke-DbaAdvancedRestore {
                             Write-Message -Level Verbose -Message "Failed to restore $database"
                             $restoreComplete = $False
                             $ExitError = $_.Exception.InnerException
-                            Stop-Function -Message "Failed to restore db $database, stopping" -ErrorRecord $_ -Continue
+                            # No -Continue: it continued with the next backup file of this database, so the break that
+                            # stops the database and goes on with the next one was never reached.
+                            Stop-Function -Message "Failed to restore db $database, stopping" -ErrorRecord $_
                             break
                         } finally {
                             # The bar of this backup file ends with the file, also when its restore failed or was stopped.

@@ -235,4 +235,33 @@ Describe $CommandName -Tag IntegrationTests {
             $openIds | Should -BeNullOrEmpty
         }
     }
+
+    Context "With -WhatIf" {
+        BeforeAll {
+            # Force skips the check for an existing installation, so the command goes on to the download. The download
+            # ran before the first ShouldProcess, so -WhatIf downloaded SqlPackage, and the verification afterwards warned
+            # that the installation had failed.
+            $splatWhatIfInstall = @{
+                Path      = "$TestDrive\WhatIfInstall"
+                LocalFile = "$TestDrive\whatif-sqlpackage.zip"
+                Force     = $true
+                WhatIf    = $true
+            }
+            $whatIfResult = Install-DbaSqlPackage @splatWhatIfInstall
+            $whatIfWarning = $WarnVar
+        }
+
+        It "Downloads nothing" {
+            Test-Path -Path $splatWhatIfInstall.LocalFile | Should -BeFalse
+        }
+
+        It "Installs nothing" {
+            Test-Path -Path $splatWhatIfInstall.Path | Should -BeFalse
+        }
+
+        It "Returns nothing and does not warn" {
+            $whatIfResult | Should -BeNullOrEmpty
+            $whatIfWarning | Should -BeNullOrEmpty
+        }
+    }
 }

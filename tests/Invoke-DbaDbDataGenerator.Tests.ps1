@@ -429,6 +429,86 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "Config that asks for more unique values than the column can hold" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Five rows from a domain of two values: the third row collides on every try, and the command stops with
+            # a return. That return skipped the close of the connection it opened for the inserts, so every such call
+            # left one session open. The sessions are counted through a server object opened once, because a
+            # counting command would open connections of its own.
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $generatorDb -Query "CREATE TABLE [dbo].[fewnumbers]([Nr] [int] NOT NULL);
+                CREATE UNIQUE INDEX [ix_fewnumbers_nr] ON [dbo].[fewnumbers]([Nr]);"
+
+            $fewNumbersConfig = @"
+{
+  "Name": "$generatorDb",
+  "Type": "DataGenerationConfiguration",
+  "Tables": [
+    {
+      "Name": "fewnumbers",
+      "Schema": "dbo",
+      "Columns": [
+        {
+          "Name": "Nr",
+          "ColumnType": "int",
+          "CharacterString": null,
+          "MinValue": 1,
+          "MaxValue": 2,
+          "MaskingType": "Random",
+          "SubType": "Number",
+          "Identity": false,
+          "ForeignKey": false,
+          "Composite": false,
+          "Nullable": false
+        }
+      ],
+      "ResetIdentity": false,
+      "TruncateTable": false,
+      "HasUniqueIndex": true,
+      "Rows": 5
+    }
+  ]
+}
+"@
+            $fewNumbersConfigPath = "$backupPath\fewnumbers.json"
+            Set-Content -Path $fewNumbersConfigPath -Value $fewNumbersConfig
+
+            $countServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $countQuery = "SELECT COUNT(*) FROM sys.dm_exec_sessions WHERE host_process_id = $PID"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatFewNumbers = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Database      = $generatorDb
+                FilePath      = $fewNumbersConfigPath
+                WarningAction = "SilentlyContinue"
+            }
+            # One warm-up call, so the pooled connections of a normal call exist before the baseline is taken.
+            $null = Invoke-DbaDbDataGenerator @splatFewNumbers
+            $sessionsBefore = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+            foreach ($i in 1..3) {
+                $fewNumbersResult = Invoke-DbaDbDataGenerator @splatFewNumbers
+            }
+            $fewNumbersWarning = $WarnVar
+            $sessionsAfter = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+        }
+
+        AfterAll {
+            $countServer.ConnectionContext.Disconnect()
+        }
+
+        It "Warns that it cannot generate the unique values and returns nothing" {
+            $fewNumbersResult | Should -BeNullOrEmpty
+            ($fewNumbersWarning -join " ") | Should -BeLike "*Could not generate a unique value*"
+        }
+
+        It "Leaves no session behind" {
+            $sessionsAfter | Should -Be $sessionsBefore
+        }
+    }
+
     Context "Config for a table with an identity primary key" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true

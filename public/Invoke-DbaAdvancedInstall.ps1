@@ -232,7 +232,7 @@ function Invoke-DbaAdvancedInstall {
             $restartNeeded = Test-PendingReboot -ComputerName $ComputerName -Credential $Credential -NoPendingRename:$NoPendingRenameCheck
         } catch {
             $restartNeeded = $false
-            Stop-Function -Message "Failed to get reboot status from $computer" -ErrorRecord $_
+            Stop-Function -Message "Failed to get reboot status from $ComputerName" -ErrorRecord $_
         }
         if ($restartNeeded -and $Restart) {
             # Restart the computer prior to doing anything
@@ -282,8 +282,17 @@ function Invoke-DbaAdvancedInstall {
                 $null = Send-File -Path $ConfigurationPath -Destination $chosenPath -Session $session -ErrorAction Stop
                 $session | Remove-PSSession
             } catch {
-                Stop-Function -Message "Failed to copy file $($ConfigurationPath) to $remoteConfig on $($ComputerName), exiting" -ErrorRecord $_
-                return
+                # Like the other failures below, this one returns its result object, so the caller gets a result for the
+                # computer. The session and the local configuration file are cleaned up here, because the cleanup in the
+                # finally of the installation is not reached from here.
+                $msg = "Failed to copy file $($ConfigurationPath) to $remoteConfig on $($ComputerName), exiting"
+                Stop-Function -Message $msg -ErrorRecord $_
+                $output.Notes += $msg
+                if ($session) {
+                    $session | Remove-PSSession
+                }
+                Remove-Item -Path $ConfigurationPath -ErrorAction SilentlyContinue
+                return $output
             }
         }
         $installParams = $ArgumentList

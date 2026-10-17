@@ -583,4 +583,72 @@ WHERE j.name = @jobName AND s.step_id = 1"
             $openIds | Should -BeNullOrEmpty
         }
     }
+
+    Context "When the pipeline stops while the dedicated admin connection is open" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $dacCredentialName = "dbatoolsci_syncdac_$(Get-Random)"
+            $splatDacCredential = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Name           = $dacCredentialName
+                Identity       = $dacCredentialName
+                SecurePassword = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+            }
+            $null = New-DbaCredential @splatDacCredential
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # Only the credentials are synced, so the dedicated admin connection is opened for Copy-DbaCredential, and
+            # its first result is the first output of the command. Select-Object -First 1 stops the pipeline right
+            # there, while the connection is open. The disconnect used to run only after the three commands that copy
+            # passwords, so it stayed open, and SQL Server allows only one dedicated admin connection per instance.
+            $splatDacSync = @{
+                Primary   = $TestConfig.InstanceCopy1
+                Secondary = $TestConfig.InstanceCopy2
+                Exclude   = @(
+                    "AgentAlert",
+                    "AgentCategory",
+                    "AgentJob",
+                    "AgentOperator",
+                    "AgentProxy",
+                    "AgentSchedule",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "DatabaseOwner",
+                    "LinkedServers",
+                    "LoginPermissions",
+                    "Logins",
+                    "SpConfigure",
+                    "SystemTriggers"
+                )
+            }
+            $dacSessionQuery = @"
+SELECT COUNT(*) AS DacSessions
+FROM sys.dm_exec_sessions AS s
+INNER JOIN sys.endpoints AS e ON e.endpoint_id = s.endpoint_id
+WHERE e.is_admin_endpoint = 1
+"@
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Get-DbaCredential -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Credential $dacCredentialName | Remove-DbaCredential
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Closes the dedicated admin connection" {
+            $firstResult = Sync-DbaAvailabilityGroup @splatDacSync | Select-Object -First 1
+            $firstResult.Name | Should -Be $dacCredentialName
+            $WarnVar | Should -BeNullOrEmpty
+
+            # The session can take a moment to end on the server after the client closed the connection.
+            $dacWatch = [System.Diagnostics.Stopwatch]::StartNew()
+            do {
+                $dacSessions = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query $dacSessionQuery).DacSessions
+                if ($dacSessions -gt 0) {
+                    Start-Sleep -Milliseconds 200
+                }
+            } while ($dacSessions -gt 0 -and $dacWatch.Elapsed.TotalSeconds -lt 5)
+            $dacSessions | Should -Be 0
+        }
+    }
 }

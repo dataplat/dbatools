@@ -595,12 +595,14 @@ function Invoke-DbaDbDataGenerator {
                 }
             } finally {
                 Write-ProgressHelper -Completed
-            }
-
-            try {
-                $sqlconn.Close()
-            } catch {
-                Stop-Function -Message "Failure" -Continue -ErrorRecord $_
+                # The returns above, a throw under EnableException and a stopped pipeline skip everything after this
+                # block, so the connection is closed here. A warning instead of Stop-Function, because a throw from a
+                # finally would replace the error that is on its way out.
+                try {
+                    $sqlconn.Close()
+                } catch {
+                    Write-Message -Level Warning -Message "Failure closing the connection to $instance" -ErrorRecord $_
+                }
             }
         }
     }

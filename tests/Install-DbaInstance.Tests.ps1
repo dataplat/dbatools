@@ -415,6 +415,11 @@ Describe $CommandName -Tag IntegrationTests {
             ($installWarnings -join " ") | Should -Match "Failed to get reboot status"
         }
 
+        It "Names the computer it cannot check" {
+            # The name came from Resolve-DbaNetworkName only, so for a name that does not resolve it was empty.
+            ($installWarnings -join " ") | Should -BeLike "*Failed to get reboot status from $($splatUnreachableInstall.SqlInstance)*"
+        }
+
         It "Completes its progress bar" {
             # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
             # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
