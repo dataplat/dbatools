@@ -75,6 +75,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "returns one success" {
+            # Counts the output itself, $results.Status.Count would skip a $null written by the command
+            @($results).Count | Should -Be 1
             $results.Name | Should -Be "dbatoolsci_copyjob"
             $results.Status | Should -Be "Successful"
         }
