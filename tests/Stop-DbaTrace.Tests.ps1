@@ -134,6 +134,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "is now in a stopped state" {
             $results = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Stop-DbaTrace
+            # Counts the output itself, $results.Id would skip a $null written by the command
+            @($results).Count | Should -Be 1
             $results.Id | Should -Be $traceid
             $results.IsRunning | Should -BeFalse
         }
