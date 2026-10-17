@@ -106,6 +106,15 @@ Describe $CommandName -Tag IntegrationTests {
 
             $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $primaryDatabase -RecoveryModel Full
             $null = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $primaryDatabase -Path $sharedPath -Type Full
+            # The command creates the folder of the database below the shared path from this session and then asks the
+            # instance whether it exists. An instance that reaches the share over the network can see a new folder only
+            # some seconds later, and the setup then fails with "is not valid or can't be reached". So the folder is
+            # created here, and the setup starts once the instance sees it.
+            $null = New-Item -Path (Join-Path -Path $sharedPath -ChildPath $primaryDatabase) -ItemType Directory
+            $folderWatch = [System.Diagnostics.Stopwatch]::StartNew()
+            while (-not (Test-DbaPath -SqlInstance $TestConfig.InstanceSingle -Path "$sharedPathUnc\$primaryDatabase") -and $folderWatch.Elapsed.TotalSeconds -lt 60) {
+                Start-Sleep -Seconds 1
+            }
             $splatLogShipping = @{
                 SourceSqlInstance       = $TestConfig.InstanceSingle
                 DestinationSqlInstance  = $TestConfig.InstanceSingle
