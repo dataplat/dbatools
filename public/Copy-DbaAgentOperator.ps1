@@ -183,7 +183,7 @@ function Copy-DbaAgentOperator {
                         Write-Message -Level Verbose -Message "Copying Operator $operatorName"
                         $sql = $sOperator.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
-                        $destServer.Query($sql)
+                        $null = $destServer.Query($sql)
                         $destServer.JobServer.Operators.Refresh()
 
                         $copyOperatorStatus.Status = "Successful"
