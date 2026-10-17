@@ -74,4 +74,81 @@ Describe $CommandName -Tag IntegrationTests {
             $openIds | Should -BeNullOrEmpty
         }
     }
+
+    Context "When neither -Database nor -Force is given" {
+        It "Names the instance in the error" {
+            # The target was $server.name, and $server is only set further down.
+            $stopError = $null
+            try {
+                Invoke-DbaDbLogShipRecovery -SqlInstance $TestConfig.InstanceSingle -EnableException
+            } catch {
+                $stopError = $PSItem
+            }
+            $stopError | Should -Not -BeNullOrEmpty
+            "$($stopError.TargetObject)" | Should -Be "$($TestConfig.InstanceSingle)"
+        }
+    }
+
+    Context "When a log shipping secondary is recovered" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $primaryDatabase = "dbatoolsci_lsrecovery_$(Get-Random)"
+            $secondaryDatabase = "$($primaryDatabase)_ls"
+            $sharedPath = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_lsrecovery_$(Get-Random)"
+            $null = New-Item -Path $sharedPath -ItemType Directory
+            $copyDestinationFolder = Join-Path -Path $sharedPath -ChildPath "copy"
+            $null = New-Item -Path $copyDestinationFolder -ItemType Directory
+            # The setup follows the one in Invoke-DbaDbLogShipping.Tests.ps1: the command accepts the shared path only in
+            # the form \\server\share. In the lab $TestConfig.Temp is a share already. On CI it is a local folder on the
+            # runner, which also hosts the instance, so the administrative share of the drive names the same folder.
+            $sharedPathUnc = $sharedPath -replace "^(.):", "\\$env:COMPUTERNAME\`$1`$"
+
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $primaryDatabase -RecoveryModel Full
+            $null = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $primaryDatabase -Path $sharedPath -Type Full
+            $splatLogShipping = @{
+                SourceSqlInstance       = $TestConfig.InstanceSingle
+                DestinationSqlInstance  = $TestConfig.InstanceSingle
+                Database                = $primaryDatabase
+                SharedPath              = $sharedPathUnc
+                IgnoreFileChecks        = $true
+                CopyDestinationFolder   = $copyDestinationFolder
+                UseExistingFullBackup   = $true
+                SecondaryDatabaseSuffix = "_ls"
+            }
+            $null = Invoke-DbaDbLogShipping @splatLogShipping
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The RESTORE WITH RECOVERY at the end ran through Query(), which returns a $null for a statement without a
+            # result set, so the output started with a $null.
+            $recoveryResults = @(Invoke-DbaDbLogShipRecovery -SqlInstance $TestConfig.InstanceSingle -Database $secondaryDatabase)
+            $recoveryWarning = $WarnVar
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $splatRemoveLogShipping = @{
+                PrimarySqlInstance      = $TestConfig.InstanceSingle
+                SecondarySqlInstance    = $TestConfig.InstanceSingle
+                Database                = $primaryDatabase
+                RemoveSecondaryDatabase = $true
+            }
+            $null = Remove-DbaDbLogShipping @splatRemoveLogShipping -ErrorAction SilentlyContinue
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $primaryDatabase, $secondaryDatabase -ErrorAction SilentlyContinue
+            Remove-Item -Path $sharedPath -Recurse -Force -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns one result for the database and nothing else" {
+            $recoveryWarning | Should -BeNullOrEmpty
+            $recoveryResults.Count | Should -Be 1
+            $recoveryResults[0].Database | Should -Be $secondaryDatabase
+            $recoveryResults[0].RecoverResult | Should -Be "Success"
+        }
+
+        It "Brings the database online" {
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $secondaryDatabase).Status | Should -Be "Normal"
+        }
+    }
 }
