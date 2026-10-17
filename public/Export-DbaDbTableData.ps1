@@ -169,8 +169,9 @@ function Export-DbaDbTableData {
             # Started on the first table, so -WhatIf never reaches Export-DbaScript
             if ($null -eq $exportPipeline) {
                 $exportCommand = { Export-DbaScript @splatExport }
-                $exportPipeline = $exportCommand.GetSteppablePipeline()
-                $exportPipeline.Begin($true)
+                # Begin($PSCmdlet) instead of Begin($true) connects the pipeline to this command, so the warnings of Export-DbaScript reach -WarningVariable
+                $exportPipeline = $exportCommand.GetSteppablePipeline($MyInvocation.CommandOrigin)
+                $exportPipeline.Begin($PSCmdlet)
             }
             foreach ($table in $InputObject) {
                 $exportPipeline.Process($table)
