@@ -200,7 +200,7 @@ function Copy-DbaInstanceAuditSpecification {
                         Write-Message -Level Verbose -Message "Copying server audit $auditSpecName"
                         $sql = $auditSpec.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
-                        $destServer.Query($sql)
+                        $null = $destServer.Query($sql)
                         $copyAuditSpecStatus.Status = "Successful"
                         $copyAuditSpecStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
