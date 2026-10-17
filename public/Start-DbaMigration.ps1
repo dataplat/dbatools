@@ -404,10 +404,20 @@ function Start-DbaMigration {
                 }
             }
             if (-not $sourceServer) {
+                # Under EnableException the Stop-Function throws, and the end block that closes the dedicated admin
+                # connection does not run.
+                if ($dacOpened) {
+                    $null = $sourceServerDac | Disconnect-DbaInstance -WhatIf:$false
+                    $dacOpened = $false
+                }
                 Stop-Function -Message "Could not connect to source instance $Source." -Category ConnectionError -Target $Source
                 return
             }
         } catch {
+            if ($dacOpened) {
+                $null = $sourceServerDac | Disconnect-DbaInstance -WhatIf:$false
+                $dacOpened = $false
+            }
             Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
             return
         }
@@ -633,6 +643,12 @@ function Start-DbaMigration {
             }
         } finally {
             Write-ProgressHelper -Completed
+            # A throw under EnableException, Ctrl+C and Select-Object -First skip the end block, and SQL Server allows only
+            # one dedicated admin connection per instance.
+            if ($dacOpened) {
+                $null = $sourceServerDac | Disconnect-DbaInstance -WhatIf:$false
+                $dacOpened = $false
+            }
         }
     }
     end {
