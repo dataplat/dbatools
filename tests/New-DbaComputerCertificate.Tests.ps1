@@ -720,4 +720,29 @@ RequestType = PKCS10
             $requestFoldersAfter | Where-Object { $PSItem -notin $requestFoldersBefore } | Should -BeNullOrEmpty
         }
     }
+
+    Context "With two computers whose names cannot be resolved" {
+        BeforeAll {
+            # For a name that does not resolve, the command guesses the full name from the domain of this session. The
+            # guess was built from $ComputerName, which holds all the names, so two names gave "first second.domain".
+            # -WhatIf keeps the command from doing anything with the guessed names.
+            $unresolvedNames = @("nohostone$(Get-Random)", "nohosttwo$(Get-Random)")
+            $splatUnresolved = @{
+                ComputerName  = $unresolvedNames
+                CaServer      = "nosuchca.dbatools.invalid"
+                CaName        = "NoSuchCA"
+                WhatIf        = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $null = New-DbaComputerCertificate @splatUnresolved
+            $unresolvedWarnings = @($WarnVar | ForEach-Object { "$PSItem" })
+        }
+
+        It "Guesses the name of each computer from its own name" {
+            $guesses = @($unresolvedWarnings | Where-Object { $PSItem -like "*Guessing it's*" })
+            $guesses.Count | Should -Be 2
+            $guesses[0] | Should -BeLike "*Guessing it's $($unresolvedNames[0]).$env:USERDNSDOMAIN"
+            $guesses[1] | Should -BeLike "*Guessing it's $($unresolvedNames[1]).$env:USERDNSDOMAIN"
+        }
+    }
 }

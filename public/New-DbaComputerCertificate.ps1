@@ -381,7 +381,8 @@ function New-DbaComputerCertificate {
                         $resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -WarningAction SilentlyContinue
 
                         if (-not $resolved) {
-                            $fqdn = "$ComputerName.$env:USERDNSDOMAIN"
+                            # The name of this computer: $ComputerName holds all of them, and two names gave "a b.domain".
+                            $fqdn = "$($computer.ComputerName).$env:USERDNSDOMAIN"
                             Write-Message -Level Warning -Message "Server name cannot be resolved. Guessing it's $fqdn"
                         } else {
                             $fqdn = $resolved.fqdn
