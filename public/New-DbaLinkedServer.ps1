@@ -208,13 +208,13 @@ function New-DbaLinkedServer {
 
                     if (Test-Bound SecurityContext) {
                         if ($SecurityContext -eq 'NoConnection') {
-                            $server.Query("EXEC master.dbo.sp_droplinkedsrvlogin @rmtsrvname = N'$LinkedServer', @locallogin = NULL")
+                            $null = $server.Query("EXEC master.dbo.sp_droplinkedsrvlogin @rmtsrvname = N'$LinkedServer', @locallogin = NULL")
                         } elseif ($SecurityContext -eq 'WithoutSecurityContext') {
-                            $server.Query("EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname = N'$LinkedServer', @locallogin = NULL, @useself = N'False', @rmtuser = N''")
+                            $null = $server.Query("EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname = N'$LinkedServer', @locallogin = NULL, @useself = N'False', @rmtuser = N''")
                         } elseif ($SecurityContext -eq 'CurrentSecurityContext') {
-                            $server.Query("EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname = N'$LinkedServer', @locallogin = NULL, @useself = N'True', @rmtuser = N''")
+                            $null = $server.Query("EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname = N'$LinkedServer', @locallogin = NULL, @useself = N'True', @rmtuser = N''")
                         } elseif ($SecurityContext -eq 'SpecifiedSecurityContext') {
-                            $server.Query("EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname = N'$LinkedServer', @locallogin = NULL, @useself = N'False', @rmtuser = N'$SecurityContextRemoteUser', @rmtpassword = N'$($SecurityContextRemoteUserPassword | ConvertFrom-SecurePass)'")
+                            $null = $server.Query("EXEC master.dbo.sp_addlinkedsrvlogin @rmtsrvname = N'$LinkedServer', @locallogin = NULL, @useself = N'False', @rmtuser = N'$SecurityContextRemoteUser', @rmtpassword = N'$($SecurityContextRemoteUserPassword | ConvertFrom-SecurePass)'")
                         }
                     }
 

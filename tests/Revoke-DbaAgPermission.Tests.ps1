@@ -61,4 +61,25 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Success"
         }
     }
+
+    Context "revokes CreateAnyDatabase on an availability group" {
+        BeforeAll {
+            # No catalog view shows the permission, so the statements the command sends are recorded while they run
+            $agServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceHadr
+            $agServer.ConnectionContext.SqlExecutionModes = [Microsoft.SqlServer.Management.Common.SqlExecutionModes]::ExecuteAndCaptureSql
+            $splatRevokeCreate = @{
+                SqlInstance       = $agServer
+                Type              = "AvailabilityGroup"
+                AvailabilityGroup = $agname
+                Permission        = "CreateAnyDatabase"
+            }
+            $null = Revoke-DbaAgPermission @splatRevokeCreate
+            $capturedSql = @($agServer.ConnectionContext.CapturedSql.Text)
+            $agServer.ConnectionContext.SqlExecutionModes = [Microsoft.SqlServer.Management.Common.SqlExecutionModes]::ExecuteSql
+        }
+
+        It "denies CREATE ANY DATABASE on the availability group" {
+            $capturedSql | Where-Object { $PSItem -match "ALTER AVAILABILITY GROUP \[$agname\] DENY CREATE ANY DATABASE" } | Should -Not -BeNullOrEmpty
+        }
+    }
 }

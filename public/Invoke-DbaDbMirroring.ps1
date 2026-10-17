@@ -368,10 +368,10 @@ function Invoke-DbaDbMirroring {
                                     $null = $source.Query("GRANT CONNECT ON ENDPOINT::$primaryendpoint TO [$account]")
                                     $null = $dest.Query("GRANT CONNECT ON ENDPOINT::$currentmirrorendpoint TO [$account]")
                                     if ($witserver) {
-                                        if (-not (Get-DbaLogin -SqlInstance $source -Login $account)) {
+                                        if (-not (Get-DbaLogin -SqlInstance $witserver -Login $account)) {
                                             $null = New-DbaLogin -SqlInstance $witserver -Login $account
                                         }
-                                        $witserver.Query("GRANT CONNECT ON ENDPOINT::$witnessendpoint TO [$account]")
+                                        $null = $witserver.Query("GRANT CONNECT ON ENDPOINT::$witnessendpoint TO [$account]")
                                     }
                                 } catch {
                                     Stop-Function -Continue -Message "Failure" -ErrorRecord $_
