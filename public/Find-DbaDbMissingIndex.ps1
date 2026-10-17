@@ -133,11 +133,14 @@ function Find-DbaDbMissingIndex {
         # Per-database query. mid.database_id = DB_ID() keeps it correct on Azure SQL Database,
         # where these DMVs only ever return rows for the connected database.
         #
-        # Overlap detection is done here rather than in SMO: the ix CTE finds, per table, every
-        # existing index whose leading key column (key_ordinal = 1, is_included_column = 0) matches
-        # any of this suggestion's candidate key columns. Doing it in the query removes a per-table
-        # SMO Tables/Indexes load and compares against every candidate key column, not just the
-        # first listed one (the DMV's equality_columns list is not in key order).
+        # Overlap detection is done here rather than in SMO, and matches on real column IDs, not on
+        # text. sys.dm_db_missing_index_columns(index_handle) returns the suggestion's candidate key
+        # columns (column_usage EQUALITY or INEQUALITY) as column_ids; an existing index overlaps when
+        # its leading key column (key_ordinal = 1, is_included_column = 0) is one of those column_ids.
+        # Comparing column_ids avoids the identifier pitfalls of text matching entirely - a column
+        # named [Order Date] or [Customer_Id] is compared by ID, so spaces and the LIKE metacharacters
+        # _ and % can't cause a false overlap. Doing it in the query also removes the per-table SMO
+        # Tables/Indexes load.
         #
         # Names come back already quoted with QUOTENAME(), so a ] in an object name can't break the
         # generated T-SQL. index_handle is returned so the suggested index name can be made unique
@@ -164,17 +167,14 @@ function Find-DbaDbMissingIndex {
 ix AS (
     SELECT
         i.object_id,
-        c.name AS leading_column,
-        i.name AS index_name
+        ic.column_id AS leading_column_id,
+        i.name       AS index_name
     FROM sys.indexes AS i
     INNER JOIN sys.index_columns AS ic
         ON ic.object_id = i.object_id
        AND ic.index_id  = i.index_id
        AND ic.key_ordinal = 1
        AND ic.is_included_column = 0
-    INNER JOIN sys.columns AS c
-        ON c.object_id = ic.object_id
-       AND c.column_id = ic.column_id
     WHERE i.index_id > 0
 )
 {0}
@@ -199,15 +199,16 @@ SELECT
     CAST(mig.avg_user_impact AS decimal(9,2))       AS AvgUserImpact,
     CAST(mig.avg_total_user_cost * mig.avg_user_impact * (mig.user_seeks + mig.user_scans) AS decimal(28,4)) AS ImpactScore,
     STUFF((
+        -- An existing index overlaps when its leading key column_id is one of this suggestion's
+        -- candidate key column_ids (EQUALITY or INEQUALITY, from the missing-index columns DMV).
+        -- Matching on column_id means identifiers with spaces, _ or % can't produce a false overlap.
         SELECT ', ' + ix.index_name
         FROM ix
         WHERE ix.object_id = mid.object_id
-          AND (
-                -- Wrap the candidate key list in commas on BOTH ends so every column, including
-                -- the last one (e.g. an inequality-only key like '[OrderDate]'), is delimited on
-                -- both sides and can match the leading-column pattern below.
-                ',' + REPLACE(REPLACE(REPLACE(ISNULL(mid.equality_columns, '') + ',' + ISNULL(mid.inequality_columns, ''), '[', ''), ']', ''), ' ', '') + ','
-                LIKE '%,' + REPLACE(ix.leading_column, ' ', '') + ',%'
+          AND ix.leading_column_id IN (
+                SELECT mic.column_id
+                FROM sys.dm_db_missing_index_columns(mid.index_handle) AS mic
+                WHERE mic.column_usage IN ('EQUALITY', 'INEQUALITY')
               )
         FOR XML PATH(''), TYPE).value('.', 'nvarchar(max)'), 1, 2, '') AS OverlappingIndex
     {1}
@@ -236,8 +237,11 @@ ORDER BY ImpactScore DESC;
 
         foreach ($instance in $SqlInstance) {
             try {
-                # Missing-index DMVs exist since SQL Server 2005; 2000 is skipped cleanly.
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                # SQL Server 2008 floor. The missing-index DMVs exist from 2005, but database
+                # discovery here goes through SMO (Get-DbaDatabase, $server.Databases), which dbatools
+                # documents as requiring SQL Server 2008+ - 2005 fails on the SMO collection query
+                # rather than running. So the floor is 10, not 9.
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 10
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -256,10 +260,14 @@ ORDER BY ImpactScore DESC;
 
         foreach ($db in $InputObject) {
             if (-not $db.IsAccessible) { continue }
-            # Honour an explicitly piped system database, but skip system databases that arrive as
-            # part of a broad Get-DbaDatabase pipe (no -Database filter).
-            if ($db.IsSystemObject -and $Database -and $db.Name -notin $Database) { continue }
-            if ($db.IsSystemObject -and -not $Database) { continue }
+            # A piped database object is an explicit selection - the caller already chose it with
+            # Get-DbaDatabase, so honour it, including a system database. (The $Database parameter is
+            # not set on the downstream command in a pipeline, so it can't be used to tell intent
+            # here; the presence of the object IS the intent.) Warn for a system DB so the caller
+            # knows it is not part of the default set, but do not silently drop it.
+            if ($db.IsSystemObject) {
+                Write-Message -Level Warning -Message "Processing system database $($db.Name) because it was piped in explicitly; system databases are not included by default."
+            }
             $databases += $db
         }
 
@@ -285,7 +293,11 @@ ORDER BY ImpactScore DESC;
             # The 2019+/Azure query-text DMV (one row per query, so joined separately from
             # group_stats to avoid double-counting the seek/scan totals). ROW_NUMBER with a
             # query_hash tiebreaker is deterministic, so a group never comes back twice.
-            if ($server.VersionMajor -ge 15) {
+            # Gate by engine type as well as version: Azure SQL Database reports VersionMajor 12 but
+            # still exposes sys.dm_db_missing_index_group_stats_query, so a version-only check would
+            # wrongly exclude it.
+            $hasQueryTextDmv = $server.VersionMajor -ge 15 -or $server.DatabaseEngineType -eq 'SqlAzureDatabase'
+            if ($hasQueryTextDmv) {
                 $queryTextCte = ", qt AS (
     SELECT group_handle, query_hash, last_sql_handle
     FROM (
@@ -314,16 +326,30 @@ ORDER BY ImpactScore DESC;
 
             $sql = $sqlTemplate -f $queryTextCte, $queryTextSelect, $queryTextJoin, $minSeekSql, $minImpactSql
 
-            # $db.Query() moves the server's shared connection into this database. Record the
-            # starting database and restore it in the finally block so a caller who passed a server
-            # object or piped Get-DbaDatabase output is not left pointing at the last database here.
-            $currentDatabase = $server.ConnectionContext.CurrentDatabase
+            # On Azure SQL Database the shared connection can't switch databases: $db.Query() issues a
+            # USE, which Azure rejects with error 40508. So for Azure, open a connection whose initial
+            # catalog IS the target database (Connect-DbaInstance -Database) and run there - no context
+            # switch, nothing to restore. On-prem keeps the shared-connection path, recording and
+            # restoring CurrentDatabase so a caller who passed a server object isn't left in the wrong
+            # database.
+            $currentDatabase = $null
             try {
-                try {
-                    $results = $db.Query($sql)
-                } catch {
-                    Stop-Function -Message "Failure executing missing-index analysis against $($db.Name) on $($server.Name)" -ErrorRecord $_ -Target $db -Continue
-                    continue
+                if ($server.DatabaseEngineType -eq 'SqlAzureDatabase') {
+                    try {
+                        $dbConn = Connect-DbaInstance -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name
+                        $results = $dbConn.Query($sql)
+                    } catch {
+                        Stop-Function -Message "Failure executing missing-index analysis against $($db.Name) on $($server.Name)" -ErrorRecord $_ -Target $db -Continue
+                        continue
+                    }
+                } else {
+                    $currentDatabase = $server.ConnectionContext.CurrentDatabase
+                    try {
+                        $results = $db.Query($sql)
+                    } catch {
+                        Stop-Function -Message "Failure executing missing-index analysis against $($db.Name) on $($server.Name)" -ErrorRecord $_ -Target $db -Continue
+                        continue
+                    }
                 }
 
                 foreach ($row in $results) {
@@ -343,18 +369,35 @@ ORDER BY ImpactScore DESC;
                     }
                     # index_handle keeps the name unique when one table has several suggestions with
                     # the same keys and different includes - otherwise running the CREATE statements
-                    # in sequence fails from the second one on.
-                    $suggestedName = "IX_$($row.TableName)_" + ($indexNameParts -join '_') + "_$($row.IndexHandle)"
-                    if ($suggestedName.Length -gt 128) { $suggestedName = $suggestedName.Substring(0, 128) }
+                    # in sequence fails from the second one on. The handle is the unique part, so when
+                    # the whole name would exceed 128 chars the DESCRIPTIVE prefix is trimmed and the
+                    # "_<handle>" suffix is always kept - truncating the suffix away would let two
+                    # suggestions with different handles collide on the same name.
+                    $handleSuffix = "_$($row.IndexHandle)"
+                    $prefix = "IX_$($row.TableName)_" + ($indexNameParts -join '_')
+                    $maxPrefix = 128 - $handleSuffix.Length
+                    if ($prefix.Length -gt $maxPrefix) { $prefix = $prefix.Substring(0, $maxPrefix) }
+                    $suggestedName = $prefix + $handleSuffix
                     $suggestedNameQuoted = "[" + ($suggestedName -replace ']', ']]') + "]"
 
-                    # SchemaNameQuoted / TableNameQuoted come back from QUOTENAME(), so a ] in an
-                    # object name is already escaped.
-                    $createStatement = "CREATE NONCLUSTERED INDEX $suggestedNameQuoted ON $($row.SchemaNameQuoted).$($row.TableNameQuoted) ($keyColText)"
-                    if ($row.IncludedColumns -isnot [System.DBNull] -and $row.IncludedColumns) {
-                        $createStatement += " INCLUDE ($($row.IncludedColumns))"
+                    # OBJECT_NAME / OBJECT_SCHEMA_NAME (and so their QUOTENAME results) return NULL when
+                    # the login can read the missing-index DMV but has no metadata permission on the
+                    # object. Emitting a CREATE INDEX ... ON .(...) in that case would be invalid T-SQL
+                    # that looks runnable, so suppress the statement and warn instead. The row is still
+                    # returned (impact, columns, handle) - only the generated DDL is withheld.
+                    if ($row.SchemaNameQuoted -is [System.DBNull] -or $row.TableNameQuoted -is [System.DBNull] -or
+                        [string]::IsNullOrEmpty($row.SchemaNameQuoted) -or [string]::IsNullOrEmpty($row.TableNameQuoted)) {
+                        Write-Message -Level Warning -Message "Object metadata for object_id $($row.ObjectId) in $($row.DatabaseName) is not visible to this login; returning the suggestion without a CREATE statement. Grant metadata access to the object to generate DDL."
+                        $createStatement = $null
+                    } else {
+                        # SchemaNameQuoted / TableNameQuoted come back from QUOTENAME(), so a ] in an
+                        # object name is already escaped.
+                        $createStatement = "CREATE NONCLUSTERED INDEX $suggestedNameQuoted ON $($row.SchemaNameQuoted).$($row.TableNameQuoted) ($keyColText)"
+                        if ($row.IncludedColumns -isnot [System.DBNull] -and $row.IncludedColumns) {
+                            $createStatement += " INCLUDE ($($row.IncludedColumns))"
+                        }
+                        $createStatement += ";"
                     }
-                    $createStatement += ";"
 
                     $overlapping = if ($row.OverlappingIndex -is [System.DBNull]) { $null } else { $row.OverlappingIndex }
 
@@ -376,7 +419,7 @@ ORDER BY ImpactScore DESC;
                         UniqueCompiles    = $row.UniqueCompiles
                         LastUserSeek      = $row.LastUserSeek
                         LastUserScan      = $row.LastUserScan
-                        StartTime         = $server.Databases['tempdb'].CreateDate
+                        StartTime         = if ($server.DatabaseEngineType -eq 'SqlAzureDatabase') { $null } else { $server.Databases['tempdb'].CreateDate }
                         QueryHash         = if ($row.PSObject.Properties.Name -contains 'QueryHash') { $row.QueryHash } else { $null }
                         LastSqlHandle     = if ($row.PSObject.Properties.Name -contains 'LastSqlHandle') { $row.LastSqlHandle } else { $null }
                         OverlappingIndex  = $overlapping
@@ -385,8 +428,12 @@ ORDER BY ImpactScore DESC;
                 }
             } finally {
                 # Put the shared connection back where the caller had it, using the same internal
-                # helper Find-DbaDbDisabledIndex uses (see #10555).
-                Restore-DatabaseContext -Server $server -Database $currentDatabase
+                # helper Find-DbaDbDisabledIndex uses (see #10555). Only on the on-prem path, where we
+                # recorded a starting database; the Azure path used a dedicated database-scoped
+                # connection and never moved the caller's context, so there is nothing to restore.
+                if ($null -ne $currentDatabase) {
+                    Restore-DatabaseContext -Server $server -Database $currentDatabase
+                }
             }
         }
     }
