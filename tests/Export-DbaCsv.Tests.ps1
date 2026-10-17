@@ -390,7 +390,9 @@ where program_name like 'dbatools%'
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
             # The command does not disconnect a server object it was given, so only its own cleanup can close the
-            # reader on that connection. The second connection checks the server from outside.
+            # reader on that connection. Connect-DbaInstance hands back that object itself when it already is in the
+            # database the command asks for, master here; for any other database the command works on a copy of its
+            # own, which it disconnects. The second connection checks the server from outside.
             $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
             $checkServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -406,6 +408,7 @@ where program_name like 'dbatools%'
             try {
                 $splatLockedExport = @{
                     SqlInstance   = $callerServer
+                    Database      = "master"
                     Query         = $readerQuery
                     Path          = $lockedPath
                     WarningAction = "SilentlyContinue"
