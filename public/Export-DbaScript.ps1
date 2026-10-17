@@ -25,6 +25,7 @@ function Export-DbaScript {
         Controls the character encoding used when writing script files to disk.
         Default is UTF8 which handles international characters and is widely supported.
         Use UTF8 for most scenarios, or ASCII if you need compatibility with older tools that don't support Unicode.
+        This also applies to the statements SMO writes to the file when the ScriptingOptionsObject has ScriptBatchTerminator set, so the Encoding and AnsiFile settings of the ScriptingOptionsObject are not used for files.
 
     .PARAMETER Passthru
         Returns the generated T-SQL script as string output instead of writing to a file.
@@ -200,6 +201,18 @@ function Export-DbaScript {
             $soAppendToFile = $ScriptingOptionsObject.AppendToFile
             $soToFileOnly = $ScriptingOptionsObject.ToFileOnly
             $soFileName = $ScriptingOptionsObject.FileName
+            $soEncoding = $ScriptingOptionsObject.Encoding
+
+            # With ScriptBatchTerminator, SMO appends to the file itself, in the encoding of the scripting options (UTF-16 unless changed).
+            # Out-File has already written the prefix in $Encoding, so SMO has to use the same encoding, or the file mixes two.
+            $smoEncoding = switch ($Encoding) {
+                "ASCII" { [System.Text.Encoding]::ASCII }
+                "BigEndianUnicode" { [System.Text.Encoding]::BigEndianUnicode }
+                "UTF7" { [System.Text.Encoding]::UTF7 }
+                # No byte order mark: Windows PowerShell has already written one with the prefix, PowerShell 7 writes none
+                "UTF8" { New-Object System.Text.UTF8Encoding -ArgumentList $false }
+                default { [System.Text.Encoding]::Unicode }
+            }
         }
 
         $eol = [System.Environment]::NewLine
@@ -331,13 +344,15 @@ function Export-DbaScript {
                                 # Option to script batch terminator via ScriptingOptionsObject needs to write to file only
                                 $ScriptingOptionsObject.AppendToFile = $true
                                 $ScriptingOptionsObject.ToFileOnly = $true
+                                $ScriptingOptionsObject.Encoding = $smoEncoding
                                 if (-not $ScriptingOptionsObject.FileName) {
                                     $ScriptingOptionsObject.FileName = $scriptPath
                                 }
                                 if ($dagScript) {
                                     "$dagScript$eol$BatchSeparator$eol" | Out-File -FilePath $ScriptingOptionsObject.FileName -Encoding $encoding -Append
                                 } else {
-                                    $null = $object.Script($ScriptingOptionsObject)
+                                    # The Script method of the object refuses ScriptData, the scripter writes the data too
+                                    $null = $scripter.EnumScript($object)
                                 }
                             } else {
                                 $ScriptingOptionsObject.FileName = $null
@@ -374,13 +389,15 @@ function Export-DbaScript {
                 if (-not $message) {
                     $message = $_.Exception
                 }
-                Stop-Function -Message "Failure on $($server.Name) | $message" -Target $server
+                # Continue with the next object, so one object that cannot be scripted does not stop the export of the objects after it
+                Stop-Function -Message "Failure on $($server.Name) | $message" -Target $server -Continue
             } finally {
                 # Reset the changed values of the $ScriptingOptionsObject in case it is reused later
                 if ($ScriptingOptionsObject) {
                     $ScriptingOptionsObject.AppendToFile = $soAppendToFile
                     $ScriptingOptionsObject.ToFileOnly = $soToFileOnly
                     $ScriptingOptionsObject.FileName = $soFileName
+                    $ScriptingOptionsObject.Encoding = $soEncoding
                 }
             }
         }

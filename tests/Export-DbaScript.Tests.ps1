@@ -119,5 +119,20 @@ Describe $CommandName -Tag IntegrationTests {
             $linecount3 = (Get-Content $tempFile).Count
             $linecount1 | Should -Not -Be $linecount3
         }
+
+        It "Should write the statements of scripting options with batch terminators in the encoding of the file" {
+            # SMO appends these statements itself, and used to write them as UTF-16 behind the UTF-8 comment header
+            $tempFile = "$tempPath\msdb-$(Get-Random).sql"
+            $options = New-DbaScriptingOption
+            $options.ScriptBatchTerminator = $true
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -ScriptingOptionsObject $options -FilePath $tempFile
+            $WarnVar | Should -BeNullOrEmpty
+            $content = Get-Content -Path $tempFile -Raw
+            $content | Should -Match ([regex]::Escape("Created by"))
+            $content | Should -Match "CREATE TABLE"
+            $content | Should -Match "(?m)^GO\r?$"
+            # The encoding of the scripting options is only borrowed for the file
+            $options.Encoding.WebName | Should -Be "utf-16"
+        }
     }
 }
