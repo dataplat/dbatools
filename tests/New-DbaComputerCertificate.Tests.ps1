@@ -678,6 +678,13 @@ RequestType = PKCS10
             $firstOnlyCert.Thumbprint | Should -Not -BeNullOrEmpty
         }
 
+        It "Removes its request folder" {
+            # The removal sat after the output, so the stopped command left the folder behind; it is in a finally now.
+            # The AfterAll above still removes it, so that a regression does not leave it in the temp folder.
+            $firstOnlyFolder | Should -Not -BeNullOrEmpty
+            Test-Path -Path $firstOnlyFolder | Should -BeFalse
+        }
+
         It "Completes its progress bar" {
             # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
             # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
@@ -689,9 +696,10 @@ RequestType = PKCS10
 
     Context "With -WhatIf" {
         BeforeAll {
-            # The request folder and its request.inf are written before any ShouldProcess, and the folder was removed
-            # inside one, so -WhatIf left it in the temp folder. With CaServer and CaName given, nothing asks Active
-            # Directory, and with -WhatIf certreq never runs.
+            # The request folder and its request.inf are written before any ShouldProcess. With -WhatIf, New-Item and
+            # Set-Content skip that through $WhatIfPreference, so nothing may be left behind, also now that the folder
+            # is removed in a finally. With CaServer and CaName given, nothing asks Active Directory, and with -WhatIf
+            # certreq never runs.
             $requestFoldersBefore = @((Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Directory -Filter "certreq-*").Name)
             $splatWhatIfCertificate = @{
                 CaServer = "nosuchca.dbatools.invalid"
