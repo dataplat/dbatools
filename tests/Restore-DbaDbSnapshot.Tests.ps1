@@ -119,4 +119,64 @@ Describe $CommandName -Tag IntegrationTests {
             ($result.PSStandardMembers.DefaultDisplayPropertySet.ReferencedPropertyNames | Sort-Object) | Should -Be ($ExpectedPropsDefault | Sort-Object)
         }
     }
+
+    Context "When the restore fails for another reason than a deadlock" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = New-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db2 -Name $db2_snap1
+            # A session that stays in the database keeps the restore from getting exclusive access, so it fails without
+            # a deadlock. -Force would end that session, so the command runs without it.
+            $holderServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -Database $db2 -NonPooledConnection
+            $null = $holderServer.ConnectionContext.ExecuteScalar("SELECT 1")
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # Only a deadlock counts the tries, and the -Continue after any other failure continued the retry loop, so
+            # the command ran the same failing restore without end. It runs in a runspace of its own, so that a regression
+            # is stopped after a minute instead of holding up the test run. The runspace imports the manifest: an import of
+            # the psm1 without a command line skips the type data. It has none of the default parameter values of the
+            # tests, so Confirm is passed here.
+            $splatFailingRestore = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Snapshot    = $db2_snap1
+                Confirm     = $false
+            }
+            if ($TestConfig.SqlCred) {
+                $splatFailingRestore.SqlCredential = $TestConfig.SqlCred
+            }
+            $restoreRunspace = [runspacefactory]::CreateRunspace()
+            $restoreRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $restoreRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $restoreShell = [powershell]::Create()
+            $restoreShell.Runspace = $restoreRunspace
+            $null = $restoreShell.AddCommand("Restore-DbaDbSnapshot").AddParameters($splatFailingRestore)
+            $restoreAsync = $restoreShell.BeginInvoke()
+            $restoreFinished = $restoreAsync.AsyncWaitHandle.WaitOne([timespan]::FromSeconds(60))
+            if (-not $restoreFinished) {
+                $restoreShell.Stop()
+            }
+            $restoreWarnings = @($restoreShell.Streams.Warning | ForEach-Object { $PSItem.Message })
+            $restoreShell.Dispose()
+            $restoreRunspace.Dispose()
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $holderServer.ConnectionContext.Disconnect()
+            Remove-DbaDbSnapshot -SqlInstance $TestConfig.InstanceSingle -Database $db2 -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Gives up instead of trying again and again" {
+            $restoreFinished | Should -BeTrue
+        }
+
+        It "Warns once about the failed restore" {
+            @($restoreWarnings | Where-Object { $PSItem -like "*Failure attempting to restore*" }).Count | Should -Be 1
+        }
+    }
 }
