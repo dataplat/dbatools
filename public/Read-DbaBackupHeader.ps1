@@ -362,11 +362,17 @@ function Read-DbaBackupHeader {
 
                         $dbVersion = $dataTable[0].DatabaseVersion
                         $SqlVersion = (Convert-DbVersionToSqlVersion $dbVersion)
+                        $incompleteHeader = $false
                         foreach ($row in $dataTable) {
                             $row.SqlVersion = $SqlVersion
                             if ($row.BackupName -eq "*** INCOMPLETE ***") {
-                                Stop-Function -Message "$($thread.file) appears to be from a new version of SQL Server than $SqlInstance, skipping" -Target $thread.file -Continue
+                                $incompleteHeader = $true
                             }
+                        }
+                        # The -Continue sat in the loop over the rows, so it only skipped the rest of that loop, and the
+                        # file was returned anyway. Here it skips the file, as the message says.
+                        if ($incompleteHeader) {
+                            Stop-Function -Message "$($thread.file) appears to be from a new version of SQL Server than $SqlInstance, skipping" -Target $thread.file -Continue
                         }
                         if ($Simple) {
                             $dataTable | Select-Object DatabaseName, BackupFinishDate, RecoveryModel, BackupSize, CompressedBackupSize, DatabaseCreationDate, UserName, ServerName, SqlVersion, BackupPath
