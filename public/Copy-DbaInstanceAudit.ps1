@@ -169,6 +169,7 @@ function Copy-DbaInstanceAudit {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Server audit $auditName exists at destination. Use -Force to drop and migrate.")) {
                             $copyAuditStatus.Status = "Skipped"
                             $copyAuditStatus.Notes = "Already exists on destination"
+                            $copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Server audit $auditName exists at destination. Use -Force to drop and migrate."
                         }
                         continue
@@ -176,10 +177,12 @@ function Copy-DbaInstanceAudit {
                         if ($Pscmdlet.ShouldProcess($destinstance, "Dropping server audit $auditName")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping server audit $auditName."
-                                foreach ($spec in $destServer.ServerAuditSpecifications) {
-                                    if ($auditSpecification.Auditname -eq $auditName) {
-                                        $auditSpecification.Drop()
-                                    }
+                                # Collected first, a drop inside the enumeration would modify the collection
+                                $destAuditSpecs = @($destServer.ServerAuditSpecifications | Where-Object AuditName -eq $auditName)
+                                foreach ($spec in $destAuditSpecs) {
+                                    Write-Message -Level Verbose -Message "Dropping server audit specification $($spec.Name) that uses $auditName."
+                                    $spec.Disable()
+                                    $spec.Drop()
                                 }
 
                                 $destServer.audits[$auditName].Disable()
@@ -231,7 +234,7 @@ function Copy-DbaInstanceAudit {
                         Write-Message -Level Verbose -Message "File path $($currentAudit.Filepath) exists on $destinstance."
                         Write-Message -Level Verbose -Message "Copying server audit $auditName."
                         $sql = $currentAudit.Script() | Out-String
-                        $destServer.Query($sql)
+                        $null = $destServer.Query($sql)
                         $copyAuditStatus.Status = "Successful"
                         $copyAuditStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {
