@@ -519,12 +519,9 @@ function Start-DbaDbEncryption {
                     $server = $null
                     try {
                         # Create new connection for this thread
-                        # EnableException puts the reason of a failed connection into Error: a warning written
-                        # here would stay in the streams of the thread, which the caller does not read.
                         $splatConnection = @{
-                            SqlInstance     = $ServerName
-                            SqlCredential   = $SqlCredential
-                            EnableException = $true
+                            SqlInstance   = $ServerName
+                            SqlCredential = $SqlCredential
                         }
                         $server = Connect-DbaInstance @splatConnection
                         $db = $server.Databases[$DatabaseName]
