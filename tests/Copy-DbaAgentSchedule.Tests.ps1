@@ -127,6 +127,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Reports the schedule as copied" {
+            # Counts the output itself, $forceResults.Status.Count would skip a $null written by the command
+            $forceResults.Count | Should -Be 1
             $forceResults.Status | Should -Be "Successful"
         }
 

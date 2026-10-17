@@ -65,6 +65,8 @@ Describe "$commandname Integration Tests" -Tag "IntegrationTests" {
         $results.Notes | Should -Be "Already exists on destination"
 
         $results = Copy-DbaDbAssembly -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Assembly dbclrassembly.resolveDNS -Force
+        # Counts the output itself, $results.Status.Count would skip a $null written by the command
+        @($results).Count | Should -Be 1
         $results.Name | Should -Be resolveDns
         $results.Status | Should -Be Successful
         $results.Type | Should -Be "Database Assembly"

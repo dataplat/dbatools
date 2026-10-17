@@ -78,7 +78,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should return one successful result" {
-            $copyResults.Status.Count | Should -Be 1
+            # Counts the output itself, $copyResults.Status.Count would skip a $null written by the command
+            @($copyResults).Count | Should -Be 1
             $copyResults.Status | Should -Be "Successful"
         }
 

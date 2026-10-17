@@ -201,7 +201,7 @@ function Copy-DbaDbAssembly {
                         $sql = "ALTER DATABASE $dbName SET TRUSTWORTHY ON"
                         try {
                             Write-Message -Level Debug -Message $sql
-                            $destServer.Query($sql)
+                            $null = $destServer.Query($sql)
                         } catch {
                             $copyDbAssemblyStatus.Status = "Failed to set security level to external"
                             $copyDbAssemblyStatus.Notes = "$PSItem"
@@ -231,7 +231,7 @@ function Copy-DbaDbAssembly {
                                     throw "$assemblyName has dependencies but this command does not yet support dependent objects"
                                 }
 
-                                $destDb.Query("DROP ASSEMBLY $assemblyName")
+                                $null = $destDb.Query("DROP ASSEMBLY $assemblyName")
                             } catch {
                                 $copyDbAssemblyStatus.Status = "Failed"
                                 $copyDbAssemblyStatus.Notes = "$PSItem"
@@ -248,7 +248,7 @@ function Copy-DbaDbAssembly {
                         Write-Message -Level Verbose -Message "Copying assembly $assemblyName from database."
                         $sql = $currentAssembly.Script()
                         Write-Message -Level Debug -Message ($sql -join ' ')
-                        $destDb.Query($sql, $dbName)
+                        $null = $destDb.Query($sql)
 
                         $copyDbAssemblyStatus.Status = "Successful"
                         $copyDbAssemblyStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject

@@ -86,7 +86,8 @@ AS
 
         It "Should execute successfully with -Classic parameter" {
             $results = Copy-DbaSystemDbUserObject -Source $TestConfig.InstanceSingle -Destination $TestConfig.InstanceSingle -Classic
-            $results | Should -Not -BeNullOrEmpty
+            # The Classic mode returns no output, the $null of every executed statement used to end up here
+            @($results).Count | Should -Be 0
         }
 
         It "Should execute successfully with -Force parameter" {
