@@ -717,4 +717,60 @@ Describe $CommandName -Tag IntegrationTests {
             $openIds | Should -BeNullOrEmpty
         }
     }
+
+    Context "When the pipeline is stopped while the dedicated admin connection is open" {
+        BeforeAll {
+            # The same stop as above, but with the passwords, so the command opens a dedicated admin connection to the
+            # source before the first migration record. It was closed in the end block only, which a stopped pipeline
+            # skips, and SQL Server allows only one per instance. WhatIf keeps the instances unchanged; the connection is
+            # opened anyway. The sessions are counted before the runspace goes away, while a leaked connection still exists.
+            $splatDacMigration = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Exclude     = "Databases"
+                WhatIf      = $true
+            }
+            if ($TestConfig.SqlCred) {
+                $splatDacMigration.SourceSqlCredential = $TestConfig.SqlCred
+                $splatDacMigration.DestinationSqlCredential = $TestConfig.SqlCred
+            }
+            $dacSessionQuery = "SELECT COUNT(*) AS DacSessions FROM sys.dm_exec_sessions AS s INNER JOIN sys.endpoints AS e ON e.endpoint_id = s.endpoint_id WHERE e.is_admin_endpoint = 1"
+            $dacRunspace = [runspacefactory]::CreateRunspace()
+            $dacRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $dacRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $dacShell = [powershell]::Create()
+            $dacShell.Runspace = $dacRunspace
+            $null = $dacShell.AddCommand("Start-DbaMigration").AddParameters($splatDacMigration)
+            $dacAsync = $dacShell.BeginInvoke()
+            $dacWatch = [System.Diagnostics.Stopwatch]::StartNew()
+            while (-not ($dacShell.Streams.Progress | Where-Object Activity -eq "Performing instance migration") -and -not $dacAsync.IsCompleted -and $dacWatch.Elapsed.TotalSeconds -lt 60) {
+                Start-Sleep -Milliseconds 10
+            }
+            $dacShell.Stop()
+            $dacStopState = $dacShell.InvocationStateInfo.State
+            # The session can take a moment to end on the server after the client closed the connection.
+            $dacWatch.Restart()
+            do {
+                $dacSessions = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query $dacSessionQuery).DacSessions
+                if ($dacSessions -gt 0) {
+                    Start-Sleep -Milliseconds 200
+                }
+            } while ($dacSessions -gt 0 -and $dacWatch.Elapsed.TotalSeconds -lt 5)
+            $dacShell.Dispose()
+            $dacRunspace.Dispose()
+        }
+
+        It "Was stopped while it was running" {
+            $dacStopState | Should -Be "Stopped"
+        }
+
+        It "Closes the dedicated admin connection" {
+            $dacSessions | Should -Be 0
+        }
+    }
 }
