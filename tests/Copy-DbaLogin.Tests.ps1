@@ -28,6 +28,7 @@ Describe $CommandName -Tag UnitTests {
                 "NewSid",
                 "ObjectLevel",
                 "Force",
+                "UpdateExisting",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
@@ -441,6 +442,328 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "leaves the destination connection in the database it was in" {
             $destContextAfter | Should -Be $destContextBefore
+        }
+    }
+}
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "Existing logins are updated in place with -UpdateExisting (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $updateLoginName = "dbatoolsci_update_$(Get-Random)"
+            $sidLoginName = "dbatoolsci_updatesid_$(Get-Random)"
+            $sourcePassword = "dbatools.IO.Source1"
+
+            # Password policy on, as CREATE LOGIN has it by default. SQL Server refuses a hashed password for such
+            # a login, which is the case the update has to handle.
+            $splatSourceLogin = @{
+                SqlInstance               = $TestConfig.InstanceCopy1
+                Login                     = $updateLoginName
+                SecurePassword            = (ConvertTo-SecureString -String $sourcePassword -AsPlainText -Force)
+                PasswordPolicyEnforced    = $true
+                PasswordExpirationEnabled = $true
+                Language                  = "us_english"
+            }
+            $sourceLogin = New-DbaLogin @splatSourceLogin
+
+            # The same SID, so the update in place applies, but every property it compares differs except the policy.
+            $splatDestLogin = @{
+                SqlInstance            = $TestConfig.InstanceCopy2
+                Login                  = $updateLoginName
+                SecurePassword         = (ConvertTo-SecureString -String "dbatools.IO.Dest1" -AsPlainText -Force)
+                Sid                    = $sourceLogin.Sid
+                PasswordPolicyEnforced = $true
+                DefaultDatabase        = "tempdb"
+                Language               = "Deutsch"
+                Disabled               = $true
+            }
+            $null = New-DbaLogin @splatDestLogin
+
+            # Created separately on both instances, so the SIDs differ.
+            foreach ($instance in $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2) {
+                $splatSidLogin = @{
+                    SqlInstance    = $instance
+                    Login          = $sidLoginName
+                    SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Sid1" -AsPlainText -Force)
+                }
+                $null = New-DbaLogin @splatSidLogin
+            }
+
+            # Read from sys.sql_logins, so the assertions don't depend on cached SMO objects. The principal_id
+            # changes when a login is dropped and recreated.
+            $loginStateQuery = @"
+SELECT principal_id,
+       CONVERT(VARCHAR(514), password_hash, 1) AS password_hash,
+       CONVERT(VARCHAR(514), sid, 1) AS sid,
+       is_policy_checked,
+       is_expiration_checked,
+       default_database_name,
+       default_language_name,
+       is_disabled,
+       CONVERT(VARCHAR(30), LOGINPROPERTY(name, 'PasswordLastSetTime'), 121) AS password_last_set
+FROM sys.sql_logins
+WHERE name = @name
+"@
+            $splatSourceState = @{
+                SqlInstance  = $TestConfig.InstanceCopy1
+                Query        = $loginStateQuery
+                SqlParameter = @{ name = $updateLoginName }
+            }
+            $splatDestState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = $loginStateQuery
+                SqlParameter = @{ name = $updateLoginName }
+            }
+            $splatSidSourceState = @{
+                SqlInstance  = $TestConfig.InstanceCopy1
+                Query        = $loginStateQuery
+                SqlParameter = @{ name = $sidLoginName }
+            }
+            $splatSidDestState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = $loginStateQuery
+                SqlParameter = @{ name = $sidLoginName }
+            }
+            $destStateBefore = Invoke-DbaQuery @splatDestState
+
+            $splatUpdate = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $TestConfig.InstanceCopy2
+                Login          = $updateLoginName
+                UpdateExisting = $true
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemoveLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Login       = $updateLoginName, $sidLoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "updates the password and the properties of the existing login without dropping it" {
+            $result = Copy-DbaLogin @splatUpdate
+
+            $WarnVar | Should -BeNullOrEmpty
+            $result.Status | Should -Be "Successful"
+            $result.Notes | Should -Be "Updated in place: password, CHECK_EXPIRATION, default database, default language, disabled state"
+
+            $sourceState = Invoke-DbaQuery @splatSourceState
+            $destState = Invoke-DbaQuery @splatDestState
+            $destState.principal_id | Should -Be $destStateBefore.principal_id
+            $destState.password_hash | Should -Be $sourceState.password_hash
+            $destState.is_policy_checked | Should -BeTrue
+            $destState.is_expiration_checked | Should -BeTrue
+            $destState.default_database_name | Should -Be $sourceState.default_database_name
+            $destState.default_language_name | Should -Be "us_english"
+            $destState.is_disabled | Should -BeFalse
+        }
+
+        It "leaves an identical login untouched on a repeated run" {
+            $stateBefore = Invoke-DbaQuery @splatDestState
+
+            $result = Copy-DbaLogin @splatUpdate
+
+            $WarnVar | Should -BeNullOrEmpty
+            $result.Status | Should -Be "Skipped"
+            $result.Notes | Should -Be "Login is identical on source and destination"
+            $stateAfter = Invoke-DbaQuery @splatDestState
+            $stateAfter.principal_id | Should -Be $stateBefore.principal_id
+            $stateAfter.password_last_set | Should -Be $stateBefore.password_last_set
+        }
+
+        It "skips a login with a different SID with a warning" {
+            $sidBefore = (Invoke-DbaQuery @splatSidDestState).sid
+
+            $splatSidUpdate = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $TestConfig.InstanceCopy2
+                Login          = $sidLoginName
+                UpdateExisting = $true
+                WarningAction  = "SilentlyContinue"
+            }
+            $result = Copy-DbaLogin @splatSidUpdate
+
+            $result.Status | Should -Be "Skipped"
+            $result.Notes | Should -Be "Different SID on destination, use -Force to drop and recreate"
+            $WarnVar | Should -BeLike "*$sidLoginName*different SID*"
+            (Invoke-DbaQuery @splatSidDestState).sid | Should -Be $sidBefore
+        }
+
+        It "drops and recreates a login with a different SID when -Force is also used" {
+            $splatSidForce = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $TestConfig.InstanceCopy2
+                Login          = $sidLoginName
+                UpdateExisting = $true
+                Force          = $true
+            }
+            $result = Copy-DbaLogin @splatSidForce
+
+            $WarnVar | Should -BeNullOrEmpty
+            $result.Status | Should -Be "Successful"
+            (Invoke-DbaQuery @splatSidDestState).sid | Should -Be (Invoke-DbaQuery @splatSidSourceState).sid
+        }
+
+        # The last test of the context: SQL Server 2025 converts an older password hash to its own format at the
+        # first successful login, so after this the hashes differ again although the password is the same.
+        It "lets the login connect to the destination with the password of the source" {
+            $splatConnect = @{
+                SqlInstance         = $TestConfig.InstanceCopy2
+                SqlCredential       = New-Object System.Management.Automation.PSCredential ($updateLoginName, (ConvertTo-SecureString -String $sourcePassword -AsPlainText -Force))
+                NonPooledConnection = $true
+            }
+            $loginServer = Connect-DbaInstance @splatConnect
+            try {
+                $loginServer.ConnectionContext.ExecuteScalar("SELECT SUSER_SNAME()") | Should -Be $updateLoginName
+            } finally {
+                # An open session would keep AfterAll from removing the login.
+                $null = $loginServer | Disconnect-DbaInstance
+            }
+        }
+    }
+
+    Context "A failing statement rolls the whole update in place back (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $rollbackLoginName = "dbatoolsci_rollback_$(Get-Random)"
+            $rollbackTriggerName = "dbatoolsci_rollback_trigger_$(Get-Random)"
+            $dropTriggerQuery = "IF EXISTS (SELECT * FROM sys.server_triggers WHERE name = N'$rollbackTriggerName') DROP TRIGGER [$rollbackTriggerName] ON ALL SERVER"
+
+            # Source with the password policy off and disabled, destination with the policy on and enabled. The update
+            # turns the policy off, sets the hash and disables the login, and the destination keeps the policy off.
+            $splatSourceLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $rollbackLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Source2" -AsPlainText -Force)
+                Disabled       = $true
+            }
+            $sourceLogin = New-DbaLogin @splatSourceLogin
+            $splatDestLogin = @{
+                SqlInstance            = $TestConfig.InstanceCopy2
+                Login                  = $rollbackLoginName
+                SecurePassword         = (ConvertTo-SecureString -String "dbatools.IO.Dest2" -AsPlainText -Force)
+                Sid                    = $sourceLogin.Sid
+                PasswordPolicyEnforced = $true
+            }
+            $null = New-DbaLogin @splatDestLogin
+
+            # Fails only the last statement of the update, ALTER LOGIN ... DISABLE, and only for this login, so the
+            # statements before it have already run. A trigger runs with XACT_ABORT ON, so a THROW would let the server
+            # roll the transaction back by itself. RAISERROR with XACT_ABORT OFF leaves the transaction open, as an
+            # error of the statement itself does, so only the rollback of the command can put the login back.
+            $createTriggerQuery = @"
+CREATE TRIGGER [$rollbackTriggerName] ON ALL SERVER FOR ALTER_LOGIN AS
+IF EVENTDATA().value('(/EVENT_INSTANCE/ObjectName)[1]', 'sysname') = N'$rollbackLoginName'
+    AND EVENTDATA().value('(/EVENT_INSTANCE/TSQLCommand/CommandText)[1]', 'nvarchar(max)') LIKE N'%DISABLE%'
+BEGIN
+    SET XACT_ABORT OFF;
+    RAISERROR(N'dbatoolsci: refused by the test trigger', 16, 1);
+END
+"@
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $createTriggerQuery
+
+            $loginStateQuery = @"
+SELECT CONVERT(VARCHAR(514), password_hash, 1) AS password_hash,
+       is_policy_checked,
+       is_expiration_checked,
+       is_disabled
+FROM sys.sql_logins
+WHERE name = @name
+"@
+            $splatSourceState = @{
+                SqlInstance  = $TestConfig.InstanceCopy1
+                Query        = $loginStateQuery
+                SqlParameter = @{ name = $rollbackLoginName }
+            }
+            $splatDestState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = $loginStateQuery
+                SqlParameter = @{ name = $rollbackLoginName }
+            }
+            # The update runs on a connection of the test, so the test can see whether a transaction was left open on
+            # it. It is not pooled, so it keeps its session between the commands.
+            $destCallerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2 -NonPooledConnection
+            $splatUpdate = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $destCallerServer
+                Login          = $rollbackLoginName
+                UpdateExisting = $true
+            }
+            $stateBefore = Invoke-DbaQuery @splatDestState
+            $sourceState = Invoke-DbaQuery @splatSourceState
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $failedResult = Copy-DbaLogin @splatUpdate -WarningVariable failedWarn
+            $tranCountAfterFailure = $destCallerServer.ConnectionContext.ExecuteScalar("SELECT @@TRANCOUNT")
+            if ($tranCountAfterFailure -gt 0) {
+                # Left open by the command, so the uncommitted update would block every read below. Closing the
+                # connection rolls it back, so the test fails instead of waiting.
+                $null = $destCallerServer | Disconnect-DbaInstance
+            }
+            $stateAfterFailure = Invoke-DbaQuery @splatDestState -EnableException
+
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $dropTriggerQuery -EnableException
+            $retryResult = Copy-DbaLogin @splatUpdate -WarningVariable retryWarn
+            $stateAfterRetry = Invoke-DbaQuery @splatDestState -EnableException
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $destCallerServer | Disconnect-DbaInstance
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $dropTriggerQuery
+            $splatRemoveLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Login       = $rollbackLoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "reports the update as failed with the error of the statement" {
+            $failedWarn | Should -BeNullOrEmpty
+            $failedResult.Status | Should -Be "Failed"
+            $failedResult.Notes | Should -BeLike "*refused by the test trigger*"
+        }
+
+        It "leaves no transaction open on the connection of the caller" {
+            $tranCountAfterFailure | Should -Be 0
+        }
+
+        It "leaves the login as it was, with the password policy still on" {
+            $stateAfterFailure.password_hash | Should -Be $stateBefore.password_hash
+            $stateAfterFailure.is_policy_checked | Should -BeTrue
+            $stateAfterFailure.is_disabled | Should -BeFalse
+        }
+
+        It "applies the whole update on the next run" {
+            $retryWarn | Should -BeNullOrEmpty
+            $retryResult.Status | Should -Be "Successful"
+            $retryResult.Notes | Should -Be "Updated in place: password, CHECK_POLICY, disabled state"
+            $stateAfterRetry.password_hash | Should -Be $sourceState.password_hash
+            $stateAfterRetry.is_policy_checked | Should -BeFalse
+            $stateAfterRetry.is_expiration_checked | Should -BeFalse
+            $stateAfterRetry.is_disabled | Should -BeTrue
         }
     }
 }
