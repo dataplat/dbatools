@@ -27,6 +27,7 @@ function Set-DbaLogin {
     .PARAMETER PasswordHash
         Sets the login password using a hashed password value (0x...). This is used for transferring logins between instances without knowing the actual password.
         The hash must be in the format returned by Get-LoginPasswordHash or extracted from sys.sql_logins. Cannot be used with -SecurePassword or -PasswordMustChange.
+        SQL Server refuses a hashed password for a login with CHECK_POLICY on, so for such a login the policy is turned off and back on around it, in one transaction. Like -Unlock -Force, this also clears a lockout of the login.
 
     .PARAMETER DefaultDatabase
         Changes the default database that the login connects to after authentication. Must be an existing database name.
@@ -381,7 +382,9 @@ function Set-DbaLogin {
                 # Change the name
                 if (Test-Bound -ParameterName 'NewName') {
                     # Check if the new name doesn't already exist
-                    if ($allLogins[$server.Name].Name -notcontains $NewName) {
+                    # Through the server of the login, because a login that comes through the pipeline has no entry in
+                    # $allLogins, which only knows the instances of -SqlInstance.
+                    if ($null -eq $server.Logins[$NewName]) {
                         try {
                             $l.Rename($NewName)
                         } catch {
@@ -390,7 +393,7 @@ function Set-DbaLogin {
                         }
                     } else {
                         $notes += 'New login name already exists'
-                        Write-Message -Message "New login name $NewName already exists on $instance" -Level Verbose
+                        Write-Message -Message "New login name $NewName already exists on $server" -Level Verbose
                     }
                 }
 
@@ -536,9 +539,38 @@ function Set-DbaLogin {
                     }
 
                     try {
-                        $loginName = $l.Name.Replace("'", "''")
-                        $sql = "ALTER LOGIN [$loginName] WITH PASSWORD = $PasswordHash HASHED"
-                        $null = $server.Query($sql)
+                        $loginIdentifier = "[" + $l.Name.Replace("]", "]]") + "]"
+                        $statements = @()
+                        if ($l.PasswordPolicyEnforced) {
+                            # SQL Server refuses a hashed password for a login with CHECK_POLICY turned on (error 33020),
+                            # so the policy is turned off for it and set back afterwards.
+                            $checkExpiration = if ($l.PasswordExpirationEnabled) { "ON" } else { "OFF" }
+                            $statements += "ALTER LOGIN $loginIdentifier WITH CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF"
+                            $statements += "ALTER LOGIN $loginIdentifier WITH PASSWORD = $PasswordHash HASHED"
+                            $statements += "ALTER LOGIN $loginIdentifier WITH CHECK_POLICY = ON, CHECK_EXPIRATION = $checkExpiration"
+                        } else {
+                            $statements += "ALTER LOGIN $loginIdentifier WITH PASSWORD = $PasswordHash HASHED"
+                        }
+                        # One transaction, so a failing statement takes back the ones before it and the policy is
+                        # never left off.
+                        $server.ConnectionContext.BeginTransaction()
+                        $committed = $false
+                        try {
+                            foreach ($statement in $statements) {
+                                $null = $server.ConnectionContext.ExecuteNonQuery($statement)
+                            }
+                            $server.ConnectionContext.CommitTransaction()
+                            $committed = $true
+                        } finally {
+                            # A failed ALTER LOGIN leaves the transaction open, and so does a stopped pipeline.
+                            if (-not $committed) {
+                                try {
+                                    $server.ConnectionContext.RollBackTransaction()
+                                } catch {
+                                    Write-Message -Level Verbose -Message "Could not roll back the transaction on $server | $PSItem"
+                                }
+                            }
+                        }
                         $passwordChanged = $true
                         $l.Refresh()
                     } catch {
