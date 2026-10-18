@@ -153,13 +153,19 @@ function Save-DbaKbUpdate {
                 } catch {
                     Write-Message -Level Verbose -Message "Start-BitsTransfer failed, falling back to Invoke-WebRequest: $PSItem"
                     Write-Progress -Activity "Downloading $fileName" -Id 1
-                    Invoke-TlsWebRequest -Uri $link -OutFile $file -ErrorAction Stop
-                    Write-Progress -Activity "Downloading $fileName" -Id 1 -Completed
+                    try {
+                        Invoke-TlsWebRequest -Uri $link -OutFile $file -ErrorAction Stop
+                    } finally {
+                        Write-Progress -Activity "Downloading $fileName" -Id 1 -Completed
+                    }
                 }
             } else {
                 Write-Progress -Activity "Downloading $fileName" -Id 1
-                Invoke-TlsWebRequest -Uri $link -OutFile $file -ErrorAction Stop
-                Write-Progress -Activity "Downloading $fileName" -Id 1 -Completed
+                try {
+                    Invoke-TlsWebRequest -Uri $link -OutFile $file -ErrorAction Stop
+                } finally {
+                    Write-Progress -Activity "Downloading $fileName" -Id 1 -Completed
+                }
             }
             if (Test-Path -Path $file) {
                 Get-ChildItem -Path $file

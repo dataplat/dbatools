@@ -45,6 +45,7 @@ Describe $CommandName -Tag UnitTests {
                 "Port",
                 "EnableException",
                 "ExtractPath",
+                "KeepExtractedFiles",
                 "ArgumentList",
                 "Download",
                 "NoPendingRenameCheck"
@@ -320,6 +321,12 @@ Describe $CommandName -Tag UnitTests {
             $result.Installer | Should -Be (Join-Path $exeDir 'SQLServer2012-KB4018073-x64-ENU.exe')
             $result.Notes | Should -BeNullOrEmpty
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
+        }
+        It "Extracts nothing with WhatIf, even with KeepExtractedFiles" {
+            $extractRoot = "$TestDrive\WhatIf"
+            $null = Update-DbaInstance -Version 2017 -Path $exeDir -ExtractPath $extractRoot -KeepExtractedFiles -EnableException -WhatIf
+            Should -Invoke -CommandName Invoke-Program -Exactly 0 -Scope It -ModuleName dbatools
+            $extractRoot | Should -Not -Exist
         }
     }
     Context "Validate upgrades to a specific KB" {
@@ -909,6 +916,31 @@ Describe $CommandName -Tag UnitTests {
             $result.ExtractPath | Should -BeLike '*\dbatools_KB*Extract_*'
             $warVar | Should -BeLike '*failed with exit code 12345*'
         }
+        It "keeps the extracted files of a failed update and reports them in the error with EnableException" {
+            Mock -CommandName Get-ChildItem -ModuleName dbatools -MockWith {
+                [PSCustomObject]@{
+                    FullName = "c:\mocked\filename.exe"
+                }
+            }
+            Mock -CommandName Get-Item -ModuleName dbatools -MockWith { "c:\mocked" }
+            # The extraction creates the real folder, the installation fails
+            Mock -CommandName Invoke-Program -ModuleName dbatools -MockWith {
+                if ($ArgumentList[0] -like "/x:*") {
+                    $null = New-Item -Path ($ArgumentList[0] -replace "^/x:|`"", "") -ItemType Directory
+                    return [PSCustomObject]@{ Successful = $true; ExitCode = 0 }
+                }
+                [PSCustomObject]@{ Successful = $false; ExitCode = 12345 }
+            }
+            $extractRoot = "$TestDrive\KeepExtractedFiles"
+            $failedUpdate = $null
+            try {
+                $null = Update-DbaInstance -Version 2008SP3 -Path "mocked" -ExtractPath $extractRoot -KeepExtractedFiles -EnableException
+            } catch {
+                $failedUpdate = $PSItem.TargetObject
+            }
+            $failedUpdate.ExtractPath | Should -BeLike "$extractRoot\dbatools_KB2546951_Extract_*"
+            (Get-ChildItem -Path $extractRoot).FullName | Should -Be $failedUpdate.ExtractPath
+        }
     }
 }
 
@@ -1057,6 +1089,52 @@ InModuleScope dbatools {
             $result | Should -BeFalse
             Should -Invoke -CommandName Invoke-Command2 -Exactly 3 -Scope It -ParameterFilter { $Authentication -eq "Credssp" }
             Should -Invoke -CommandName Get-DbaCmObject -Exactly 0 -Scope It
+        }
+    }
+}
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "When the computer cannot be reached" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. The top level domain invalid never resolves, so
+            # the search for SQL Server installations fails, the command warns and updates nothing.
+            $emptyUpdatePath = "$TestDrive\EmptyUpdates"
+            $null = New-Item -Path $emptyUpdatePath -ItemType Directory -Force
+            $splatUnreachableUpdate = @{
+                ComputerName = "progressleak$(Get-Random).invalid"
+                Version      = "2022"
+                Path         = $emptyUpdatePath
+                WhatIf       = $true
+            }
+            $updateRunspace = [runspacefactory]::CreateRunspace()
+            $updateRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $updateRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $updateShell = [powershell]::Create()
+            $updateShell.Runspace = $updateRunspace
+            $null = $updateShell.AddCommand("Update-DbaInstance").AddParameters($splatUnreachableUpdate).Invoke()
+            $updateWarnings = @($updateShell.Streams.Warning | ForEach-Object { $PSItem.Message })
+            $updateRecords = @($updateShell.Streams.Progress)
+            $updateShell.Dispose()
+            $updateRunspace.Dispose()
+        }
+
+        It "Warns that it cannot look for SQL Server installations" {
+            ($updateWarnings -join " ") | Should -Match "Error while looking for SQL Server installations"
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $updateRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $updateRecords | Where-Object Activity -like "Preparing to update SQL Server*" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
         }
     }
 }

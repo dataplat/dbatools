@@ -1591,4 +1591,58 @@ WHERE program_name LIKE N'dbatools%'
             $jobStep.Command | Should -BeLike "*@Directory = *$backupLocationSetting*"
         }
     }
+
+    Context "When the pipeline ends at the result" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $firstOnlyDbName = "dbatoolsci_maintfirst_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $firstOnlyDbName
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. Select-Object -First 1 stops the command at
+            # the result of the first instance. The runspace imports the manifest: an import of the psm1
+            # without a command line skips the type data.
+            $splatFirstOnlyInstall = @{
+                SqlInstance = $TestConfig.InstanceMulti1
+                Database    = $firstOnlyDbName
+            }
+            if ($TestConfig.SqlCred) {
+                $splatFirstOnlyInstall.SqlCredential = $TestConfig.SqlCred
+            }
+            $firstOnlyRunspace = [runspacefactory]::CreateRunspace()
+            $firstOnlyRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $firstOnlyRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $firstOnlyShell = [powershell]::Create()
+            $firstOnlyShell.Runspace = $firstOnlyRunspace
+            $firstOnlyResult = $firstOnlyShell.AddCommand("Install-DbaMaintenanceSolution").AddParameters($splatFirstOnlyInstall).AddCommand("Select-Object").AddParameter("First", 1).Invoke()
+            $firstOnlyRecords = @($firstOnlyShell.Streams.Progress)
+            $firstOnlyShell.Dispose()
+            $firstOnlyRunspace.Dispose()
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $firstOnlyDbName
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Installs the solution" {
+            $firstOnlyResult.Results | Should -Be "Success"
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $firstOnlyRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $firstOnlyRecords | Where-Object Activity -eq "Executing Install-DbaMaintenanceSolution" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }

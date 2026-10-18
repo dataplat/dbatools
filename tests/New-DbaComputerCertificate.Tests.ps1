@@ -639,4 +639,51 @@ RequestType = PKCS10
             $requestAfterAccept | Should -BeNullOrEmpty
         }
     }
+
+    Context "When the pipeline ends at the certificate" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. Select-Object -First 1 stops the command at
+            # the certificate it returns, before it removes its request folder.
+            $firstOnlyRunspace = [runspacefactory]::CreateRunspace()
+            $firstOnlyRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $firstOnlyRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $firstOnlyShell = [powershell]::Create()
+            $firstOnlyShell.Runspace = $firstOnlyRunspace
+            $firstOnlyCert = $firstOnlyShell.AddCommand("New-DbaComputerCertificate").AddParameter("SelfSigned", $true).AddCommand("Select-Object").AddParameter("First", 1).Invoke()
+            $firstOnlyRecords = @($firstOnlyShell.Streams.Progress)
+            $firstOnlyShell.Dispose()
+            $firstOnlyRunspace.Dispose()
+
+            # The first record names the request folder of this call, which the stopped command could not remove.
+            $firstOnlyFolder = ($firstOnlyRecords | Where-Object StatusDescription -like "Creating *" | Select-Object -First 1).StatusDescription -replace "^Creating ", ""
+        }
+
+        AfterAll {
+            if ($firstOnlyCert) {
+                Remove-DbaComputerCertificate -Thumbprint $firstOnlyCert.Thumbprint
+            }
+            if ($firstOnlyFolder) {
+                Remove-Item -Path $firstOnlyFolder -Recurse -ErrorAction SilentlyContinue
+            }
+        }
+
+        It "Returns the certificate" {
+            $firstOnlyCert.Thumbprint | Should -Not -BeNullOrEmpty
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $firstOnlyRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $firstOnlyRecords | Where-Object Activity -eq "Executing New-DbaComputerCertificate" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }

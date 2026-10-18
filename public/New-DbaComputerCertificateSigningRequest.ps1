@@ -191,90 +191,93 @@ function New-DbaComputerCertificateSigningRequest {
         foreach ($computer in $ComputerName) {
             $stepCounter = 0
 
-            if (-not $secondaryNode) {
+            try {
+                if (-not $secondaryNode) {
 
-                if ($ClusterInstanceName) {
-                    if ($ClusterInstanceName -notmatch "\.") {
-                        $fqdn = "$ClusterInstanceName.$env:USERDNSDOMAIN"
+                    if ($ClusterInstanceName) {
+                        if ($ClusterInstanceName -notmatch "\.") {
+                            $fqdn = "$ClusterInstanceName.$env:USERDNSDOMAIN"
+                        } else {
+                            $fqdn = $ClusterInstanceName
+                        }
                     } else {
-                        $fqdn = $ClusterInstanceName
-                    }
-                } else {
-                    $resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -WarningAction SilentlyContinue
+                        $resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -WarningAction SilentlyContinue
 
-                    if (-not $resolved) {
-                        $fqdn = "$ComputerName.$env:USERDNSDOMAIN"
-                        Write-Message -Level Warning -Message "Server name cannot be resolved. Guessing it's $fqdn"
+                        if (-not $resolved) {
+                            $fqdn = "$ComputerName.$env:USERDNSDOMAIN"
+                            Write-Message -Level Warning -Message "Server name cannot be resolved. Guessing it's $fqdn"
+                        } else {
+                            $fqdn = $resolved.fqdn
+                        }
+                    }
+
+                    $certDir = "$Path\$fqdn"
+                    $certCfg = "$certDir\request.inf"
+                    $certCsr = "$certDir\$fqdn.csr"
+
+                    if (Test-Path($certDir)) {
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Deleting files from $certDir"
+                        $null = Remove-Item "$certDir\*.*"
                     } else {
-                        $fqdn = $resolved.fqdn
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating $certDir"
+                        $null = New-Item -Path $certDir -ItemType Directory -Force
                     }
-                }
 
-                $certDir = "$Path\$fqdn"
-                $certCfg = "$certDir\request.inf"
-                $certCsr = "$certDir\$fqdn.csr"
+                    # Make sure output is compat with clusters
+                    $shortName = $fqdn.Split(".")[0]
 
-                if (Test-Path($certDir)) {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Deleting files from $certDir"
-                    $null = Remove-Item "$certDir\*.*"
-                } else {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating $certDir"
-                    $null = New-Item -Path $certDir -ItemType Directory -Force
-                }
+                    if (-not $dns) {
+                        $dns = $shortName, $fqdn
+                    }
 
-                # Make sure output is compat with clusters
-                $shortName = $fqdn.Split(".")[0]
-
-                if (-not $dns) {
-                    $dns = $shortName, $fqdn
-                }
-
-                $san = Get-SanExt $dns
-                # Write config file
-                Set-Content $certCfg "[Version]"
-                Add-Content $certCfg 'Signature="$Windows NT$"'
-                Add-Content $certCfg "[NewRequest]"
-                Add-Content $certCfg "Subject = ""CN=$fqdn"""
-                if ($Provider -eq "Microsoft RSA SChannel Cryptographic Provider") {
-                    # A legacy CSP key. KeySpec 1 is AT_KEYEXCHANGE, the KeySpec the Microsoft certificate requirements for SQL Server name.
-                    Add-Content $certCfg "KeySpec = 1"
-                }
-                Add-Content $certCfg "KeyLength = $KeyLength"
-                Add-Content $certCfg "Exportable = TRUE"
-                Add-Content $certCfg "MachineKeySet = TRUE"
-                Add-Content $certCfg "FriendlyName=""$FriendlyName"""
-                Add-Content $certCfg "SMIME = False"
-                Add-Content $certCfg "PrivateKeyArchive = FALSE"
-                Add-Content $certCfg "UserProtected = FALSE"
-                Add-Content $certCfg "UseExistingKeySet = FALSE"
-                Add-Content $certCfg "ProviderName = ""$Provider"""
-                if ($Provider -eq "Microsoft RSA SChannel Cryptographic Provider") {
-                    # ProviderType 12 is PROV_RSA_SCHANNEL.
-                    Add-Content $certCfg "ProviderType = 12"
-                } else {
-                    # A Key Storage Provider has neither a provider type nor a KeySpec, it takes the key algorithm instead.
-                    Add-Content $certCfg "KeyAlgorithm = RSA"
-                }
-                if ($SelfSigned) {
-                    Add-Content $certCfg "RequestType = Cert"
-                } else {
-                    Add-Content $certCfg "RequestType = PKCS10"
-                }
-                Add-Content $certCfg "KeyUsage = 0xa0"
-                Add-Content $certCfg "[EnhancedKeyUsageExtension]"
-                Add-Content $certCfg "OID=1.3.6.1.5.5.7.3.1"
-                Add-Content $certCfg "[Extensions]"
-                Add-Content $certCfg $san
-                Add-Content $certCfg "Critical=2.5.29.17"
+                    $san = Get-SanExt $dns
+                    # Write config file
+                    Set-Content $certCfg "[Version]"
+                    Add-Content $certCfg 'Signature="$Windows NT$"'
+                    Add-Content $certCfg "[NewRequest]"
+                    Add-Content $certCfg "Subject = ""CN=$fqdn"""
+                    if ($Provider -eq "Microsoft RSA SChannel Cryptographic Provider") {
+                        # A legacy CSP key. KeySpec 1 is AT_KEYEXCHANGE, the KeySpec the Microsoft certificate requirements for SQL Server name.
+                        Add-Content $certCfg "KeySpec = 1"
+                    }
+                    Add-Content $certCfg "KeyLength = $KeyLength"
+                    Add-Content $certCfg "Exportable = TRUE"
+                    Add-Content $certCfg "MachineKeySet = TRUE"
+                    Add-Content $certCfg "FriendlyName=""$FriendlyName"""
+                    Add-Content $certCfg "SMIME = False"
+                    Add-Content $certCfg "PrivateKeyArchive = FALSE"
+                    Add-Content $certCfg "UserProtected = FALSE"
+                    Add-Content $certCfg "UseExistingKeySet = FALSE"
+                    Add-Content $certCfg "ProviderName = ""$Provider"""
+                    if ($Provider -eq "Microsoft RSA SChannel Cryptographic Provider") {
+                        # ProviderType 12 is PROV_RSA_SCHANNEL.
+                        Add-Content $certCfg "ProviderType = 12"
+                    } else {
+                        # A Key Storage Provider has neither a provider type nor a KeySpec, it takes the key algorithm instead.
+                        Add-Content $certCfg "KeyAlgorithm = RSA"
+                    }
+                    if ($SelfSigned) {
+                        Add-Content $certCfg "RequestType = Cert"
+                    } else {
+                        Add-Content $certCfg "RequestType = PKCS10"
+                    }
+                    Add-Content $certCfg "KeyUsage = 0xa0"
+                    Add-Content $certCfg "[EnhancedKeyUsageExtension]"
+                    Add-Content $certCfg "OID=1.3.6.1.5.5.7.3.1"
+                    Add-Content $certCfg "[Extensions]"
+                    Add-Content $certCfg $san
+                    Add-Content $certCfg "Critical=2.5.29.17"
 
 
-                if ($PScmdlet.ShouldProcess("local", "Creating certificate for $computer")) {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Running: certreq -new $certCfg $certCsr"
-                    $null = certreq -new $certCfg $certCsr
+                    if ($PScmdlet.ShouldProcess("local", "Creating certificate for $computer")) {
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Running: certreq -new $certCfg $certCsr"
+                        $null = certreq -new $certCfg $certCsr
+                    }
+                    Get-ChildItem $certCfg, $certCsr
                 }
-                Get-ChildItem $certCfg, $certCsr
+            } finally {
+                Write-ProgressHelper -Completed
             }
-            Write-ProgressHelper -Completed
         }
     }
 }

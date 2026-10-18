@@ -212,4 +212,45 @@ Describe $CommandName -Tag IntegrationTests {
         $result.CertificateThumbprint | Should -BeNullOrEmpty
         $WarnVar | Should -BeNullOrEmpty
     }
+
+    Context "When the certificate does not exist" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. No certificate has this thumbprint, so the
+            # command warns and changes nothing. The runspace imports the manifest: an import of the psm1
+            # without a command line skips the type data.
+            $splatMissingThumbprint = @{
+                SqlInstance = $TestConfig.InstanceRestart
+                Thumbprint  = "0000000000000000000000000000000000000000"
+            }
+            $missingRunspace = [runspacefactory]::CreateRunspace()
+            $missingRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $missingRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $missingShell = [powershell]::Create()
+            $missingShell.Runspace = $missingRunspace
+            $null = $missingShell.AddCommand("Set-DbaNetworkCertificate").AddParameters($splatMissingThumbprint).Invoke()
+            $missingWarnings = @($missingShell.Streams.Warning | ForEach-Object { $PSItem.Message })
+            $missingRecords = @($missingShell.Streams.Progress)
+            $missingShell.Dispose()
+            $missingRunspace.Dispose()
+        }
+
+        It "Warns that the certificate is not suitable" {
+            ($missingWarnings -join " ") | Should -Match "CertificateNotFound"
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $missingRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $missingRecords | Where-Object Activity -eq "Executing Set-DbaNetworkCertificate" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }

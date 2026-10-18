@@ -751,9 +751,11 @@ function Import-DbaCsv {
                     Write-Progress -Id 2 -Activity "Analyzing column types" -Status "$percent% complete" -PercentComplete $percent
                 }
 
-                $inferredColumns = [Dataplat.Dbatools.Csv.Reader.CsvSchemaInference]::InferSchema($Path, $CsvOptions, $progressCallback)
-
-                Write-Progress -Id 2 -Activity "Analyzing column types" -Status "Complete" -Completed
+                try {
+                    $inferredColumns = [Dataplat.Dbatools.Csv.Reader.CsvSchemaInference]::InferSchema($Path, $CsvOptions, $progressCallback)
+                } finally {
+                    Write-Progress -Id 2 -Activity "Analyzing column types" -Status "Complete" -Completed
+                }
             } else {
                 # Sample-based inference
                 Write-Message -Level Verbose -Message "Sampling first $SampleRows rows for type inference..."

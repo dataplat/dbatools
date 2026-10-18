@@ -125,4 +125,57 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Count | Should -Be 1
         }
     }
+
+    Context "When the download fails" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. The link points to the top level domain
+            # invalid, which never resolves, so the download fails; this needs neither the catalog nor the
+            # internet. Invoke-WebRequest reports that as an error that ends only its own statement, so the
+            # command would go on to its next line anyway; with -ErrorAction Stop of the caller the failure
+            # throws out of the command, which is when the bar was left on screen. The runspace imports the
+            # manifest: an import of the psm1 without a command line skips the type data.
+            $failingUpdate = [PSCustomObject]@{
+                Link = "https://progressleak$(Get-Random).invalid/sqlserver2022-kb0000000-x64_0000000000000000.exe"
+            }
+            $splatFailingDownload = @{
+                InputObject   = $failingUpdate
+                Path          = $tempPath
+                UseWebRequest = $true
+                ErrorAction   = "Stop"
+            }
+            $downloadRunspace = [runspacefactory]::CreateRunspace()
+            $downloadRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $downloadRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $downloadShell = [powershell]::Create()
+            $downloadShell.Runspace = $downloadRunspace
+            $downloadError = $null
+            try {
+                $null = $downloadShell.AddCommand("Save-DbaKbUpdate").AddParameters($splatFailingDownload).Invoke()
+            } catch {
+                $downloadError = $PSItem
+            }
+            $downloadRecords = @($downloadShell.Streams.Progress)
+            $downloadShell.Dispose()
+            $downloadRunspace.Dispose()
+        }
+
+        It "Throws out of the failed download" {
+            $downloadError | Should -Not -BeNullOrEmpty
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $downloadRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $downloadRecords | Where-Object Activity -like "Downloading *" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+    }
 }
