@@ -112,7 +112,7 @@ WHERE SCHEMA_NAME(o.schema_id) = '$escapedSchema'
                         $exists = $db.Query($checkSql).PropExists
                         if ($exists -gt 0) {
                             $dropSql = "EXEC sys.sp_dropextendedproperty @name = N'$propName', @level0type = N'SCHEMA', @level0name = N'$escapedSchema', @level1type = N'TABLE', @level1name = N'$escapedTable', @level2type = N'COLUMN', @level2name = N'$escapedColumn'"
-                            $db.Query($dropSql)
+                            $null = $db.Query($dropSql)
                         }
                     } catch {
                         $errors += $propName
