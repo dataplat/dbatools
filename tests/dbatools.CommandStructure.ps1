@@ -564,3 +564,121 @@ function Get-DbaStopFunctionParameterMap {
     }
     $map
 }
+
+function Get-DbaBareQueryFinding {
+    <#
+    .SYNOPSIS
+        Finds the Query() calls whose value goes to the output of their function.
+
+    .DESCRIPTION
+        Used by the "command structure" Describe in dbatools.Tests.ps1, and by its fixtures.
+
+        The Query() script methods of the SMO Server and Database objects (xml\dbatools.Types.ps1xml)
+        return the first table of the result, which is $null for a batch without a result set. A call
+        whose value nothing takes writes that $null into the output of the command (#10794).
+
+        The check follows the value of every .Query(...) call up the tree, the way PowerShell passes it
+        on. It goes on through statement blocks, subexpressions, parentheses, array literals, the
+        bodies of if, switch, loop, try, catch, finally and trap, and the last command of a pipeline.
+        It is taken when it is assigned, cast, redirected to a file or $null, piped on to a further
+        command, returned or thrown, used as an argument, an operand or the object of a member, or used
+        as the condition of an if, a loop or a switch. A scriptblock passes its output on to what runs
+        it - a command or a method it is an argument of, & or . - so a call in the scriptblock of
+        ForEach-Object is followed further, while one in a scriptblock that is assigned counts as
+        taken. A call whose value reaches its function is a finding; findings are objects with Rule,
+        File, Function, Line and Message.
+
+    .PARAMETER Ast
+        The parsed file.
+
+    .PARAMETER File
+        The name to report the findings under.
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [System.Management.Automation.Language.Ast]$Ast,
+        [Parameter(Mandatory)]
+        [string]$File
+    )
+
+    # $true when the parent passes the value of the child on, $false when it takes it.
+    $passesOn = {
+        param($Parent, $Child)
+        if ($Parent -is [System.Management.Automation.Language.CommandBaseAst]) {
+            $toFile = $Parent.Redirections | Where-Object { $PSItem -is [System.Management.Automation.Language.FileRedirectionAst] -and $PSItem.FromStream -in "Output", "All" }
+            if ($toFile) { return $false }
+            if ($Parent -is [System.Management.Automation.Language.CommandExpressionAst]) { return $true }
+            # A command passes on the output of a scriptblock it runs, never the value of an argument.
+            return ($Child -is [System.Management.Automation.Language.ScriptBlockExpressionAst] -or $Child -is [System.Management.Automation.Language.CommandParameterAst])
+        }
+        if ($Parent -is [System.Management.Automation.Language.CommandParameterAst] -or $Parent -is [System.Management.Automation.Language.InvokeMemberExpressionAst]) {
+            return ($Child -is [System.Management.Automation.Language.ScriptBlockExpressionAst])
+        }
+        if ($Parent -is [System.Management.Automation.Language.PipelineAst]) {
+            return ($Parent.PipelineElements[$Parent.PipelineElements.Count - 1] -eq $Child)
+        }
+        if ($Parent -is [System.Management.Automation.Language.IfStatementAst]) {
+            foreach ($clause in $Parent.Clauses) {
+                if ($clause.Item1 -eq $Child) { return $false }
+            }
+            return $true
+        }
+        if ($Parent -is [System.Management.Automation.Language.SwitchStatementAst]) {
+            if ($Parent.Condition -eq $Child) { return $false }
+            foreach ($clause in $Parent.Clauses) {
+                if ($clause.Item1 -eq $Child) { return $false }
+            }
+            return $true
+        }
+        if ($Parent -is [System.Management.Automation.Language.LoopStatementAst]) {
+            return ($Parent.Body -eq $Child)
+        }
+        $passingTypes = @(
+            [System.Management.Automation.Language.ScriptBlockExpressionAst],
+            [System.Management.Automation.Language.ScriptBlockAst],
+            [System.Management.Automation.Language.NamedBlockAst],
+            [System.Management.Automation.Language.StatementBlockAst],
+            [System.Management.Automation.Language.SubExpressionAst],
+            [System.Management.Automation.Language.ArrayExpressionAst],
+            [System.Management.Automation.Language.ParenExpressionAst],
+            [System.Management.Automation.Language.ArrayLiteralAst],
+            [System.Management.Automation.Language.TryStatementAst],
+            [System.Management.Automation.Language.CatchClauseAst],
+            [System.Management.Automation.Language.TrapStatementAst]
+        )
+        foreach ($passingType in $passingTypes) {
+            if ($Parent -is $passingType) { return $true }
+        }
+        return $false
+    }
+
+    $calls = $Ast.FindAll({
+            param($Node)
+            $Node -is [System.Management.Automation.Language.InvokeMemberExpressionAst] -and
+            $Node.Member -is [System.Management.Automation.Language.StringConstantExpressionAst] -and
+            $Node.Member.Value -eq "Query"
+        }, $true)
+
+    foreach ($call in $calls) {
+        $child = $call
+        $parent = $call.Parent
+        while ($parent -and $parent -isnot [System.Management.Automation.Language.FunctionDefinitionAst] -and (& $passesOn $parent $child)) {
+            $child = $parent
+            $parent = $parent.Parent
+        }
+        if ($parent -is [System.Management.Automation.Language.FunctionDefinitionAst]) {
+            $functionName = $parent.Name
+        } elseif (-not $parent) {
+            $functionName = "<script>"
+        } else {
+            continue
+        }
+        [PSCustomObject]@{
+            Rule     = "Query"
+            File     = $File
+            Function = $functionName
+            Line     = $call.Extent.StartLineNumber
+            Message  = "the value of Query() goes to the output, and it is `$null for a batch without a result set"
+        }
+    }
+}
