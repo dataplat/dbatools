@@ -115,7 +115,7 @@ function Remove-DbaDbMasterKey {
             if ($Pscmdlet.ShouldProcess($server.Name, "Removing master key on $($db.Name)")) {
                 # avoid enumeration issues
                 try {
-                    $masterkey.Parent.Query("DROP MASTER KEY")
+                    $null = $masterkey.Parent.Query("DROP MASTER KEY")
                     [PSCustomObject]@{
                         ComputerName = $server.ComputerName
                         InstanceName = $server.ServiceName
