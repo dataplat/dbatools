@@ -100,6 +100,16 @@ function Sync-DbaAvailabilityGroup {
         all other object types as usual.
         See Copy-DbaAgentJob for the full behaviour.
 
+    .PARAMETER UpdateExistingLogin
+        Passed through as -UpdateExisting to Copy-DbaLogin for the Logins sync only; no other object type is affected.
+        Instead of skipping every login that already exists on a secondary (or dropping and recreating all of them with -Force), logins
+        whose password hash, password policy, default database, default language or disabled state differs from the primary are updated
+        in place with ALTER LOGIN, so their SIDs, the databases and jobs they own and their open sessions on the secondaries are kept.
+        A login with a different SID on a secondary is skipped with a warning, because the database users of the availability group
+        databases are not mapped to it. When combined with -Force, this switch takes precedence for logins: only logins with a different
+        SID are dropped and recreated, while -Force continues to drop and recreate all other object types as usual.
+        See Copy-DbaLogin for the full behaviour.
+
     .PARAMETER InputObject
         Accepts availability group objects from Get-DbaAvailabilityGroup for pipeline processing.
         Use this to sync multiple availability groups at once or to process specific AGs returned by filtering commands.
@@ -113,6 +123,7 @@ function Sync-DbaAvailabilityGroup {
         Drops and recreates existing objects on secondary replicas instead of skipping them.
         Use this when you need to update objects that already exist on secondaries or when objects have configuration differences that need to be synchronized.
         For agent jobs, -UseJobLastModified takes precedence when both are specified.
+        For logins, -UpdateExistingLogin takes precedence when both are specified, and only logins with a different SID are dropped and recreated.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -171,6 +182,12 @@ function Sync-DbaAvailabilityGroup {
 
         Syncs all object types to the replicas in the db3 AG. Agent jobs that already exist on a secondary are only updated when their
         definition differs from the primary; identical jobs are left untouched. All other object types sync as they normally would.
+
+    .EXAMPLE
+        PS C:\> Sync-DbaAvailabilityGroup -Primary sql2016a -AvailabilityGroup db3 -UpdateExistingLogin
+
+        Syncs all object types to the replicas in the db3 AG. Logins that already exist on a secondary are not dropped, but updated in
+        place when their password or properties differ from the primary, so a password changed on the primary reaches the secondaries.
     #>
     [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'Medium')]
     param (
@@ -189,6 +206,7 @@ function Sync-DbaAvailabilityGroup {
         [string[]]$ExcludeJob,
         [switch]$DisableJobOnDestination,
         [switch]$UseJobLastModified,
+        [switch]$UpdateExistingLogin,
         [parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.AvailabilityGroup[]]$InputObject,
         [switch]$ExcludePassword,
@@ -306,7 +324,15 @@ function Sync-DbaAvailabilityGroup {
 
                 if ($Exclude -notcontains "Logins") {
                     Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing logins"
-                    Copy-DbaLogin -Source $server -Destination $secondaries -Login $Login -ExcludeLogin $ExcludeLogin -Force:$Force
+                    $splatCopyLogin = @{
+                        Source         = $server
+                        Destination    = $secondaries
+                        Login          = $Login
+                        ExcludeLogin   = $ExcludeLogin
+                        Force          = $Force
+                        UpdateExisting = $UpdateExistingLogin
+                    }
+                    Copy-DbaLogin @splatCopyLogin
                 }
 
                 if ($Exclude -notcontains "DatabaseOwner") {
