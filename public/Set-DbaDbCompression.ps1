@@ -364,7 +364,7 @@ function Set-DbaDbCompression {
                                                 $withOptions += "SORT_IN_TEMPDB = ON"
                                             }
                                             $query = "ALTER INDEX [$($index.Name)] ON $($index.Parent) REBUILD PARTITION = ALL WITH ($($withOptions -join ", "))"
-                                            $Server.Query($query, $db.Name)
+                                            $null = $Server.Query($query, $db.Name)
                                         } else {
                                             $($index.PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $P.PartitionNumber }).DataCompression = $CompressionType
                                             $index.OnlineIndexOperation = $CanDoOnlineOperation
@@ -415,7 +415,7 @@ function Set-DbaDbCompression {
                                             $withOptions += "SORT_IN_TEMPDB = ON"
                                         }
                                         $query = "ALTER INDEX [$($index.Name)] ON $($index.Parent) REBUILD PARTITION = ALL WITH ($($withOptions -join ", "))"
-                                        $Server.Query($query, $db.Name)
+                                        $null = $Server.Query($query, $db.Name)
                                     } else {
                                         $($index.PhysicalPartitions | Where-Object { $_.PartitionNumber -eq $P.PartitionNumber }).DataCompression = $CompressionType
                                         $index.OnlineIndexOperation = $CanDoOnlineOperation
