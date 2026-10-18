@@ -62,12 +62,19 @@ Describe $CommandName -Tag IntegrationTests {
                 SqlInstance = $TestConfig.InstanceSingle
                 Database    = $testDbName
             }
-            $result = Set-DbaDbFileGrowth @splatSetFileGrowth | Select-Object -First 1
+            $allResults = Set-DbaDbFileGrowth @splatSetFileGrowth
+            $result = $allResults | Select-Object -First 1
         }
 
         It "returns the proper info" {
             $result.Database | Should -Be $testDbName
             $result.GrowthType | Should -Be "kb"
+        }
+
+        It "returns one result per file" {
+            # A $null written by the command would be counted here
+            $testDbFiles = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
+            @($allResults).Count | Should -Be @($testDbFiles).Count
         }
     }
 
