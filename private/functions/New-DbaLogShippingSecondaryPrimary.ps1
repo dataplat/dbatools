@@ -330,7 +330,7 @@ function New-DbaLogShippingSecondaryPrimary {
         try {
             Write-Message -Message "Configuring logshipping making settings for the primary database." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
-            $ServerSecondary.Query($Query)
+            $null = $ServerSecondary.Query($Query)
         } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
             Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)"  -ErrorRecord $_ -Target $SqlInstance
