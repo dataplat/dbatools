@@ -101,6 +101,13 @@ Describe $CommandName -Tag IntegrationTests {
             ($results -join [Environment]::NewLine) | Should -Match "MakeItSo"
         }
 
+        It "Should include the defined BatchSeparator with scripting options" {
+            # With a ScriptingOptionsObject, -Passthru added the separator only when ScriptBatchTerminator was set
+            $options = New-DbaScriptingOption
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -ScriptingOptionsObject $options -BatchSeparator "MakeItSo"
+            ($results -join [Environment]::NewLine) | Should -Match "(?m)^MakeItSo\r?$"
+        }
+
         It "Should not accept non-SMO objects" {
             $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
             $null = [PSCustomObject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction SilentlyContinue

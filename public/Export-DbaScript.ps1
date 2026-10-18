@@ -35,7 +35,7 @@ function Export-DbaScript {
     .PARAMETER ScriptingOptionsObject
         Accepts a customized SMO ScriptingOptions object created with New-DbaScriptingOption to control script generation.
         Use this when you need specific formatting like including schema context, headers, or data along with object definitions.
-        Settings in this object override other Export-DbaScript parameters like BatchSeparator.
+        BatchSeparator still separates the statements, except in a file written with ScriptBatchTerminator set, where SMO writes its own batch terminator.
 
     .PARAMETER BatchSeparator
         Sets the batch terminator added between SQL statements in the output script.
@@ -323,8 +323,10 @@ function Export-DbaScript {
                         if ($ScriptingOptionsObject) {
                             $ScriptingOptionsObject.FileName = $null
                             foreach ($scriptpart in @(if ($dagScript) { $dagScript } else { $scripter.EnumScript($object) })) {
-                                if ($scriptBatchTerminator) {
+                                if ($BatchSeparator) {
                                     $scriptpart = "$scriptpart$eol$BatchSeparator$eol"
+                                } else {
+                                    $scriptpart = "$scriptpart$eol"
                                 }
                                 $scriptpart | Out-String
                             }

@@ -44,9 +44,8 @@ function Export-DbaDbTableData {
         Useful for reviewing the script content before execution or when piping to other commands.
 
     .PARAMETER BatchSeparator
-        Adds a batch separator (like GO) after every statement in the output file.
+        Adds a batch separator (like GO) after every statement in the output file, and in the output of -Passthru.
         Defaults to the Formatting.BatchSeparator configuration value, which is GO. Pass an empty string to write the statements without a separator.
-        With -Passthru, a separator is only added when the ScriptingOptionsObject has ScriptBatchTerminator set to $true.
 
     .PARAMETER NoPrefix
         Excludes the comment header with the creator, timestamp, and dbatools version from the generated script.
@@ -97,7 +96,7 @@ function Export-DbaDbTableData {
 
         System.String (when -Passthru is specified)
 
-        Returns the generated INSERT statements as string output. Multiple strings are returned for table data scripts, one per INSERT statement or batch. A batch separator is only added when the ScriptingOptionsObject has ScriptBatchTerminator set to $true.
+        Returns the generated INSERT statements as string output. Multiple strings are returned for table data scripts, one per INSERT statement or batch. Each one ends with the batch separator of -BatchSeparator, as in the file.
 
     .EXAMPLE
         PS C:\> Get-DbaDbTable -SqlInstance sql2017 -Database AdventureWorks2014 -Table EmployeePayHistory | Export-DbaDbTableData
