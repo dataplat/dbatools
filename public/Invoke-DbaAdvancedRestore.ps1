@@ -506,7 +506,10 @@ function Invoke-DbaAdvancedRestore {
                             if ($ExecuteAs -ne "" -and $BackupCnt -eq 1) {
                                 $executeAsLogin = $ExecuteAs.Replace("'", "''")
                             }
-                            if (($KeepCDC -or $ErrorBrokerConversations) -and $restore.NoRecovery -eq $false) {
+                            # -VerifyOnly never takes the two branches that execute a restore statement of their own. Since
+                            # the verification goes on to the last backup file, it reaches the one that recovers, which the
+                            # first branch would restore.
+                            if (-not $VerifyOnly -and ($KeepCDC -or $ErrorBrokerConversations) -and $restore.NoRecovery -eq $false) {
                                 $script = $restore.Script($server)
                                 $withOptions = @()
                                 if ($KeepCDC) { $withOptions += "KEEP_CDC" }
@@ -524,7 +527,7 @@ function Invoke-DbaAdvancedRestore {
                                     $null = $server.ConnectionContext.ExecuteNonQuery($script)
                                     Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                                 }
-                            } elseif ($null -ne $Pages -and $action -eq 'Database') {
+                            } elseif (-not $VerifyOnly -and $null -ne $Pages -and $action -eq "Database") {
                                 $script = $restore.Script($server)
                                 $script = $script -replace "] FROM", "] PAGE='$pages' FROM"
                                 if ($true -ne $OutputScriptOnly) {

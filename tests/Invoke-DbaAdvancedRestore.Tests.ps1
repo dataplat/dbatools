@@ -340,6 +340,62 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When -VerifyOnly with -KeepCDC verifies two full backups" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Two full backups of the same database in a folder of their own. The instance creates the folder, so it sees it
+            # right away.
+            $twoFullPath = "$($TestConfig.Temp)\$CommandName-twofull-$(Get-Random)"
+            $null = New-DbaDirectory -SqlInstance $TestConfig.InstanceSingle -Path $twoFullPath
+            foreach ($twoFullFile in "first.bak", "second.bak") {
+                $splatTwoFull = @{
+                    SqlInstance     = $TestConfig.InstanceSingle
+                    Database        = $restoreDbName
+                    BackupDirectory = $twoFullPath
+                    FilePath        = $twoFullFile
+                    Type            = "Full"
+                }
+                $null = Backup-DbaDatabase @splatTwoFull
+            }
+
+            # The history Restore-DbaDatabase hands over for -VerifyOnly, which skips the selection of a restore: both full
+            # backups are verified, and the second is the last backup file, the one that recovers. The database and its
+            # files get a new name, so a restore shows as a database that was created.
+            $verifyDbName = "dbatoolsci_advrestoreverify_$(Get-Random)"
+            $twoFullHistory = Get-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -Path $twoFullPath |
+                Format-DbaBackupInformation -ReplaceDatabaseName $verifyDbName -ReplaceDbNameInFile
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The branch for -KeepCDC came before the one for -VerifyOnly and restored the backup file that recovers.
+            $keepCdcResult = $twoFullHistory | Invoke-DbaAdvancedRestore -SqlInstance $TestConfig.InstanceSingle -VerifyOnly -KeepCDC
+            $keepCdcWarning = $WarnVar
+            $verifyDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $verifyDbName
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $verifyDbName -ErrorAction SilentlyContinue
+            Remove-Item -Path $twoFullPath -Recurse -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Verifies both backup files" {
+            $keepCdcWarning | Should -BeNullOrEmpty
+            @($keepCdcResult | Where-Object { $PSItem -is [string] }) | Should -Be @("Verify successful", "Verify successful")
+        }
+
+        It "Restores no database" {
+            $verifyDb | Should -BeNullOrEmpty
+        }
+    }
+
     Context "When the restore of a backup file fails" {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
