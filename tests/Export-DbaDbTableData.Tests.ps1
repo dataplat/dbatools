@@ -97,6 +97,18 @@ Describe $CommandName -Tag IntegrationTests {
             $WarnVar | Should -BeNullOrEmpty
         }
 
+        It "writes every table of -InputObject into the same file" {
+            # The tables come through the parameter, not the pipeline. The shared Export-DbaScript pipeline then expected
+            # no input and failed for its missing InputObject.
+            $directTables = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Table dbatoolsci_example, dbatoolsci_temp
+            $filePath = "$exportPath\directtables.sql"
+            $null = Export-DbaDbTableData -InputObject $directTables -FilePath $filePath
+            $WarnVar | Should -BeNullOrEmpty
+            $content = Get-Content -Path $filePath -Raw
+            $content | Should -Match ([regex]::Escape("INSERT [dbo].[dbatoolsci_example] ([id]) VALUES (1)"))
+            $content | Should -Match ([regex]::Escape("INSERT [dbo].[dbatoolsci_temp] ([name], [database_id],"))
+        }
+
         It "omits the USE statement when the scripting options exclude the database context" {
             $options = New-DbaScriptingOption
             $options.ScriptSchema = $false
@@ -175,6 +187,13 @@ Describe $CommandName -Tag IntegrationTests {
         It "warns about the failing table and still exports the tables after it" {
             # All tables share one Export-DbaScript pipeline, and the first failure used to stop it for every table after it
             $results = $deniedTables | Export-DbaDbTableData -Passthru -NoPrefix -WarningAction SilentlyContinue
+            "$results" | Should -Match ([regex]::Escape("INSERT [dbo].[b_allowed] ([id]) VALUES (2)"))
+            "$results" | Should -Not -Match ([regex]::Escape("[dbo].[a_denied]"))
+            $WarnVar | Should -Match "SELECT permission was denied on the object .a_denied."
+        }
+
+        It "warns about the failing table and still exports the tables after it with -InputObject" {
+            $results = Export-DbaDbTableData -InputObject $deniedTables -Passthru -NoPrefix -WarningAction SilentlyContinue
             "$results" | Should -Match ([regex]::Escape("INSERT [dbo].[b_allowed] ([id]) VALUES (2)"))
             "$results" | Should -Not -Match ([regex]::Escape("[dbo].[a_denied]"))
             $WarnVar | Should -Match "SELECT permission was denied on the object .a_denied."
