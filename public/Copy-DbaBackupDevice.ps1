@@ -226,7 +226,7 @@ function Copy-DbaBackupDevice {
                 if ($Pscmdlet.ShouldProcess($destinstance, "Adding backup device $deviceName")) {
                     Write-Message -Level Verbose -Message "Adding backup device $deviceName on $destinstance"
                     try {
-                        $destServer.Query($sql)
+                        $null = $destServer.Query($sql)
                         $destServer.BackupDevices.Refresh()
 
                         $copyBackupDeviceStatus.Status = "Successful"

@@ -193,7 +193,7 @@ function Copy-DbaServerRole {
                         Write-Message -Level Verbose -Message "Copying server role $roleName"
                         $sql = $currentRole.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
-                        $destServer.Query($sql)
+                        $null = $destServer.Query($sql)
                         $destServer.Roles.Refresh()
 
                         $splatPermissions = @{
@@ -206,7 +206,7 @@ function Copy-DbaServerRole {
                                 $permSql = $perm.GrantStatement
                                 if ($permSql) {
                                     Write-Message -Level Debug -Message "Granting permission: $permSql"
-                                    $destServer.Query($permSql)
+                                    $null = $destServer.Query($permSql)
                                 }
                             } catch {
                                 Write-Message -Level Warning -Message "Could not grant permission for role $roleName on $destinstance | $PSItem"

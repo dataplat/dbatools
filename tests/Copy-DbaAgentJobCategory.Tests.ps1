@@ -83,6 +83,8 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             $results = Copy-DbaAgentJobCategory @splatCopyCategory
+            # Counts the output itself, $results.Status.Count would skip a $null written by the command
+            @($results).Count | Should -Be 1
             $results.Name | Should -Be "dbatoolsci test category"
             $results.Status | Should -Be "Successful"
         }
@@ -111,6 +113,7 @@ Describe $CommandName -Tag IntegrationTests {
                 AlertCategory = "dbatoolsci alert category"
             }
             $results = Copy-DbaAgentJobCategory @splatCopyAlertCategory
+            @($results).Count | Should -Be 1
             $results.Name | Should -Be "dbatoolsci alert category"
             $results.Status | Should -Be "Successful"
             (Get-DbaAgentAlertCategory -SqlInstance $TestConfig.InstanceCopy2 -Category $alertCategoryNames).Name | Should -Be "dbatoolsci alert category"

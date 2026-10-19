@@ -173,7 +173,7 @@ function Copy-DbaDataCollector {
                 if ($Pscmdlet.ShouldProcess($destinstance, "Attempting to modify Data Collector configuration")) {
                     try {
                         $sql = "Unknown at this time"
-                        $destServer.Query($sql)
+                        $null = $destServer.Query($sql)
                         $destStore.Alter()
                     } catch {
                         $copyServerConfigStatus.Status = "Failed"
@@ -243,7 +243,7 @@ function Copy-DbaDataCollector {
                         $sql = $sql -replace [Regex]::Escape("'$source'"), "'$destinstance'"
                         Write-Message -Level Debug -Message $sql
                         Write-Message -Level Verbose -Message "Migrating collection set $collectionName"
-                        $destServer.Query($sql)
+                        $null = $destServer.Query($sql)
                         $copyCollectionSetStatus.Status = "Successful"
                         $copyCollectionSetStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {

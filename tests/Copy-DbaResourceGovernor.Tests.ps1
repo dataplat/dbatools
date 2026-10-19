@@ -90,7 +90,24 @@ Describe $CommandName -Tag IntegrationTests {
             $results = Copy-DbaResourceGovernor @splatCopyRG
             $results.Status | Select-Object -Unique | Should -BeExactly "Successful"
             $results.Status.Count | Should -BeGreaterThan 3
+            # Every output object is a result row, $results.Status.Count skips a $null written by the command
+            @($results).Count | Should -Be $results.Status.Count
             $results.Name | Should -Contain "dbatoolsci_prod"
+        }
+
+        It "Copies all pools but the excluded ones" {
+            $splatCopyExclude = @{
+                Source              = $TestConfig.InstanceCopy1
+                Destination         = $TestConfig.InstanceCopy2
+                ExcludeResourcePool = "dbatoolsci_offhoursprocessing"
+                Force               = $true
+                WarningAction       = "SilentlyContinue"
+            }
+
+            $results = Copy-DbaResourceGovernor @splatCopyExclude
+            $poolResults = $results | Where-Object Type -eq "Resource Governor Pool"
+            $poolResults.Name | Should -Be "dbatoolsci_prod"
+            $poolResults.Status | Should -Be "Successful"
         }
 
         It "Returns the proper classifier function" {

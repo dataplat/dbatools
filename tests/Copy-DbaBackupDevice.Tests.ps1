@@ -72,11 +72,20 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "When copying backup device between instances" {
         It "Should copy the backup device successfully or warn about local copy" {
-            $results = Copy-DbaBackupDevice -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -WarningVariable WarnVar -WarningAction SilentlyContinue 3> $null
+            $splatCopyDevice = @{
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
+                BackupDevice    = $deviceName
+                WarningVariable = "WarnVar"
+                WarningAction   = "SilentlyContinue"
+            }
+            $results = Copy-DbaBackupDevice @splatCopyDevice 3> $null
 
             if ($WarnVar) {
                 $WarnVar | Should -Match "backup device to destination"
             } else {
+                # Counts the output itself, $results.Status.Count would skip a $null written by the command
+                @($results).Count | Should -Be 1
                 $results.Status | Should -Be "Successful"
             }
         }
