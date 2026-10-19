@@ -223,7 +223,13 @@ function New-DbaEndpoint {
                     if ($Certificate) {
                         $outscript = $endpoint.Script()
                         # The script names the role of -Role, so the authentication goes behind whichever role it is
-                        $outscript = $outscript -replace "(ROLE = \w+),", "`$1, AUTHENTICATION = CERTIFICATE $cert,"
+                        # The text comes from a match evaluator: in a replacement string, a $ in the name of the
+                        # certificate would be taken for a group of the regex.
+                        $outscript = [regex]::Replace(
+                            $outscript,
+                            "(ROLE = \w+),",
+                            [System.Text.RegularExpressions.MatchEvaluator] { param($roleMatch) "$($roleMatch.Groups[1].Value), AUTHENTICATION = CERTIFICATE $cert," }
+                        )
                         $null = $server.Query($outscript)
                     } else {
                         $null = $endpoint.Create()
