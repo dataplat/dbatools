@@ -591,19 +591,35 @@ function Copy-DbaLogin {
                                 try {
                                     # One transaction, so a failing statement takes back the ones before it and the
                                     # policy turned off for the password is never left off.
-                                    $destServer.ConnectionContext.BeginTransaction()
-                                    $committed = $false
+                                    # The connection can come from the caller with a transaction of its own. A rollback
+                                    # would take back the work of the caller as well, so inside that transaction the
+                                    # statements are only taken back to a savepoint.
+                                    $ownsTransaction = $destServer.ConnectionContext.ExecuteScalar("SELECT @@TRANCOUNT") -eq 0
+                                    if ($ownsTransaction) {
+                                        $destServer.ConnectionContext.BeginTransaction()
+                                    } else {
+                                        $null = $destServer.ConnectionContext.ExecuteNonQuery("SAVE TRANSACTION dbatools_CopyDbaLogin")
+                                    }
+                                    $applied = $false
                                     try {
                                         foreach ($statement in $statements) {
                                             $null = $destServer.ConnectionContext.ExecuteNonQuery($statement)
                                         }
-                                        $destServer.ConnectionContext.CommitTransaction()
-                                        $committed = $true
+                                        if ($ownsTransaction) {
+                                            $destServer.ConnectionContext.CommitTransaction()
+                                        }
+                                        $applied = $true
                                     } finally {
                                         # A failed ALTER LOGIN leaves the transaction open, and so does a stopped pipeline.
-                                        if (-not $committed) {
+                                        if (-not $applied) {
                                             try {
-                                                $destServer.ConnectionContext.RollBackTransaction()
+                                                if ($ownsTransaction) {
+                                                    $destServer.ConnectionContext.RollBackTransaction()
+                                                } elseif ($destServer.ConnectionContext.ExecuteScalar("SELECT XACT_STATE()") -eq 1) {
+                                                    # Back to the savepoint only. A transaction of the caller that can no longer
+                                                    # commit can only be rolled back as a whole, and that is up to the caller.
+                                                    $null = $destServer.ConnectionContext.ExecuteNonQuery("ROLLBACK TRANSACTION dbatools_CopyDbaLogin")
+                                                }
                                             } catch {
                                                 Write-Message -Level Verbose -Message "Could not roll back the transaction on $destinstance | $PSItem"
                                             }
