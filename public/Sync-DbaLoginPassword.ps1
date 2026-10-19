@@ -195,9 +195,9 @@ function Sync-DbaLoginPassword {
                         # Get the password hash from source
                         $passwordHash = Get-LoginPasswordHash -Login $sourceLogin
 
+                        # Thrown, so the login gets its Failed row from the catch below like every other failure.
                         if (-not $passwordHash) {
-                            Write-Message -Level Warning -Message "Failed to retrieve password hash for login $loginName from source. Skipping."
-                            continue
+                            throw "Failed to retrieve password hash for login $loginName from source."
                         }
 
                         # Apply the password hash to destination
@@ -218,8 +218,8 @@ function Sync-DbaLoginPassword {
                         }
                     } catch {
                         $errorMessage = $_.Exception.Message
-                        Stop-Function -Message "Failed to sync password for login $loginName on $dest : $errorMessage" -ErrorRecord $_ -Target $loginName -Continue
 
+                        # Before Stop-Function: its -Continue goes on with the next login, so nothing after it runs.
                         [PSCustomObject]@{
                             SourceServer      = $sourceServer.Name
                             DestinationServer = $destServer.Name
@@ -227,6 +227,8 @@ function Sync-DbaLoginPassword {
                             Status            = "Failed"
                             Notes             = $errorMessage
                         }
+
+                        Stop-Function -Message "Failed to sync password for login $loginName on $dest : $errorMessage" -ErrorRecord $_ -Target $loginName -Continue
                     }
                 }
             }
