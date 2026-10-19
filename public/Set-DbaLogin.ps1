@@ -553,19 +553,35 @@ function Set-DbaLogin {
                         }
                         # One transaction, so a failing statement takes back the ones before it and the policy is
                         # never left off.
-                        $server.ConnectionContext.BeginTransaction()
-                        $committed = $false
+                        # The connection can come from the caller with a transaction of its own, a piped login
+                        # brings the connection of its server. A rollback would take back the work of the caller as
+                        # well, so inside that transaction the statements are only taken back to a savepoint.
+                        $ownsTransaction = $server.ConnectionContext.ExecuteScalar("SELECT @@TRANCOUNT") -eq 0
+                        if ($ownsTransaction) {
+                            $server.ConnectionContext.BeginTransaction()
+                        } else {
+                            $null = $server.ConnectionContext.ExecuteNonQuery("SAVE TRANSACTION dbatools_SetDbaLogin")
+                        }
+                        $applied = $false
                         try {
                             foreach ($statement in $statements) {
                                 $null = $server.ConnectionContext.ExecuteNonQuery($statement)
                             }
-                            $server.ConnectionContext.CommitTransaction()
-                            $committed = $true
+                            if ($ownsTransaction) {
+                                $server.ConnectionContext.CommitTransaction()
+                            }
+                            $applied = $true
                         } finally {
                             # A failed ALTER LOGIN leaves the transaction open, and so does a stopped pipeline.
-                            if (-not $committed) {
+                            if (-not $applied) {
                                 try {
-                                    $server.ConnectionContext.RollBackTransaction()
+                                    if ($ownsTransaction) {
+                                        $server.ConnectionContext.RollBackTransaction()
+                                    } elseif ($server.ConnectionContext.ExecuteScalar("SELECT XACT_STATE()") -eq 1) {
+                                        # Back to the savepoint only. A transaction of the caller that can no longer
+                                        # commit can only be rolled back as a whole, and that is up to the caller.
+                                        $null = $server.ConnectionContext.ExecuteNonQuery("ROLLBACK TRANSACTION dbatools_SetDbaLogin")
+                                    }
                                 } catch {
                                     Write-Message -Level Verbose -Message "Could not roll back the transaction on $server | $PSItem"
                                 }

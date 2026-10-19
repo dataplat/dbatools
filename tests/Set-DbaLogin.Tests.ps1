@@ -514,4 +514,112 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             (Invoke-DbaQuery @splatQuoteState).password_hash | Should -Be $sourceHash
         }
     }
+
+    Context "Sets the password from a hash inside a transaction of the caller" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $tranRandom = Get-Random
+            $tranSourceName = "dbatoolsci_transource_$tranRandom"
+            $tranPolicyName = "dbatoolsci_tranpolicy_$tranRandom"
+
+            $splatTranSource = @{
+                SqlInstance    = $TestConfig.InstanceSingle
+                Login          = $tranSourceName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Hash2" -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatTranSource
+            # Password policy on, so the command turns it off before it sets the hash and has to turn it back on.
+            $splatTranPolicy = @{
+                SqlInstance            = $TestConfig.InstanceSingle
+                Login                  = $tranPolicyName
+                SecurePassword         = (ConvertTo-SecureString -String "dbatools.IO.Other2" -AsPlainText -Force)
+                PasswordPolicyEnforced = $true
+            }
+            $null = New-DbaLogin @splatTranPolicy
+            $splatTranSourceHash = @{
+                SqlInstance  = $TestConfig.InstanceSingle
+                Query        = "SELECT CONVERT(VARCHAR(514), password_hash, 1) AS password_hash FROM sys.sql_logins WHERE name = @name"
+                SqlParameter = @{ name = $tranSourceName }
+            }
+            $tranSourceHash = (Invoke-DbaQuery @splatTranSourceHash).password_hash
+
+            # The caller opens a transaction and does work of its own in it, which a rollback of the whole transaction
+            # would take back. The connection is not pooled, so the transaction stays on its session between the
+            # commands. A piped login brings the connection of its server, so the command works in that transaction.
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $callerServer.ConnectionContext.BeginTransaction()
+            $null = $callerServer.ConnectionContext.ExecuteNonQuery("CREATE TABLE #dbatoolsci_callerwork (id INT)")
+            $tranLogin = Get-DbaLogin -SqlInstance $callerServer -Login $tranPolicyName
+
+            # Read on the connection of the caller, which sees the uncommitted changes of its own transaction and is not
+            # blocked by them.
+            $callerStateQuery = @"
+SELECT @@TRANCOUNT AS tran_count,
+       CASE WHEN OBJECT_ID(N'tempdb..#dbatoolsci_callerwork') IS NULL THEN 0 ELSE 1 END AS caller_work,
+       CONVERT(VARCHAR(514), password_hash, 1) AS password_hash,
+       is_policy_checked
+FROM sys.sql_logins
+WHERE name = N'$tranPolicyName'
+"@
+            $stateBefore = $callerServer.Query($callerStateQuery)
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # A valid binary value, but no password hash. SQL Server refuses it after the policy was turned off.
+            $failedResult = $tranLogin | Set-DbaLogin -PasswordHash 0x1234 -WarningAction SilentlyContinue
+            $failedWarn = $WarnVar
+            $stateAfterFailure = $callerServer.Query($callerStateQuery)
+
+            $successResult = $tranLogin | Set-DbaLogin -PasswordHash $tranSourceHash
+            $successWarn = $WarnVar
+            $stateAfterSuccess = $callerServer.Query($callerStateQuery)
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The caller takes its transaction back, with the hash that was set in it.
+            if ($callerServer.ConnectionContext.ExecuteScalar("SELECT @@TRANCOUNT") -gt 0) {
+                $callerServer.ConnectionContext.RollBackTransaction()
+            }
+            $null = $callerServer | Disconnect-DbaInstance
+            $splatRemoveTranLogin = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Login       = $tranSourceName, $tranPolicyName
+                Force       = $true
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveTranLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "warns about the refused hash" {
+            $failedResult | Should -BeNullOrEmpty
+            ($failedWarn -join " ") | Should -BeLike "*Something went wrong setting the password hash for*$tranPolicyName*"
+        }
+
+        It "keeps the transaction of the caller and the work done in it when the hash is refused" {
+            $stateAfterFailure.tran_count | Should -Be 1
+            $stateAfterFailure.caller_work | Should -Be 1
+        }
+
+        It "takes back its own statements when the hash is refused, so the policy is on again" {
+            $stateAfterFailure.password_hash | Should -Be $stateBefore.password_hash
+            $stateAfterFailure.is_policy_checked | Should -BeTrue
+        }
+
+        It "sets the hash inside the transaction of the caller and leaves the transaction open" {
+            $successWarn | Should -BeNullOrEmpty
+            $successResult.PasswordChanged | Should -BeTrue
+            $stateAfterSuccess.tran_count | Should -Be 1
+            $stateAfterSuccess.caller_work | Should -Be 1
+            $stateAfterSuccess.password_hash | Should -Be $tranSourceHash
+            $stateAfterSuccess.is_policy_checked | Should -BeTrue
+        }
+    }
 }
