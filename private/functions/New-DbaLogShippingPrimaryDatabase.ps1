@@ -322,7 +322,7 @@ function New-DbaLogShippingPrimaryDatabase {
         try {
             Write-Message -Message "Configuring logshipping for primary database $Database." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
-            $server.Query($Query)
+            $null = $server.Query($Query)
 
             # For versions prior to SQL Server 2014, adding a monitor works in a different way.
             # The next section makes sure the settings are being synchronized with earlier versions
@@ -364,7 +364,7 @@ function New-DbaLogShippingPrimaryDatabase {
                 "
                 Write-Message -Message "Updating monitor information for the primary database $Database." -Level Verbose
                 Write-Message -Message "Executing query:`n$query" -Level Verbose
-                $server.Query($query)
+                $null = $server.Query($query)
             }
         } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning

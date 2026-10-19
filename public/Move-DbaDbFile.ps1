@@ -375,7 +375,7 @@ function Move-DbaDbFile {
 
                             if ($PSCmdlet.ShouldProcess($Database, "Executing ALTER DATABASE query - $query")) {
                                 # Change database file path
-                                $server.Databases["master"].Query($query)
+                                $null = $server.Databases["master"].Query($query)
                             }
                             if ($DeleteAfterMove) {
                                 try {
@@ -409,10 +409,16 @@ function Move-DbaDbFile {
                         }
                     } else {
                         Write-Message -Level Verbose -Message "File $fileName already exists on $destination. Skipping."
-                        $returnObject.SourceFileDeleted = "N/A"
-                        $returnObject.DatabaseFileMetadata = "N/A"
-                        $returnObject.Result = "Already exists. Skipping"
-                        $returnObject
+                        [PSCustomObject]@{
+                            Instance             = $SqlInstance
+                            Database             = $Database
+                            LogicalName          = $LogicalName
+                            Source               = $physicalName
+                            Destination          = $destination
+                            Result               = "Already exists. Skipping"
+                            DatabaseFileMetadata = "N/A"
+                            SourceFileDeleted    = "N/A"
+                        }
                     }
                 }
 
