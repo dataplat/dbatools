@@ -767,6 +767,114 @@ WHERE name = @name
         }
     }
 
+    Context "A failing statement inside a transaction of the caller takes back only the update (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $callerLoginName = "dbatoolsci_callertran_$(Get-Random)"
+            $callerTriggerName = "dbatoolsci_callertran_trigger_$(Get-Random)"
+            $dropCallerTriggerQuery = "IF EXISTS (SELECT * FROM sys.server_triggers WHERE name = N'$callerTriggerName') DROP TRIGGER [$callerTriggerName] ON ALL SERVER"
+
+            # As in the context above: the update turns the policy off, sets the hash and disables the login, and the
+            # trigger refuses the last statement with the transaction left open.
+            $splatSourceLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $callerLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Source3" -AsPlainText -Force)
+                Disabled       = $true
+            }
+            $sourceLogin = New-DbaLogin @splatSourceLogin
+            $splatDestLogin = @{
+                SqlInstance            = $TestConfig.InstanceCopy2
+                Login                  = $callerLoginName
+                SecurePassword         = (ConvertTo-SecureString -String "dbatools.IO.Dest3" -AsPlainText -Force)
+                Sid                    = $sourceLogin.Sid
+                PasswordPolicyEnforced = $true
+            }
+            $null = New-DbaLogin @splatDestLogin
+            $createTriggerQuery = @"
+CREATE TRIGGER [$callerTriggerName] ON ALL SERVER FOR ALTER_LOGIN AS
+IF EVENTDATA().value('(/EVENT_INSTANCE/ObjectName)[1]', 'sysname') = N'$callerLoginName'
+    AND EVENTDATA().value('(/EVENT_INSTANCE/TSQLCommand/CommandText)[1]', 'nvarchar(max)') LIKE N'%DISABLE%'
+BEGIN
+    SET XACT_ABORT OFF;
+    RAISERROR(N'dbatoolsci: refused by the test trigger', 16, 1);
+END
+"@
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $createTriggerQuery
+
+            # The caller opens a transaction and does work of its own in it, which a rollback of the whole transaction
+            # would take back. The connection is not pooled, so the transaction stays on its session between the
+            # commands, and the command updates the login in that transaction.
+            $destCallerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2 -NonPooledConnection
+            $destCallerServer.ConnectionContext.BeginTransaction()
+            $null = $destCallerServer.ConnectionContext.ExecuteNonQuery("CREATE TABLE #dbatoolsci_callerwork (id INT)")
+
+            # Read on the connection of the caller, which sees the uncommitted changes of its own transaction and is not
+            # blocked by them.
+            $callerStateQuery = @"
+SELECT @@TRANCOUNT AS tran_count,
+       CASE WHEN OBJECT_ID(N'tempdb..#dbatoolsci_callerwork') IS NULL THEN 0 ELSE 1 END AS caller_work,
+       CONVERT(VARCHAR(514), password_hash, 1) AS password_hash,
+       is_policy_checked,
+       is_disabled
+FROM sys.sql_logins
+WHERE name = N'$callerLoginName'
+"@
+            $stateBefore = $destCallerServer.Query($callerStateQuery)
+            $splatUpdate = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $destCallerServer
+                Login          = $callerLoginName
+                UpdateExisting = $true
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $failedResult = Copy-DbaLogin @splatUpdate -WarningVariable failedWarn
+            $stateAfterFailure = $destCallerServer.Query($callerStateQuery)
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The caller takes its transaction back.
+            if ($destCallerServer.ConnectionContext.ExecuteScalar("SELECT @@TRANCOUNT") -gt 0) {
+                $destCallerServer.ConnectionContext.RollBackTransaction()
+            }
+            $null = $destCallerServer | Disconnect-DbaInstance
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $dropCallerTriggerQuery
+            $splatRemoveLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Login       = $callerLoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "reports the update as failed with the error of the statement" {
+            $failedWarn | Should -BeNullOrEmpty
+            $failedResult.Status | Should -Be "Failed"
+            $failedResult.Notes | Should -BeLike "*refused by the test trigger*"
+        }
+
+        It "keeps the transaction of the caller and the work done in it" {
+            $stateAfterFailure.tran_count | Should -Be 1
+            $stateAfterFailure.caller_work | Should -Be 1
+        }
+
+        It "takes back its own statements, so the login is as it was" {
+            $stateAfterFailure.password_hash | Should -Be $stateBefore.password_hash
+            $stateAfterFailure.is_policy_checked | Should -BeTrue
+            $stateAfterFailure.is_disabled | Should -BeFalse
+        }
+    }
+
     Context "The permissions of a renamed login are synced to the login it is renamed to (#10772)" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
