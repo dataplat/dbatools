@@ -328,7 +328,8 @@ Describe "$CommandName Integration Tests" -Tag "IntegrationTests" {
 
     Context "Command actually works" {
         It "Should return the correct information including database, currentowner and targetowner" {
-            $whoami = whoami
+            # Not whoami.exe: with Git for Windows first on the PATH, its whoami prints the user name without the domain
+            $whoami = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
             $results = Test-DbaDbOwner -SqlInstance $TestConfig.InstanceSingle -Database $dbname
             $results.Database | Should -Be $dbname
             $results.CurrentOwner | Should -Be $whoami

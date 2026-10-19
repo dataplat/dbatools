@@ -73,9 +73,16 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        # The test sets max server memory, so the values of the instances are restored afterwards
+        $multi1MaxValue = (Get-DbaMaxMemory -SqlInstance $TestConfig.InstanceMulti1 -WarningAction SilentlyContinue).MaxValue
+        $multi2MaxValue = (Get-DbaMaxMemory -SqlInstance $TestConfig.InstanceMulti2 -WarningAction SilentlyContinue).MaxValue
     }
 
     AfterAll {
+        $null = Set-DbaMaxMemory -SqlInstance $TestConfig.InstanceMulti1 -Max $multi1MaxValue -WarningAction SilentlyContinue
+        $null = Set-DbaMaxMemory -SqlInstance $TestConfig.InstanceMulti2 -Max $multi2MaxValue -WarningAction SilentlyContinue
+
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
