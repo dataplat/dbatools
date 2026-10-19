@@ -166,6 +166,99 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When the command is stopped while it decrypts the credentials" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $dacSessionIdQuery = "SELECT s.session_id FROM sys.dm_exec_sessions AS s INNER JOIN sys.endpoints AS e ON e.endpoint_id = s.endpoint_id WHERE e.is_admin_endpoint = 1"
+            $dacSessionsBefore = @((Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query $dacSessionIdQuery).session_id)
+
+            # A credential created in an open transaction blocks the query of the decryption, which reads every credential
+            # through the dedicated admin connection. That holds the command after it opened the connection and before
+            # its first output, the time it used to spend in begin, where nothing closed the connection after a stop.
+            $blockerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1 -NonPooledConnection
+            $blockerServer.ConnectionContext.BeginTransaction()
+            $null = $blockerServer.ConnectionContext.ExecuteNonQuery("CREATE CREDENTIAL [dbatoolsci_stopblocker] WITH IDENTITY = N'dbatoolsci_stopblocker', SECRET = N'dbatools.IO'")
+            $blockerSpid = $blockerServer.ConnectionContext.ExecuteScalar("SELECT @@SPID")
+            $blockedDacQuery = "SELECT COUNT(*) AS Blocked FROM sys.dm_exec_requests AS r INNER JOIN sys.dm_exec_sessions AS s ON s.session_id = r.session_id INNER JOIN sys.endpoints AS e ON e.endpoint_id = s.endpoint_id WHERE e.is_admin_endpoint = 1 AND r.blocking_session_id = $blockerSpid"
+
+            # The command runs in a runspace of its own, so the test can stop it as Ctrl+C does. The runspace imports the
+            # manifest: an import of the psm1 without a command line skips the type data.
+            $splatStopCopy = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Name        = "thorcred"
+            }
+            if ($TestConfig.SqlCred) {
+                $splatStopCopy.SourceSqlCredential = $TestConfig.SqlCred
+                $splatStopCopy.DestinationSqlCredential = $TestConfig.SqlCred
+            }
+            $stopRunspace = [runspacefactory]::CreateRunspace()
+            $stopRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $stopRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $stopShell = [powershell]::Create()
+            $stopShell.Runspace = $stopRunspace
+            $null = $stopShell.AddCommand($CommandName).AddParameters($splatStopCopy)
+            $stopAsync = $stopShell.BeginInvoke()
+            $stopWatch = [System.Diagnostics.Stopwatch]::StartNew()
+            do {
+                $decryptBlocked = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query $blockedDacQuery).Blocked -gt 0
+                if (-not $decryptBlocked) {
+                    Start-Sleep -Milliseconds 100
+                }
+            } while (-not $decryptBlocked -and -not $stopAsync.IsCompleted -and $stopWatch.Elapsed.TotalSeconds -lt 60)
+
+            # A stop does not interrupt a running query, so the transaction ends after the stop was requested and the
+            # command stops at its next statement.
+            $stopRequest = $stopShell.BeginStop($null, $null)
+            $blockerServer.ConnectionContext.RollBackTransaction()
+            $stopShell.EndStop($stopRequest)
+            $stopState = $stopShell.InvocationStateInfo.State
+            $stopShell.Dispose()
+            $stopRunspace.Dispose()
+
+            # The session can take a moment to end on the server after the client closed the connection.
+            $dacWatch = [System.Diagnostics.Stopwatch]::StartNew()
+            do {
+                $dacSessionsAfter = @((Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query $dacSessionIdQuery).session_id | Where-Object { $PSItem -notin $dacSessionsBefore })
+                if ($dacSessionsAfter) {
+                    Start-Sleep -Milliseconds 200
+                }
+            } while ($dacSessionsAfter -and $dacWatch.Elapsed.TotalSeconds -lt 5)
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $blockerServer | Disconnect-DbaInstance
+            # A dedicated admin connection left open by the stopped command would keep every later test from opening one.
+            foreach ($dacSessionId in $dacSessionsAfter) {
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query "KILL $dacSessionId"
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Was stopped while it decrypted the credentials" {
+            $decryptBlocked | Should -BeTrue
+            $stopState | Should -Be "Stopped"
+        }
+
+        It "Closes the dedicated admin connection" {
+            $dacSessionsAfter | Should -BeNullOrEmpty
+        }
+    }
+
     # See https://github.com/dataplat/dbatools/issues/7896 and comments above in BeforeAll
     Context "Crypto provider cred" {
         It "ensure copied credential is using the same crypto provider" {
