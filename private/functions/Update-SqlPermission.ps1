@@ -203,7 +203,9 @@ function Update-SqlPermission {
 
     if ($DestServer.VersionMajor -lt 9) {
         Write-Message -Level Warning -Message "SQL Server 2005 or greater required for database mappings.";
-        continue
+        # Return, not continue: this function has no loop here, so a continue went on with the next iteration of the
+        # loop of the caller and skipped the rest of it, the result row of Sync-DbaLoginPermission for example.
+        return
     }
 
     # For Sync, if info doesn't exist in EnumDatabaseMappings, then no big deal.
