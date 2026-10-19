@@ -766,4 +766,105 @@ WHERE name = @name
             $stateAfterRetry.is_disabled | Should -BeTrue
         }
     }
+
+    Context "The permissions of a renamed login are synced to the login it is renamed to (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $renameRandom = Get-Random
+            $renameSourceName = "dbatoolsci_renamesrc_$renameRandom"
+            $renameDestName = "dbatoolsci_renamedest_$renameRandom"
+
+            # The source login is in no server role.
+            $splatSourceLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $renameSourceName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Source4" -AsPlainText -Force)
+            }
+            $sourceLogin = New-DbaLogin @splatSourceLogin
+
+            # On the destination, the login it is renamed to has its SID and is a sysadmin, so the update in place has to
+            # take it out of the role. Another login there has the name of the source login, is a sysadmin as well and
+            # has nothing to do with the copy.
+            $splatRenamedLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $renameDestName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Dest4" -AsPlainText -Force)
+                Sid            = $sourceLogin.Sid
+            }
+            $null = New-DbaLogin @splatRenamedLogin
+            $splatNamesakeLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $renameSourceName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Dest4" -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatNamesakeLogin
+            $splatSysadmin = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                ServerRole  = "sysadmin"
+                Login       = $renameDestName, $renameSourceName
+                Confirm     = $false
+            }
+            $null = Add-DbaServerRoleMember @splatSysadmin
+
+            $splatSysadminState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = "SELECT m.name FROM sys.server_role_members AS rm INNER JOIN sys.server_principals AS r ON r.principal_id = rm.role_principal_id INNER JOIN sys.server_principals AS m ON m.principal_id = rm.member_principal_id WHERE r.name = N'sysadmin' AND m.name IN (@sourceName, @destName)"
+                SqlParameter = @{
+                    sourceName = $renameSourceName
+                    destName   = $renameDestName
+                }
+            }
+            $splatRenameUpdate = @{
+                Source               = $TestConfig.InstanceCopy1
+                Destination          = $TestConfig.InstanceCopy2
+                Login                = $renameSourceName
+                LoginRenameHashtable = @{ $renameSourceName = $renameDestName }
+                UpdateExisting       = $true
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $renameResult = Copy-DbaLogin @splatRenameUpdate
+            $renameWarn = $WarnVar
+            $sysadminsAfter = @((Invoke-DbaQuery @splatSysadminState -EnableException).name)
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The login it is renamed to exists on the destination only.
+            $splatRemoveSourceLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Login       = $renameSourceName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveSourceLogin
+            $splatRemoveDestLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Login       = $renameSourceName, $renameDestName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveDestLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "updates the login it is renamed to in place" {
+            $renameWarn | Should -BeNullOrEmpty
+            $renameResult.Status | Should -Be "Successful"
+            $renameResult.Name | Should -Be $renameDestName
+        }
+
+        It "takes the login it is renamed to out of the server role the source login is not in" {
+            $sysadminsAfter | Should -Not -Contain $renameDestName
+        }
+
+        It "leaves the other login with the name of the source login in its server role" {
+            $sysadminsAfter | Should -Contain $renameSourceName
+        }
+    }
 }
