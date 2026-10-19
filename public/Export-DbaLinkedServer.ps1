@@ -163,65 +163,70 @@ function Export-DbaLinkedServer {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($LinkedServer) {
-                $InputObject = $InputObject | Where-Object Name -in $LinkedServer
-            }
-
-            if (-not $InputObject) {
-                Write-Message -Level Verbose -Message "Nothing to export"
-                continue
-            }
-
-            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
-
-            $sql = @()
-
-            if ($ExcludePassword) {
-                $sql += $InputObject.Script()
-            } else {
-                try {
-                    $decrypted = Get-DecryptedObject -SqlInstance $server -Credential $Credential -Type LinkedServer -EnableException:$EnableException
-                } catch {
-                    Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+            # The dedicated admin connection is closed in the finally: the continue for nothing to export, the -Continue for a
+            # failed decryption or write, a throw under EnableException and a stopped pipeline skipped the disconnect at the end, and
+            # SQL Server allows only one dedicated admin connection per instance.
+            try {
+                if ($LinkedServer) {
+                    $InputObject = $InputObject | Where-Object Name -in $LinkedServer
                 }
 
-                foreach ($ls in $InputObject) {
-                    $currentls = $decrypted | Where-Object Name -eq $ls.Name
-                    if ($currentls.Password) {
-                        $tempsql = $ls.Script()
-                        foreach ($map in $currentls) {
-                            if ($map.Identity -isnot [dbnull]) {
-                                $rmtuser = $map.Identity.Replace("'", "''")
-                                $password = $map.Password.Replace("'", "''")
+                if (-not $InputObject) {
+                    Write-Message -Level Verbose -Message "Nothing to export"
+                    continue
+                }
+
+                $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
+
+                $sql = @()
+
+                if ($ExcludePassword) {
+                    $sql += $InputObject.Script()
+                } else {
+                    try {
+                        $decrypted = Get-DecryptedObject -SqlInstance $server -Credential $Credential -Type LinkedServer -EnableException:$EnableException
+                    } catch {
+                        Stop-Function -Continue -Message "Failure" -ErrorRecord $_
+                    }
+
+                    foreach ($ls in $InputObject) {
+                        $currentls = $decrypted | Where-Object Name -eq $ls.Name
+                        if ($currentls.Password) {
+                            $tempsql = $ls.Script()
+                            foreach ($map in $currentls) {
+                                if ($map.Identity -isnot [dbnull]) {
+                                    $rmtuser = $map.Identity.Replace("'", "''")
+                                    $password = $map.Password.Replace("'", "''")
+                                }
+                                $tempsql = $tempsql.Replace(' /* For security reasons the linked server remote logins password is changed with ######## */', '')
+                                $tempsql = $tempsql.Replace("rmtuser=N'$rmtuser',@rmtpassword='########'", "rmtuser=N'$rmtuser',@rmtpassword='$password'")
                             }
-                            $tempsql = $tempsql.Replace(' /* For security reasons the linked server remote logins password is changed with ######## */', '')
-                            $tempsql = $tempsql.Replace("rmtuser=N'$rmtuser',@rmtpassword='########'", "rmtuser=N'$rmtuser',@rmtpassword='$password'")
+                            $sql += $tempsql
+                        } else {
+                            $sql += $ls.Script()
                         }
-                        $sql += $tempsql
-                    } else {
-                        $sql += $ls.Script()
                     }
                 }
-            }
-            if ($Passthru) {
-                $sql
-            } elseif ($Path -or $FilePath) {
-                try {
-                    if ($Append) {
-                        Add-Content -Path $FilePath -Value $sql
-                    } else {
-                        Set-Content -Path $FilePath -Value $sql
+                if ($Passthru) {
+                    $sql
+                } elseif ($Path -or $FilePath) {
+                    try {
+                        if ($Append) {
+                            Add-Content -Path $FilePath -Value $sql
+                        } else {
+                            Set-Content -Path $FilePath -Value $sql
+                        }
+                        Get-ChildItem -Path $FilePath
+                    } catch {
+                        Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
                     }
-                    Get-ChildItem -Path $FilePath
-                } catch {
-                    Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
+                } else {
+                    $sql
                 }
-            } else {
-                $sql
-            }
-
-            if ($dacOpened) {
-                $null = $server | Disconnect-DbaInstance -WhatIf:$false
+            } finally {
+                if ($dacOpened) {
+                    $null = $server | Disconnect-DbaInstance -WhatIf:$false
+                }
             }
         }
     }

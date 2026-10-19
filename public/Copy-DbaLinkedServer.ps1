@@ -332,53 +332,60 @@ function Copy-DbaLinkedServer {
             Write-Message -Level Verbose -Message "You are using a SQL Credential. Note that this script requires Windows Administrator access on the source server. Attempting with $($SourceSqlCredential.Username)."
         }
 
-        try {
-            # Do we need a dedicated admin connection to the source for password retrieval?
-            # If passwords are excluded, we don't need a DAC
-            if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
-
-            # Do we have a dedicated admin connection already?
-            $dacConnected = Test-DacConnection -InputObject $Source
-
-            $dacOpened = $false
-            if ($dacNeeded) {
-                if ($dacConnected) {
-                    Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
-                    $sourceServer = $Source.InputObject
-                } else {
-                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
-                    $dacOpened = $true
-                }
-            } else {
-                Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-            }
-        } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
-            return
-        }
     }
     process {
         if (Test-FunctionInterrupt) { return }
 
-        foreach ($destinstance in $Destination) {
+        # The dedicated admin connection is opened here and closed in the finally, not in begin and end: a throw under
+        # EnableException, Ctrl+C and Select-Object -First skip the end block, also before process has started, and SQL
+        # Server allows only one dedicated admin connection per instance. The command takes no pipeline input, so process
+        # runs once.
+        $dacOpened = $false
+        try {
             try {
-                $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                # Do we need a dedicated admin connection to the source for password retrieval?
+                # If passwords are excluded, we don't need a DAC
+                if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+
+                # Do we have a dedicated admin connection already?
+                $dacConnected = Test-DacConnection -InputObject $Source
+
+                if ($dacNeeded) {
+                    if ($dacConnected) {
+                        Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                        $sourceServer = $Source.InputObject
+                    } else {
+                        Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                        $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
+                        $dacOpened = $true
+                    }
+                } else {
+                    Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+                }
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
-            }
-            if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
-                Stop-Function -Message "Not a sysadmin on $destinstance" -Target $destServer -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+                return
             }
 
-            # Magic happens here
-            Copy-DbaLinkedServers $LinkedServer -Force:$force
-        }
-    }
-    end {
-        if ($dacOpened) {
-            $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+            foreach ($destinstance in $Destination) {
+                try {
+                    $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
+                } catch {
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                }
+                if (!(Test-SqlSa -SqlInstance $destServer -SqlCredential $DestinationSqlCredential)) {
+                    Stop-Function -Message "Not a sysadmin on $destinstance" -Target $destServer -Continue
+                }
+
+                # Magic happens here
+                Copy-DbaLinkedServers $LinkedServer -Force:$force
+            }
+        } finally {
+            if ($dacOpened) {
+                $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+                $dacOpened = $false
+            }
         }
     }
 }
