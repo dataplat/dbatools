@@ -95,13 +95,15 @@ function Update-SqlPermission {
         }
 
         # Remove for Syncs
+        # The member to drop is the login on the destination: with a rename, the name of the source login can belong
+        # to a different login there.
         if ($roleMembers -notcontains $loginName -and $destRoleMembers -contains $newLoginName -and $null -ne $destRole) {
-            if ($Pscmdlet.ShouldProcess($destination, "Adding $loginName to $roleName server role.")) {
+            if ($Pscmdlet.ShouldProcess($destination, "Removing $newLoginName from $roleName server role.")) {
                 try {
-                    $destRole.DropMember($loginName)
-                    Write-Message -Level Verbose -Message "Removing $newLoginName from $destRoleName server role on $destination successfully performed."
+                    $destRole.DropMember($newLoginName)
+                    Write-Message -Level Verbose -Message "Removing $newLoginName from $roleName server role on $destination successfully performed."
                 } catch {
-                    Stop-Function -Message "Failed to remove $newLoginName from $destRoleName server role on $destination." -Target $role -ErrorRecord $_
+                    Stop-Function -Message "Failed to remove $newLoginName from $roleName server role on $destination." -Target $role -ErrorRecord $_
                 }
             }
         }
