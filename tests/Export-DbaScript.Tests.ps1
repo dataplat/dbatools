@@ -101,6 +101,13 @@ Describe $CommandName -Tag IntegrationTests {
             ($results -join [Environment]::NewLine) | Should -Match "MakeItSo"
         }
 
+        It "Should include the defined BatchSeparator with scripting options" {
+            # With a ScriptingOptionsObject, -Passthru added the separator only when ScriptBatchTerminator was set
+            $options = New-DbaScriptingOption
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -ScriptingOptionsObject $options -BatchSeparator "MakeItSo"
+            ($results -join [Environment]::NewLine) | Should -Match "(?m)^MakeItSo\r?$"
+        }
+
         It "Should not accept non-SMO objects" {
             $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
             $null = [PSCustomObject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction SilentlyContinue
@@ -118,6 +125,21 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $tempFile -Append
             $linecount3 = (Get-Content $tempFile).Count
             $linecount1 | Should -Not -Be $linecount3
+        }
+
+        It "Should write the statements of scripting options with batch terminators in the encoding of the file" {
+            # SMO appends these statements itself, and used to write them as UTF-16 behind the UTF-8 comment header
+            $tempFile = "$tempPath\msdb-$(Get-Random).sql"
+            $options = New-DbaScriptingOption
+            $options.ScriptBatchTerminator = $true
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -ScriptingOptionsObject $options -FilePath $tempFile
+            $WarnVar | Should -BeNullOrEmpty
+            $content = Get-Content -Path $tempFile -Raw
+            $content | Should -Match ([regex]::Escape("Created by"))
+            $content | Should -Match "CREATE TABLE"
+            $content | Should -Match "(?m)^GO\r?$"
+            # The encoding of the scripting options is only borrowed for the file
+            $options.Encoding.WebName | Should -Be "utf-16"
         }
     }
 }
