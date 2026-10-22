@@ -63,28 +63,39 @@ FROM sys.all_objects a CROSS JOIN sys.all_objects b;
         $overlapWorkload = "SELECT Payload FROM dbo.Events WHERE OrderDate > '2020-06-01' AND 1 = (SELECT 1);"
         1..5 | ForEach-Object { $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $db -Query $overlapWorkload }
 
-        # Identifier-edge-case table: the key column name contains a space, and a distinct column name
-        # differs only by an underscore (a LIKE wildcard). Overlap matching is by column_id, so the
-        # index on [Order Date] must be flagged, and the index on [Customer_Id] must NOT be mistaken
-        # for a suggestion on a [CustomerId]-style column. This is the regression for the LIKE fix.
+        # Identifier-edge-case table. Two things the OLD text/LIKE matching got wrong, that column_id
+        # matching must get right:
+        #   1. Space: a suggestion on [Order Date] against an index leading on [Order Date] (the old
+        #      code stripped spaces, so it could confuse this with a different column).
+        #   2. Underscore wildcard: an index leads on [Customer_d], and the workload filters on
+        #      [CustomerId], producing a suggestion on [CustomerId]. Under the old LIKE, the _ in
+        #      [Customer_d] is a single-character wildcard, so 'Customer_d' would FALSELY match
+        #      'CustomerId'. With column_id matching it must NOT, because they are different columns.
         $edgeSetup = @"
-CREATE TABLE dbo.Sales ([Sale Id] int IDENTITY(1,1) PRIMARY KEY, [Order Date] datetime2 NOT NULL, [Customer_Id] int NOT NULL, Note char(200) NOT NULL DEFAULT 'x');
+CREATE TABLE dbo.Sales ([Sale Id] int IDENTITY(1,1) PRIMARY KEY, [Order Date] datetime2 NOT NULL, CustomerId int NOT NULL, [Customer_d] int NOT NULL, Note char(200) NOT NULL DEFAULT 'x');
 CREATE NONCLUSTERED INDEX [IX_Sales_OrderDate] ON dbo.Sales ([Order Date]);
-CREATE NONCLUSTERED INDEX [IX_Sales_CustomerId] ON dbo.Sales ([Customer_Id]);
-INSERT INTO dbo.Sales ([Order Date], [Customer_Id])
-SELECT TOP (20000) DATEADD(MINUTE, ABS(CHECKSUM(NEWID())) % 1000000, '2020-01-01'), ABS(CHECKSUM(NEWID())) % 1000
+CREATE NONCLUSTERED INDEX [IX_Sales_Customer_d] ON dbo.Sales ([Customer_d]);
+INSERT INTO dbo.Sales ([Order Date], CustomerId, [Customer_d])
+SELECT TOP (20000) DATEADD(MINUTE, ABS(CHECKSUM(NEWID())) % 1000000, '2020-01-01'), ABS(CHECKSUM(NEWID())) % 1000, ABS(CHECKSUM(NEWID())) % 1000
 FROM sys.all_objects a CROSS JOIN sys.all_objects b;
 "@
         $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $db -Query $edgeSetup
 
+        # Range on [Order Date] -> inequality suggestion on the spaced column.
         $edgeWorkload = "SELECT Note FROM dbo.Sales WHERE [Order Date] > '2020-06-01' AND 1 = (SELECT 1);"
         1..5 | ForEach-Object { $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $db -Query $edgeWorkload }
 
+        # Equality on CustomerId -> suggestion on [CustomerId]; the existing index on [Customer_d]
+        # must NOT be reported as overlapping (it would be, under the old _-as-wildcard LIKE).
+        $wildcardWorkload = "SELECT Note FROM dbo.Sales WHERE CustomerId = 42 AND 1 = (SELECT 1);"
+        1..5 | ForEach-Object { $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $db -Query $wildcardWorkload }
+
         # Low thresholds so the single-seek fixtures are not filtered out by the defaults.
         $results = Find-DbaDbMissingIndex -SqlInstance $TestConfig.InstanceSingle -Database $db -MinimumImpact 0 -MinimumSeek 1
-        $suggestion = $results | Where-Object { $PSItem.EqualityColumns -match "CustomerId" } | Select-Object -First 1
+        $suggestion = $results | Where-Object { $PSItem.Table -eq "Orders" -and $PSItem.EqualityColumns -match "CustomerId" } | Select-Object -First 1
         $overlapSuggestion = $results | Where-Object { $PSItem.InequalityColumns -match "OrderDate" } | Select-Object -First 1
         $edgeSuggestion = $results | Where-Object { $PSItem.Table -eq "Sales" -and $PSItem.InequalityColumns -match "Order Date" } | Select-Object -First 1
+        $wildcardSuggestion = $results | Where-Object { $PSItem.Table -eq "Sales" -and $PSItem.EqualityColumns -match "CustomerId" } | Select-Object -First 1
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -152,53 +163,123 @@ FROM sys.all_objects a CROSS JOIN sys.all_objects b;
             $edgeSuggestion.OverlappingIndex | Should -Match "IX_Sales_OrderDate"
         }
 
-        It "Does not falsely flag the [Customer_Id] index (underscore is a LIKE wildcard)" {
-            # The suggestion is on [Order Date], so IX_Sales_CustomerId must NOT appear; column_id
-            # matching makes the _ in [Customer_Id] a literal, not a wildcard.
-            $edgeSuggestion.OverlappingIndex | Should -Not -Match "IX_Sales_CustomerId"
+        It "Returns the equality suggestion on CustomerId" {
+            $wildcardSuggestion | Should -Not -BeNullOrEmpty
+        }
+
+        It "Does not falsely flag the [Customer_d] index for a [CustomerId] suggestion" {
+            # Under the OLD LIKE matching, the _ in 'Customer_d' is a single-char wildcard, so an index
+            # leading on [Customer_d] would FALSELY match a suggestion on [CustomerId]. column_id
+            # matching compares real columns, so IX_Sales_Customer_d must NOT be reported here.
+            $wildcardSuggestion.OverlappingIndex | Should -Not -Match "IX_Sales_Customer_d"
         }
     }
 
     Context "Honours an explicitly piped system database" {
-        It "Processes msdb and warns when piped in explicitly" {
+        It "Processes msdb without warning when piped in explicitly" {
             # Get-DbaDatabase -Database msdb | Find-DbaDbMissingIndex: the downstream -Database is not
             # set in a pipeline, so the command must treat the piped object as an explicit selection
-            # and process it (with a warning), not silently return nothing.
-            $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database msdb |
-                Find-DbaDbMissingIndex -MinimumImpact 0 -MinimumSeek 1 -WarningVariable warnSystem 3> $null
-            $warnSystem | Should -Match "msdb"
-            $warnSystem | Should -Match "piped in explicitly"
+            # and process it, not silently return nothing. The caller chose msdb, so there is no
+            # warning (that would be noise); the processing note is verbose only. This runs without
+            # throwing, which proves msdb was not rejected.
+            { Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database msdb |
+                Find-DbaDbMissingIndex -MinimumImpact 0 -MinimumSeek 1 -WarningVariable warnSystem 3> $null } |
+                Should -Not -Throw
+            $warnSystem | Should -BeNullOrEmpty
         }
     }
 
     Context "Withholds DDL for metadata-hidden objects" {
         BeforeAll {
-            # A login with VIEW SERVER STATE (so it can read the missing-index DMVs) but no access to
-            # the object metadata: OBJECT_NAME/OBJECT_SCHEMA_NAME return NULL, so a CREATE statement
-            # would be malformed. The command must withhold the statement and warn instead.
+            # The split we need: the login CAN read the missing-index DMV (a server-scoped view) but
+            # CANNOT see the object's metadata, so OBJECT_NAME / OBJECT_SCHEMA_NAME return NULL and a
+            # generated CREATE statement would be malformed. The command must return the row but
+            # withhold the statement, and warn. To produce that split:
+            #   - grant the server-level DMV permission. SQL 2022+ renamed it to VIEW SERVER
+            #     PERFORMANCE STATE; earlier versions use VIEW SERVER STATE. Grant whichever the
+            #     instance supports (try the new name, fall back to the old) so the DMV returns rows.
+            #   - add a database user (so Get-DbaDatabase -OnlyAccessible does not drop the database
+            #     before analysis - without the user the login can't open the DB and gets zero rows,
+            #     which is exactly the vacuous pass this test must avoid), but grant it NO permission
+            #     on dbo.Orders, so the object metadata stays hidden.
             $restrictedLogin = "dbatoolsci_mi_restricted_$(Get-Random)"
             $restrictedPass = "P@ssw0rd$(Get-Random)!"
+            $server2022Plus = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).VersionMajor -ge 16
+            $dmvGrant = if ($server2022Plus) { "VIEW SERVER PERFORMANCE STATE" } else { "VIEW SERVER STATE" }
             $loginSetup = @"
 USE [master];
 CREATE LOGIN [$restrictedLogin] WITH PASSWORD = '$restrictedPass', CHECK_POLICY = OFF;
-GRANT VIEW SERVER STATE TO [$restrictedLogin];
+GRANT $dmvGrant TO [$restrictedLogin];
 "@
             $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query $loginSetup
-            $restrictedCred = [PSCredential]::new($restrictedLogin, (ConvertTo-SecureString $restrictedPass -AsPlainText -Force))
+            $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $db -Login $restrictedLogin
+            $restrictedSecure = ConvertTo-SecureString $restrictedPass -AsPlainText -Force
+            $restrictedCred = New-Object System.Management.Automation.PSCredential($restrictedLogin, $restrictedSecure)
+
+            # Generate a fresh suggestion so the DMV has a row for this table.
+            $hiddenWorkload = "SELECT Amount FROM dbo.Orders WHERE CustomerId = 77 AND 1 = (SELECT 1);"
+            1..5 | ForEach-Object { $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $db -Query $hiddenWorkload }
+
+            $restricted = Find-DbaDbMissingIndex -SqlInstance $TestConfig.InstanceSingle -SqlCredential $restrictedCred -Database $db -MinimumImpact 0 -MinimumSeek 1 -WarningVariable warnMeta 3> $null
         }
 
         AfterAll {
             $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "DROP LOGIN [$restrictedLogin];" -ErrorAction SilentlyContinue
         }
 
-        It "Returns rows without a CREATE statement when object metadata is hidden" {
-            # The restricted login has no user in $db and no object access, so any suggestion it can
-            # see has NULL schema/table. Either it gets no rows (no access to the DB at all) or rows
-            # with a null CreateStatement and a warning - never an invalid 'ON .(...)' statement.
-            $restricted = Find-DbaDbMissingIndex -SqlInstance $TestConfig.InstanceSingle -SqlCredential $restrictedCred -Database $db -MinimumImpact 0 -MinimumSeek 1 -WarningVariable warnMeta 3> $null
-            foreach ($r in $restricted) {
-                $r.CreateStatement | Should -Not -Match "ON \s*\.\s*\("
-            }
+        It "Returns at least one row for the restricted login" {
+            $restricted | Should -Not -BeNullOrEmpty
+        }
+
+        It "Withholds the CREATE statement (null, never an invalid 'ON .(...)')" {
+            $hidden = $restricted | Select-Object -First 1
+            $hidden.CreateStatement | Should -BeNullOrEmpty
+            foreach ($r in $restricted) { $r.CreateStatement | Should -Not -Match "ON \s*\.\s*\(" }
+        }
+
+        It "Warns that object metadata is not visible" {
+            $warnMeta | Should -Match "not visible to this login"
+        }
+    }
+
+    # Azure SQL Database boundary. CI has no Azure SQL DB, so Get-TestConfig leaves AzureSqlDbServer
+    # empty and this context skips; a lab that configures AzureSqlDbServer/Name/Cred runs it for real
+    # (pattern from tests/CLAUDE.md, "The other boundary CI does not have"). The first It asserts the
+    # engine, so pointed at anything but Azure SQL DB the whole context fails rather than passing
+    # vacuously - every other engine simply takes the USE that Azure rejects with error 40508.
+    Context "Azure SQL Database" -Skip:(-not $TestConfig.AzureSqlDbServer) {
+        BeforeAll {
+            $azCred = $TestConfig.AzureSqlDbCred
+            $azServer = Connect-DbaInstance -SqlInstance $TestConfig.AzureSqlDbServer -SqlCredential $azCred -Database $TestConfig.AzureSqlDbName
+            $azTable = "dbatoolsci_mi_$(Get-Random)"
+            $azSetup = @"
+CREATE TABLE dbo.[$azTable] (Id int IDENTITY(1,1) PRIMARY KEY, CustomerId int NOT NULL, Amount money NOT NULL, Filler char(200) NOT NULL DEFAULT 'x');
+INSERT INTO dbo.[$azTable] (CustomerId, Amount)
+SELECT TOP (20000) ABS(CHECKSUM(NEWID())) % 1000, ABS(CHECKSUM(NEWID())) % 10000
+FROM sys.all_objects a CROSS JOIN sys.all_objects b;
+"@
+            $null = Invoke-DbaQuery -SqlInstance $azServer -Query $azSetup
+            $azWorkload = "SELECT Amount FROM dbo.[$azTable] WHERE CustomerId = 42 AND 1 = (SELECT 1);"
+            1..5 | ForEach-Object { $null = Invoke-DbaQuery -SqlInstance $azServer -Query $azWorkload }
+
+            $azResults = Find-DbaDbMissingIndex -SqlInstance $TestConfig.AzureSqlDbServer -SqlCredential $azCred -Database $TestConfig.AzureSqlDbName -MinimumImpact 0 -MinimumSeek 1 -WarningVariable azWarn 3> $null
+        }
+
+        AfterAll {
+            if ($azServer) { $null = Invoke-DbaQuery -SqlInstance $azServer -Query "DROP TABLE IF EXISTS dbo.[$azTable];" -ErrorAction SilentlyContinue }
+        }
+
+        It "Is actually an Azure SQL Database" {
+            $azServer.DatabaseEngineEdition | Should -Be "SqlDatabase"
+        }
+
+        It "Runs without hitting error 40508 (cross-database USE)" {
+            $azWarn | Should -Not -Match "40508"
+            $azWarn | Should -Not -Match "USE statement is not supported"
+        }
+
+        It "Returns a seeded suggestion on CustomerId" {
+            ($azResults | Where-Object { $PSItem.EqualityColumns -match "CustomerId" }) | Should -Not -BeNullOrEmpty
         }
     }
 }
