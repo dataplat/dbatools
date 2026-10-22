@@ -176,6 +176,7 @@ ix AS (
        AND ic.key_ordinal = 1
        AND ic.is_included_column = 0
     WHERE i.index_id > 0
+      AND i.is_hypothetical = 0   -- exclude DTA leftovers; they aren't real overlaps
 )
 {0}
 SELECT
@@ -248,10 +249,12 @@ ORDER BY ImpactScore DESC;
 
             # Skip system databases unless one is named explicitly. Get-DbaDatabase -ExcludeSystem
             # drops them silently, which reads as "no suggestions" for a deliberate -Database msdb;
-            # so when a system database is named we include it and warn.
+            # so when a system database is named we include it. The caller asked for it, so this is
+            # a verbose note, not a warning (a warning here would be noise on every run and would
+            # drown out real warnings).
             $namedSystem = @($Database | Where-Object { $_ -in 'master', 'model', 'msdb', 'tempdb' })
             if ($namedSystem) {
-                Write-Message -Level Warning -Message "System databases are not included by default; processing $($namedSystem -join ', ') because named explicitly."
+                Write-Message -Level Verbose -Message "Processing explicitly named system database(s): $($namedSystem -join ', ')."
                 $databases += Get-DbaDatabase -SqlInstance $server -Database $Database -ExcludeDatabase $ExcludeDatabase -OnlyAccessible
             } else {
                 $databases += Get-DbaDatabase -SqlInstance $server -Database $Database -ExcludeDatabase $ExcludeDatabase -ExcludeSystem -OnlyAccessible
@@ -263,10 +266,10 @@ ORDER BY ImpactScore DESC;
             # A piped database object is an explicit selection - the caller already chose it with
             # Get-DbaDatabase, so honour it, including a system database. (The $Database parameter is
             # not set on the downstream command in a pipeline, so it can't be used to tell intent
-            # here; the presence of the object IS the intent.) Warn for a system DB so the caller
-            # knows it is not part of the default set, but do not silently drop it.
+            # here; the presence of the object IS the intent.) A verbose note, not a warning: the
+            # caller piped these in deliberately, so warning on each system DB is just noise.
             if ($db.IsSystemObject) {
-                Write-Message -Level Warning -Message "Processing system database $($db.Name) because it was piped in explicitly; system databases are not included by default."
+                Write-Message -Level Verbose -Message "Processing explicitly piped system database $($db.Name)."
             }
             $databases += $db
         }
@@ -293,8 +296,10 @@ ORDER BY ImpactScore DESC;
             # The 2019+/Azure query-text DMV (one row per query, so joined separately from
             # group_stats to avoid double-counting the seek/scan totals). ROW_NUMBER with a
             # query_hash tiebreaker is deterministic, so a group never comes back twice.
-            # Gate by engine type as well as version: Azure SQL Database reports VersionMajor 12 but
-            # still exposes sys.dm_db_missing_index_group_stats_query, so a version-only check would
+            # Gate by engine type as well as version: on Azure SQL Database the version number is
+            # unreliable for this check (SMO derives it from @@MICROSOFTVERSION), so gate on the
+            # engine type too - Azure still exposes sys.dm_db_missing_index_group_stats_query, and a
+            # version-only check would
             # wrongly exclude it.
             $hasQueryTextDmv = $server.VersionMajor -ge 15 -or $server.DatabaseEngineType -eq 'SqlAzureDatabase'
             if ($hasQueryTextDmv) {
@@ -333,14 +338,21 @@ ORDER BY ImpactScore DESC;
             # restoring CurrentDatabase so a caller who passed a server object isn't left in the wrong
             # database.
             $currentDatabase = $null
+            $ownedConn = $null
             try {
                 if ($server.DatabaseEngineType -eq 'SqlAzureDatabase') {
                     try {
                         $dbConn = Connect-DbaInstance -SqlInstance $server -SqlCredential $SqlCredential -Database $db.Name
+                        # Connect-DbaInstance may return the SAME server object (already scoped to this
+                        # database) or a distinct COPY (when it had to re-scope). Only a distinct copy
+                        # is ours to release - disconnecting the caller's own server would be wrong. On
+                        # a non-pooled caller the copy keeps NonPooledConnection = true, and SMO's
+                        # PoolDisconnect skips those, so Disconnect-DbaInstance alone can leave it open;
+                        # we also close the underlying SqlConnection directly to be sure.
+                        if (-not [object]::ReferenceEquals($dbConn, $server)) { $ownedConn = $dbConn }
                         $results = $dbConn.Query($sql)
                     } catch {
                         Stop-Function -Message "Failure executing missing-index analysis against $($db.Name) on $($server.Name)" -ErrorRecord $_ -Target $db -Continue
-                        continue
                     }
                 } else {
                     $currentDatabase = $server.ConnectionContext.CurrentDatabase
@@ -348,7 +360,6 @@ ORDER BY ImpactScore DESC;
                         $results = $db.Query($sql)
                     } catch {
                         Stop-Function -Message "Failure executing missing-index analysis against $($db.Name) on $($server.Name)" -ErrorRecord $_ -Target $db -Continue
-                        continue
                     }
                 }
 
@@ -406,8 +417,8 @@ ORDER BY ImpactScore DESC;
                         InstanceName      = $server.ServiceName
                         SqlInstance       = $server.DomainInstanceName
                         Database          = $row.DatabaseName
-                        Schema            = $row.SchemaName
-                        Table             = $row.TableName
+                        Schema            = if ($row.SchemaName -is [System.DBNull]) { $null } else { $row.SchemaName }
+                        Table             = if ($row.TableName -is [System.DBNull]) { $null } else { $row.TableName }
                         EqualityColumns   = if ($row.EqualityColumns -is [System.DBNull]) { $null } else { $row.EqualityColumns }
                         InequalityColumns = if ($row.InequalityColumns -is [System.DBNull]) { $null } else { $row.InequalityColumns }
                         IncludedColumns   = if ($row.IncludedColumns -is [System.DBNull]) { $null } else { $row.IncludedColumns }
@@ -433,6 +444,17 @@ ORDER BY ImpactScore DESC;
                 # connection and never moved the caller's context, so there is nothing to restore.
                 if ($null -ne $currentDatabase) {
                     Restore-DatabaseContext -Server $server -Database $currentDatabase
+                }
+                # Release a database-scoped connection we actually created for the Azure path (never
+                # the caller's own server). Disconnect-DbaInstance clears it from the connection cache;
+                # for a non-pooled copy (which PoolDisconnect won't close) we also close the underlying
+                # SqlConnection directly, so monitoring loops can't accumulate open sessions.
+                if ($null -ne $ownedConn) {
+                    try { $null = Disconnect-DbaInstance -InputObject $ownedConn } catch { }
+                    try {
+                        $sqlConn = $ownedConn.ConnectionContext.SqlConnectionObject
+                        if ($null -ne $sqlConn -and $sqlConn.State -ne 'Closed') { $sqlConn.Close() }
+                    } catch { }
                 }
             }
         }
