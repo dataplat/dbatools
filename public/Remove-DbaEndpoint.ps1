@@ -100,7 +100,7 @@ function Remove-DbaEndpoint {
             if ($Pscmdlet.ShouldProcess($ep.Parent.name, "Removing endpoint $ep")) {
                 try {
                     # avoid enumeration issues
-                    $ep.Parent.Query("DROP ENDPOINT $ep")
+                    $null = $ep.Parent.Query("DROP ENDPOINT $ep")
                     [PSCustomObject]@{
                         ComputerName = $ep.ComputerName
                         InstanceName = $ep.InstanceName

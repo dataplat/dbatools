@@ -118,7 +118,7 @@ function Remove-DbaCustomError {
                 # sp_dropmessage handles the proper drop order automatically
                 try {
                     if ($Language -ieq "All") {
-                        $server.Query("EXEC sp_dropmessage @msgnum = $MessageID, @lang = 'all'")
+                        $null = $server.Query("EXEC sp_dropmessage @msgnum = $MessageID, @lang = 'all'")
                     } else {
                         # Check if this is English and other language versions exist
                         # SQL Server requires all localized versions to be dropped before us_english
@@ -127,14 +127,14 @@ function Remove-DbaCustomError {
                             $otherLanguages = $server.Query("SELECT COUNT(*) AS cnt FROM sys.messages WHERE message_id = $MessageID AND language_id <> 1033")
                             if ($otherLanguages.cnt -gt 0) {
                                 # Other languages exist, must drop all
-                                $server.Query("EXEC sp_dropmessage @msgnum = $MessageID, @lang = 'all'")
+                                $null = $server.Query("EXEC sp_dropmessage @msgnum = $MessageID, @lang = 'all'")
                             } else {
                                 # Only English exists, drop just English
-                                $server.Query("EXEC sp_dropmessage @msgnum = $MessageID, @lang = '$languageName'")
+                                $null = $server.Query("EXEC sp_dropmessage @msgnum = $MessageID, @lang = '$languageName'")
                             }
                         } else {
                             # Non-English language, drop just that language
-                            $server.Query("EXEC sp_dropmessage @msgnum = $MessageID, @lang = '$languageName'")
+                            $null = $server.Query("EXEC sp_dropmessage @msgnum = $MessageID, @lang = '$languageName'")
                         }
                     }
                 } catch {

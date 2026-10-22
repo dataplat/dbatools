@@ -124,7 +124,7 @@ function Stop-DbaTrace {
 
             if ($Pscmdlet.ShouldProcess($traceid, "Stopping the TraceID on $server")) {
                 try {
-                    $server.Query($sql)
+                    $null = $server.Query($sql)
                     $output = Get-DbaTrace -SqlInstance $server -Id $traceid
                     if (-not $output) {
                         $output = [PSCustomObject]@{

@@ -130,17 +130,17 @@ function Set-DbaDbMirror {
                 if ($Partner) {
                     if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Setting partner on $db")) {
                         # use t-sql cuz $db.Alter() does not always work against restoring dbs
-                        $db.Parent.Query("ALTER DATABASE $db SET PARTNER = N'$Partner'")
+                        $null = $db.Parent.Query("ALTER DATABASE $db SET PARTNER = N'$Partner'")
                     }
                 } elseif ($Witness) {
                     if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Setting witness on $db")) {
-                        $db.Parent.Query("ALTER DATABASE $db SET WITNESS = N'$Witness'")
+                        $null = $db.Parent.Query("ALTER DATABASE $db SET WITNESS = N'$Witness'")
                     }
                 }
 
                 if ($SafetyLevel) {
                     if ($Pscmdlet.ShouldProcess($db.Parent.Name, "Changing safety level to $SafetyLevel on $db")) {
-                        $db.Parent.Query("ALTER DATABASE $db SET PARTNER SAFETY $SafetyLevel")
+                        $null = $db.Parent.Query("ALTER DATABASE $db SET PARTNER SAFETY $SafetyLevel")
                         # $db.MirroringSafetyLevel = $SafetyLevel
                     }
                 }

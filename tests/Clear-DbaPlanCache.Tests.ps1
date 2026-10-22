@@ -41,4 +41,14 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Match "below"
         }
     }
+
+    Context "When clearing plan cache" {
+        It "Returns one result per instance" {
+            # A threshold of 0 clears the cache whatever its size
+            $results = Clear-DbaPlanCache -SqlInstance $TestConfig.InstanceSingle -Threshold 0
+            # Counts the output itself, $results.Status would skip a $null written by the command
+            @($results).Count | Should -Be 1
+            $results.Status | Should -Be "Plan cache cleared"
+        }
+    }
 }

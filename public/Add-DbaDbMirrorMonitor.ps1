@@ -73,7 +73,7 @@ function Add-DbaDbMirrorMonitor {
 
             if ($Pscmdlet.ShouldProcess($instance, "add mirror monitoring")) {
                 try {
-                    $server.Query("EXEC msdb.dbo.sp_dbmmonitoraddmonitoring")
+                    $null = $server.Query("EXEC msdb.dbo.sp_dbmmonitoraddmonitoring")
                     [PSCustomObject]@{
                         ComputerName  = $server.ComputerName
                         InstanceName  = $server.ServiceName
