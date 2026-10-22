@@ -147,11 +147,22 @@ function Save-DbaKbUpdate {
                 $file = "$Path$([IO.Path]::DirectorySeparatorChar)$fileName"
             }
 
-            if (-not $UseWebRequest -and (Get-Command Start-BitsTransfer -ErrorAction Ignore)) {
-                try {
-                    Start-BitsTransfer -Source $link -Destination $file -ErrorAction Stop
-                } catch {
-                    Write-Message -Level Verbose -Message "Start-BitsTransfer failed, falling back to Invoke-WebRequest: $PSItem"
+            # A failed download is reported by Stop-Function. Invoke-WebRequest reports it as an error that ends only its own
+            # statement, so the command neither warned nor threw under EnableException, and the caller got a plain error.
+            try {
+                if (-not $UseWebRequest -and (Get-Command Start-BitsTransfer -ErrorAction Ignore)) {
+                    try {
+                        Start-BitsTransfer -Source $link -Destination $file -ErrorAction Stop
+                    } catch {
+                        Write-Message -Level Verbose -Message "Start-BitsTransfer failed, falling back to Invoke-WebRequest: $PSItem"
+                        Write-Progress -Activity "Downloading $fileName" -Id 1
+                        try {
+                            Invoke-TlsWebRequest -Uri $link -OutFile $file -ErrorAction Stop
+                        } finally {
+                            Write-Progress -Activity "Downloading $fileName" -Id 1 -Completed
+                        }
+                    }
+                } else {
                     Write-Progress -Activity "Downloading $fileName" -Id 1
                     try {
                         Invoke-TlsWebRequest -Uri $link -OutFile $file -ErrorAction Stop
@@ -159,13 +170,8 @@ function Save-DbaKbUpdate {
                         Write-Progress -Activity "Downloading $fileName" -Id 1 -Completed
                     }
                 }
-            } else {
-                Write-Progress -Activity "Downloading $fileName" -Id 1
-                try {
-                    Invoke-TlsWebRequest -Uri $link -OutFile $file -ErrorAction Stop
-                } finally {
-                    Write-Progress -Activity "Downloading $fileName" -Id 1 -Completed
-                }
+            } catch {
+                Stop-Function -Message "Failed to download $link" -ErrorRecord $PSItem -Target $link -Continue
             }
             if (Test-Path -Path $file) {
                 Get-ChildItem -Path $file

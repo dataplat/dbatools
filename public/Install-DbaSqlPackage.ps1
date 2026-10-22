@@ -212,7 +212,8 @@ function Install-DbaSqlPackage {
             }
 
             # Download if needed
-            if (-not (Test-Path -Path $LocalFile) -or $Force) {
+            # The download is real work, so -WhatIf has to skip it too, and not only the installation.
+            if ((-not (Test-Path -Path $LocalFile) -or $Force) -and $Pscmdlet.ShouldProcess($url, "Download SqlPackage to $LocalFile")) {
                 try {
                     Write-Progress -Activity "Installing SqlPackage" -Status "Starting download from Microsoft..." -PercentComplete 20
                     Write-Message -Level Verbose -Message "Downloading SqlPackage from $url"
@@ -288,6 +289,12 @@ function Install-DbaSqlPackage {
                         return
                     }
                 }
+            }
+
+            # With -WhatIf nothing was downloaded or installed, so there is nothing to verify. The verification warned that
+            # the installation failed when SqlPackage was not there yet.
+            if ($WhatIfPreference) {
+                return
             }
 
             Write-Progress -Activity "Installing SqlPackage" -Status "Verifying installation..." -PercentComplete 90
