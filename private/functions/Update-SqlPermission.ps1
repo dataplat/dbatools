@@ -109,6 +109,33 @@ function Update-SqlPermission {
         }
     }
 
+    # Server roles that exist on the destination only. The loop above never sees them, so a login updated in place kept
+    # their membership, and with it permissions like CONTROL SERVER of a user-defined role, while a login that -Force
+    # drops and recreates loses it.
+    foreach ($destOnlyRole in $DestServer.Roles) {
+        if ($null -ne $SourceServer.Roles[$destOnlyRole.Name]) {
+            continue
+        }
+        $destOnlyRoleName = $destOnlyRole.Name
+
+        try {
+            $destOnlyRoleMembers = $destOnlyRole.EnumMemberNames()
+        } catch {
+            $destOnlyRoleMembers = $destOnlyRole.EnumServerRoleMembers()
+        }
+
+        if ($destOnlyRoleMembers -contains $newLoginName) {
+            if ($Pscmdlet.ShouldProcess($destination, "Removing $newLoginName from $destOnlyRoleName server role.")) {
+                try {
+                    $destOnlyRole.DropMember($newLoginName)
+                    Write-Message -Level Verbose -Message "Removing $newLoginName from $destOnlyRoleName server role on $destination successfully performed."
+                } catch {
+                    Stop-Function -Message "Failed to remove $newLoginName from $destOnlyRoleName server role on $destination." -Target $destOnlyRole -ErrorRecord $_
+                }
+            }
+        }
+    }
+
     $ownedJobs = $SourceServer.JobServer.Jobs | Where-Object OwnerLoginName -eq $loginName
     foreach ($ownedJob in $ownedJobs) {
         if ($null -ne $DestServer.JobServer.Jobs[$ownedJob.Name]) {
