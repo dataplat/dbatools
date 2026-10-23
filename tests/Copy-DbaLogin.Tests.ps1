@@ -975,4 +975,118 @@ WHERE name = N'$callerLoginName'
             $sysadminsAfter | Should -Contain $renameSourceName
         }
     }
+
+    Context "A server role that exists on the destination only loses the login updated in place (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $destRoleRandom = Get-Random
+            $destRoleLoginName = "dbatoolsci_destrolelogin_$destRoleRandom"
+            $destRoleOtherName = "dbatoolsci_destroleother_$destRoleRandom"
+            $destRoleName = "dbatoolsci_destrole_$destRoleRandom"
+
+            # The source login is in no server role, and the source has no role of that name.
+            $splatSourceLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $destRoleLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Source5" -AsPlainText -Force)
+            }
+            $sourceLogin = New-DbaLogin @splatSourceLogin
+
+            # On the destination, the login has the same SID and is a member of a user-defined server role that has
+            # CONTROL SERVER. Another login is a member as well and has nothing to do with the copy.
+            $splatDestLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $destRoleLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Dest5" -AsPlainText -Force)
+                Sid            = $sourceLogin.Sid
+            }
+            $null = New-DbaLogin @splatDestLogin
+            $splatOtherLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $destRoleOtherName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Dest5" -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatOtherLogin
+            $null = New-DbaServerRole -SqlInstance $TestConfig.InstanceCopy2 -ServerRole $destRoleName
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "GRANT CONTROL SERVER TO [$destRoleName]"
+            $splatDestRoleMember = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                ServerRole  = $destRoleName
+                Login       = $destRoleLoginName, $destRoleOtherName
+                Confirm     = $false
+            }
+            $null = Add-DbaServerRoleMember @splatDestRoleMember
+
+            $splatDestRoleState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = "SELECT m.name FROM sys.server_role_members AS rm INNER JOIN sys.server_principals AS r ON r.principal_id = rm.role_principal_id INNER JOIN sys.server_principals AS m ON m.principal_id = rm.member_principal_id WHERE r.name = @roleName"
+                SqlParameter = @{
+                    roleName = $destRoleName
+                }
+            }
+            $splatDestRoleUpdate = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $TestConfig.InstanceCopy2
+                Login          = $destRoleLoginName
+                UpdateExisting = $true
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $destRoleResult = Copy-DbaLogin @splatDestRoleUpdate
+            $destRoleWarn = $WarnVar
+            $destRoleMembersAfter = @((Invoke-DbaQuery @splatDestRoleState -EnableException).name)
+            $splatDestRoleAfter = @{
+                SqlInstance     = $TestConfig.InstanceCopy2
+                ServerRole      = $destRoleName
+                EnableException = $true
+            }
+            $destRoleAfter = Get-DbaServerRole @splatDestRoleAfter
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemoveSourceLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Login       = $destRoleLoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveSourceLogin
+            # The logins first: SQL Server drops no server role that still has members.
+            $splatRemoveDestLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Login       = $destRoleLoginName, $destRoleOtherName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveDestLogin
+            $splatRemoveDestRole = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                ServerRole  = $destRoleName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaServerRole @splatRemoveDestRole
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "updates the login in place" {
+            $destRoleWarn | Should -BeNullOrEmpty
+            $destRoleResult.Status | Should -Be "Successful"
+            $destRoleResult.Name | Should -Be $destRoleLoginName
+        }
+
+        It "takes the login out of the server role the source does not have" {
+            $destRoleMembersAfter | Should -Not -Contain $destRoleLoginName
+        }
+
+        It "leaves the server role and its other member on the destination" {
+            $destRoleAfter | Should -Not -BeNullOrEmpty
+            $destRoleMembersAfter | Should -Contain $destRoleOtherName
+        }
+    }
 }
