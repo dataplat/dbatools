@@ -330,7 +330,9 @@ function Set-DbaLogin {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $allLogins[$instance.ToString()] = Get-DbaLogin -SqlInstance $server
+            # Only the logins of -Login: Get-DbaLogin processes every login it gets, and on an instance with many logins
+            # or far away that took long for a single one (#10807).
+            $allLogins[$instance.ToString()] = Get-DbaLogin -SqlInstance $server -Login $Login
             $InputObject += $allLogins[$instance.ToString()] | Where-Object { ($_.Name -in $Login) -and ($_.Name -notlike '##*') }
         }
 

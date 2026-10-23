@@ -407,6 +407,69 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
         }
     }
 
+    Context "Only the logins of -Login are read (#10807)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $readRandom = Get-Random
+            $readLoginName = "dbatoolsci_readlogin_$readRandom"
+            $readOtherName = "dbatoolsci_readother_$readRandom"
+            $splatReadLogins = @{
+                SqlInstance    = $TestConfig.InstanceSingle
+                Login          = $readLoginName, $readOtherName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Read7" -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatReadLogins
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # Get-DbaLogin writes a verbose message for every login it processes, the messages the issue shows. The
+            # command read every login of the instance for the one of -Login.
+            $splatReadDisable = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Login       = $readLoginName
+                Disable     = $true
+                Verbose     = $true
+            }
+            $readRecords = @(Set-DbaLogin @splatReadDisable 4>&1)
+            $readResult = $readRecords | Where-Object { $PSItem -isnot [System.Management.Automation.VerboseRecord] }
+            $readProcessed = @(
+                foreach ($record in $readRecords) {
+                    if ($record -is [System.Management.Automation.VerboseRecord] -and $record.Message -match "\[Get-DbaLogin\] Processing \[(?<name>.+?)\] on") {
+                        $Matches.name
+                    }
+                }
+            )
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemoveReadLogins = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Login       = $readLoginName, $readOtherName
+                Force       = $true
+            }
+            $null = Remove-DbaLogin @splatRemoveReadLogins
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "changes the login of -Login" {
+            $WarnVar | Should -BeNullOrEmpty
+            $readResult.Name | Should -Be $readLoginName
+            $readResult.IsDisabled | Should -BeTrue
+        }
+
+        It "reads no other login of the instance" {
+            $readProcessed | Should -Not -Contain $readOtherName
+            $readProcessed | Should -Be $readLoginName
+        }
+    }
+
     Context "Sets the password from a hash" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
