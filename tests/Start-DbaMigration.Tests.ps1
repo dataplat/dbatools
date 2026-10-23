@@ -773,4 +773,124 @@ Describe $CommandName -Tag IntegrationTests {
             $dacSessions | Should -Be 0
         }
     }
+
+    Context "When the pipeline is stopped while the normal source connection is opened" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The command opens the dedicated admin connection first and the normal connection after it. A logon trigger
+            # on the source holds every login of a test login for a while, but not its dedicated admin connection, for
+            # which logon triggers do not fire. The pipeline is stopped while the normal connection waits in the trigger:
+            # a stop there skipped the catch of the connections and came before the finally of the migration.
+            $initRandom = Get-Random
+            $initLoginName = "dbatoolsci_miginit_$initRandom"
+            $initTriggerName = "dbatoolsci_miginit_$initRandom"
+            $initPassword = ConvertTo-SecureString -String "dbatools.IO.Init6" -AsPlainText -Force
+            $initCredential = New-Object System.Management.Automation.PSCredential($initLoginName, $initPassword)
+            $splatInitLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $initLoginName
+                SecurePassword = $initPassword
+            }
+            $null = New-DbaLogin @splatInitLogin
+            $splatInitSysadmin = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                ServerRole  = "sysadmin"
+                Login       = $initLoginName
+                Confirm     = $false
+            }
+            $null = Add-DbaServerRoleMember @splatInitSysadmin
+            $initTrigger = @"
+CREATE TRIGGER [$initTriggerName] ON ALL SERVER FOR LOGON AS
+BEGIN
+    IF ORIGINAL_LOGIN() = N'$initLoginName'
+        WAITFOR DELAY '00:00:08';
+END
+"@
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query $initTrigger
+
+            $splatInitMigration = @{
+                Source              = $TestConfig.InstanceCopy1
+                SourceSqlCredential = $initCredential
+                Destination         = $TestConfig.InstanceCopy2
+                Exclude             = "Databases"
+                WhatIf              = $true
+            }
+            if ($TestConfig.SqlCred) {
+                $splatInitMigration.DestinationSqlCredential = $TestConfig.SqlCred
+            }
+            $splatInitWaiting = @{
+                SqlInstance  = $TestConfig.InstanceCopy1
+                Query        = "SELECT COUNT(*) AS Waiting FROM sys.dm_exec_requests AS r INNER JOIN sys.dm_exec_sessions AS s ON s.session_id = r.session_id WHERE s.original_login_name = @loginName AND r.wait_type = N'WAITFOR'"
+                SqlParameter = @{ loginName = $initLoginName }
+            }
+            $splatInitDacSessions = @{
+                SqlInstance  = $TestConfig.InstanceCopy1
+                Query        = "SELECT COUNT(*) AS DacSessions FROM sys.dm_exec_sessions AS s INNER JOIN sys.endpoints AS e ON e.endpoint_id = s.endpoint_id WHERE e.is_admin_endpoint = 1 AND s.original_login_name = @loginName"
+                SqlParameter = @{ loginName = $initLoginName }
+            }
+
+            $initRunspace = [runspacefactory]::CreateRunspace()
+            $initRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $initRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $initShell = [powershell]::Create()
+            $initShell.Runspace = $initRunspace
+            $null = $initShell.AddCommand("Start-DbaMigration").AddParameters($splatInitMigration)
+            $initAsync = $initShell.BeginInvoke()
+            $initWatch = [System.Diagnostics.Stopwatch]::StartNew()
+            do {
+                $initWaiting = (Invoke-DbaQuery @splatInitWaiting).Waiting
+                if ($initWaiting -eq 0) {
+                    Start-Sleep -Milliseconds 100
+                }
+            } while ($initWaiting -eq 0 -and -not $initAsync.IsCompleted -and $initWatch.Elapsed.TotalSeconds -lt 60)
+            # Stop returns once the login the trigger holds is through.
+            $initShell.Stop()
+            $initStopState = $initShell.InvocationStateInfo.State
+            # The session can take a moment to end on the server after the client closed the connection.
+            $initWatch.Restart()
+            do {
+                $initDacSessions = (Invoke-DbaQuery @splatInitDacSessions).DacSessions
+                if ($initDacSessions -gt 0) {
+                    Start-Sleep -Milliseconds 200
+                }
+            } while ($initDacSessions -gt 0 -and $initWatch.Elapsed.TotalSeconds -lt 5)
+            $initShell.Dispose()
+            $initRunspace.Dispose()
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query "IF EXISTS (SELECT 1 FROM sys.server_triggers WHERE name = N'$initTriggerName') DROP TRIGGER [$initTriggerName] ON ALL SERVER"
+            # Force ends the sessions the stopped runspace left behind.
+            $splatRemoveInitLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Login       = $initLoginName
+                Force       = $true
+            }
+            $null = Remove-DbaLogin @splatRemoveInitLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Was stopped while the normal connection was opened" {
+            $initWaiting | Should -BeGreaterThan 0
+            $initStopState | Should -Be "Stopped"
+        }
+
+        It "Closes the dedicated admin connection" {
+            $initDacSessions | Should -Be 0
+        }
+    }
 }
