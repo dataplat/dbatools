@@ -95,13 +95,42 @@ function Update-SqlPermission {
         }
 
         # Remove for Syncs
+        # The member to drop is the login on the destination: with a rename, the name of the source login can belong
+        # to a different login there.
         if ($roleMembers -notcontains $loginName -and $destRoleMembers -contains $newLoginName -and $null -ne $destRole) {
-            if ($Pscmdlet.ShouldProcess($destination, "Adding $loginName to $roleName server role.")) {
+            if ($Pscmdlet.ShouldProcess($destination, "Removing $newLoginName from $roleName server role.")) {
                 try {
-                    $destRole.DropMember($loginName)
-                    Write-Message -Level Verbose -Message "Removing $newLoginName from $destRoleName server role on $destination successfully performed."
+                    $destRole.DropMember($newLoginName)
+                    Write-Message -Level Verbose -Message "Removing $newLoginName from $roleName server role on $destination successfully performed."
                 } catch {
-                    Stop-Function -Message "Failed to remove $newLoginName from $destRoleName server role on $destination." -Target $role -ErrorRecord $_
+                    Stop-Function -Message "Failed to remove $newLoginName from $roleName server role on $destination." -Target $role -ErrorRecord $_
+                }
+            }
+        }
+    }
+
+    # Server roles that exist on the destination only. The loop above never sees them, so a login updated in place kept
+    # their membership, and with it permissions like CONTROL SERVER of a user-defined role, while a login that -Force
+    # drops and recreates loses it.
+    foreach ($destOnlyRole in $DestServer.Roles) {
+        if ($null -ne $SourceServer.Roles[$destOnlyRole.Name]) {
+            continue
+        }
+        $destOnlyRoleName = $destOnlyRole.Name
+
+        try {
+            $destOnlyRoleMembers = $destOnlyRole.EnumMemberNames()
+        } catch {
+            $destOnlyRoleMembers = $destOnlyRole.EnumServerRoleMembers()
+        }
+
+        if ($destOnlyRoleMembers -contains $newLoginName) {
+            if ($Pscmdlet.ShouldProcess($destination, "Removing $newLoginName from $destOnlyRoleName server role.")) {
+                try {
+                    $destOnlyRole.DropMember($newLoginName)
+                    Write-Message -Level Verbose -Message "Removing $newLoginName from $destOnlyRoleName server role on $destination successfully performed."
+                } catch {
+                    Stop-Function -Message "Failed to remove $newLoginName from $destOnlyRoleName server role on $destination." -Target $destOnlyRole -ErrorRecord $_
                 }
             }
         }
@@ -201,7 +230,9 @@ function Update-SqlPermission {
 
     if ($DestServer.VersionMajor -lt 9) {
         Write-Message -Level Warning -Message "SQL Server 2005 or greater required for database mappings.";
-        continue
+        # Return, not continue: this function has no loop here, so a continue went on with the next iteration of the
+        # loop of the caller and skipped the rest of it, the result row of Sync-DbaLoginPermission for example.
+        return
     }
 
     # For Sync, if info doesn't exist in EnumDatabaseMappings, then no big deal.
