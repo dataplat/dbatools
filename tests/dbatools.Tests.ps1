@@ -1012,8 +1012,9 @@ Describe "$ModuleName command structure" -Tag Compliance {
     The command invariants in CLAUDE.md that the AST can prove, checked over public\ and
     private\functions\. Rule 1: a Stop-Function that can continue has a loop or switch to continue in
     the same function or scriptblock. Rule 3: a begin block that can set the interrupt flag is followed
-    by if (Test-FunctionInterrupt) { return } as the first statement of process. The analyzer is in
-    dbatools.CommandStructure.ps1, its own fixtures are in the next Describe.
+    by if (Test-FunctionInterrupt) { return } as the first statement of process. Next to them: no
+    Query() call writes its value into the output, unless it is listed as meant (#10794). The analyzer
+    is in dbatools.CommandStructure.ps1, its own fixtures are in the next Describe.
     #>
     BeforeAll {
         $ModulePath = Split-Path $PSScriptRoot -Parent
@@ -1081,6 +1082,108 @@ Describe "$ModuleName command structure" -Tag Compliance {
             }
         )
 
+        # Query() calls whose value is meant as output: each returns the rows of a SELECT. The check
+        # cannot tell a SELECT from a batch without a result set, which returns $null, so each one is
+        # listed with the exact number of sites, as above.
+        $queryOutputExceptions = @(
+            [PSCustomObject]@{
+                File     = "Find-DbaDbDuplicateIndex.ps1"
+                Function = "Find-DbaDbDuplicateIndex"
+                Sites    = 1
+                Reason   = "the rows of the duplicate or overlapping index SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Find-DbaDbUnusedIndex.ps1"
+                Function = "Find-DbaDbUnusedIndex"
+                Sites    = 1
+                Reason   = "the rows of the index usage SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaConnection.ps1"
+                Function = "Get-DbaConnection"
+                Sites    = 1
+                Reason   = "the rows of the connection SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaDatabase.ps1"
+                Function = "Invoke-QueryDatabaseSizes"
+                Sites    = 1
+                Reason   = "helper; the rows of the size SELECT are its return value, which the command assigns"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaDatabase.ps1"
+                Function = "Invoke-QueryDBlastUsed"
+                Sites    = 1
+                Reason   = "helper; the rows of the last used SELECT are its return value, which the command assigns"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaDatabase.ps1"
+                Function = "Invoke-QueryRawDatabases"
+                Sites    = 3
+                Reason   = "helper; the rows of the sys.databases SELECT for each version are its return value, which the command assigns"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaDbFeatureUsage.ps1"
+                Function = "Get-DbaDbFeatureUsage"
+                Sites    = 1
+                Reason   = "the rows of the feature SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaDbPageInfo.ps1"
+                Function = "Get-DbaDbPageInfo"
+                Sites    = 1
+                Reason   = "the rows of the page SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaDbPhysicalFile.ps1"
+                Function = "Get-DbaDbPhysicalFile"
+                Sites    = 1
+                Reason   = "private; the rows of the file SELECT are its return value"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaExecutionPlan.ps1"
+                Function = "Get-DbaExecutionPlan"
+                Sites    = 1
+                Reason   = "with -Force the rows of the plan SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaOpenTransaction.ps1"
+                Function = "Get-DbaOpenTransaction"
+                Sites    = 1
+                Reason   = "the rows of the transaction SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaPermission.ps1"
+                Function = "Get-DbaPermission"
+                Sites    = 2
+                Reason   = "the rows of the server and the database permission SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaTempdbUsage.ps1"
+                Function = "Get-DbaTempdbUsage"
+                Sites    = 1
+                Reason   = "the rows of the tempdb usage SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Read-DbaTraceFile.ps1"
+                Function = "Read-DbaTraceFile"
+                Sites    = 1
+                Reason   = "the rows of the fn_trace_gettable SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Read-DbaTransactionLog.ps1"
+                Function = "Read-DbaTransactionLog"
+                Sites    = 1
+                Reason   = "the rows of the fn_dblog SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Test-DbaDiskSpeed.ps1"
+                Function = "Test-DbaDiskSpeed"
+                Sites    = 1
+                Reason   = "the rows of the file stats SELECT are the output"
+            }
+        )
+
         $parseErrorFiles = @()
         $functionFiles = Get-ChildItem -Path "$ModulePath\public", "$ModulePath\private\functions" -Filter "*.ps1" -Recurse | Sort-Object -Property Name
         $allFindings = foreach ($functionFile in $functionFiles) {
@@ -1091,6 +1194,7 @@ Describe "$ModuleName command structure" -Tag Compliance {
                 continue
             }
             Get-DbaCommandStructureFinding -Ast $functionAst -File $functionFile.Name -StopFunctionParameter $stopFunctionParameter
+            Get-DbaBareQueryFinding -Ast $functionAst -File $functionFile.Name
         }
 
         $formatFinding = {
@@ -1101,23 +1205,29 @@ Describe "$ModuleName command structure" -Tag Compliance {
         $argumentFindings = @($allFindings | Where-Object Rule -eq "Arguments" | ForEach-Object { & $formatFinding $PSItem })
         $guardFindings = @($allFindings | Where-Object Rule -eq "3" | ForEach-Object { & $formatFinding $PSItem })
 
-        $continueFindings = @()
-        $ruleOneFindings = @($allFindings | Where-Object Rule -eq "1")
-        foreach ($helperGroup in ($ruleOneFindings | Group-Object -Property File, Function)) {
-            $firstFinding = $helperGroup.Group[0]
-            $exception = $dynamicContinueExceptions | Where-Object { $PSItem.File -eq $firstFinding.File -and $PSItem.Function -eq $firstFinding.Function }
-            if (-not $exception) {
-                $continueFindings += $helperGroup.Group | ForEach-Object { & $formatFinding $PSItem }
-            } elseif ($exception.Sites -ne $helperGroup.Count) {
-                $continueFindings += "$($firstFinding.File) $($firstFinding.Function) - $($helperGroup.Count) dynamic continue sites, the exception list expects $($exception.Sites) (lines $($helperGroup.Group.Line -join ", "))"
+        # The findings an exception list does not cover: a function that is not listed, a listed one
+        # with another number of sites, and an entry whose sites are all gone.
+        $getUncoveredFinding = {
+            param($Findings, $Exceptions, $SiteName)
+            foreach ($functionGroup in ($Findings | Group-Object -Property File, Function)) {
+                $firstFinding = $functionGroup.Group[0]
+                $exception = $Exceptions | Where-Object { $PSItem.File -eq $firstFinding.File -and $PSItem.Function -eq $firstFinding.Function }
+                if (-not $exception) {
+                    $functionGroup.Group | ForEach-Object { & $formatFinding $PSItem }
+                } elseif ($exception.Sites -ne $functionGroup.Count) {
+                    "$($firstFinding.File) $($firstFinding.Function) - $($functionGroup.Count) $SiteName, the exception list expects $($exception.Sites) (lines $($functionGroup.Group.Line -join ", "))"
+                }
+            }
+            foreach ($exception in $Exceptions) {
+                $matchingFindings = @($Findings | Where-Object { $PSItem.File -eq $exception.File -and $PSItem.Function -eq $exception.Function })
+                if (-not $matchingFindings) {
+                    "$($exception.File) $($exception.Function) - the exception list expects $($exception.Sites) $SiteName and there are none, remove the entry"
+                }
             }
         }
-        foreach ($exception in $dynamicContinueExceptions) {
-            $matchingFindings = @($ruleOneFindings | Where-Object { $PSItem.File -eq $exception.File -and $PSItem.Function -eq $exception.Function })
-            if (-not $matchingFindings) {
-                $continueFindings += "$($exception.File) $($exception.Function) - the exception list expects $($exception.Sites) dynamic continue sites and there are none, remove the entry"
-            }
-        }
+
+        $continueFindings = @(& $getUncoveredFinding @($allFindings | Where-Object Rule -eq "1") $dynamicContinueExceptions "dynamic continue sites")
+        $queryFindings = @(& $getUncoveredFinding @($allFindings | Where-Object Rule -eq "Query") $queryOutputExceptions "Query() sites with output")
     }
 
     It "every command file can be parsed" {
@@ -1134,6 +1244,10 @@ Describe "$ModuleName command structure" -Tag Compliance {
 
     It "every begin block that can set the interrupt flag is followed by the process guard" {
         $guardFindings | Should -BeNullOrEmpty -Because "without the guard process runs on after begin stopped (CLAUDE.md, rule 3)"
+    }
+
+    It "every Query() call whose value goes to the output is listed as meant" {
+        $queryFindings | Should -BeNullOrEmpty -Because "Query() returns `$null for a batch without a result set, and a call whose value nothing takes writes it into the output of the command; put `$null = in front of it (#10794)"
     }
 }
 
@@ -1152,6 +1266,12 @@ Describe "$ModuleName command structure analyzer" -Tag Compliance {
             param($Code, $Rule)
             $fixtureAst = [System.Management.Automation.Language.Parser]::ParseInput($Code, [ref]$null, [ref]$null)
             @(Get-DbaCommandStructureFinding -Ast $fixtureAst -File "fixture.ps1" -StopFunctionParameter $stopFunctionParameter | Where-Object Rule -eq $Rule)
+        }
+
+        $queryFindingsOf = {
+            param($Code)
+            $fixtureAst = [System.Management.Automation.Language.Parser]::ParseInput($Code, [ref]$null, [ref]$null)
+            @(Get-DbaBareQueryFinding -Ast $fixtureAst -File "fixture.ps1")
         }
     }
 
@@ -1734,6 +1854,103 @@ function Get-Fixture {
 }
 '@
             & $findingsOf $code "3" | Should -HaveCount 1
+        }
+    }
+
+    Context "Query() calls whose value goes to the output" {
+        It "reports a call of its own, with the line and function" {
+            $code = @'
+function Get-Fixture {
+    process {
+        $server.Query("DROP TABLE dbo.Fixture")
+    }
+}
+'@
+            $findings = & $queryFindingsOf $code
+            $findings | Should -HaveCount 1
+            $findings[0].Line | Should -Be 3
+            $findings[0].Function | Should -Be "Get-Fixture"
+        }
+
+        It "accepts a value that is assigned, cast, piped on, redirected, returned or used" {
+            $code = @'
+function Get-Fixture {
+    process {
+        $null = $server.Query("x")
+        [void]$server.Query("x")
+        $server.Query("x") | Out-Null
+        $server.Query("x") > $null
+        $count = $server.Query("x").Rows.Count
+        Export-Csv -InputObject $server.Query("x") -Path $Path
+        foreach ($row in @($server.Query("x"))) { $row }
+        if ($server.Query("x")) { "found" }
+        switch ($server.Query("x")) { default { "found" } }
+        $text = "$($server.Query("x"))"
+        $rows = if ($Force) { $server.Query("x") } else { $server.Query("y") }
+        $scriptBlock = { $server.Query("x") }
+        throw $server.Query("x")
+        return $server.Query("x")
+    }
+}
+'@
+            & $queryFindingsOf $code | Should -BeNullOrEmpty
+        }
+
+        It "follows the value through if, try, loops, switch and subexpressions" {
+            $code = @'
+function Get-Fixture {
+    process {
+        if ($Force) { $server.Query("x") } else { $server.Query("x") }
+        try { $server.Query("x") } catch { $server.Query("x") } finally { $server.Query("x") }
+        foreach ($db in $InputObject) { $db.Query("x") }
+        switch ($Mode) { default { $server.Query("x") } }
+        $($server.Query("x"))
+        @($server.Query("x"))
+        ($server.Query("x"))
+        $server.Query("x"), "done"
+        $server.Query("x") 2>&1
+        trap { $server.Query("x") }
+    }
+}
+'@
+            & $queryFindingsOf $code | Should -HaveCount 13
+        }
+
+        It "follows the output of a scriptblock to what runs it, up to a pipeline that goes on" {
+            $code = @'
+function Get-Fixture {
+    process {
+        $InputObject | ForEach-Object { $PSItem.Query("x") }
+        $InputObject | ForEach-Object -Process:{ $PSItem.Query("x") }
+        $InputObject.ForEach({ $PSItem.Query("x") })
+        & { $server.Query("x") }
+        . { $server.Query("x") }
+        $null = $InputObject | ForEach-Object { $PSItem.Query("x") }
+        $InputObject | ForEach-Object { $PSItem.Query("x") } | Out-Null
+    }
+}
+'@
+            $findings = & $queryFindingsOf $code
+            $findings | Should -HaveCount 5
+            $findings.Line -join ", " | Should -Be "3, 4, 5, 6, 7"
+        }
+
+        It "reports a call in a helper under the name of the helper, in any spelling of the method" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        function Invoke-FixtureHelper {
+            $server.query("x")
+        }
+    }
+    process {
+        $null = Invoke-FixtureHelper
+    }
+}
+'@
+            $findings = & $queryFindingsOf $code
+            $findings | Should -HaveCount 1
+            $findings[0].Function | Should -Be "Invoke-FixtureHelper"
         }
     }
 }
