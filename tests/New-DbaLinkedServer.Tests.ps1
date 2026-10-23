@@ -52,12 +52,8 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created linked servers.
-        Remove-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer "dbatoolscli_LS1_$random" -Force -ErrorAction SilentlyContinue
-        Remove-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer "dbatoolscli_LS2_$random" -Force -ErrorAction SilentlyContinue
-        Remove-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer "dbatoolscli_LS3_$random" -Force -ErrorAction SilentlyContinue
-        Remove-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer "dbatoolscli_LS4_$random" -Force -ErrorAction SilentlyContinue
-        Remove-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer "dbatoolscli_LS5_$random" -Force -ErrorAction SilentlyContinue
-        Remove-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer "dbatoolscli_LS6_$random" -Force -ErrorAction SilentlyContinue
+        # Only the ones that exist: after a test failed halfway, removing a missing one throws here and the login below stays.
+        $null = Get-DbaLinkedServer -SqlInstance $InstanceSingle | Where-Object Name -like "dbatoolscli_LS?_$random" | Remove-DbaLinkedServer -Force
 
         # Cleanup test login.
         Remove-DbaLogin -SqlInstance $instance3 -Login $loginName -ErrorAction SilentlyContinue
@@ -106,16 +102,20 @@ Describe $CommandName -Tag IntegrationTests {
         It "Creates a linked server with the different security context options" {
             $results = New-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer "dbatoolscli_LS3_$random" -ServerProduct mssql -Provider sqlncli -DataSource $instance3 -SecurityContext NoConnection
 
+            # Counts the output itself, $results.RemoteUser would skip a $null written by the command
+            @($results).Count | Should -Be 1
             $results.RemoteUser | Should -BeNullOrEmpty
             $results.Impersonate | Should -BeNullOrEmpty
 
             $results = New-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer "dbatoolscli_LS4_$random" -ServerProduct mssql -Provider sqlncli -DataSource $instance3 -SecurityContext WithoutSecurityContext
 
+            @($results).Count | Should -Be 1
             $results.RemoteUser | Should -BeNullOrEmpty
             $results.Impersonate | Should -Be $false
 
             $results = New-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer "dbatoolscli_LS5_$random" -ServerProduct mssql -Provider sqlncli -DataSource $instance3 -SecurityContext CurrentSecurityContext
 
+            @($results).Count | Should -Be 1
             $results.RemoteUser | Should -BeNullOrEmpty
             $results.Impersonate | Should -Be $true
 
@@ -129,6 +129,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = New-DbaLinkedServer -SqlInstance $InstanceSingle -LinkedServer "dbatoolscli_LS6_$random" -ServerProduct mssql -Provider sqlncli -DataSource $instance3 -SecurityContext SpecifiedSecurityContext -SecurityContextRemoteUser $loginName -SecurityContextRemoteUserPassword $securePassword
 
+            @($results).Count | Should -Be 1
             $results.RemoteUser | Should -Be $loginName
             $results.Impersonate | Should -Be $false
         }

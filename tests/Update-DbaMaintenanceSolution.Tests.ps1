@@ -161,28 +161,52 @@ Describe $CommandName -Tag IntegrationTests {
             # both when the skip was a warning and when it was thrown. Count the sessions through a server
             # object opened once, and only the sessions of this process.
             $countServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
-            $countQuery = @"
+            # Only the sessions that logged in after the start of a round are counted. A count of all sessions, or of
+            # the sleeping ones, also moved when the pool closed idle sessions of earlier tests or a reset session
+            # turned dormant (4 -> 3, 13 -> 1 and 8 -> 9 in full runs, 2 -> 1 on PowerShell 7). A session the command
+            # closed can take a moment to go away on the server, so the count is retried for up to ten seconds; a
+            # session it left behind stays.
+            $getNewSessionCount = {
+                param($Since)
+                $newSessionQuery = @"
 SELECT COUNT(*)
 FROM sys.dm_exec_sessions
-WHERE program_name LIKE N'dbatools%'
-  AND host_process_id = $PID
-  AND status = N'sleeping'
+WHERE host_process_id = $PID
   AND session_id <> @@spid
+  AND login_time > CONVERT(datetime2, '$Since', 121)
 "@
+                $waitUntil = (Get-Date).AddSeconds(10)
+                do {
+                    $newSessionCount = $countServer.ConnectionContext.ExecuteScalar($newSessionQuery)
+                    if ($newSessionCount -eq 0) {
+                        break
+                    }
+                    Start-Sleep -Milliseconds 500
+                } while ((Get-Date) -lt $waitUntil)
+                $newSessionCount
+            }
+            $serverTimeQuery = "SELECT CONVERT(varchar(27), SYSDATETIME(), 121)"
             $missingDbName = "dbatoolsci_missing_$(Get-Random)"
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
             # One warm-up call so the background connections of the tab expansion exist before the baseline.
             $null = Update-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceSingle -Database $missingDbName -WarningAction SilentlyContinue
-            $sleepingBefore = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+            # And one of the thrown skip, so that a connection either form opens on first use is older than the rounds.
+            try {
+                $null = Update-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceSingle -Database $missingDbName -EnableException
+            } catch {
+                $null = $PSItem
+            }
 
+            $roundStart = $countServer.ConnectionContext.ExecuteScalar($serverTimeQuery)
             foreach ($i in 1..3) {
                 $null = Update-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceSingle -Database $missingDbName -WarningAction SilentlyContinue
             }
             $warningsAfterWarn = $WarnVar
-            $sleepingAfterWarn = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+            $newSessionsAfterWarn = & $getNewSessionCount $roundStart
 
+            $roundStart = $countServer.ConnectionContext.ExecuteScalar($serverTimeQuery)
             foreach ($i in 1..3) {
                 try {
                     $null = Update-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceSingle -Database $missingDbName -EnableException
@@ -190,7 +214,7 @@ WHERE program_name LIKE N'dbatools%'
                     $null = $PSItem
                 }
             }
-            $sleepingAfterThrow = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+            $newSessionsAfterThrow = & $getNewSessionCount $roundStart
         }
 
         AfterAll {
@@ -205,12 +229,12 @@ WHERE program_name LIKE N'dbatools%'
             @($warningsAfterWarn) -join " " | Should -BeLike "*$missingDbName not found*"
         }
 
-        It "leaves no sleeping session behind when the skip is a warning" {
-            $sleepingAfterWarn | Should -Be $sleepingBefore
+        It "leaves no session behind when the skip is a warning" {
+            $newSessionsAfterWarn | Should -Be 0
         }
 
-        It "leaves no sleeping session behind when the skip is thrown" {
-            $sleepingAfterThrow | Should -Be $sleepingBefore
+        It "leaves no session behind when the skip is thrown" {
+            $newSessionsAfterThrow | Should -Be 0
         }
     }
 }

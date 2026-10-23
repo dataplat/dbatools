@@ -50,6 +50,8 @@ Describe $CommandName -Tag IntegrationTests {
 
     It "removes the mirror monitor" {
         $results = Remove-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
+        # Counts the output itself, $results.MonitorStatus would skip a $null written by the command
+        @($results).Count | Should -Be 1
         $results.MonitorStatus | Should -Be "Removed"
     }
 }

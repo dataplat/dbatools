@@ -270,7 +270,7 @@ function New-DbaLogShippingSecondaryDatabase {
         try {
             Write-Message -Message "Configuring logshipping for secondary database $SecondaryDatabase on $SqlInstance." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
-            $ServerSecondary.Query($Query)
+            $null = $ServerSecondary.Query($Query)
 
             # For versions prior to SQL Server 2014, adding a monitor works in a different way.
             # The next section makes sure the settings are being synchronized with earlier versions
@@ -311,7 +311,7 @@ function New-DbaLogShippingSecondaryDatabase {
 
                 Write-Message -Message "Updating monitor information for the secondary database $Database." -Level Verbose
                 Write-Message -Message "Executing query:`n$query" -Level Verbose
-                $ServerSecondary.Query($query)
+                $null = $ServerSecondary.Query($query)
 
             }
         } catch {

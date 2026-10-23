@@ -76,4 +76,24 @@ Describe $CommandName -Tag IntegrationTests {
             $copiedProc.Status | Should -Be "Successful"
         }
     }
+
+    Context "When the startup procedure exists on the destination and -Force is used" {
+        BeforeAll {
+            # The previous context copied the procedure, so -Force drops it on the destination first
+            $splatCopyForce = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Procedure   = $procName
+                Force       = $true
+            }
+            $forceResults = Copy-DbaStartupProcedure @splatCopyForce
+        }
+
+        It "Should return one successful result" {
+            # Counts the output itself, $forceResults.Status.Count would skip a $null written by the command
+            @($forceResults).Count | Should -Be 1
+            $forceResults.Name | Should -Be $procName
+            $forceResults.Status | Should -Be "Successful"
+        }
+    }
 }

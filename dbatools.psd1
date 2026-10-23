@@ -834,7 +834,7 @@
             Tags         = @('sqlserver', 'migrations', 'sql', 'dba', 'databases', 'mac', 'linux', 'core')
 
             # The web address of an icon which can be used in galleries to represent this module
-            IconUri      = "https://dbatools.io/logo.png"
+            IconUri      = "https://dbatools.io/thor.png"
 
             # The web address of this module's project or support homepage.
             ProjectUri   = "https://dbatools.io"

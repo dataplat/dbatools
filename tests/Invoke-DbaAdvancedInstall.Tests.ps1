@@ -533,7 +533,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $installShell = [powershell]::Create()
             $installShell.Runspace = $installRunspace
-            $null = $installShell.AddCommand("Invoke-DbaAdvancedInstall").AddParameters($splatMissingInstall).Invoke()
+            $installResult = $installShell.AddCommand("Invoke-DbaAdvancedInstall").AddParameters($splatMissingInstall).Invoke()
             $installWarnings = @($installShell.Streams.Warning | ForEach-Object { $PSItem.Message })
             $installRecords = @($installShell.Streams.Progress)
             $installShell.Dispose()
@@ -542,6 +542,24 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Warns that the configuration file cannot be copied" {
             ($installWarnings -join " ") | Should -Match "Failed to copy file"
+        }
+
+        It "Names the computer whose reboot status it cannot read" {
+            # The message used the variable $computer, which the command never sets.
+            ($installWarnings -join " ") | Should -BeLike "*Failed to get reboot status from $($splatMissingInstall.ComputerName)*"
+        }
+
+        It "Returns a failed result for the computer" {
+            # The failed copy returned nothing, unlike the other failures, so Install-DbaInstance had no result for it.
+            @($installResult).Count | Should -Be 1
+            $installResult[0].ComputerName | Should -Be $splatMissingInstall.ComputerName
+            $installResult[0].Successful | Should -BeFalse
+            ($installResult[0].Notes -join " ") | Should -BeLike "*Failed to copy file*"
+        }
+
+        It "Removes the local configuration file" {
+            # The cleanup of the configuration file is in the finally of the installation, which the failed copy never reached.
+            Test-Path -Path $missingInstallConfig | Should -BeFalse
         }
 
         It "Completes its progress bar" {

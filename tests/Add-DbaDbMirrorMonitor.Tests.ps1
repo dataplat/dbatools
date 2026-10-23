@@ -28,6 +28,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Adds the mirror monitor" {
             $results = Add-DbaDbMirrorMonitor -SqlInstance $TestConfig.InstanceSingle
+            # Counts the output itself, $results.MonitorStatus would skip a $null written by the command
+            @($results).Count | Should -Be 1
             $results.MonitorStatus | Should -Be "Added"
         }
     }

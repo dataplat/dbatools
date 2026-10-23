@@ -201,4 +201,59 @@ Describe $CommandName -Tag IntegrationTests {
             Should -Invoke -CommandName New-DbaLogShippingPrimaryDatabase -ModuleName dbatools -Times 1 -Exactly
         }
     }
+
+    Context "When log shipping is set up" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The same setup as in the context above, without the failing helper: every helper runs for real
+            $setupDatabase = "dbatoolsci_lssetup_$(Get-Random)"
+            $setupSecondary = "$($setupDatabase)_ls"
+            $setupPath = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_lssetup_$(Get-Random)"
+            $null = New-Item -Path $setupPath -ItemType Directory
+            $setupCopyFolder = Join-Path -Path $setupPath -ChildPath "copy"
+            $null = New-Item -Path $setupCopyFolder -ItemType Directory
+            $setupPathUnc = $setupPath -replace "^(.):", "\\$env:COMPUTERNAME\`$1`$"
+
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Name $setupDatabase -RecoveryModel Full
+            $null = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $setupDatabase -Path $setupPath -Type Full
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatSetup = @{
+                SourceSqlInstance       = $TestConfig.InstanceHadr
+                DestinationSqlInstance  = $TestConfig.InstanceHadr
+                Database                = $setupDatabase
+                SharedPath              = $setupPathUnc
+                IgnoreFileChecks        = $true
+                CopyDestinationFolder   = $setupCopyFolder
+                UseExistingFullBackup   = $true
+                SecondaryDatabaseSuffix = "_ls"
+            }
+            $setupResults = Invoke-DbaDbLogShipping @splatSetup
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemoveLogShipping = @{
+                PrimarySqlInstance      = $TestConfig.InstanceHadr
+                SecondarySqlInstance    = $TestConfig.InstanceHadr
+                Database                = $setupDatabase
+                RemoveSecondaryDatabase = $true
+            }
+            $null = Remove-DbaDbLogShipping @splatRemoveLogShipping
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceHadr -Database $setupDatabase, $setupSecondary
+            Remove-Item -Path $setupPath -Recurse -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns one successful result" {
+            # Counts the output itself, $setupResults.Result would skip a $null written by the helpers
+            @($setupResults).Count | Should -Be 1
+            $setupResults.Result | Should -Be "Success"
+            $setupResults.PrimaryDatabase | Should -Be $setupDatabase
+        }
+    }
 }

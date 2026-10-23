@@ -213,7 +213,7 @@ function Copy-DbaAgentProxy {
                         Write-Message -Level Verbose -Message "Copying server proxy account $proxyName"
                         $sql = $account.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
-                        $destServer.Query($sql)
+                        $null = $destServer.Query($sql)
 
                         # Will fixing this misspelled status cause problems downstream?
                         $copyAgentProxyAccountStatus.Status = "Successful"

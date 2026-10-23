@@ -124,6 +124,8 @@ select TraceID=@TraceID
         }
 
         It "returns the right values" {
+            # Counts the output itself, $results.Id would skip a $null written by the command
+            @($results).Count | Should -Be 1
             $results.Id | Should -Be $traceid
             $results.Status | Should -Be "Stopped, closed and deleted"
         }

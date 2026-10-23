@@ -533,7 +533,7 @@ WHERE j.job_id = @jobId"
                         }
 
                         Write-Message -Message $sql -Level Debug
-                        $destServer.Query($sql)
+                        $null = $destServer.Query($sql)
 
                         $destServer.JobServer.Jobs.Refresh()
                         $destServer.JobServer.Jobs[$destJobName].IsEnabled = $sourceServer.JobServer.Jobs[$serverJob.name].IsEnabled

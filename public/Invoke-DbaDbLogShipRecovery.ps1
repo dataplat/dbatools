@@ -128,7 +128,7 @@ function Invoke-DbaDbLogShipRecovery {
     process {
         foreach ($instance in $SqlInstance) {
             if (-not $Force -and -not $Database) {
-                Stop-Function -Message "You must specify a -Database or -Force for all databases" -Target $server.name
+                Stop-Function -Message "You must specify a -Database or -Force for all databases" -Target $instance
                 return
             }
             $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
@@ -308,7 +308,8 @@ function Invoke-DbaDbLogShipRecovery {
                                         Write-Message -Message "Restoring the database to it's normal state" -Level Verbose
                                         try {
                                             $query = "RESTORE DATABASE [$secondarydb] WITH RECOVERY"
-                                            $server.Query($query)
+                                            # Query() returns a $null for a statement without a result set.
+                                            $null = $server.Query($query)
 
                                         } catch {
                                             $recoverResult = "Failed"

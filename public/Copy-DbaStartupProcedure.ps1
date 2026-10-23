@@ -172,7 +172,7 @@ function Copy-DbaStartupProcedure {
                         if ($Pscmdlet.ShouldProcess($destInstance, "Dropping startup procedure $currentProcFullName and recreating")) {
                             try {
                                 Write-Message -Level Verbose -Message "Dropping startup procedure $currentProcFullName"
-                                $destServer.Query("DROP PROCEDURE [$($currentProcSchema)].[$($currentProcName)]")
+                                $null = $destServer.Query("DROP PROCEDURE [$($currentProcSchema)].[$($currentProcName)]")
                             } catch {
                                 $copyStartupProcStatus.Status = "Failed"
                                 $copyStartupProcStatus.Notes = (Get-ErrorMessage -Record $_)

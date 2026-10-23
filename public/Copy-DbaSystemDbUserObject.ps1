@@ -405,7 +405,7 @@ function Copy-DbaSystemDbUserObject {
                             Write-Message -Level Debug -Message "$sql"
                             if ($PSCmdlet.ShouldProcess($destInstance, $sql)) {
                                 try {
-                                    $destServer.Query($sql, $systemDb)
+                                    $null = $destServer.Query($sql, $systemDb)
                                 } catch {
                                     # Don't care - long story having to do with duplicate stuff
                                     # here to avoid an empty catch

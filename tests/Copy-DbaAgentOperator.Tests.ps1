@@ -73,7 +73,8 @@ Describe $CommandName -Tag IntegrationTests {
                 Operator    = @($operatorName1, $operatorName2)
             }
             $results = Copy-DbaAgentOperator @splatCopyOperators
-            $results.Status.Count | Should -Be 2
+            # Counts the output itself, $results.Status.Count would skip a $null written by the command
+            @($results).Count | Should -Be 2
             $results.Status | Should -Be @("Successful", "Successful")
         }
 

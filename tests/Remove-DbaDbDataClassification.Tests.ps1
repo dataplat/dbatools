@@ -61,6 +61,8 @@ Describe $CommandName -Tag IntegrationTests {
             $classification | Should -Not -BeNullOrEmpty
 
             $result = $classification | Remove-DbaDbDataClassification
+            # Counts the output itself, $result.Status would skip a $null written by the command
+            @($result).Count | Should -Be 1
             $result.Status | Should -Be "Removed"
 
             $afterRemove = Get-DbaDbDataClassification -SqlInstance $TestConfig.InstanceSingle -Database $dbName -Column "Email"

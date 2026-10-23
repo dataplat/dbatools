@@ -125,23 +125,27 @@ function Revoke-DbaAgPermission {
         }
 
         foreach ($instance in $SqlInstance) {
-            if ($perm -contains "CreateAnyDatabase") {
-                try {
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-                } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-                }
-
+            try {
+                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+            if ($Permission -contains "CreateAnyDatabase") {
                 foreach ($ag in $AvailabilityGroup) {
-                    try {
-                        $server.Query("ALTER AVAILABILITY GROUP $ag GRANT CREATE ANY DATABASE")
-                    } catch {
-                        Stop-Function -Message "Failure" -ErrorRecord $_ -Target $instance
-                        return
+                    if ($Pscmdlet.ShouldProcess($server.Name, "Revoking CreateAnyDatabase on $ag")) {
+                        try {
+                            # An availability group knows only GRANT and DENY CREATE ANY DATABASE, SMO revokes with the DENY
+                            $server.RevokeAvailabilityGroupCreateDatabasePrivilege($ag)
+                            $server.Alter()
+                        } catch {
+                            Stop-Function -Message "Failure executing RevokeAvailabilityGroupCreateDatabasePrivilege for Availability Group $ag" -ErrorRecord $_ -Target $instance
+                            return
+                        }
                     }
                 }
-            } elseif ($Login) {
-                $InputObject += Get-DbaLogin -SqlInstance $instance -SqlCredential $SqlCredential -Login $Login
+            }
+            if ($Login) {
+                $InputObject += Get-DbaLogin -SqlInstance $server -SqlCredential $SqlCredential -Login $Login
                 foreach ($account in $Login) {
                     if ($account -notin $InputObject.Name) {
                         try {

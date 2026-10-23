@@ -114,7 +114,7 @@ function Enable-DbaTraceFlag {
                 if ($Pscmdlet.ShouldProcess($instance, "Enabling flag '$tf'")) {
                     try {
                         $query = "DBCC TRACEON($tf, -1)"
-                        $server.Query($query)
+                        $null = $server.Query($query)
                         $server.Refresh()
                     } catch {
                         $TraceFlagInfo.Status = "Failed"

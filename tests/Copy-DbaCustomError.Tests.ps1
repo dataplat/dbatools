@@ -66,6 +66,8 @@ Describe $CommandName -Tag IntegrationTests {
                 CustomError = 60000
             }
             $copyResults = Copy-DbaCustomError @splatCopyError
+            # Counts the output itself, $copyResults.Status.Count would skip a $null written by the command
+            @($copyResults).Count | Should -Be 2
             $copyResults.Name[0] | Should -Be "60000:'us_english'"
             $copyResults.Name[1] | Should -Match "60000\:'Fran"
             $copyResults.Status | Should -Be @("Successful", "Successful")

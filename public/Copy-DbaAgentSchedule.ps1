@@ -198,7 +198,7 @@ function Copy-DbaAgentSchedule {
                         $sql = $currentschedule.Script() | Out-String
 
                         Write-Message -Level Debug -Message $sql
-                        $destServer.Query($sql)
+                        $null = $destServer.Query($sql)
 
                         $copySharedScheduleStatus.Status = "Successful"
                         $copySharedScheduleStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject

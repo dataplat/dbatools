@@ -137,6 +137,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "is now running after start" {
             $runningResults = Get-DbaTrace -SqlInstance $TestConfig.InstanceSingle -Id $traceid | Start-DbaTrace
+            # Counts the output itself, $runningResults.Id would skip a $null written by the command
+            @($runningResults).Count | Should -Be 1
             $runningResults.Id | Should -Be $traceid
             $runningResults.IsRunning | Should -Be $true
         }

@@ -173,12 +173,12 @@ function Copy-DbaResourceGovernor {
 
                                 Write-Message -Level Verbose -Message "Creating function."
                                 $script = $sourceClassifierFunction.Script() | Where-Object { $_ -notmatch '^SET QUOTED_IDENTIFIER' -and $_ -notmatch '^SET ANSI_NULLS' }
-                                $destServer.Query($script)
+                                $null = $destServer.Query($script)
 
                                 $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = $fullyQualifiedFunctionName);"
                                 Write-Message -Level Debug -Message $sql
                                 Write-Message -Level Verbose -Message "Mapping Resource Governor classifier function."
-                                $destServer.Query($sql)
+                                $null = $destServer.Query($sql)
 
                                 $copyResourceGovClassifierFunc.Status = "Successful"
                                 $copyResourceGovClassifierFunc.Notes = "The new classifier function has been created"
@@ -187,7 +187,7 @@ function Copy-DbaResourceGovernor {
                                 $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
                                 Write-Message -Level Debug -Message $sql
                                 Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
-                                $destServer.Query($sql)
+                                $null = $destServer.Query($sql)
                             } else {
                                 if ($Force -eq $false) {
                                     $copyResourceGovClassifierFunc.Status = "Skipped"
@@ -198,12 +198,12 @@ function Copy-DbaResourceGovernor {
                                     $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = NULL);"
                                     Write-Message -Level Debug -Message $sql
                                     Write-Message -Level Verbose -Message "Disabling the Resource Governor."
-                                    $destServer.Query($sql)
+                                    $null = $destServer.Query($sql)
 
                                     $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
                                     Write-Message -Level Debug -Message $sql
                                     Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
-                                    $destServer.Query($sql)
+                                    $null = $destServer.Query($sql)
 
                                     Write-Message -Level Verbose -Message "Dropping the destination classifier function."
                                     $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
@@ -212,17 +212,17 @@ function Copy-DbaResourceGovernor {
 
                                     Write-Message -Level Verbose -Message "Re-creating the Resource Governor classifier function."
                                     $script = $sourceClassifierFunction.Script() | Where-Object { $_ -notmatch '^SET QUOTED_IDENTIFIER' -and $_ -notmatch '^SET ANSI_NULLS' }
-                                    $destServer.Query($script)
+                                    $null = $destServer.Query($script)
 
                                     $sql = "ALTER RESOURCE GOVERNOR WITH (CLASSIFIER_FUNCTION = $fullyQualifiedFunctionName);"
                                     Write-Message -Level Debug -Message $sql
                                     Write-Message -Level Verbose -Message "Mapping Resource Governor classifier function."
-                                    $destServer.Query($sql)
+                                    $null = $destServer.Query($sql)
 
                                     $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
                                     Write-Message -Level Debug -Message $sql
                                     Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
-                                    $destServer.Query($sql)
+                                    $null = $destServer.Query($sql)
 
                                     $copyResourceGovClassifierFunc.Status = "Successful"
                                     $copyResourceGovClassifierFunc.Notes = "The old classifier function has been overwritten."
@@ -237,7 +237,7 @@ function Copy-DbaResourceGovernor {
                         $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
                         Write-Message -Level Debug -Message $sql
                         Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
-                        $destServer.Query($sql)
+                        $null = $destServer.Query($sql)
                         Write-Message -Level Verbose -Message "Issue reconfiguring Resource Governor on $destinstance | $PSItem"
                     }
                 }
@@ -247,7 +247,7 @@ function Copy-DbaResourceGovernor {
             if ($ResourcePool) {
                 $pools = $sourceServer.ResourceGovernor.ResourcePools | Where-Object Name -In $ResourcePool
             } elseif ($ExcludeResourcePool) {
-                $pool = $sourceServer.ResourceGovernor.ResourcePools | Where-Object Name -NotIn $ExcludeResourcePool
+                $pools = $sourceServer.ResourceGovernor.ResourcePools | Where-Object { $_.Name -notin "internal", "default" -and $_.Name -notin $ExcludeResourcePool }
             } else {
                 $pools = $sourceServer.ResourceGovernor.ResourcePools | Where-Object { $_.Name -notin "internal", "default" }
             }
@@ -282,7 +282,8 @@ function Copy-DbaResourceGovernor {
                             try {
                                 $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential
                                 $destPool = $destServer.ResourceGovernor.ResourcePools[$poolName]
-                                $workloadGroups = $destPool.WorkloadGroups
+                                # Collected first, a drop inside the enumeration would modify the collection
+                                $workloadGroups = @($destPool.WorkloadGroups)
                                 foreach ($workloadGroup in $workloadGroups) {
                                     $workloadGroup.Drop()
                                 }
@@ -298,7 +299,7 @@ function Copy-DbaResourceGovernor {
                                 $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
                                 Write-Message -Level Debug -Message $sql
                                 Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
-                                $destServer.Query($sql)
+                                $null = $destServer.Query($sql)
                                 continue
                             }
                         }
@@ -310,7 +311,7 @@ function Copy-DbaResourceGovernor {
                         $sql = $pool.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
                         Write-Message -Level Verbose -Message "Copying pool $poolName."
-                        $destServer.Query($sql)
+                        $null = $destServer.Query($sql)
 
                         $copyResourceGovPool.Status = "Successful"
                         $copyResourceGovPool | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -332,7 +333,7 @@ function Copy-DbaResourceGovernor {
                             $sql = $workloadGroup.Script() | Out-String
                             Write-Message -Level Debug -Message $sql
                             Write-Message -Level Verbose -Message "Copying $workgroupName."
-                            $destServer.Query($sql)
+                            $null = $destServer.Query($sql)
 
                             $copyResourceGovWorkGroup.Status = "Successful"
                             $copyResourceGovWorkGroup | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -340,7 +341,7 @@ function Copy-DbaResourceGovernor {
                             $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
                             Write-Message -Level Debug -Message $sql
                             Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
-                            $destServer.Query($sql)
+                            $null = $destServer.Query($sql)
                         }
                     } catch {
                         if ($copyResourceGovWorkGroup) {
@@ -363,15 +364,15 @@ function Copy-DbaResourceGovernor {
                     try {
                         if (!$sourceServer.ResourceGovernor.Enabled) {
                             $sql = "ALTER RESOURCE GOVERNOR DISABLE"
-                            $destServer.Query($sql)
+                            $null = $destServer.Query($sql)
 
                             $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE;"
                             Write-Message -Level Debug -Message $sql
                             Write-Message -Level Verbose -Message "Reconfiguring Resource Governor."
-                            $destServer.Query($sql)
+                            $null = $destServer.Query($sql)
                         } else {
                             $sql = "ALTER RESOURCE GOVERNOR RECONFIGURE"
-                            $destServer.Query($sql)
+                            $null = $destServer.Query($sql)
                         }
                     } catch {
                         $altermsg = $_.Exception

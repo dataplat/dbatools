@@ -566,8 +566,17 @@ function Install-DbaInstance {
                 }
                 # resolve names
                 Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Resolving computer name"
-                $resolvedName = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential
-                if ($computer.IsLocalHost) {
+                # Without a resolved name, the name given is used, as Update-DbaInstance does. An empty name made every
+                # later step fail on it, starting with the check for a pending reboot.
+                try {
+                    $resolvedName = Resolve-DbaNetworkName -ComputerName $computer -Credential $Credential -EnableException
+                } catch {
+                    Write-Message -Level Verbose -Message "Could not resolve $($computer.ComputerName) (this may occur with CredSSP or workgroup environments). Using provided name directly."
+                    $resolvedName = $null
+                }
+                if (-not $resolvedName) {
+                    $fullComputerName = $computer.ComputerName
+                } elseif ($computer.IsLocalHost) {
                     # Don't add a domain to localhost as this might add a domain that is later not recognized by .IsLocalHost anymore (#6976).
                     $fullComputerName = $resolvedName.ComputerName
                 } else {

@@ -100,6 +100,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns success status" {
+            # Counts the output itself, $results.Status.Count would skip a $null written by the command
+            @($results).Count | Should -Be 1
             $results.Name | Should -Be $sourceJobName
             $results.Status | Should -Be "Successful"
             $results.Notes | Should -BeLike "Synchronized * job step(s)"

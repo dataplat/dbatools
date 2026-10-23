@@ -678,12 +678,71 @@ RequestType = PKCS10
             $firstOnlyCert.Thumbprint | Should -Not -BeNullOrEmpty
         }
 
+        It "Removes its request folder" {
+            # The removal sat after the output, so the stopped command left the folder behind; it is in a finally now.
+            # The AfterAll above still removes it, so that a regression does not leave it in the temp folder.
+            $firstOnlyFolder | Should -Not -BeNullOrEmpty
+            Test-Path -Path $firstOnlyFolder | Should -BeFalse
+        }
+
         It "Completes its progress bar" {
             # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
             # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
             $openIds = $firstOnlyRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
             $firstOnlyRecords | Where-Object Activity -eq "Executing New-DbaComputerCertificate" | Should -Not -BeNullOrEmpty
             $openIds | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "With -WhatIf" {
+        BeforeAll {
+            # The request folder and its request.inf are written before any ShouldProcess. With -WhatIf, New-Item and
+            # Set-Content skip that through $WhatIfPreference, so nothing may be left behind, also now that the folder
+            # is removed in a finally. With CaServer and CaName given, nothing asks Active Directory, and with -WhatIf
+            # certreq never runs.
+            $requestFoldersBefore = @((Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Directory -Filter "certreq-*").Name)
+            $splatWhatIfCertificate = @{
+                CaServer = "nosuchca.dbatools.invalid"
+                CaName   = "NoSuchCA"
+                WhatIf   = $true
+            }
+            $whatIfResult = New-DbaComputerCertificate @splatWhatIfCertificate
+            $whatIfWarning = $WarnVar
+            $requestFoldersAfter = @((Get-ChildItem -Path ([System.IO.Path]::GetTempPath()) -Directory -Filter "certreq-*").Name)
+        }
+
+        It "Creates no certificate and does not warn" {
+            $whatIfResult | Should -BeNullOrEmpty
+            $whatIfWarning | Should -BeNullOrEmpty
+        }
+
+        It "Leaves no request folder behind" {
+            $requestFoldersAfter | Where-Object { $PSItem -notin $requestFoldersBefore } | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "With two computers whose names cannot be resolved" {
+        BeforeAll {
+            # For a name that does not resolve, the command guesses the full name from the domain of this session. The
+            # guess was built from $ComputerName, which holds all the names, so two names gave "first second.domain".
+            # -WhatIf keeps the command from doing anything with the guessed names.
+            $unresolvedNames = @("nohostone$(Get-Random)", "nohosttwo$(Get-Random)")
+            $splatUnresolved = @{
+                ComputerName  = $unresolvedNames
+                CaServer      = "nosuchca.dbatools.invalid"
+                CaName        = "NoSuchCA"
+                WhatIf        = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $null = New-DbaComputerCertificate @splatUnresolved
+            $unresolvedWarnings = @($WarnVar | ForEach-Object { "$PSItem" })
+        }
+
+        It "Guesses the name of each computer from its own name" {
+            $guesses = @($unresolvedWarnings | Where-Object { $PSItem -like "*Guessing it's*" })
+            $guesses.Count | Should -Be 2
+            $guesses[0] | Should -BeLike "*Guessing it's $($unresolvedNames[0]).$env:USERDNSDOMAIN"
+            $guesses[1] | Should -BeLike "*Guessing it's $($unresolvedNames[1]).$env:USERDNSDOMAIN"
         }
     }
 }
