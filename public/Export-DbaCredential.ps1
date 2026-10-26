@@ -120,36 +120,37 @@ function Export-DbaCredential {
         }
 
         foreach ($instance in $SqlInstance) {
-            try {
-                # Do we need a dedicated admin connection to the source for password retrieval?
-                # If passwords are excluded, we don't need a DAC
-                if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
-
-                # Do we have a dedicated admin connection already?
-                $dacConnected = Test-DacConnection -InputObject $instance
-
-                $dacOpened = $false
-                if ($dacNeeded) {
-                    if ($dacConnected) {
-                        Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
-                        $server = $instance.InputObject
-                    } else {
-                        Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
-                        $dacOpened = $true
-                    }
-                } else {
-                    Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
-                }
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
             # The dedicated admin connection is closed in the finally: the continue for nothing to export, the -Continue for a
             # failed write, a throw under EnableException and a stopped pipeline skipped the disconnect at the end, and SQL Server
-            # allows only one dedicated admin connection per instance.
+            # allows only one dedicated admin connection per instance. The finally starts before the connection opens, as in
+            # Export-DbaLinkedServer, so that no statement runs between the opened connection and its finally.
+            $dacOpened = $false
             try {
+                try {
+                    # Do we need a dedicated admin connection to the source for password retrieval?
+                    # If passwords are excluded, we don't need a DAC
+                    if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+
+                    # Do we have a dedicated admin connection already?
+                    $dacConnected = Test-DacConnection -InputObject $instance
+
+                    if ($dacNeeded) {
+                        if ($dacConnected) {
+                            Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                            $server = $instance.InputObject
+                        } else {
+                            Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                            $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                            $dacOpened = $true
+                        }
+                    } else {
+                        Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
+                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                    }
+                } catch {
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                }
+
                 if ($ExcludePassword) {
                     $credentials = foreach ($cred in $server.Credentials) {
                         [PSCustomObject]@{
