@@ -7,6 +7,26 @@ param(
 
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
+        BeforeDiscovery {
+            $emptySecureToken = New-Object System.Security.SecureString
+            $emptySecureToken.MakeReadOnly()
+            $scriptMethodToken = [pscustomobject]@{}
+            $splatAddScriptMethodTokenMember = @{
+                InputObject = $scriptMethodToken
+                MemberType  = "ScriptMethod"
+                Name        = "GetAccessToken"
+                Value       = { "not-a-clr-renewable-token" }
+            }
+            Add-Member @splatAddScriptMethodTokenMember
+            $script:invalidAccessTokenCases = @(
+                @{ Name = "numeric zero"; Value = 0 }
+                @{ Name = "boolean false"; Value = $false }
+                @{ Name = "an empty SecureString"; Value = $emptySecureToken }
+                @{ Name = "an object with a blank Token property"; Value = [pscustomobject]@{ Token = "" } }
+                @{ Name = "an object with only a PowerShell GetAccessToken script method"; Value = $scriptMethodToken }
+            )
+        }
+
         It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
@@ -17,6 +37,7 @@ Describe $CommandName -Tag UnitTests {
                 "PublishXml",
                 "Database",
                 "ConnectionString",
+                "AccessToken",
                 "GenerateDeploymentReport",
                 "ScriptOnly",
                 "Type",
@@ -27,6 +48,120 @@ Describe $CommandName -Tag UnitTests {
                 "DacFxPath"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+
+        It "Rejects a SQL credential and access token together" {
+            $securePassword = New-Object System.Security.SecureString
+            foreach ($passwordCharacter in "unused".ToCharArray()) {
+                $securePassword.AppendChar($passwordCharacter)
+            }
+            $securePassword.MakeReadOnly()
+            $credential = New-Object System.Management.Automation.PSCredential -ArgumentList "unused", $securePassword
+            $splatConflictingAuthentication = @{
+                SqlInstance     = "not-used"
+                SqlCredential   = $credential
+                AccessToken     = "unused-token"
+                Path            = "not-used.dacpac"
+                Database        = "not-used"
+                EnableException = $true
+            }
+
+            { Publish-DbaDacPackage @splatConflictingAuthentication } | Should -Throw "*cannot be used together*"
+        }
+
+        It "Rejects an explicitly bound blank access token before connecting" {
+            $splatBlankAccessToken = @{
+                ConnectionString = "Server=not-used"
+                AccessToken      = ""
+                Path             = "not-used.dacpac"
+                Database         = "not-used"
+                EnableException  = $true
+            }
+
+            { Publish-DbaDacPackage @splatBlankAccessToken } | Should -Throw "*AccessToken*non-empty*"
+        }
+
+        It "Rejects an explicitly bound null access token before connecting" {
+            $splatNullAccessToken = @{
+                ConnectionString = "Server=not-used"
+                AccessToken      = $null
+                Path             = "not-used.dacpac"
+                Database         = "not-used"
+                EnableException  = $true
+            }
+
+            { Publish-DbaDacPackage @splatNullAccessToken } | Should -Throw "*AccessToken*non-empty*"
+        }
+
+        It "Rejects <Name> as an access token before connecting" -ForEach $script:invalidAccessTokenCases {
+            $splatInvalidAccessToken = @{
+                ConnectionString = "Server=not-used"
+                AccessToken      = $Value
+                Path             = "not-used.dacpac"
+                Database         = "not-used"
+                EnableException  = $true
+            }
+
+            { Publish-DbaDacPackage @splatInvalidAccessToken } | Should -Throw "*AccessToken*non-empty*"
+        }
+
+        It "Accepts established access token shapes" {
+            (Get-Command Publish-DbaDacPackage).Parameters["AccessToken"].ParameterType | Should -Be ([PSObject])
+        }
+
+        It "Constructs DacServices with the exact universal authentication provider overload" {
+            InModuleScope dbatools {
+                if (-not ("DbaTestRenewableAccessToken" -as [type])) {
+                    $renewableTokenSource = @"
+using Microsoft.SqlServer.Management.Common;
+
+public sealed class DbaTestRenewableAccessToken : IRenewableToken
+{
+    public int CallCount { get; private set; }
+    public System.DateTimeOffset TokenExpiry { get; set; }
+    public string Resource { get; set; }
+    public string Tenant { get; set; }
+    public string UserId { get; set; }
+
+    string IRenewableToken.GetAccessToken()
+    {
+        CallCount++;
+        return "renewed-token-" + CallCount;
+    }
+}
+"@
+                    $splatRenewableTokenType = @{
+                        TypeDefinition       = $renewableTokenSource
+                        ReferencedAssemblies = [Microsoft.SqlServer.Management.Common.IRenewableToken].Assembly.Location
+                        IgnoreWarnings       = $true
+                        WarningAction        = "SilentlyContinue"
+                        ErrorAction          = "Stop"
+                    }
+                    Add-Type @splatRenewableTokenType
+                }
+                $renewableToken = New-Object DbaTestRenewableAccessToken
+                $services = New-DbaDacService -ConnectionString "Server=unused.database.windows.net;Database=master;Encrypt=True" -AccessToken $renewableToken
+                $longTokenServices = New-DbaDacService -ConnectionString "Server=unused.database.windows.net;Database=master;Encrypt=True" -AccessToken ("x" * 129)
+                $providerType = "Dataplat.Dbatools.Utility.DacAccessTokenProvider" -as [type]
+                $provider = New-Object $providerType -ArgumentList $renewableToken, $true
+                $secureToken = New-Object System.Security.SecureString
+                foreach ($secureTokenCharacter in "secure-proof".ToCharArray()) {
+                    $secureToken.AppendChar($secureTokenCharacter)
+                }
+                $secureToken.MakeReadOnly()
+                $secureTokenProvider = New-Object $providerType -ArgumentList $secureToken, $false
+                $constructorTypes = [type[]]@([string], [Microsoft.SqlServer.Dac.IUniversalAuthProvider])
+                $universalAuthConstructor = [Microsoft.SqlServer.Dac.DacServices].GetConstructor($constructorTypes)
+
+                $services | Should -BeOfType ([Microsoft.SqlServer.Dac.DacServices])
+                $longTokenServices | Should -BeOfType ([Microsoft.SqlServer.Dac.DacServices])
+                $universalAuthConstructor.GetParameters()[1].ParameterType | Should -Be ([Microsoft.SqlServer.Dac.IUniversalAuthProvider])
+                $renewableToken.CallCount | Should -Be 0
+                $provider -is [Microsoft.SqlServer.Dac.IUniversalAuthProvider] | Should -BeTrue
+                $provider.GetValidAccessToken() | Should -Be "renewed-token-1"
+                $provider.GetValidAccessToken() | Should -Be "renewed-token-2"
+                $secureTokenProvider.GetValidAccessToken() | Should -Be "secure-proof"
+            }
         }
     }
 }
@@ -44,7 +179,7 @@ Describe $CommandName -Tag IntegrationTests {
             INSERT dbo.example
             SELECT top 100 object_id
             FROM sys.objects")
-        $publishprofile = New-DbaDacProfile -SqlInstance $TestConfig.InstanceCopy1 -Database $dbname -Path $TestConfig.Temp
+        $script:publishprofile = New-DbaDacProfile -SqlInstance $TestConfig.InstanceCopy1 -Database $dbname -Path $TestConfig.Temp
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -55,7 +190,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $dbname
-        Remove-Item -Path $publishprofile.FileName -ErrorAction SilentlyContinue
+        Remove-Item -Path $script:publishprofile.FileName -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -67,15 +202,15 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $extractOptions = New-DbaDacOption -Action Export
             $extractOptions.ExtractAllTableData = $true
-            $dacpac = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceCopy1 -Database $dbname -DacOption $extractOptions
+            $script:dacpac = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceCopy1 -Database $dbname -DacOption $extractOptions
         }
 
         AfterAll {
-            if ($dacpac.Path) { Remove-Item -Path $dacpac.Path -ErrorAction SilentlyContinue }
+            if ($script:dacpac.Path) { Remove-Item -Path $script:dacpac.Path -ErrorAction SilentlyContinue }
         }
 
         It "Performs an xml-based deployment" {
-            $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance $TestConfig.InstanceCopy2
+            $results = $script:dacpac | Publish-DbaDacPackage -PublishXml $script:publishprofile.FileName -Database $dbname -SqlInstance $TestConfig.InstanceCopy2
             $results.Result | Should -BeLike "*Update complete.*"
             $ids = Invoke-DbaQuery -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -Query "SELECT id FROM dbo.example"
             $ids.id | Should -Not -BeNullOrEmpty
@@ -83,7 +218,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Performs an SMO-based deployment" {
             $options = New-DbaDacOption -Action Publish
-            $results = $dacpac | Publish-DbaDacPackage -DacOption $options -Database $dbname -SqlInstance $TestConfig.InstanceCopy2
+            $results = $script:dacpac | Publish-DbaDacPackage -DacOption $options -Database $dbname -SqlInstance $TestConfig.InstanceCopy2
             $results.Result | Should -BeLike "*Update complete.*"
             $ids = Invoke-DbaQuery -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -Query "SELECT id FROM dbo.example"
             $ids.id | Should -Not -BeNullOrEmpty
@@ -91,7 +226,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Performs an SMO-based deployment and generates a deployment report" {
             $options = New-DbaDacOption -Action Publish
-            $results = $dacpac | Publish-DbaDacPackage -DacOption $options -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -GenerateDeploymentReport
+            $results = $script:dacpac | Publish-DbaDacPackage -DacOption $options -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -GenerateDeploymentReport
             $results.Result | Should -BeLike "*Update complete.*"
             $results.DeploymentReport | Should -Not -BeNullOrEmpty
             $deploymentReportContent = Get-Content -Path $results.DeploymentReport
@@ -101,7 +236,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Performs a script generation without deployment" {
-            $results = $dacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -ScriptOnly -PublishXml $publishprofile.FileName
+            $results = $script:dacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -ScriptOnly -PublishXml $script:publishprofile.FileName
             $results.Result | Should -BeLike "*Reporting and scripting deployment plan (Complete)*"
             $results.DatabaseScriptPath | Should -Not -BeNullOrEmpty
             Test-Path ($results.DatabaseScriptPath) | Should -Be $true
@@ -112,7 +247,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Performs a script generation without deployment and using an input options object" {
             $opts = New-DbaDacOption -Action Publish
             $opts.GenerateDeploymentScript = $true
-            $results = $dacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -DacOption $opts
+            $results = $script:dacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -DacOption $opts
             $results.Result | Should -BeLike "*Reporting and scripting deployment plan (Complete)*"
             $results.DatabaseScriptPath | Should -Not -BeNullOrEmpty
             Test-Path ($results.DatabaseScriptPath) | Should -Be $true
@@ -129,7 +264,7 @@ Describe $CommandName -Tag IntegrationTests {
                 }
             }
             $opts = New-DbaDacOption @splatOption
-            $results = $dacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -DacOption $opts
+            $results = $script:dacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -DacOption $opts
             $results.Result | Should -BeLike "*Reporting and scripting deployment plan (Complete)*"
             $results.DatabaseScriptPath | Should -Be "$($TestConfig.Temp)\testdb.sql"
             Test-Path ($results.DatabaseScriptPath) | Should -Be $true
@@ -140,31 +275,70 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Bacpac tests" {
         BeforeAll {
             $extractOptions = New-DbaDacOption -Action Export -Type Bacpac
-            $bacpac = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceCopy1 -Database $dbname -DacOption $extractOptions -Type Bacpac
+            $script:bacpac = Export-DbaDacPackage -SqlInstance $TestConfig.InstanceCopy1 -Database $dbname -DacOption $extractOptions -Type Bacpac
         }
 
         AfterAll {
-            if ($bacpac.Path) { Remove-Item -Path $bacpac.Path -ErrorAction SilentlyContinue }
+            if ($script:bacpac.Path) { Remove-Item -Path $script:bacpac.Path -ErrorAction SilentlyContinue }
         }
 
         It "Performs an SMO-based deployment" {
             $options = New-DbaDacOption -Action Publish -Type Bacpac
-            $results = $bacpac | Publish-DbaDacPackage -Type Bacpac -DacOption $options -Database $dbname -SqlInstance $TestConfig.InstanceCopy2
+            $results = $script:bacpac | Publish-DbaDacPackage -Type Bacpac -DacOption $options -Database $dbname -SqlInstance $TestConfig.InstanceCopy2
             $results.Result | Should -BeLike "*Updating database (Complete)*"
+            $results.ConnectionString | Should -Not -BeNullOrEmpty
+            $results.ConnectionString | Should -Not -Match "(?i)(Password|Pwd)=(?!\*{8}(?:;|$))[^;]*"
             $ids = Invoke-DbaQuery -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -Query "SELECT id FROM dbo.example"
             $ids.id | Should -Not -BeNullOrEmpty
         }
 
         It "Auto detects that a .bacpac is being used and sets the Type to Bacpac" {
             $options = New-DbaDacOption -Action Publish -Type Bacpac
-            $results = $bacpac | Publish-DbaDacPackage -DacOption $options -Database $dbname -SqlInstance $TestConfig.InstanceCopy2
+            $results = $script:bacpac | Publish-DbaDacPackage -DacOption $options -Database $dbname -SqlInstance $TestConfig.InstanceCopy2
             $results.Result | Should -BeLike "*Updating database (Complete)*"
             $ids = Invoke-DbaQuery -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -Query "SELECT id FROM dbo.example"
             $ids.id | Should -Not -BeNullOrEmpty
         }
 
         It "Should throw when ScriptOnly is used" {
-            { $bacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -ScriptOnly -Type Bacpac -EnableException } | Should -Throw
+            { $script:bacpac | Publish-DbaDacPackage -Database $dbname -SqlInstance $TestConfig.InstanceCopy2 -ScriptOnly -Type Bacpac -EnableException } | Should -Throw
+        }
+
+        It "Throws and emits no success result when a BACPAC import cannot authenticate" {
+            $badPassword = New-Object System.Security.SecureString
+            foreach ($character in "definitely-wrong".ToCharArray()) {
+                $badPassword.AppendChar($character)
+            }
+            $badPassword.MakeReadOnly()
+            $badUserName = "dbatools_invalid_$([guid]::NewGuid().ToString("N"))"
+            $badCredential = New-Object System.Management.Automation.PSCredential -ArgumentList $badUserName, $badPassword
+            $splatBadConnection = @{
+                SqlInstance   = $TestConfig.InstanceCopy2
+                SqlCredential = $badCredential
+                Database      = "master"
+            }
+            $badConnectionString = New-DbaConnectionString @splatBadConnection
+            $splatPublishFailure = @{
+                ConnectionString = $badConnectionString
+                Database         = $dbname
+                Path             = $script:bacpac.Path
+                Type             = "Bacpac"
+                EnableException  = $true
+                Confirm          = $false
+            }
+
+            $publishOutput = New-Object System.Collections.ArrayList
+            $failureRecord = $null
+            try {
+                Publish-DbaDacPackage @splatPublishFailure | ForEach-Object {
+                    $null = $publishOutput.Add($PSItem)
+                }
+            } catch {
+                $failureRecord = $PSItem
+            }
+
+            $failureRecord.Exception.Message | Should -BeLike "*Login failed*"
+            $publishOutput | Should -BeNullOrEmpty
         }
     }
 }

@@ -49,7 +49,7 @@ CROSS JOIN
 
 TRUNCATE TABLE Tab1;
 DBCC SHRINKFILE ($databaseName1, TRUNCATEONLY);
-DBCC SHRINKFILE ($($databaseName1)_Log, TRUNCATEONLY);
+DBCC SHRINKFILE ($($databaseName1)_log, TRUNCATEONLY);
 "@
 
             $null = $db1.Query($sqlGrowthAndShrink)

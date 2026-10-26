@@ -198,9 +198,9 @@ WHERE SCHEMA_NAME(o.schema_id) = '$escapedSchema'
             $exists = $Db.Query($checkSql).PropExists
 
             if ($exists -gt 0) {
-                $Db.Query("EXEC sys.sp_updateextendedproperty @name = N'$escapedPropName', @value = N'$escapedValue', @level0type = N'SCHEMA', @level0name = N'$escapedSchema', @level1type = N'TABLE', @level1name = N'$escapedTable', @level2type = N'COLUMN', @level2name = N'$escapedColumn'")
+                $null = $Db.Query("EXEC sys.sp_updateextendedproperty @name = N'$escapedPropName', @value = N'$escapedValue', @level0type = N'SCHEMA', @level0name = N'$escapedSchema', @level1type = N'TABLE', @level1name = N'$escapedTable', @level2type = N'COLUMN', @level2name = N'$escapedColumn'")
             } else {
-                $Db.Query("EXEC sys.sp_addextendedproperty @name = N'$escapedPropName', @value = N'$escapedValue', @level0type = N'SCHEMA', @level0name = N'$escapedSchema', @level1type = N'TABLE', @level1name = N'$escapedTable', @level2type = N'COLUMN', @level2name = N'$escapedColumn'")
+                $null = $Db.Query("EXEC sys.sp_addextendedproperty @name = N'$escapedPropName', @value = N'$escapedValue', @level0type = N'SCHEMA', @level0name = N'$escapedSchema', @level1type = N'TABLE', @level1name = N'$escapedTable', @level2type = N'COLUMN', @level2name = N'$escapedColumn'")
             }
         }
     }

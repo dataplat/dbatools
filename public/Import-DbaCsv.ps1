@@ -751,9 +751,11 @@ function Import-DbaCsv {
                     Write-Progress -Id 2 -Activity "Analyzing column types" -Status "$percent% complete" -PercentComplete $percent
                 }
 
-                $inferredColumns = [Dataplat.Dbatools.Csv.Reader.CsvSchemaInference]::InferSchema($Path, $CsvOptions, $progressCallback)
-
-                Write-Progress -Id 2 -Activity "Analyzing column types" -Status "Complete" -Completed
+                try {
+                    $inferredColumns = [Dataplat.Dbatools.Csv.Reader.CsvSchemaInference]::InferSchema($Path, $CsvOptions, $progressCallback)
+                } finally {
+                    Write-Progress -Id 2 -Activity "Analyzing column types" -Status "Complete" -Completed
+                }
             } else {
                 # Sample-based inference
                 Write-Message -Level Verbose -Message "Sampling first $SampleRows rows for type inference..."
@@ -1493,13 +1495,20 @@ WHERE c.object_id = OBJECT_ID(@tableName)
 
                         $finalRowCountReported = Get-BulkRowsCopiedCount $bulkCopy
 
-                        $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+                        # -1 signals that the reflection lookup failed, not a wrapped counter, so it must not
+                        # reach Get-AdjustedTotalRowsCopied: fed in as a row count it inflates the total by
+                        # billions of rows (see #10675). The running total from the notifications is then the
+                        # best number available.
+                        if ($finalRowCountReported -ge 0) {
+                            $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+                        }
 
                         if ($completed) {
                             Write-Progress -Id 1 -Activity "Inserting $($script:totalRowsCopied) rows" -Status "Complete" -Completed
                         } else {
                             Write-Progress -Id 1 -Activity "Inserting $($script:totalRowsCopied) rows" -Status "Failed" -Completed
                         }
+                        Write-Progress -Activity "Importing from $file" -Completed
                     }
                 }
                 if ($PSCmdlet.ShouldProcess($instance, "Finalizing import")) {

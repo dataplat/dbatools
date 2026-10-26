@@ -245,10 +245,21 @@ function Add-DbaRegServer {
                             $newserver.CredentialPersistenceType = "PersistLoginNameAndPassword"
                             $newserver.Create()
 
-                            Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName | Where-Object Source -ne 'Azure Data Studio'
+                            # Buffered rather than streamed: a downstream early stop (| Select-Object -First 1)
+                            # would end this command at a streamed emission, before the disconnect below.
+                            $verifiedServer = Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName | Where-Object Source -ne 'Azure Data Studio'
                         } catch {
                             Stop-Function -Message "Failed to add $ServerName on $target" -ErrorRecord $_ -Continue
+                        } finally {
+                            # The verification call reconnects the store connection that Get-DbaRegServerGroup
+                            # already closed, and nothing closes it again - one session per call stayed open.
+                            # Closed in the finally, so a verification error or an early-stopped pipeline cannot
+                            # skip it; only a connection this module opened is ever closed.
+                            if ($newserver) {
+                                Disconnect-RegServer -Server $newserver
+                            }
                         }
+                        $verifiedServer
                     }
                 } else {
                     try {
@@ -261,10 +272,21 @@ function Add-DbaRegServer {
                         $newserver.OtherParams = $OtherParams
                         $newserver.Create()
 
-                        Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName | Where-Object Source -ne 'Azure Data Studio'
+                        # Buffered rather than streamed: a downstream early stop (| Select-Object -First 1)
+                        # would end this command at a streamed emission, before the disconnect below.
+                        $verifiedServer = Get-DbaRegServer -SqlInstance $reggroup.ParentServer -Name $Name -ServerName $ServerName | Where-Object Source -ne 'Azure Data Studio'
                     } catch {
                         Stop-Function -Message "Failed to add $ServerName on $target" -ErrorRecord $_ -Continue
+                    } finally {
+                        # The verification call reconnects the store connection that Get-DbaRegServerGroup
+                        # already closed, and nothing closes it again - one session per call stayed open.
+                        # Closed in the finally, so a verification error or an early-stopped pipeline cannot
+                        # skip it; only a connection this module opened is ever closed.
+                        if ($newserver) {
+                            Disconnect-RegServer -Server $newserver
+                        }
                     }
+                    $verifiedServer
                 }
             }
         }

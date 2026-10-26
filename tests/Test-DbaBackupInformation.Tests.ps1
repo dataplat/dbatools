@@ -83,6 +83,47 @@ Describe $CommandName -Tag UnitTests {
                 $output.IsVerified | Should -BeFalse
             }
         }
+
+        Context "Single missing backup file fails verification" {
+            BeforeEach {
+                $script:scalarServer = [PSCustomObject]@{
+                    Name                  = "sql1"
+                    ComputerName          = "sql1"
+                    VersionMajor          = 12
+                    DatabaseEngineEdition = "Enterprise"
+                    ServiceAccount        = "svc"
+                }
+                $script:scalarServer.PSObject.TypeNames.Insert(0, "Microsoft.SqlServer.Management.Smo.Server")
+                $script:scalarHistory = [PSCustomObject]@{
+                    Database         = "testdb"
+                    OriginalDatabase = "testdb"
+                    FileList         = @(
+                        [PSCustomObject]@{
+                            PhysicalName = "C:\data\testdb.mdf"
+                        }
+                    )
+                    FullName         = "\\backups\testdb.bak"
+                }
+
+                Mock Connect-DbaInstance { $script:scalarServer }
+                Mock Get-DbaDbPhysicalFile { @() }
+                Mock Get-DbaDatabase { $null }
+                Mock Get-DbaPathSep { "\" }
+                Mock Test-DbaLsnChain { $true }
+                Mock New-DbaDirectory { $true }
+                # A single scalar path on a single instance makes the real Test-DbaPath
+                # return a bare boolean instead of file objects; reading .FileExists off
+                # that boolean made a missing single backup file pass verification (#10512)
+                Mock Test-DbaPath { $false }
+            }
+
+            It "fails verification when the only backup file is missing" {
+                $output = $script:scalarHistory | Test-DbaBackupInformation -SqlInstance "sql1" -WarningVariable warnvar 3> $null
+
+                $output.IsVerified | Should -BeFalse
+                $warnvar | Should -BeLike "*cannot be read*"
+            }
+        }
     }
 }
 

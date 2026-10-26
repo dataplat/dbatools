@@ -37,9 +37,15 @@ function Get-DbaParquetPath {
 
     $searchPaths = @()
 
+    # The assemblies differ per PowerShell edition, so the folder of the running edition comes first
+    # and the flat folder is only the fallback for installations made before that split existed.
+    $editionFolder = Get-DbaParquetEditionFolder
+
     $configuredPath = Get-DbatoolsConfigValue -FullName "Path.DbatoolsParquet"
     if ($configuredPath) {
         $configuredPath = $configuredPath.TrimEnd("/", "\")
+        $searchPaths += Join-Path -Path $configuredPath -ChildPath $editionFolder | Join-Path -ChildPath "Parquet.dll"
+        $searchPaths += Join-Path -Path $configuredPath -ChildPath $editionFolder | Join-Path -ChildPath "Parquet.Net.dll"
         $searchPaths += Join-Path -Path $configuredPath -ChildPath "Parquet.dll"
         $searchPaths += Join-Path -Path $configuredPath -ChildPath "Parquet.Net.dll"
     }
@@ -47,6 +53,8 @@ function Get-DbaParquetPath {
     $dbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
     if ($dbatoolsData) {
         $dbatoolsData = $dbatoolsData.TrimEnd("/", "\")
+        $searchPaths += Join-Path -Path $dbatoolsData -ChildPath "parquet" | Join-Path -ChildPath $editionFolder | Join-Path -ChildPath "Parquet.dll"
+        $searchPaths += Join-Path -Path $dbatoolsData -ChildPath "parquet" | Join-Path -ChildPath $editionFolder | Join-Path -ChildPath "Parquet.Net.dll"
         $searchPaths += Join-Path -Path $dbatoolsData -ChildPath "parquet" | Join-Path -ChildPath "Parquet.dll"
         $searchPaths += Join-Path -Path $dbatoolsData -ChildPath "parquet" | Join-Path -ChildPath "Parquet.Net.dll"
     }

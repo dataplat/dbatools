@@ -26,6 +26,7 @@ $lines = $content -split "`n"
 # Track state for multi-line constructs
 $inHereStringSingle = $false
 $inHereStringDouble = $false
+$inBlockComment = $false
 $inHashtable = $false
 $hashtableLines = @()
 $hashtableStart = 0
@@ -33,6 +34,8 @@ $misalignedHashtables = @()
 
 # Patterns (using double quotes with escaping)
 $patternComment = "^\s*#"
+$patternBlockCommentStart = "<#"
+$patternBlockCommentEnd = "#>"
 $patternHereStringSingleStart = "@'"
 $patternHereStringDoubleStart = "@`""
 $patternHereStringSingleEnd = "^'@"
@@ -40,6 +43,7 @@ $patternHereStringDoubleEnd = "^`"@"
 $patternBacktick = "``\s*$"
 $patternBoolAttribute = "\[\s*(Parameter|CmdletBinding|OutputType|ValidateSet)\s*\([^]]*=\s*\`$(true|false)"
 $patternStaticNew = "::new\s*\("
+$patternDoubleQuotedString = "`"(?:[^`"``]|``.)*`""
 $patternSingleQuote = "(?<![@])'.+'"
 $patternPlainSplat = "\`$splat\s*="
 $patternNamedSplat = "\`$splat[A-Z][a-zA-Z0-9]*\s*="
@@ -55,7 +59,12 @@ $patternTrailingSpace = "\s+$"
 for ($i = 0; $i -lt $lines.Count; $i++) {
     $line = $lines[$i].TrimEnd("`r")
     $lineNum = $i + 1
-    $isComment = $line -match $patternComment
+
+    # Track block-comment state (<# ... #>), which $patternComment (line starting with #) does not cover
+    $lineIsBlockComment = $inBlockComment
+    if ($line -match $patternBlockCommentStart) { $inBlockComment = $true; $lineIsBlockComment = $true }
+    if ($line -match $patternBlockCommentEnd) { $inBlockComment = $false; $lineIsBlockComment = $true }
+    $isComment = ($line -match $patternComment) -or $lineIsBlockComment
 
     # Track here-string state
     if ($line -match $patternHereStringSingleStart) { $inHereStringSingle = $true }
@@ -82,7 +91,10 @@ for ($i = 0; $i -lt $lines.Count; $i++) {
         }
 
         # 4. No single quotes (except here-strings already handled above)
-        if ($line -match $patternSingleQuote) {
+        # Double-quoted spans are stripped first, so T-SQL literals nested in a
+        # double-quoted PowerShell string are not reported.
+        $lineWithoutDoubleQuoted = $line -replace $patternDoubleQuotedString, "`"`""
+        if ($lineWithoutDoubleQuoted -match $patternSingleQuote) {
             $violations += "Line ${lineNum}: Use double quotes instead of single quotes."
         }
 
@@ -108,7 +120,20 @@ for ($i = 0; $i -lt $lines.Count; $i++) {
         }
 
         # 8. Track hashtables for alignment check
+        # A hashtable that closes on its own line (@{ } or @{ Name = 1 }) is not
+        # tracked: the end pattern needs a line starting with a brace, so it would
+        # collect every later line with = until an unrelated closing brace. Inside
+        # a tracked hashtable such a line is an ordinary entry.
+        $opensHashtable = $false
         if ($line -match $patternHashtableStart) {
+            $braceDepth = 0
+            foreach ($character in $line.Substring($line.IndexOf("@{") + 1).ToCharArray()) {
+                if ($character -eq "{") { $braceDepth++ }
+                if ($character -eq "}") { $braceDepth-- }
+            }
+            $opensHashtable = $braceDepth -gt 0
+        }
+        if ($opensHashtable) {
             $inHashtable = $true
             $hashtableLines = @()
             $hashtableStart = $lineNum

@@ -78,6 +78,17 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should show trace flag 7745 meets best practice" {
             ($results | Where-Object Name -eq "Trace Flag 7745 Enabled").IsBestPractice | Should -Be $true
         }
+
+        It "Asks for trace flag 7752 only before SQL Server 2019, which loads Query Store asynchronously by default" {
+            # Until #10600 this read the nonexistent property MajorVersion, so 7752 was reported as missing on
+            # every version.
+            $traceFlag7752 = $results | Where-Object Name -eq "Trace Flag 7752 Enabled"
+            if ($svr.VersionMajor -ge 15) {
+                $traceFlag7752 | Should -BeNullOrEmpty
+            } else {
+                $traceFlag7752 | Should -Not -BeNullOrEmpty
+            }
+        }
     }
 
     Context "Exclude database works" {
@@ -92,6 +103,19 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should not return results for $($dbname)" {
             ($resultsExclude | Where-Object Database -eq $dbname) | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "When a system database is named explicitly" {
+        It "Warns about master instead of failing with a null array" {
+            $resultsSystemDb = Test-DbaDbQueryStore -SqlInstance $TestConfig.InstanceSingle -Database master -WarningVariable warnSystemDb -WarningAction SilentlyContinue
+            $warnSystemDb -join "`n" | Should -Match "Query Store cannot be enabled on system database master"
+            ($resultsSystemDb | Where-Object Database) | Should -BeNullOrEmpty
+        }
+
+        It "Does not fall back to evaluating every database once the filters leave nothing" {
+            $resultsSystemDb = Test-DbaDbQueryStore -SqlInstance $TestConfig.InstanceSingle -Database master -WarningAction SilentlyContinue
+            ($resultsSystemDb | Where-Object Database -eq $dbname) | Should -BeNullOrEmpty
         }
     }
 

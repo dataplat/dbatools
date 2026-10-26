@@ -14,9 +14,43 @@ Describe $CommandName -Tag UnitTests {
                 "Name",
                 "Simple",
                 "Language",
+                "TimeoutSec",
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    # The timeout only shows up in the call to Invoke-WebRequest, so there is nothing an integration
+    # test could assert without an unreachable host. We mock inside the module - a mock without
+    # -ModuleName never applies to the code under test and would silently test nothing.
+    Context "Passing the timeout to the web request" {
+        BeforeAll {
+            Mock -CommandName Invoke-WebRequest -ModuleName dbatools -MockWith { }
+        }
+
+        It "Uses 30 seconds when TimeoutSec is not specified" {
+            $null = Get-DbaKbUpdate -Name KB4057119 -WarningAction SilentlyContinue
+            $splatShouldInvoke = @{
+                CommandName     = "Invoke-WebRequest"
+                ModuleName      = "dbatools"
+                ParameterFilter = { $TimeoutSec -eq 30 }
+            }
+            Should -Invoke @splatShouldInvoke
+        }
+
+        It "Uses the value of TimeoutSec when it is specified" {
+            $null = Get-DbaKbUpdate -Name KB4057119 -TimeoutSec 7 -WarningAction SilentlyContinue
+            $splatShouldInvoke = @{
+                CommandName     = "Invoke-WebRequest"
+                ModuleName      = "dbatools"
+                ParameterFilter = { $TimeoutSec -eq 7 }
+            }
+            Should -Invoke @splatShouldInvoke
+        }
+
+        It "Rejects a timeout of zero" {
+            { Get-DbaKbUpdate -Name KB4057119 -TimeoutSec 0 } | Should -Throw -ExpectedMessage "*minimum allowed range*"
         }
     }
 }
@@ -29,6 +63,11 @@ Describe $CommandName -Tag IntegrationTests {
     #
     # We have to probe the search page and not the start page: on 2026-07-31 the start page answered
     # in one second while every search timed out, so a probe of the start page would not have helped.
+    # And we have to probe for a download button and not for the status code: on 2026-08-01 the search
+    # page answered 200 in about a second but rendered no results table for any query, so a probe of
+    # the status code let the tests run and fail. The download button is what the command itself looks
+    # for, so this probe is true exactly when the command can work.
+    # The same probe is used in Save-DbaKbUpdate.Tests.ps1.
     try {
         $splatCatalog = @{
             Uri             = "https://www.catalog.update.microsoft.com/Search.aspx?q=KB4057119"
@@ -36,7 +75,8 @@ Describe $CommandName -Tag IntegrationTests {
             TimeoutSec      = 30
             ErrorAction     = "Stop"
         }
-        $catalogReachable = (Invoke-WebRequest @splatCatalog).StatusCode -eq 200
+        $catalogResponse = Invoke-WebRequest @splatCatalog
+        $catalogReachable = [bool]($catalogResponse.InputFields | Where-Object { $PSItem.type -eq "Button" -and $PSItem.class -eq "flatBlueButtonDownload focus-only" })
     } catch {
         $catalogReachable = $false
     }
@@ -44,15 +84,15 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Querying the Microsoft Update Catalog" -Skip:(-not $catalogReachable) {
         It "successfully connects and parses link and title" {
             $results = Get-DbaKbUpdate -Name KB4057119
-            $results.Link -match "download.windowsupdate.com"
-            $results.Title -match "Cumulative Update"
+            $results.Link | Should -Match "download.windowsupdate.com"
+            $results.Title | Should -Match "Cumulative Update"
             $results.KBLevel | Should -Be 4057119
         }
 
         It "test with the -Simple param" {
             $results = Get-DbaKbUpdate -Name KB4577194 -Simple
-            $results.Link -match "download.windowsupdate.com"
-            $results.Title -match "Cumulative Update"
+            $results.Link | Should -Match "download.windowsupdate.com"
+            $results.Title | Should -Match "Cumulative Update"
             $results.KBLevel | Should -Be 4577194
         }
 
@@ -62,8 +102,8 @@ Describe $CommandName -Tag IntegrationTests {
 
             $results = Get-DbaKbUpdate -Name KB4564903
             $results.KBLevel | Should -Be 4564903
-            $results.Link -match "download.windowsupdate.com"
-            $results.Title -match "Cumulative Update"
+            $results.Link | Should -Match "download.windowsupdate.com"
+            $results.Title | Should -Match "Cumulative Update"
         }
 
         It "Call with multiple KBs" {
@@ -84,15 +124,15 @@ Describe $CommandName -Tag IntegrationTests {
         It "Call without specific language" {
             $results = Get-DbaKbUpdate -Name KB5003279
             $results.KBLevel | Should -Be 5003279
-            $results.Classification -match "Service Packs"
-            $results.Link -match "-enu_"
+            $results.Classification | Should -Match "Service Packs"
+            $results.Link | Should -Match "-enu_"
         }
 
         It "Call with specific language" {
             $results = Get-DbaKbUpdate -Name KB5003279 -Language ja
             $results.KBLevel | Should -Be 5003279
-            $results.Classification -match "Service Packs"
-            $results.Link -match "-jpn_"
+            $results.Classification | Should -Match "Service Packs"
+            $results.Link | Should -Match "-jpn_"
         }
     }
 }

@@ -30,6 +30,9 @@ Describe $CommandName -Tag UnitTests {
                 "Reattach",
                 "SetSourceReadOnly",
                 "ReuseSourceFolderStructure",
+                "DestinationDataDirectory",
+                "DestinationLogDirectory",
+                "DestinationFileStreamDirectory",
                 "IncludeSupportDbs",
                 "UseLastBackup",
                 "Continue",
@@ -45,6 +48,18 @@ Describe $CommandName -Tag UnitTests {
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
+
+        It "Rejects the destination directories with -DetachAttach before anything runs" {
+            # Detach/attach moves the files itself, so the directories belong to the backup/restore parameter set only (#10587)
+            $splatDetachWithDirectory = @{
+                Source                   = "dbatoolsci_nosuchsource"
+                Destination              = "dbatoolsci_nosuchdestination"
+                Database                 = "dbatoolsci_nosuchdb"
+                DetachAttach             = $true
+                DestinationDataDirectory = "C:\dbatoolsci_nosuchdirectory"
+            }
+            { Copy-DbaDatabase @splatDetachWithDirectory } | Should -Throw -ExceptionType ([System.Management.Automation.ParameterBindingException])
+        }
     }
 }
 
@@ -55,8 +70,9 @@ Describe $CommandName -Tag IntegrationTests {
 
         # For all the backups that we want to clean up after the test, we create a directory that we can delete at the end.
         # Other files can be written there as well, maybe we change the name of that variable later. But for now we focus on backups.
-        $NetworkPath = $TestConfig.Temp
         $random = Get-Random
+        $NetworkPath = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_copydatabase$random"
+        $null = New-Item -Path $NetworkPath -ItemType Directory -Force
         $backuprestoredb = "dbatoolsci_backuprestore$random"
         $backuprestoredb2 = "dbatoolsci_backuprestoreother$random"
         $detachattachdb = "dbatoolsci_detachattach$random"
@@ -105,6 +121,10 @@ Describe $CommandName -Tag IntegrationTests {
             Database    = $supportDbs
         }
         Remove-DbaDatabase @splatRemoveSupport -ErrorAction SilentlyContinue
+
+        # The backups taken during the tests stay behind otherwise, and every test file that runs
+        # afterwards then reports them as leftovers of its own.
+        Remove-Item -Path $NetworkPath -Recurse -Force -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -158,7 +178,6 @@ Describe $CommandName -Tag IntegrationTests {
             $db1.Name | Should -Be $db2.Name
             $db1.RecoveryModel | Should -Be $db2.RecoveryModel
             $db1.Status | Should -Be $db2.Status
-            $db1.Owner | Should -Be $db2.Owner
         }
 
         It "Should say skipped" {
@@ -295,6 +314,9 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "UseLastBackup with -Continue" {
+        # The destination database is pre-staged here in Restoring state, so SMO caches it as not
+        # accessible. This is the context that showed the skipped owner update of #10555: without the
+        # object refresh after the restore, Set-DbaDbOwner saw the stale value, warned and skipped.
         BeforeAll {
             $splatStopProcess = @{
                 SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
@@ -355,7 +377,7 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be "Successful"
         }
 
-        It "retains its name, recovery model, and status." {
+        It "retains its name, recovery model, status, and owner." {
             $splatGetDbs = @{
                 SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
                 Database    = $backuprestoredb
@@ -366,6 +388,10 @@ Describe $CommandName -Tag IntegrationTests {
             $dbs[0].Name | Should -Be $dbs[1].Name
             $dbs[0].RecoveryModel | Should -Be $dbs[1].RecoveryModel
             $dbs[0].Status | Should -Be $dbs[1].Status
+            # The owner catches the skipped Set-DbaDbOwner: when the stale SMO object made it skip,
+            # the destination kept the login that ran the restore as the owner instead of the owner
+            # of the source database.
+            $dbs[0].Owner | Should -Be $dbs[1].Owner
         }
     }
 
@@ -509,6 +535,198 @@ Describe $CommandName -Tag IntegrationTests {
             $warnvar | Should -BeLike "*Cannot use NewName when copying multiple databases"
             $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database "RestoreTimeClean"
         }
+    }
+
+    Context "Multi-database copies regression tests for issue #10512" {
+        BeforeDiscovery {
+            # Both spellings the help documents as "treated as not specified" (#10512)
+            $blankNewNameCases = @(
+                @{ NewNameLabel = "an empty"; NewNameValue = "" }
+                @{ NewNameLabel = "a whitespace"; NewNameValue = "   " }
+            )
+        }
+
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatStopProcess = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Program     = "dbatools PowerShell module - dbatools.io"
+            }
+            Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
+
+            $randomPipe = Get-Random
+            $pipeDb1 = "dbatoolsci_pipe1$randomPipe"
+            $pipeDb2 = "dbatoolsci_pipe2$randomPipe"
+            $pipeNewName = "dbatoolsci_piperename$randomPipe"
+            $pipeSentinelDb = "dbatoolsci_pipesentinel$randomPipe"
+            $pipeOwnerLogin = "dbatoolsci_owner$randomPipe"
+
+            $serverPipeSource = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
+            $serverPipeSource.Query("CREATE DATABASE $pipeDb1; ALTER DATABASE $pipeDb1 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+            $serverPipeSource.Query("CREATE DATABASE $pipeDb2; ALTER DATABASE $pipeDb2 SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+
+            # An unrelated destination database whose owner must survive every copy below:
+            # the #10512 defect swept the owner of every database on the destination. The
+            # sentinel owner is a dedicated login because the sweep sets owners to the
+            # source database owner - if both were sa, a sweep would go undetected.
+            $serverPipeDest = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2
+            $serverPipeDest.Query("CREATE DATABASE $pipeSentinelDb; ALTER DATABASE $pipeSentinelDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+            $securePipeOwner = ConvertTo-SecureString "P@ssw0rd$randomPipe!" -AsPlainText -Force
+            $splatOwnerLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $pipeOwnerLogin
+                SecurePassword = $securePipeOwner
+            }
+            $null = New-DbaLogin @splatOwnerLogin
+            $splatSentinelOwner = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Database    = $pipeSentinelDb
+                TargetLogin = $pipeOwnerLogin
+            }
+            $null = Set-DbaDbOwner @splatSentinelOwner
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemovePipeSource = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Database    = $pipeDb1, $pipeDb2
+            }
+            Remove-DbaDatabase @splatRemovePipeSource -ErrorAction SilentlyContinue
+
+            $splatRemovePipeDest = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Database    = $pipeDb1, $pipeDb2, $pipeNewName, $pipeSentinelDb
+            }
+            Remove-DbaDatabase @splatRemovePipeDest -ErrorAction SilentlyContinue
+            Remove-DbaLogin -SqlInstance $TestConfig.InstanceCopy2 -Login $pipeOwnerLogin -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Copies every database in a parameter array" {
+            $splatCopyArray = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                Database      = $pipeDb1, $pipeDb2
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+            }
+            $results = Copy-DbaDatabase @splatCopyArray
+            ($results | Measure-Object).Count | Should -Be 2
+            $results.Status | Should -Be @("Successful", "Successful")
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb1, $pipeDb2 -EnableException
+        }
+
+        It "Copies every piped database" {
+            $splatCopyPiped = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+            }
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb1, $pipeDb2 | Copy-DbaDatabase @splatCopyPiped
+            ($results | Measure-Object).Count | Should -Be 2
+            $results.Status | Should -Be @("Successful", "Successful")
+            $results.Name | Should -Contain $pipeDb1
+            $results.Name | Should -Contain $pipeDb2
+            ($results | Where-Object Name -eq $pipeDb1).DestinationDatabase | Should -Be $pipeDb1
+            ($results | Where-Object Name -eq $pipeDb2).DestinationDatabase | Should -Be $pipeDb2
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeSentinelDb).Owner | Should -Be $pipeOwnerLogin
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb1, $pipeDb2 -EnableException
+        }
+
+        It "Ignores <NewNameLabel> NewName and copies piped databases under their original names" -ForEach $blankNewNameCases {
+            # The reporter's pipeline passes -NewName unconditionally and leaves it blank when
+            # no rename is wanted (#10512). A blank name must mean "no rename", never an empty
+            # -Database filter that lets post-restore commands sweep the whole destination.
+            $ownerBefore = (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeSentinelDb).Owner
+            $splatCopyBlankName = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+                NewName       = $NewNameValue
+            }
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb1, $pipeDb2 | Copy-DbaDatabase @splatCopyBlankName
+            ($results | Measure-Object).Count | Should -Be 2
+            $results.Status | Should -Be @("Successful", "Successful")
+            ($results | Where-Object Name -eq $pipeDb1).DestinationDatabase | Should -Be $pipeDb1
+            ($results | Where-Object Name -eq $pipeDb2).DestinationDatabase | Should -Be $pipeDb2
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeSentinelDb).Owner | Should -Be $ownerBefore
+            $splatRemoveBlankCopies = @{
+                SqlInstance     = $TestConfig.InstanceCopy2
+                Database        = $pipeDb1, $pipeDb2
+                EnableException = $true
+            }
+            $null = Remove-DbaDatabase @splatRemoveBlankCopies
+        }
+
+        It "Rejects NewName with piped databases before any copy happens" {
+            $splatCopyPipedRename = @{
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
+                BackupRestore   = $true
+                SharedPath      = $NetworkPath
+                NewName         = $pipeNewName
+                WarningVariable = "warnvar"
+            }
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb1, $pipeDb2 | Copy-DbaDatabase @splatCopyPipedRename 3> $null
+            $results | Should -BeNullOrEmpty
+            $warnvar | Should -BeLike "*Cannot use NewName with piped databases*"
+            # The rejection must be atomic: no renamed database and no partial copies
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeNewName, $pipeDb1, $pipeDb2 | Should -BeNullOrEmpty
+        }
+
+        It "Continues to the next piped database when one restore fails" {
+            # The reported shape (#10512): several piped databases, no -NewName. A backup
+            # gone missing must yield exactly one Failed result for that database and must
+            # not silently discard the databases piped in after it.
+            $splatBackupGone = @{
+                SqlInstance     = $TestConfig.InstanceCopy1
+                Database        = $pipeDb1
+                Path            = $NetworkPath
+                EnableException = $true
+            }
+            $backupGone = Backup-DbaDatabase @splatBackupGone
+            $backupGone.FullName | ForEach-Object { Remove-Item -Path $PSItem -Force }
+
+            $splatBackupKeep = @{
+                SqlInstance     = $TestConfig.InstanceCopy1
+                Database        = $pipeDb2
+                Path            = $NetworkPath
+                EnableException = $true
+            }
+            $null = Backup-DbaDatabase @splatBackupKeep
+
+            $splatCopyLastBackup = @{
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
+                BackupRestore   = $true
+                UseLastBackup   = $true
+                WithReplace     = $true
+                WarningVariable = "warnvar"
+            }
+            # sys.databases rows come back in no guaranteed order, and this test only
+            # proves anything when the failing database is piped FIRST - a failure on the
+            # last record leaves no later record for the old discard bug to suppress.
+            $orderedPipeInput = @(
+                Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb1
+                Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $pipeDb2
+            )
+            $results = $orderedPipeInput | Copy-DbaDatabase @splatCopyLastBackup 3> $null
+            ($results | Where-Object Name -eq $pipeDb1 | Measure-Object).Count | Should -Be 1
+            ($results | Where-Object Name -eq $pipeDb1).Status | Should -Be "Failed"
+            ($results | Where-Object Name -eq $pipeDb2 | Measure-Object).Count | Should -Be 1
+            ($results | Where-Object Name -eq $pipeDb2).Status | Should -Be "Successful"
+            (Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb2).Name | Should -Be $pipeDb2
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $pipeDb2 -EnableException
+        }
+
     }
 
     Context "SetSourceOffline regression test for issue #9546" {
@@ -667,6 +885,261 @@ Describe $CommandName -Tag IntegrationTests {
                 $results[0].DestinationDatabase | Should -Be "djkhgfkjghfdjgd"
                 $results[0].Status | Should -BeLike "Successful*"
             }
+        }
+    }
+
+    Context "Custom destination directories for issue #10587" {
+        BeforeDiscovery {
+            $rejectedDirectoryCases = @(
+                @{
+                    Label           = "a log directory without a data directory"
+                    DataName        = ""
+                    LogName         = "rejected_log"
+                    FileStreamName  = ""
+                    Reuse           = $false
+                    ExpectedWarning = "*-DestinationLogDirectory can only be used together with -DestinationDataDirectory*"
+                }
+                @{
+                    Label           = "a FILESTREAM directory without a data directory"
+                    DataName        = ""
+                    LogName         = ""
+                    FileStreamName  = "rejected_filestream"
+                    Reuse           = $false
+                    ExpectedWarning = "*-DestinationFileStreamDirectory can only be used together with -DestinationDataDirectory*"
+                }
+                @{
+                    Label           = "a data directory together with -ReuseSourceFolderStructure"
+                    DataName        = "rejected_data"
+                    LogName         = ""
+                    FileStreamName  = ""
+                    Reuse           = $true
+                    ExpectedWarning = "*-ReuseSourceFolderStructure cannot be combined with -DestinationDataDirectory*"
+                }
+            )
+        }
+
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatStopProcess = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Program     = "dbatools PowerShell module - dbatools.io"
+            }
+            Get-DbaProcess @splatStopProcess | Stop-DbaProcess -WarningAction SilentlyContinue
+
+            $directoryDb = "dbatoolsci_directories_$(Get-Random)"
+            $serverDirectories = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
+            $serverDirectories.Query("CREATE DATABASE $directoryDb; ALTER DATABASE $directoryDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+            $serverDirectories.Query("CREATE TABLE dbo.dbatoolsci_rows (id int NOT NULL); INSERT INTO dbo.dbatoolsci_rows (id) VALUES (10587);", $directoryDb)
+
+            # The directories live below the folder of this test file, which both instances can write to and which
+            # the AfterAll of the Describe removes. They are not created here: the restore has to create them.
+            $directoryRoot = Join-Path -Path $NetworkPath -ChildPath "directories"
+            $destinationDefaultPath = Get-DbaDefaultPath -SqlInstance $TestConfig.InstanceCopy2
+
+            # A rejected call must not start a backup, so it gets a backup folder of its own that has to stay empty.
+            $rejectedSharedPath = Join-Path -Path $NetworkPath -ChildPath "rejected"
+            $null = New-Item -Path $rejectedSharedPath -ItemType Directory -Force
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $directoryDb -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Restores to the default directories of the destination when no directory is given" {
+            $splatCopyDefault = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                Database      = $directoryDb
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+            }
+            $results = Copy-DbaDatabase @splatCopyDefault
+            $results.Status | Should -Be "Successful"
+
+            $files = Get-DbaDbFile -SqlInstance $TestConfig.InstanceCopy2 -Database $directoryDb
+            ($files | Where-Object TypeDescription -eq "ROWS").PhysicalName | Split-Path -Parent | Should -Be $destinationDefaultPath.Data.TrimEnd("\")
+            ($files | Where-Object TypeDescription -eq "LOG").PhysicalName | Split-Path -Parent | Should -Be $destinationDefaultPath.Log.TrimEnd("\")
+        }
+
+        It "Restores a fresh backup into the given data and log directories" {
+            $dataDirectory = Join-Path -Path $directoryRoot -ChildPath "fresh\$directoryDb\data"
+            $logDirectory = Join-Path -Path $directoryRoot -ChildPath "fresh\$directoryDb\log"
+            $splatCopyFresh = @{
+                Source                   = $TestConfig.InstanceCopy1
+                Destination              = $TestConfig.InstanceCopy2
+                Database                 = $directoryDb
+                BackupRestore            = $true
+                SharedPath               = $NetworkPath
+                DestinationDataDirectory = $dataDirectory
+                DestinationLogDirectory  = $logDirectory
+                Force                    = $true
+            }
+            $results = Copy-DbaDatabase @splatCopyFresh
+            $results.Status | Should -Be "Successful"
+
+            $files = Get-DbaDbFile -SqlInstance $TestConfig.InstanceCopy2 -Database $directoryDb
+            ($files | Where-Object TypeDescription -eq "ROWS").PhysicalName | Split-Path -Parent | Should -Be $dataDirectory
+            ($files | Where-Object TypeDescription -eq "LOG").PhysicalName | Split-Path -Parent | Should -Be $logDirectory
+
+            $restoredRows = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Database $directoryDb -Query "SELECT id FROM dbo.dbatoolsci_rows"
+            $restoredRows.id | Should -Be 10587
+        }
+
+        It "Restores the last backup with the log files in the data directory when only that is given" {
+            $splatBackup = @{
+                SqlInstance     = $TestConfig.InstanceCopy1
+                Database        = $directoryDb
+                BackupDirectory = $NetworkPath
+            }
+            $null = Backup-DbaDatabase @splatBackup
+
+            $dataDirectory = Join-Path -Path $directoryRoot -ChildPath "last\$directoryDb"
+            $splatCopyLast = @{
+                Source                   = $TestConfig.InstanceCopy1
+                Destination              = $TestConfig.InstanceCopy2
+                Database                 = $directoryDb
+                BackupRestore            = $true
+                UseLastBackup            = $true
+                DestinationDataDirectory = $dataDirectory
+                Force                    = $true
+            }
+            $results = Copy-DbaDatabase @splatCopyLast
+            $results.Status | Should -Be "Successful"
+
+            $files = Get-DbaDbFile -SqlInstance $TestConfig.InstanceCopy2 -Database $directoryDb
+            $files.PhysicalName | Split-Path -Parent | Should -Be $dataDirectory, $dataDirectory
+
+            $restoredRows = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Database $directoryDb -Query "SELECT id FROM dbo.dbatoolsci_rows"
+            $restoredRows.id | Should -Be 10587
+        }
+
+        It "Rejects <Label> before dropping the destination or taking a backup" -ForEach $rejectedDirectoryCases {
+            # -Force would drop the existing destination database first, so it has to survive a rejected call,
+            # and the rejected call must not have written a backup either.
+            $splatCopyRejected = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                Database      = $directoryDb
+                BackupRestore = $true
+                SharedPath    = $rejectedSharedPath
+                Force         = $true
+                WarningAction = "SilentlyContinue"
+            }
+            if ($DataName) {
+                $splatCopyRejected.DestinationDataDirectory = Join-Path -Path $directoryRoot -ChildPath $DataName
+            }
+            if ($LogName) {
+                $splatCopyRejected.DestinationLogDirectory = Join-Path -Path $directoryRoot -ChildPath $LogName
+            }
+            if ($FileStreamName) {
+                $splatCopyRejected.DestinationFileStreamDirectory = Join-Path -Path $directoryRoot -ChildPath $FileStreamName
+            }
+            if ($Reuse) {
+                $splatCopyRejected.ReuseSourceFolderStructure = $true
+            }
+            $results = Copy-DbaDatabase @splatCopyRejected
+
+            $results | Should -BeNullOrEmpty
+            $WarnVar | Should -BeLike $ExpectedWarning
+            Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Database $directoryDb | Should -Not -BeNullOrEmpty
+            Get-ChildItem -Path $rejectedSharedPath | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "When a system database is requested" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $afterSystemDb = "dbatoolsci_aftersystem_$(Get-Random)"
+            $serverAfterSystem = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1
+            $serverAfterSystem.Query("CREATE DATABASE $afterSystemDb; ALTER DATABASE $afterSystemDb SET AUTO_CLOSE OFF WITH ROLLBACK IMMEDIATE")
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $afterSystemDb -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Copies the database piped in after a system database" {
+            # A plain Stop-Function used to set the command-wide interrupt flag for the system database, and
+            # Test-FunctionInterrupt then dropped every database piped in after it.
+            $splatAfterSystem = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                BackupRestore = $true
+                SharedPath    = $NetworkPath
+                WarningAction = "SilentlyContinue"
+            }
+            $pipedDatabases = @(Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master) + @(Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $afterSystemDb)
+            $results = $pipedDatabases | Copy-DbaDatabase @splatAfterSystem
+            ($results | Measure-Object).Count | Should -Be 1
+            $results.Name | Should -Be $afterSystemDb
+            $results.Status | Should -Be "Successful"
+            ($WarnVar -join " ") | Should -BeLike "*Migrating system databases is not currently supported*"
+        }
+
+        It "Throws for a system database under -EnableException" {
+            $splatThrow = @{
+                Source          = $TestConfig.InstanceCopy1
+                Destination     = $TestConfig.InstanceCopy2
+                BackupRestore   = $true
+                SharedPath      = $NetworkPath
+                EnableException = $true
+            }
+            # The parameter form: a throw inside the process block of a piped call surfaces in the upstream command,
+            # whose own output loop catches it (Get-DbaDatabase warns about a modified collection instead).
+            $systemDbException = $null
+            $systemDbWarnings = $null
+            try {
+                Copy-DbaDatabase @splatThrow -Database master -WarningVariable systemDbWarnings
+            } catch {
+                $systemDbException = $PSItem
+            }
+            $systemDbException.Exception.Message | Should -BeLike "*Migrating system databases is not currently supported*"
+            # Stop-Function writes its warning before it throws, as it does for every throw in dbatools; the message is
+            # not written a second time.
+            @($systemDbWarnings).Count | Should -Be 1
+        }
+
+        It "Warns without eating an iteration of the caller's loop" {
+            # The system database check used to run Stop-Function -Continue in the process block, where no
+            # loop encloses it - the continue escaped the command and consumed an iteration of this very
+            # loop, so the counter stayed at zero (#10638). The check fires before any connection is made.
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $splatSystemDb = @{
+                    Source        = $TestConfig.InstanceCopy1
+                    Destination   = $TestConfig.InstanceCopy2
+                    Database      = "master"
+                    BackupRestore = $true
+                    SharedPath    = $TestConfig.Temp
+                    WarningAction = "SilentlyContinue"
+                }
+                $null = Copy-DbaDatabase @splatSystemDb
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            # The last call warned once, not twice.
+            @($WarnVar).Count | Should -Be 1
+            $WarnVar | Should -BeLike "*Migrating system databases is not currently supported*"
         }
     }
 }

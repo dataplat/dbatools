@@ -356,20 +356,28 @@ function Get-DbaPermission {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
 
-            foreach ($db in $dbs) {
-                Write-Message -Level Verbose -Message "Processing $db on $instance."
+            # Working through a Database object moves the connection into that database and never moves it
+            # back - the query below runs there, and so does every enumeration of a database level
+            # collection. The database of the caller is put back when the work is done. See #10555.
+            $callerDatabase = $server.ConnectionContext.CurrentDatabase
+            try {
+                foreach ($db in $dbs) {
+                    Write-Message -Level Verbose -Message "Processing $db on $instance."
 
-                if ($db.IsAccessible -eq $false) {
-                    Write-Message -Level Warning -Message "The database $db is not accessible. Skipping database."
-                    Continue
-                }
+                    if ($db.IsAccessible -eq $false) {
+                        Write-Message -Level Warning -Message "The database $db is not accessible. Skipping database."
+                        Continue
+                    }
 
-                Write-Message -Level Debug -Message "T-SQL: $currentDBPermsql"
-                try {
-                    $db.ExecuteWithResults($currentDBPermsql).Tables.Rows
-                } catch {
-                    Stop-Function -Message "Failure executing against $($db.Name) on $instance" -ErrorRecord $_ -Continue
+                    Write-Message -Level Debug -Message "T-SQL: $currentDBPermsql"
+                    try {
+                        $db.Query($currentDBPermsql)
+                    } catch {
+                        Stop-Function -Message "Failure executing against $($db.Name) on $instance" -ErrorRecord $_ -Continue
+                    }
                 }
+            } finally {
+                Restore-DatabaseContext -Server $server -Database $callerDatabase
             }
         }
     }

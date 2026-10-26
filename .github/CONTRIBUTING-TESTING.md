@@ -2,6 +2,8 @@
 
 This tutorial explains how to run dbatools tests locally against your SQL Server lab. It covers the test infrastructure, configuration, and best practices based on recent improvements by Andreas Jordan.
 
+This is an operational tutorial. [`tests/CLAUDE.md`](../tests/CLAUDE.md) is the authoritative source for ongoing test policy and the supported Pester runtime.
+
 ---
 
 ## Table of Contents
@@ -94,7 +96,7 @@ This script:
 ### 1.2 Install Pester (Testing Framework)
 
 ```powershell
-Install-Module Pester -RequiredVersion 5.7.1 -Force -SkipPublisherCheck
+Install-Module Pester -RequiredVersion 6.0.0 -Force -SkipPublisherCheck
 ```
 
 ### 1.3 Install PSScriptAnalyzer (Code Formatting)
@@ -327,14 +329,31 @@ Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -Coverage
 # Run with full coverage including dependencies
 Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -Coverage -DependencyCoverage
 
-# Run with script analyzer check
+# Run with script analyzer check on the test file and the command
 Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -ScriptAnalyzer
+
+# Run the repository wide style checks that CI enforces
+Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -Compliance
 
 # Run multiple tests matching a pattern
 Invoke-ManualPester -Path "*Backup*" -TestIntegration
 
 # Show less output
 Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -Show None
+```
+
+### Before opening a pull request
+
+`Invoke-ManualPester -Path <command>` runs only that command's test file. Two of the checks CI runs
+belong to no command's test file at all, so a green run of it says nothing about them:
+
+| Switch | What it adds |
+|---|---|
+| `-ScriptAnalyzer` | Checks the test file and the command under test against [tests/PSScriptAnalyzerRules.psd1](../tests/PSScriptAnalyzerRules.psd1), the repository style profile. |
+| `-Compliance` | Runs the `Compliance` tagged tests from [tests/dbatools.Tests.ps1](../tests/dbatools.Tests.ps1) over the whole repository: no UTF-8 BOM, no tabs, no trailing spaces, no ScriptAnalyzer errors. Takes about half a minute. |
+
+```powershell
+Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -ScriptAnalyzer -Compliance
 ```
 
 ### Method 2: Direct Pester Invocation
@@ -427,18 +446,19 @@ git commit -m "Fix login handling (do Get-DbaLogin, Set-DbaLogin)"
 git commit -m "Update comments [skip ci]"
 ```
 
-### AppVeyor Build Matrix
+### CI Build Matrix
 
-The CI runs tests across multiple scenarios in parallel:
+The `ci-azure` workflow runs tests across multiple scenarios in parallel on self-hosted Azure runners:
 
 ```yaml
-# From appveyor.yml
+# From .github/workflows/ci-azure.yml
 matrix:
-  - scenario: SINGLE (split into 3 parts for speed)
-  - scenario: MULTI
-  - scenario: COPY
-  - scenario: HADR
-  - scenario: RESTART
+  - scenario: SINGLE (split into 5 parts for speed, sql2022)
+  - scenario: MULTI (sql2022 + sql2017)
+  - scenario: COPY (sql2017 + sql2022)
+  - scenario: HADR (sql2019)
+  - scenario: RESTART (sql2019)
+  - scenario: default (no instance)
 ```
 
 ---
@@ -535,7 +555,7 @@ Get-ChildItem $TestConfig.Temp -Recurse |
 
 # === INITIAL SETUP (one time) ===
 .\.github\scripts\install-dbatools-library.ps1
-Install-Module Pester -RequiredVersion 5.7.1 -Force -SkipPublisherCheck
+Install-Module Pester -RequiredVersion 6.0.0 -Force -SkipPublisherCheck
 Install-Module PSScriptAnalyzer -RequiredVersion 1.18.2 -Force
 Copy-Item .\tests\constants.local.ps1.example .\tests\constants.local.ps1
 # Edit constants.local.ps1 with your instances
@@ -566,6 +586,7 @@ Invoke-ManualPester -Path "*Backup*" -TestIntegration
 | [tests/constants.local.ps1.example](../tests/constants.local.ps1.example) | Template for local config |
 | [private/testing/Get-TestConfig.ps1](../private/testing/Get-TestConfig.ps1) | Loads test configuration |
 | [private/testing/Invoke-ManualPester.ps1](../private/testing/Invoke-ManualPester.ps1) | Local test runner helper |
+| [private/testing/Get-TestInstanceUsage.ps1](../private/testing/Get-TestInstanceUsage.ps1) | Reports which `$TestConfig` instances a test file uses, and therefore which CI lane it runs in |
 | [tests/pester.groups.ps1](../tests/pester.groups.ps1) | Scenario definitions |
 | [tests/appveyor.common.ps1](../tests/appveyor.common.ps1) | CI test discovery logic |
-| [tests/CLAUDE.md](../tests/CLAUDE.md) | Pester v5 test standards |
+| [tests/CLAUDE.md](../tests/CLAUDE.md) | Ongoing test policy and Pester 6 standards |

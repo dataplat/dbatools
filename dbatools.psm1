@@ -305,7 +305,9 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
 }
 
 # Process TEPP parameters
-if (-not $env:DBATOOLS_DISABLE_TEPP -and -not $script:disablerunspacetepp -and -not (Get-Runspace -Name dbatools-import-tepp)) {
+# The dbatools runspaces that import the module set $global:disablerunspacetepp, because nobody tab completes in a background runspace.
+# It has to be global, as the module cannot see the script scope of the code that imports it.
+if (-not $env:DBATOOLS_DISABLE_TEPP -and -not $global:disablerunspacetepp -and -not (Get-Runspace -Name dbatools-import-tepp)) {
     foreach ($file in (Get-ChildItem -File -Path "$script:PSModuleRoot/private/scripts/insertTepp*")) {
         Import-Command -Path $file.FullName
     }
@@ -332,7 +334,7 @@ if (-not $env:DBATOOLS_DISABLE_LOGGING) {
     Write-ImportTime -Text "Loading Script: Logging"
 }
 
-if (-not $env:DBATOOLS_DISABLE_TEPP -and -not $script:disablerunspacetepp) {
+if (-not $env:DBATOOLS_DISABLE_TEPP -and -not $global:disablerunspacetepp) {
     # Start the tepp asynchronous update system (requires the configuration system up and running)
     foreach ($file in (Get-ChildItem -File -Path "$script:PSModuleRoot/private/scripts/updateTeppAsync*")) {
         Import-Command -Path $file.FullName
@@ -390,6 +392,7 @@ foreach ($command in $replAliases.GetEnumerator()) {
 # and on dbatools.io. They must be defined on every PowerShell version.
 # region Commands
 $script:xplat = @(
+        "Start-DbaAzMigration",
         'Start-DbaMigration',
         'Copy-DbaDatabase',
         'Copy-DbaLogin',
@@ -538,6 +541,8 @@ $script:xplat = @(
         'Get-DbaQueryExecutionTime',
         'Get-DbaTempdbUsage',
         'Find-DbaDbGrowthEvent',
+        'Find-DbaDbMissingIndex',
+        'Find-DbaDbQueryStoreRegression',
         'Test-DbaLinkedServerConnection',
         'Get-DbaDbFile',
         'Get-DbaDbFileGrowth',
@@ -545,11 +550,13 @@ $script:xplat = @(
         'Read-DbaTransactionLog',
         'Get-DbaDbTable',
         'Remove-DbaDbTable',
+        "Invoke-DbaDbIndexRebuild",
         'Invoke-DbaDbShrink',
         'Get-DbaEstimatedCompletionTime',
         'Get-DbaLinkedServer',
         'New-DbaAgentJob',
         'Get-DbaLogin',
+        'Get-DbaUnusedLogin',
         'New-DbaScriptingOption',
         'Save-DbaDiagnosticQueryScript',
         'Invoke-DbaDiagnosticQuery',
@@ -876,6 +883,7 @@ $script:xplat = @(
         'Export-DbaServerRole',
         'Get-DbaBuild',
         'Update-DbaBuildReference',
+        'Install-DbaCommunitySoftware',
         'Install-DbaFirstResponderKit',
         'Install-DbaSqlPackage',
         'Install-DbaWhoIsActive',
@@ -1029,6 +1037,7 @@ $script:xplat = @(
         'Get-DbaOperatingSystem',
         'Get-DbaComputerSystem',
         'Set-DbaPrivilege',
+        'Remove-DbaPrivilege',
         'Set-DbaTcpPort',
         'Set-DbaCmConnection',
         'Get-DbaUptime',

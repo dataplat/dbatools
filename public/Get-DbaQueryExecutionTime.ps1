@@ -238,38 +238,46 @@ function Get-DbaQueryExecutionTime {
                 $dbs = $dbs | Where-Object Name -NotIn $ExcludeDatabase
             }
 
-            foreach ($db in $dbs) {
-                Write-Message -Level Verbose -Message "Processing $db on $instance"
+            # Working through a Database object moves the connection into that database and never moves it
+            # back - the query below runs there, and so does every enumeration of a database level
+            # collection. The database of the caller is put back when the work is done. See #10555.
+            $callerDatabase = $server.ConnectionContext.CurrentDatabase
+            try {
+                foreach ($db in $dbs) {
+                    Write-Message -Level Verbose -Message "Processing $db on $instance"
 
-                if ($db.IsAccessible -eq $false) {
-                    Write-Message -Level Warning -Message "The database $db is not accessible. Skipping database."
-                    continue
-                }
-
-                try {
-                    foreach ($row in $db.ExecuteWithResults($sql).Tables.Rows) {
-                        [PSCustomObject]@{
-                            ComputerName       = $server.ComputerName
-                            InstanceName       = $server.ServiceName
-                            SqlInstance        = $server.DomainInstanceName
-                            Database           = $row.DatabaseName
-                            ProcName           = $row.ProcName
-                            ObjectID           = $row.object_id
-                            TypeDesc           = $row.type_desc
-                            Executions         = $row.Execution_Count
-                            AvgExecMs          = $row.AvgExec_ms
-                            MaxExecMs          = $row.MaxExec_ms
-                            CachedTime         = $row.cached_time
-                            LastExecTime       = $row.last_execution_time
-                            TotalWorkerTimeMs  = $row.total_worker_time_ms
-                            TotalElapsedTimeMs = $row.total_elapsed_time_ms
-                            SQLText            = $row.SQLText
-                            FullStatementText  = $row.full_statement_text
-                        } | Select-DefaultView -ExcludeProperty FullStatementText
+                    if ($db.IsAccessible -eq $false) {
+                        Write-Message -Level Warning -Message "The database $db is not accessible. Skipping database."
+                        continue
                     }
-                } catch {
-                    Stop-Function -Message "Could not process $db on $instance" -Target $db -ErrorRecord $_ -Continue
+
+                    try {
+                        foreach ($row in $db.Query($sql)) {
+                            [PSCustomObject]@{
+                                ComputerName       = $server.ComputerName
+                                InstanceName       = $server.ServiceName
+                                SqlInstance        = $server.DomainInstanceName
+                                Database           = $row.DatabaseName
+                                ProcName           = $row.ProcName
+                                ObjectID           = $row.object_id
+                                TypeDesc           = $row.type_desc
+                                Executions         = $row.Execution_Count
+                                AvgExecMs          = $row.AvgExec_ms
+                                MaxExecMs          = $row.MaxExec_ms
+                                CachedTime         = $row.cached_time
+                                LastExecTime       = $row.last_execution_time
+                                TotalWorkerTimeMs  = $row.total_worker_time_ms
+                                TotalElapsedTimeMs = $row.total_elapsed_time_ms
+                                SQLText            = $row.SQLText
+                                FullStatementText  = $row.full_statement_text
+                            } | Select-DefaultView -ExcludeProperty FullStatementText
+                        }
+                    } catch {
+                        Stop-Function -Message "Could not process $db on $instance" -Target $db -ErrorRecord $_ -Continue
+                    }
                 }
+            } finally {
+                Restore-DatabaseContext -Server $server -Database $callerDatabase
             }
         }
     }

@@ -138,15 +138,24 @@ function Invoke-DbaDbDataGenerator {
         try {
             $script:faker = New-Object Bogus.Faker($Locale)
         } catch {
-            Stop-Function -Message "Could not load randomizer class" -Continue
+            # No -Continue here: the begin block has no enclosing loop, so the continue would escape
+            # the command and eat an iteration of whatever loop the caller runs in.
+            Stop-Function -Message "Could not load randomizer class"
+            return
         }
 
-        $supportedDataTypes = 'bigint', 'bit', 'bool', 'char', 'date', 'datetime', 'datetime2', 'decimal', 'int', 'float', 'guid', 'money', 'numeric', 'nchar', 'ntext', 'nvarchar', 'real', 'smalldatetime', 'smallint', 'text', 'time', 'tinyint', 'uniqueidentifier', 'userdefineddatatype', 'varchar'
-        $supportedFakerMaskingTypes = ($script:faker | Get-Member -MemberType Property | Select-Object Name -ExpandProperty Name)
-        # The value of the property DateTimeReference is currently $null, which causes the next line to throw an exception.
-        # We have to contact the developer of Bogus to solve the issue.
-        $supportedFakerSubTypes = ($script:faker | Get-Member -MemberType Property | Where-Object Name -ne DateTimeReference) | ForEach-Object { ($script:faker.$($_.Name)) | Get-Member -MemberType Method | Where-Object { $_.Name -notlike 'To*' -and $_.Name -notlike 'Get*' -and $_.Name -notlike 'Trim*' -and $_.Name -notin 'Add', 'Equals', 'CompareTo', 'Clone', 'Contains', 'CopyTo', 'EndsWith', 'IndexOf', 'IndexOfAny', 'Insert', 'IsNormalized', 'LastIndexOf', 'LastIndexOfAny', 'Normalize', 'PadLeft', 'PadRight', 'Remove', 'Replace', 'Split', 'StartsWith', 'Substring', 'Letter', 'Lines', 'Paragraph', 'Paragraphs', 'Sentence', 'Sentences' } | Select-Object name -ExpandProperty Name }
-        $supportedFakerSubTypes += "Date"
+        # This list has to match the one in Test-DbaDbDataGeneratorConfig, because a configuration is
+        # rejected up front on every finding reported there.
+        $supportedDataTypes = "bigint", "bit", "bool", "char", "date", "datetime", "datetime2", "decimal", "int", "float", "guid", "money", "numeric", "nchar", "ntext", "nvarchar", "real", "smalldatetime", "smallint", "text", "time", "tinyint", "uniqueidentifier", "userdefineddatatype", "varchar"
+        # This list decides which configurations we accept, so it has to predict what Get-DbaRandomizedValue
+        # will accept further down. That command validates its input against the randomizer types, so we use
+        # the same list here. Reflecting over a Bogus.Faker object instead offered subtypes that
+        # Get-DbaRandomizedValue then rejected, hid every subtype that Bogus exposes as a property rather than
+        # a method, like Person.DateOfBirth, and broke whenever a new property was added or was null, as
+        # DateTimeReference is by design (see https://github.com/bchavez/Bogus/issues/612).
+        # The whole combination is kept, not two separate lists of types and subtypes, because only the
+        # combinations that appear together are valid.
+        $supportedRandomizerTypes = Get-DbaRandomizedType
         #$foreignKeyQuery = Get-Content -Path "$script:PSModuleRoot\bin\datageneration\ForeignKeyHierarchy.sql"
     }
 
@@ -164,7 +173,17 @@ function Invoke-DbaDbDataGenerator {
 
             # Test the configuration
             try {
-                Test-DbaDbDataGeneratorConfig -FilePath $FilePath -EnableException
+                $configErrors = @()
+
+                # The findings are output objects, not exceptions, so they have to be collected and
+                # acted on. Left unassigned they went to the output stream and the generation ran on
+                # an invalid configuration.
+                $configErrors += Test-DbaDbDataGeneratorConfig -FilePath $FilePath -EnableException
+
+                if ($configErrors.Count -ge 1) {
+                    Stop-Function -Message "Errors found testing the configuration file." -Target $FilePath
+                    return $configErrors
+                }
             } catch {
                 Stop-Function -Message "Errors found testing the configuration file. `n$_" -ErrorRecord $_ -Target $FilePath
                 return
@@ -206,47 +225,127 @@ function Invoke-DbaDbDataGenerator {
             $sqlconn = $server.ConnectionContext.SqlConnectionObject.PsObject.Copy()
             $sqlconn.Open()
 
-            foreach ($db in $dbs) {
-                $stepcounter = $nullmod = 0
+            try {
+                foreach ($db in $dbs) {
+                    $stepcounter = $nullmod = 0
 
-                #$foreignKeys = Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db -Query $foreignKeyQuery
+                    #$foreignKeys = Invoke-DbaQuery -SqlInstance $instance -SqlCredential $SqlCredential -Database $db -Query $foreignKeyQuery
 
-                foreach ($tableobject in $tables.Tables) {
+                    foreach ($tableobject in $tables.Tables) {
 
-                    if ($tableobject.Name -in $ExcludeTable -or ($Table -and $tableobject.Name -notin $Table)) {
-                        Write-Message -Level Verbose -Message "Skipping $($tableobject.Name) because it is explicitly excluded"
-                        continue
-                    }
+                        if ($tableobject.Name -in $ExcludeTable -or ($Table -and $tableobject.Name -notin $Table)) {
+                            Write-Message -Level Verbose -Message "Skipping $($tableobject.Name) because it is explicitly excluded"
+                            continue
+                        }
 
-                    if ($tableobject.Name -notin $db.Tables.Name) {
-                        Stop-Function -Message "Table $($tableobject.Name) is not present in $db" -Target $db -Continue
-                    }
+                        if ($tableobject.Name -notin $db.Tables.Name) {
+                            Stop-Function -Message "Table $($tableobject.Name) is not present in $db" -Target $db -Continue
+                        }
 
-                    $uniqueValues = @()
+                        $tablecolumns = $tableobject.Columns
 
-                    # Check if the table contains unique indexes
-                    if ($tableobject.HasUniqueIndex) {
-                        # Loop through the rows and generate a unique value for each row
-                        Write-Message -Level Verbose -Message "Generating unique values for $($tableobject.Name)"
+                        if ($Column) {
+                            $tablecolumns = $tablecolumns | Where-Object Name -in $Column
+                        }
 
-                        for ($i = 0; $i -lt $tableobject.Rows; $i++) {
-                            $rowValue = New-Object PSCustomObject
+                        if ($ExcludeColumn) {
+                            $tablecolumns = $tablecolumns | Where-Object Name -notin $ExcludeColumn
+                        }
 
-                            # Loop through each of the unique indexes
-                            foreach ($index in ($db.Tables[$($tableobject.Name)].Indexes | Where-Object IsUnique -eq $true )) {
+                        if (-not $tablecolumns) {
+                            Write-Message -Level Verbose "No columns to process in $($db.Name).$($tableobject.Schema).$($tableobject.Name), moving on"
+                            continue
+                        }
 
-                                # Loop through the index columns
-                                foreach ($indexColumn in $index.IndexedColumns) {
-                                    # Get the column mask info
-                                    $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
+                        # Everything about the columns is checked here, before a single value is generated. The
+                        # insert statement names every column of the table, so skipping one further down left the
+                        # statement with fewer values than columns and SQL Server answered with a syntax error that
+                        # says nothing about the configuration behind it. The unique index values below are
+                        # generated before that statement is built, so this has to come first or an unusable column
+                        # is invoked anyway. The whole table is skipped, because half a row is not useful either.
+                        $unsupportedColumns = @()
+                        foreach ($columnobject in $tablecolumns) {
+                            # The type and the subtype have to be a combination that exists. Checking them against
+                            # two independent lists accepted Name/ZipCode, because Name is a type somewhere and
+                            # ZipCode is a subtype somewhere, and the generating failed later on.
+                            $randomizerCombination = $supportedRandomizerTypes | Where-Object { $PSItem.Type -eq $columnobject.MaskingType -and $PSItem.SubType -eq $columnobject.SubType }
 
-                                    if ($columnMaskInfo) {
+                            if ($columnobject.ColumnType -notin $supportedDataTypes) {
+                                Write-Message -Level Warning -Message "Unsupported data type `"$($columnobject.ColumnType)`" for column $($columnobject.Name)"
+                                $unsupportedColumns += $columnobject.Name
+                            } elseif ($columnobject.MaskingType -notin $supportedRandomizerTypes.Type) {
+                                Write-Message -Level Warning -Message "Unsupported masking type `"$($columnobject.MaskingType)`" for column $($columnobject.Name)"
+                                $unsupportedColumns += $columnobject.Name
+                            } elseif (-not $randomizerCombination) {
+                                Write-Message -Level Warning -Message "Unsupported masking sub type `"$($columnobject.SubType)`" for masking type `"$($columnobject.MaskingType)`" for column $($columnobject.Name)"
+                                $unsupportedColumns += $columnobject.Name
+                            } elseif ($randomizerCombination.RequiredParameter) {
+                                # A data generation configuration has nowhere to put a Format or a Value, so these
+                                # combinations can be used with Get-DbaRandomizedValue but never from here.
+                                Write-Message -Level Warning -Message "Masking sub type `"$($columnobject.SubType)`" needs a $($randomizerCombination.RequiredParameter) that a data generation configuration cannot supply, for column $($columnobject.Name)"
+                                $unsupportedColumns += $columnobject.Name
+                            }
+                        }
+
+                        if ($unsupportedColumns.Count -gt 0) {
+                            Stop-Function -Message "Skipping table $($tableobject.Schema).$($tableobject.Name) in $($db.Name), no data can be generated for these columns: $($unsupportedColumns -join ", ")" -Target $tableobject -Continue
+                        }
+
+                        $uniqueValues = @()
+                        $uniqueValueColumns = @()
+
+                        # Check if the table contains unique indexes
+                        if ($tableobject.HasUniqueIndex) {
+                            # Loop through the rows and generate a unique value for each row
+                            Write-Message -Level Verbose -Message "Generating unique values for $($tableobject.Name)"
+
+                            $uniqueIndexes = @($db.Tables[$($tableobject.Name)].Indexes | Where-Object IsUnique -eq $true)
+
+                            # Only the index columns that are part of the configuration get a value generated
+                            # here. The insert statement further down only names configured columns, so an
+                            # index column outside the configuration is left to SQL Server. Identity columns
+                            # are excluded even when they carry the unique index - the typical primary key:
+                            # their values come from the identity branch of the insert, and random values
+                            # here would jump the identity seed toward the type limit.
+                            $identityColumnNames = @($tableobject.Columns | Where-Object Identity | Select-Object -ExpandProperty Name)
+                            $uniqueValueColumns = @($uniqueIndexes.IndexedColumns.Name | Select-Object -Unique | Where-Object { $PSItem -in $tableobject.Columns.Name -and $PSItem -notin $identityColumnNames })
+
+                            # The collision check must also see what is already persisted: without
+                            # TruncateTable, a candidate matching an existing indexed value would pass
+                            # the generation and then fail at insert time.
+                            $existingUniqueValues = @()
+                            if ($uniqueValueColumns.Count -gt 0 -and -not $tableobject.TruncateTable) {
+                                $existingColumnList = "[" + ($uniqueValueColumns -join "], [") + "]"
+                                $existingValuesQuery = "SELECT DISTINCT $existingColumnList FROM [$($tableobject.Schema)].[$($tableobject.Name)]"
+                                try {
+                                    $existingUniqueValues = @(Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query $existingValuesQuery -EnableException)
+                                } catch {
+                                    Stop-Function -Message "Error reading the existing unique index values from $($tableobject.Schema).$($tableobject.Name)" -Target $tableobject -ErrorRecord $_
+                                    return
+                                }
+                            }
+
+                            for ($i = 0; $i -lt $tableobject.Rows; $i++) {
+                                $attempt = 0
+
+                                # Generate a candidate row holding a value for every unique index column and
+                                # try again as long as a unique index of an earlier row holds the same
+                                # combination. The whole candidate is regenerated on a collision, so two
+                                # indexes sharing a column stay consistent within the row.
+                                do {
+                                    $attempt++
+                                    $rowValue = New-Object PSCustomObject
+
+                                    foreach ($indexColumnName in $uniqueValueColumns) {
+                                        # Get the column mask info
+                                        $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumnName
+
                                         # Generate a new value
                                         try {
-                                            if ($PSBoundParameters.MaxValue -and $columnMaskInfo.SubType -eq 'String' -and $columnMaskInfo.MaxValue -gt $MaxValue) {
+                                            if ($PSBoundParameters.MaxValue -and $columnMaskInfo.SubType -eq "String" -and $columnMaskInfo.MaxValue -gt $MaxValue) {
                                                 $columnMaskInfo.MaxValue = $MaxValue
                                             }
-                                            if ($columnMaskInfo.ColumnType -in $supportedDataTypes -and $columnMaskInfo.MaskingType -eq 'Random' -and $columnMaskInfo.SubType -in 'Bool', 'Number', 'Float', 'Byte', 'String') {
+                                            if ($columnMaskInfo.ColumnType -in $supportedDataTypes -and $columnMaskInfo.MaskingType -eq "Random" -and $columnMaskInfo.SubType -in "Bool", "Number", "Float", "Byte", "String") {
                                                 $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.ColumnType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
                                             } else {
                                                 $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
@@ -255,273 +354,255 @@ function Invoke-DbaDbDataGenerator {
                                             Stop-Function -Message "Failure" -Target $columnMaskInfo -Continue -ErrorRecord $_
                                         }
 
-                                        # Check if the value is already present as a property
-                                        if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
-                                            $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
-                                        }
+                                        $rowValue | Add-Member -Name $indexColumnName -Type NoteProperty -Value $newValue
                                     }
 
+                                    # A collision is an earlier row that carries the same values in all the
+                                    # configured columns of one of the unique indexes.
+                                    $collision = $false
+                                    foreach ($index in $uniqueIndexes) {
+                                        $indexColumnNames = @($index.IndexedColumns.Name | Where-Object { $PSItem -in $uniqueValueColumns })
+
+                                        if ($indexColumnNames.Count -eq 0) {
+                                            continue
+                                        }
+
+                                        foreach ($existingRow in ($existingUniqueValues + $uniqueValues)) {
+                                            $matchingColumnNames = @($indexColumnNames | Where-Object { $existingRow.$PSItem -eq $rowValue.$PSItem })
+
+                                            if ($matchingColumnNames.Count -eq $indexColumnNames.Count) {
+                                                $collision = $true
+                                                break
+                                            }
+                                        }
+
+                                        if ($collision) {
+                                            break
+                                        }
+                                    }
+                                } while ($collision -and $attempt -lt 100)
+
+                                if ($collision) {
+                                    Stop-Function -Message "Could not generate a unique value for the unique indexes of $($tableobject.Name) after $attempt tries" -Target $tableobject
+                                    return
                                 }
 
-                                # To be sure the values are unique, loop as long as long as needed to generate a unique value
-                                while (($uniqueValues | Select-Object -Property ($rowValue | Get-Member -MemberType NoteProperty | Select-Object -ExpandProperty Name)) -match $rowValue) {
+                                # Add the row value to the array
+                                $uniqueValues += $rowValue
+                            }
+                        }
 
-                                    $rowValue = New-Object PSCustomObject
+                        if (-not $server.IsAzure) {
+                            $sqlconn.ChangeDatabase($db.Name)
+                        }
+                        $insertQuery = ""
 
-                                    # Loop through the index columns
-                                    foreach ($indexColumn in $index.IndexedColumns) {
-                                        # Get the column mask info
-                                        $columnMaskInfo = $tableobject.Columns | Where-Object Name -eq $indexColumn.Name
+                        if ($Pscmdlet.ShouldProcess($instance, "Generating data for columns $($tablecolumns.Name -join ', ') in $($tableobject.Rows) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
+                            $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
 
-                                        # Generate a new value
-                                        try {
-                                            if ($PSBoundParameters.MaxValue -and $columnMaskInfo.SubType -eq 'String' -and $columnMaskInfo.MaxValue -gt $MaxValue) {
-                                                $columnMaskInfo.MaxValue = $MaxValue
+                            Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Generating data" -Message "Inserting $($tableobject.Rows) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
+
+                            if ($tableobject.TruncateTable) {
+                                $query = "TRUNCATE TABLE [$($tableobject.Schema)].[$($tableobject.Name)];"
+
+                                try {
+                                    $null = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                                } catch {
+                                    Write-Message -Level VeryVerbose -Message "$query"
+                                    $errormessage = $_.Exception.Message.ToString()
+                                    Stop-Function -Message "Error truncating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $query -Continue -ErrorRecord $_
+                                }
+                            }
+
+                            if ($tableobject.Columns.Identity -contains $true) {
+                                $query = "SELECT IDENT_CURRENT('[$($tableobject.Schema)].[$($tableobject.Name)]') AS CurrentIdentity,
+                            IDENT_INCR('[$($tableobject.Schema)].[$($tableobject.Name)]') AS IdentityIncrement,
+                            IDENT_SEED('[$($tableobject.Schema)].[$($tableobject.Name)]') AS IdentitySeed;"
+
+                                try {
+                                    $identityValues = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query
+                                    # https://docs.microsoft.com/en-us/sql/t-sql/public/ident-current-transact-sql says:
+                                    # When the IDENT_CURRENT value is NULL (because the table has never contained rows or has been truncated), the IDENT_CURRENT function returns the seed value.
+                                    # So if we get a 1 back, we count the rows so that the first row added to an empty table gets the number 1.
+                                    if ($identityValues.CurrentIdentity -eq 1) {
+                                        $query = "SELECT COUNT(*) FROM [$($tableobject.Schema)].[$($tableobject.Name)];"
+                                        $rowcount = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query -As SingleValue
+                                        if ($rowcount -eq 0) {
+                                            $identityValues.CurrentIdentity = 0
+                                        }
+                                    }
+                                } catch {
+                                    Write-Message -Level VeryVerbose -Message "$query"
+                                    $errormessage = $_.Exception.Message.ToString()
+                                    Stop-Function -Message "Error getting identity values from $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $query -Continue -ErrorRecord $_
+                                }
+
+                                $insertQuery += "SET IDENTITY_INSERT [$($tableobject.Schema)].[$($tableobject.Name)] ON;`n"
+                            }
+
+                            $insertQuery += "INSERT INTO [$($tableobject.Schema)].[$($tableobject.Name)] ([$($tablecolumns.Name -join '],[')])`nVALUES`n"
+
+                            [int]$nextIdentity = $null
+
+                            for ($i = 1; $i -le $tableobject.Rows; $i++) {
+                                $columnValues = @()
+
+                                foreach ($columnobject in $tablecolumns) {
+
+                                    # The data type, the masking type and the subtype of every column were checked
+                                    # before the insert statement was built.
+
+                                    # make sure max is good
+                                    # A column of a unique index always gets its pre-generated value, even when
+                                    # it is nullable - the second NULL would already violate the index.
+                                    if ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
+
+                                        if ($uniqueValues.Count -lt 1) {
+                                            Stop-Function -Message "Could not find any unique values in dictionary" -Target $tableobject
+                                            return
+                                        }
+
+                                        $columnValue = $uniqueValues[$i - 1].$($columnobject.Name)
+
+                                    } elseif ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
+                                        $columnValue = $null
+                                    } elseif ($columnobject.Identity) {
+                                        if ($nextIdentity -or (-not $nextIdentity -and $tableobject.TruncateTable)) {
+                                            $nextIdentity += $identityValues.IdentityIncrement
+                                        } else {
+                                            $nextIdentity = $identityValues.CurrentIdentity + $identityValues.IdentityIncrement
+                                        }
+                                        $columnValue = $nextIdentity
+                                    } else {
+
+                                        if ($columnobject.CharacterString) {
+                                            $charstring = $columnobject.CharacterString
+                                        } else {
+                                            $charstring = $CharacterString
+                                        }
+
+                                        if (($columnobject.MinValue -or $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
+                                            if (-not $columnobject.MinValue) {
+                                                $columnobject.MinValue = (Get-Date -Date $columnobject.MaxValue).AddDays(-365)
                                             }
-                                            if ($columnMaskInfo.ColumnType -in $supportedDataTypes -and $columnMaskInfo.MaskingType -eq 'Random' -and $columnMaskInfo.SubType -in 'Bool', 'Number', 'Float', 'Byte', 'String') {
-                                                $newValue = Get-DbaRandomizedValue -DataType $columnMaskInfo.ColumnType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
+                                            if (-not $columnobject.MaxValue) {
+                                                $columnobject.MaxValue = (Get-Date -Date $columnobject.MinValue).AddDays(365)
+                                            }
+                                        }
+
+                                        try {
+                                            if ($PSBoundParameters.MaxValue -and $columnobject.SubType -eq 'String' -and $columnobject.MaxValue -gt $MaxValue) {
+                                                $columnobject.MaxValue = $MaxValue
+                                            }
+                                            if ($columnobject.ColumnType -in $supportedDataTypes -and $columnobject.MaskingType -eq 'Random' -and $columnobject.SubType -in 'Bool', 'Number', 'Float', 'Byte', 'String') {
+                                                $randomParams = @{
+                                                    DataType        = $columnobject.ColumnType
+                                                    CharacterString = $charstring
+                                                    Locale          = $Locale
+                                                    Min             = $columnobject.MinValue
+                                                    Max             = $columnobject.MaxValue
+                                                }
+                                                $columnValue = Get-DbaRandomizedValue @randomParams
                                             } else {
-                                                $newValue = Get-DbaRandomizedValue -RandomizerType $columnMaskInfo.MaskingType -RandomizerSubtype $columnMaskInfo.SubType -Locale $Locale -Min $columnMaskInfo.MinValue -Max $columnMaskInfo.MaxValue
+                                                $randomParams = @{
+                                                    RandomizerType    = $columnobject.MaskingType
+                                                    RandomizerSubtype = $columnobject.SubType
+                                                    CharacterString   = $charstring
+                                                    Locale            = $Locale
+                                                    Min               = $columnobject.MinValue
+                                                    Max               = $columnobject.MaxValue
+                                                }
+                                                $columnValue = Get-DbaRandomizedValue @randomParams
                                             }
 
                                         } catch {
                                             Stop-Function -Message "Failure" -Target $script:faker -Continue -ErrorRecord $_
                                         }
 
-                                        # Check if the value is already present as a property
-                                        if (($rowValue | Get-Member -MemberType NoteProperty).Name -notcontains $indexColumn.Name) {
-                                            $rowValue | Add-Member -Name $indexColumn.Name -Type NoteProperty -Value $newValue
-                                            $uniqueValueColumns += $indexColumn.Name
-                                        }
-                                    }
-                                }
-                            }
-                            # Add the row value to the array
-                            $uniqueValues += $rowValue
-                        }
-                    }
-
-                    $uniqueValueColumns = $uniqueValueColumns | Select-Object -Unique
-
-                    if (-not $server.IsAzure) {
-                        $sqlconn.ChangeDatabase($db.Name)
-                    }
-                    $tablecolumns = $tableobject.Columns
-
-                    if ($Column) {
-                        $tablecolumns = $tablecolumns | Where-Object Name -in $Column
-                    }
-
-                    if ($ExcludeColumn) {
-                        $tablecolumns = $tablecolumns | Where-Object Name -notin $ExcludeColumn
-                    }
-
-                    if (-not $tablecolumns) {
-                        Write-Message -Level Verbose "No columns to process in $($db.Name).$($tableobject.Schema).$($tableobject.Name), moving on"
-                        continue
-                    }
-
-                    $insertQuery = ""
-
-                    if ($Pscmdlet.ShouldProcess($instance, "Generating data for columns $($tablecolumns.Name -join ', ') in $($tableobject.Rows) rows in $($db.Name).$($tableobject.Schema).$($tableobject.Name)")) {
-                        $elapsed = [System.Diagnostics.Stopwatch]::StartNew()
-
-                        Write-ProgressHelper -StepNumber ($stepcounter++) -TotalSteps $tables.Tables.Count -Activity "Generating data" -Message "Inserting $($tableobject.Rows) rows in $($tableobject.Schema).$($tableobject.Name) in $($db.Name) on $instance"
-
-                        if ($tableobject.TruncateTable) {
-                            $query = "TRUNCATE TABLE [$($tableobject.Schema)].[$($tableobject.Name)];"
-
-                            try {
-                                $null = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query
-                            } catch {
-                                Write-Message -Level VeryVerbose -Message "$query"
-                                $errormessage = $_.Exception.Message.ToString()
-                                Stop-Function -Message "Error truncating $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $query -Continue -ErrorRecord $_
-                            }
-                        }
-
-                        if ($tableobject.Columns.Identity -contains $true) {
-                            $query = "SELECT IDENT_CURRENT('[$($tableobject.Schema)].[$($tableobject.Name)]') AS CurrentIdentity,
-                            IDENT_INCR('[$($tableobject.Schema)].[$($tableobject.Name)]') AS IdentityIncrement,
-                            IDENT_SEED('[$($tableobject.Schema)].[$($tableobject.Name)]') AS IdentitySeed;"
-
-                            try {
-                                $identityValues = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query
-                                # https://docs.microsoft.com/en-us/sql/t-sql/public/ident-current-transact-sql says:
-                                # When the IDENT_CURRENT value is NULL (because the table has never contained rows or has been truncated), the IDENT_CURRENT function returns the seed value.
-                                # So if we get a 1 back, we count the rows so that the first row added to an empty table gets the number 1.
-                                if ($identityValues.CurrentIdentity -eq 1) {
-                                    $query = "SELECT COUNT(*) FROM [$($tableobject.Schema)].[$($tableobject.Name)];"
-                                    $rowcount = Invoke-DbaQuery -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $db.Name -Query $query -As SingleValue
-                                    if ($rowcount -eq 0) {
-                                        $identityValues.CurrentIdentity = 0
-                                    }
-                                }
-                            } catch {
-                                Write-Message -Level VeryVerbose -Message "$query"
-                                $errormessage = $_.Exception.Message.ToString()
-                                Stop-Function -Message "Error getting identity values from $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $query -Continue -ErrorRecord $_
-                            }
-
-                            $insertQuery += "SET IDENTITY_INSERT [$($tableobject.Schema)].[$($tableobject.Name)] ON;`n"
-                        }
-
-                        $insertQuery += "INSERT INTO [$($tableobject.Schema)].[$($tableobject.Name)] ([$($tablecolumns.Name -join '],[')])`nVALUES`n"
-
-                        [int]$nextIdentity = $null
-
-                        for ($i = 1; $i -le $tableobject.Rows; $i++) {
-                            $columnValues = @()
-
-                            foreach ($columnobject in $tablecolumns) {
-
-                                if ($columnobject.ColumnType -notin $supportedDataTypes) {
-                                    Stop-Function -Message "Unsupported data type '$($columnobject.ColumnType)' for column $($columnobject.Name)" -Target $columnobject -Continue
-                                }
-
-                                if ($columnobject.MaskingType -notin $supportedFakerMaskingTypes) {
-                                    Stop-Function -Message "Unsupported masking type '$($columnobject.MaskingType)' for column $($columnobject.Name)" -Target $columnobject -Continue
-                                }
-
-                                if ($columnobject.SubType -notin $supportedFakerSubTypes) {
-                                    Stop-Function -Message "Unsupported masking sub type '$($columnobject.SubType)' for column $($columnobject.Name)" -Target $columnobject -Continue
-                                }
-
-                                # make sure max is good
-                                if ($columnobject.Nullable -and (($nullmod++) % $ModulusFactor -eq 0)) {
-                                    $columnValue = $null
-                                } elseif ($tableobject.HasUniqueIndex -and $columnobject.Name -in $uniqueValueColumns) {
-
-                                    if ($uniqueValues.Count -lt 1) {
-                                        Stop-Function -Message "Could not find any unique values in dictionary" -Target $tableobject
-                                        return
                                     }
 
-                                    $columnValue = $uniqueValues[$rowNumber].$($columnobject.Name)
-
-                                } elseif ($columnobject.Identity) {
-                                    if ($nextIdentity -or (-not $nextIdentity -and $tableobject.TruncateTable)) {
-                                        $nextIdentity += $identityValues.IdentityIncrement
-                                    } else {
-                                        $nextIdentity = $identityValues.CurrentIdentity + $identityValues.IdentityIncrement
-                                    }
-                                    $columnValue = $nextIdentity
-                                } else {
-
-                                    if ($columnobject.CharacterString) {
-                                        $charstring = $columnobject.CharacterString
-                                    } else {
-                                        $charstring = $CharacterString
+                                    # Most subtypes return a date as a string that is already formatted for SQL
+                                    # Server, but the ones Bogus exposes as a property, like Person.DateOfBirth,
+                                    # come back as a DateTime. Converting that further down with ToString() and no
+                                    # culture writes whatever the process culture uses, which swaps day and month
+                                    # everywhere but the invariant culture.
+                                    if ($columnValue -is [datetime]) {
+                                        $columnValue = $columnValue.ToString("yyyy-MM-dd HH:mm:ss.fff", [System.Globalization.CultureInfo]::InvariantCulture)
                                     }
 
-                                    if (($columnobject.MinValue -or $columnobject.MaxValue) -and ($columnobject.ColumnType -match 'date')) {
-                                        if (-not $columnobject.MinValue) {
-                                            $columnobject.MinValue = (Get-Date -Date $columnobject.MaxValue).AddDays(-365)
-                                        }
-                                        if (-not $columnobject.MaxValue) {
-                                            $columnobject.MaxValue = (Get-Date -Date $columnobject.MinValue).AddDays(365)
-                                        }
-                                    }
-
-                                    try {
-                                        if ($PSBoundParameters.MaxValue -and $columnobject.SubType -eq 'String' -and $columnobject.MaxValue -gt $MaxValue) {
-                                            $columnobject.MaxValue = $MaxValue
-                                        }
-                                        if ($columnobject.ColumnType -in $supportedDataTypes -and $columnobject.MaskingType -eq 'Random' -and $columnobject.SubType -in 'Bool', 'Number', 'Float', 'Byte', 'String') {
-                                            $randomParams = @{
-                                                DataType        = $columnobject.ColumnType
-                                                CharacterString = $charstring
-                                                Locale          = $Locale
-                                                Min             = $columnobject.MinValue
-                                                Max             = $columnobject.MaxValue
-                                            }
-                                            $columnValue = Get-DbaRandomizedValue @randomParams
+                                    if ($null -eq $columnValue -and $columnobject.Nullable -eq $true) {
+                                        $columnValues += 'NULL'
+                                    } elseif ($columnobject.ColumnType -eq 'xml') {
+                                        # nothing, unsure how i'll handle this
+                                    } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
+                                        $columnValues += "'$columnValue'"
+                                    } elseif ($columnobject.ColumnType -match 'int') {
+                                        $columnValues += "$columnValue"
+                                    } elseif ($columnobject.ColumnType -in 'bit', 'bool') {
+                                        if ($columnValue) {
+                                            $columnValues += "1"
                                         } else {
-                                            $randomParams = @{
-                                                RandomizerType    = $columnobject.MaskingType
-                                                RandomizerSubtype = $columnobject.SubType
-                                                CharacterString   = $charstring
-                                                Locale            = $Locale
-                                                Min               = $columnobject.MinValue
-                                                Max               = $columnobject.MaxValue
-                                            }
-                                            $columnValue = Get-DbaRandomizedValue @randomParams
+                                            $columnValues += "0"
                                         }
-
-                                    } catch {
-                                        Stop-Function -Message "Failure" -Target $script:faker -Continue -ErrorRecord $_
-                                    }
-
-                                }
-
-                                if ($null -eq $columnValue -and $columnobject.Nullable -eq $true) {
-                                    $columnValues += 'NULL'
-                                } elseif ($columnobject.ColumnType -eq 'xml') {
-                                    # nothing, unsure how i'll handle this
-                                } elseif ($columnobject.ColumnType -in 'uniqueidentifier') {
-                                    $columnValues += "'$columnValue'"
-                                } elseif ($columnobject.ColumnType -match 'int') {
-                                    $columnValues += "$columnValue"
-                                } elseif ($columnobject.ColumnType -in 'bit', 'bool') {
-                                    if ($columnValue) {
-                                        $columnValues += "1"
                                     } else {
-                                        $columnValues += "0"
+                                        $columnValue = ($columnValue).Tostring().Replace("'", "''")
+                                        $columnValues += "'$columnValue'"
                                     }
+                                }
+
+                                if ($i -lt $tableobject.Rows) {
+                                    $insertQuery += "( $($columnValues -join ',') ),`n"
                                 } else {
-                                    $columnValue = ($columnValue).Tostring().Replace("'", "''")
-                                    $columnValues += "'$columnValue'"
+                                    $insertQuery += "( $($columnValues -join ',') );`n"
                                 }
                             }
 
-                            if ($i -lt $tableobject.Rows) {
-                                $insertQuery += "( $($columnValues -join ',') ),`n"
-                            } else {
-                                $insertQuery += "( $($columnValues -join ',') );`n"
+                            if ($tableobject.Columns.Identity -contains $true) {
+                                $insertQuery += "SET IDENTITY_INSERT [$($tableobject.Schema)].[$($tableobject.Name)] OFF;"
                             }
-                        }
 
-                        if ($tableobject.Columns.Identity -contains $true) {
-                            $insertQuery += "SET IDENTITY_INSERT [$($tableobject.Schema)].[$($tableobject.Name)] OFF;"
+                            try {
+                                $transaction = $sqlconn.BeginTransaction()
+                                $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($insertQuery, $sqlconn, $transaction)
+                                $null = $sqlcmd.ExecuteNonQuery()
+                            } catch {
+                                Write-Message -Level VeryVerbose -Message "$insertQuery"
+                                $errormessage = $_.Exception.Message.ToString()
+                                Stop-Function -Message "Error inserting $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $insertQuery -Continue -ErrorRecord $_
+                            }
+
+
                         }
 
                         try {
-                            $transaction = $sqlconn.BeginTransaction()
-                            $sqlcmd = New-Object Microsoft.Data.SqlClient.SqlCommand($insertQuery, $sqlconn, $transaction)
-                            $null = $sqlcmd.ExecuteNonQuery()
+                            $null = $transaction.Commit()
+                            [PSCustomObject]@{
+                                ComputerName = $db.Parent.ComputerName
+                                InstanceName = $db.Parent.ServiceName
+                                SqlInstance  = $db.Parent.DomainInstanceName
+                                Database     = $db.Name
+                                Schema       = $tableobject.Schema
+                                Table        = $tableobject.Name
+                                Columns      = $tableobject.Columns.Name
+                                Rows         = $tableobject.Rows
+                                Elapsed      = [prettytimespan]$elapsed.Elapsed
+                                Status       = "Done"
+                            }
                         } catch {
-                            Write-Message -Level VeryVerbose -Message "$insertQuery"
-                            $errormessage = $_.Exception.Message.ToString()
-                            Stop-Function -Message "Error inserting $($tableobject.Schema).$($tableobject.Name): $errormessage" -Target $insertQuery -Continue -ErrorRecord $_
+                            Stop-Function -Message "Error inserting into $($tableobject.Schema).$($tableobject.Name)" -Target $insertQuery -Continue -ErrorRecord $_
                         }
-
-
-                    }
-
-                    try {
-                        $null = $transaction.Commit()
-                        [PSCustomObject]@{
-                            ComputerName = $db.Parent.ComputerName
-                            InstanceName = $db.Parent.ServiceName
-                            SqlInstance  = $db.Parent.DomainInstanceName
-                            Database     = $db.Name
-                            Schema       = $tableobject.Schema
-                            Table        = $tableobject.Name
-                            Columns      = $tableobject.Columns.Name
-                            Rows         = $tableobject.Rows
-                            Elapsed      = [prettytimespan]$elapsed.Elapsed
-                            Status       = "Done"
-                        }
-                    } catch {
-                        Stop-Function -Message "Error inserting into $($tableobject.Schema).$($tableobject.Name)" -Target $insertQuery -Continue -ErrorRecord $_
                     }
                 }
-            }
-
-            try {
-                $sqlconn.Close()
-            } catch {
-                Stop-Function -Message "Failure" -Continue -ErrorRecord $_
+            } finally {
+                Write-ProgressHelper -Completed
+                # The returns above, a throw under EnableException and a stopped pipeline skip everything after this
+                # block, so the connection is closed here. A warning instead of Stop-Function, because a throw from a
+                # finally would replace the error that is on its way out.
+                try {
+                    $sqlconn.Close()
+                } catch {
+                    Write-Message -Level Warning -Message "Failure closing the connection to $instance" -ErrorRecord $_
+                }
             }
         }
     }

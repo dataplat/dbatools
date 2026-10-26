@@ -135,28 +135,36 @@ function Invoke-DbaXEReplay {
             }
 
 
-            if ($Raw) {
-                Write-Message -Message "Invoking XEReplay against $instance running on $($server.name) with raw output" -Level Verbose
+            # The file is replayed once per database context. Without -Database, sqlcmd runs it once in the
+            # default database of the login, which is what the command always did.
+            $databaseContexts = $Database
+            if (-not $databaseContexts) {
+                $databaseContexts = @($null)
+            }
+
+            foreach ($databaseContext in $databaseContexts) {
+                $sqlcmdArguments = @("-S", "$instance", "-i", $filename)
+                if ($databaseContext) {
+                    $sqlcmdArguments += "-d", $databaseContext
+                }
                 if (Test-Bound -ParameterName SqlCredential) {
-                    . sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
-                    continue
-                } else {
-                    . sqlcmd -S $instance -i $filename
+                    $sqlcmdArguments += "-U", $SqlCredential.UserName, "-P", $SqlCredential.GetNetworkCredential().Password
+                }
+
+                if ($Raw) {
+                    Write-Message -Message "Invoking XEReplay against $instance running on $($server.name) with raw output" -Level Verbose
+                    & sqlcmd @sqlcmdArguments
                     continue
                 }
-            }
 
-            Write-Message -Message "Invoking XEReplay against $instance running on $($server.name)" -Level Verbose
-            if (Test-Bound -ParameterName SqlCredential) {
-                $output = . sqlcmd -S $instance -i $filename -U $SqlCredential.Username -P $SqlCredential.GetNetworkCredential().Password
-            } else {
-                $output = . sqlcmd -S $instance -i $filename
-            }
+                Write-Message -Message "Invoking XEReplay against $instance running on $($server.name)" -Level Verbose
+                $output = & sqlcmd @sqlcmdArguments
 
-            foreach ($line in $output) {
-                $newline = $line.Trim()
-                if ($newline -and $newline -notmatch "------------------------------------------------------------------------------------") {
-                    "$newline"
+                foreach ($line in $output) {
+                    $newline = $line.Trim()
+                    if ($newline -and $newline -notmatch "------------------------------------------------------------------------------------") {
+                        "$newline"
+                    }
                 }
             }
         }

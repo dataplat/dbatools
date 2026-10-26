@@ -175,6 +175,22 @@ function Test-DbaDbDataMaskingConfig {
                     }
                 }
 
+                # Test that the masking type and the sub type belong together. Testing them against two
+                # independent lists accepted Name/ZipCode, because Name is a type somewhere and ZipCode is a
+                # subtype somewhere, and the masking failed later on.
+                if ($null -ne $column.SubType -and $column.MaskingType -in $randomizerTypes.Type -and $column.SubType -in $randomizerTypes.SubType) {
+                    $randomizerCombination = $randomizerTypes | Where-Object { $PSItem.Type -eq $column.MaskingType -and $PSItem.SubType -eq $column.SubType }
+
+                    if (-not $randomizerCombination) {
+                        [PSCustomObject]@{
+                            Table  = $table.Name
+                            Column = $column.Name
+                            Value  = "$($column.MaskingType)/$($column.SubType)"
+                            Error  = "SubType is not valid for this MaskingType"
+                        }
+                    }
+                }
+
                 # Test date types
                 if ($column.ColumnType.ToLower() -eq 'date') {
 

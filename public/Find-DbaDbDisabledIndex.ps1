@@ -137,32 +137,40 @@ function Find-DbaDbDisabledIndex {
             }
 
             if ($databases.Count -gt 0) {
-                foreach ($db in $databases.name) {
+                # Working through a Database object moves the connection into that database and never moves it
+                # back - the query below runs there, and so does every enumeration of a database level
+                # collection. The database of the caller is put back when the work is done. See #10555.
+                $callerDatabase = $server.ConnectionContext.CurrentDatabase
+                try {
+                    foreach ($db in $databases.name) {
 
-                    if ($ExcludeDatabase -contains $db -or $null -eq $server.Databases[$db]) {
-                        continue
-                    }
-
-                    try {
-                        if ($PSCmdlet.ShouldProcess($db, "Getting disabled indexes")) {
-                            Write-Message -Level Verbose -Message "Getting indexes from database '$db'."
-                            Write-Message -Level Debug -Message "SQL Statement: $sql"
-                            $disabledIndex = $server.Databases[$db].ExecuteWithResults($sql)
-
-                            if ($disabledIndex.Tables[0].Rows.Count -gt 0) {
-                                $results = $disabledIndex.Tables[0];
-                                if ($results.Count -gt 0 -or !([string]::IsNullOrEmpty($results))) {
-                                    foreach ($index in $results) {
-                                        $index
-                                    }
-                                }
-                            } else {
-                                Write-Message -Level Verbose -Message "No Disabled indexes found"
-                            }
+                        if ($ExcludeDatabase -contains $db -or $null -eq $server.Databases[$db]) {
+                            continue
                         }
-                    } catch {
-                        Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -InnerErrorRecord $_ -Target $db
+
+                        try {
+                            if ($PSCmdlet.ShouldProcess($db, "Getting disabled indexes")) {
+                                Write-Message -Level Verbose -Message "Getting indexes from database '$db'."
+                                Write-Message -Level Debug -Message "SQL Statement: $sql"
+                                $disabledIndex = $server.Databases[$db].Query($sql)
+
+                                if (@($disabledIndex).Count -gt 0) {
+                                    $results = $disabledIndex;
+                                    if ($results.Count -gt 0 -or !([string]::IsNullOrEmpty($results))) {
+                                        foreach ($index in $results) {
+                                            $index
+                                        }
+                                    }
+                                } else {
+                                    Write-Message -Level Verbose -Message "No Disabled indexes found"
+                                }
+                            }
+                        } catch {
+                            Stop-Function -Message "Issue gathering indexes" -Category InvalidOperation -InnerErrorRecord $_ -Target $db
+                        }
                     }
+                } finally {
+                    Restore-DatabaseContext -Server $server -Database $callerDatabase
                 }
             } else {
                 Write-Message -Level Verbose -Message "There are no databases to analyse."

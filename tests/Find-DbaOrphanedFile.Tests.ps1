@@ -128,3 +128,40 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "The connection of the caller is left in the database it was in (#10555)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            # This command reads the directory tree through master, so a caller that is already in master
+            # cannot show the leak at all. The connection starts in tempdb for that reason, and it is not
+            # pooled, because a pooled connection reconnects at its default database.
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -Database tempdb -NonPooledConnection
+            $contextBefore = $callerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()")
+
+            $contextResult = Find-DbaOrphanedFile -SqlInstance $callerServer
+
+            $contextAfter = $callerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()")
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $callerServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "starts in tempdb, so a leak into master can be seen at all" {
+            $contextBefore | Should -Be "tempdb"
+        }
+
+        It "leaves the connection in the database it was in" {
+            $contextAfter | Should -Be $contextBefore
+        }
+    }
+}

@@ -73,6 +73,8 @@ Describe $CommandName -Tag IntegrationTests {
             { $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 2147483648 -Language "English" } | Should -Throw
 
             $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 70000
+            # The command returns nothing, the $null of sp_dropmessage used to end up here
+            @($testResults).Count | Should -Be 0
             ($serverPrimary.UserDefinedMessages | Where-Object ID -eq 70000).Count | Should -Be 0
         }
 
@@ -81,15 +83,19 @@ Describe $CommandName -Tag IntegrationTests {
             $testResults | Should -BeNullOrEmpty
 
             $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 70003 -Language "French"
+            @($testResults).Count | Should -Be 0
             ($serverPrimary.UserDefinedMessages | Where-Object { $PSItem.ID -eq 70003 -and $PSItem.Language -eq "French" }).Count | Should -Be 0
 
             $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 70003 -Language "All"
+            @($testResults).Count | Should -Be 0
             ($serverPrimary.UserDefinedMessages | Where-Object ID -eq 70003).Count | Should -Be 0 # SMO does a cascade delete of all messages by related ID in this scenario, so the resulting count is 1.
 
             $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 70004 -Language "English"
+            @($testResults).Count | Should -Be 0
             ($serverPrimary.UserDefinedMessages | Where-Object ID -eq 70004).Count | Should -Be 0
 
             $testResults = Remove-DbaCustomError -SqlInstance $serverPrimary -MessageID 70005
+            @($testResults).Count | Should -Be 0
             ($serverPrimary.UserDefinedMessages | Where-Object ID -eq 70005).Count | Should -Be 0
         }
     }

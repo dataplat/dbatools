@@ -96,19 +96,23 @@ function Stop-DbaDbEncryption {
         if (-not $Parallel) {
             # Sequential processing (original behavior)
             $stepCounter = 0
-            foreach ($db in $InputObject) {
-                $server = $db.Parent
-                Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Disabling encryption for $($db.Name) on $($server.Name)" -TotalSteps $InputObject.Count
-                try {
-                    if ($db.EncryptionEnabled) {
-                        $db | Disable-DbaDbEncryption -Confirm:$false
-                    } else {
-                        Write-Message -Level Verbose "Encryption was not enabled for $($db.Name) on $($server.Name)"
-                        $db | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, "Name as DatabaseName", EncryptionEnabled
+            try {
+                foreach ($db in $InputObject) {
+                    $server = $db.Parent
+                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Disabling encryption for $($db.Name) on $($server.Name)" -TotalSteps $InputObject.Count
+                    try {
+                        if ($db.EncryptionEnabled) {
+                            $db | Disable-DbaDbEncryption -Confirm:$false
+                        } else {
+                            Write-Message -Level Verbose "Encryption was not enabled for $($db.Name) on $($server.Name)"
+                            $db | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, "Name as DatabaseName", EncryptionEnabled
+                        }
+                    } catch {
+                        Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                     }
-                } catch {
-                    Stop-Function -Message "Failure" -ErrorRecord $_ -Continue
                 }
+            } finally {
+                Write-ProgressHelper -Completed
             }
         } else {
             # Parallel processing using runspaces
@@ -194,64 +198,77 @@ function Stop-DbaDbEncryption {
             if ($dbatools) {
                 $initialSessionState.ImportPSModule($dbatools.Path)
             }
-            $runspacePool = [runspacefactory]::CreateRunspacePool(1, 10, $initialSessionState, $Host)
+            # The pool gets no host. With $Host, the warnings, verbose messages and progress of the calling
+            # pipeline no longer reach the streams of a host created through the PowerShell API once a thread has
+            # run. The threads return their failures as objects, which are read from the thread itself.
+            $runspacePool = [runspacefactory]::CreateRunspacePool($initialSessionState)
+            $null = $runspacePool.SetMaxRunspaces(10)
             $runspacePool.Open()
 
             $threads = @()
 
-            foreach ($db in $InputObject) {
-                $splatRunspace = @{
-                    ServerName      = $db.Parent.Name
-                    DatabaseName    = $db.Name
-                    SqlCredential   = $SqlCredential
-                    EnableException = $EnableException
-                }
+            # The finally disposes the threads and closes the pool also when Stop-Function throws under
+            # EnableException and when the pipeline stops early (Ctrl+C, Select-Object -First).
+            try {
+                foreach ($db in $InputObject) {
+                    $splatRunspace = @{
+                        ServerName      = $db.Parent.Name
+                        DatabaseName    = $db.Name
+                        SqlCredential   = $SqlCredential
+                        EnableException = $EnableException
+                    }
 
-                Write-Message -Level Verbose "Queuing database $($db.Name) on $($db.Parent.Name) for decryption"
+                    Write-Message -Level Verbose "Queuing database $($db.Name) on $($db.Parent.Name) for decryption"
 
-                $thread = [powershell]::Create()
-                $thread.RunspacePool = $runspacePool
-                $null = $thread.AddScript($disableScript)
-                $null = $thread.AddParameters($splatRunspace)
+                    $thread = [powershell]::Create()
+                    $thread.RunspacePool = $runspacePool
+                    $null = $thread.AddScript($disableScript)
+                    $null = $thread.AddParameters($splatRunspace)
 
-                $handle = $thread.BeginInvoke()
-                $threads += [PSCustomObject]@{
-                    Handle      = $handle
-                    Thread      = $thread
-                    Database    = $db.Name
-                    Instance    = $db.Parent.Name
-                    IsRetrieved = $false
-                    Started     = Get-Date
-                }
-            }
-
-            # Retrieve results from runspaces
-            while ($threads | Where-Object { $_.IsRetrieved -eq $false }) {
-                $totalThreads = ($threads | Measure-Object).Count
-                $totalRetrievedThreads = ($threads | Where-Object { $_.IsRetrieved -eq $true } | Measure-Object).Count
-                Write-Progress -Id 1 -Activity "Disabling encryption" -Status "Progress" -CurrentOperation "Processing: $totalRetrievedThreads/$totalThreads" -PercentComplete ($totalRetrievedThreads / $totalThreads * 100)
-
-                foreach ($thread in ($threads | Where-Object { $_.IsRetrieved -eq $false })) {
-                    if ($thread.Handle.IsCompleted) {
-                        $result = $thread.Thread.EndInvoke($thread.Handle)
-                        $thread.IsRetrieved = $true
-
-                        if ($result) {
-                            if ($result.Status -eq "Failed") {
-                                Stop-Function -Message "Failed to disable encryption for $($result.DatabaseName) on $($result.SqlInstance): $($result.Error)" -Continue
-                            } else {
-                                $result | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, EncryptionEnabled
-                            }
-                        }
-
-                        $thread.Thread.Dispose()
+                    $handle = $thread.BeginInvoke()
+                    $threads += [PSCustomObject]@{
+                        Handle      = $handle
+                        Thread      = $thread
+                        Database    = $db.Name
+                        Instance    = $db.Parent.Name
+                        IsRetrieved = $false
+                        Started     = Get-Date
                     }
                 }
-                Start-Sleep -Milliseconds 500
-            }
 
-            $runspacePool.Close()
-            $runspacePool.Dispose()
+                # Retrieve results from runspaces
+                while ($threads | Where-Object { $_.IsRetrieved -eq $false }) {
+                    $totalThreads = ($threads | Measure-Object).Count
+                    $totalRetrievedThreads = ($threads | Where-Object { $_.IsRetrieved -eq $true } | Measure-Object).Count
+                    Write-Progress -Id 1 -Activity "Disabling encryption" -Status "Progress" -CurrentOperation "Processing: $totalRetrievedThreads/$totalThreads" -PercentComplete ($totalRetrievedThreads / $totalThreads * 100)
+
+                    foreach ($thread in ($threads | Where-Object { $_.IsRetrieved -eq $false })) {
+                        if ($thread.Handle.IsCompleted) {
+                            $result = $thread.Thread.EndInvoke($thread.Handle)
+                            $thread.IsRetrieved = $true
+
+                            if ($result) {
+                                if ($result.Status -eq "Failed") {
+                                    Stop-Function -Message "Failed to disable encryption for $($result.DatabaseName) on $($result.SqlInstance): $($result.Error)" -Continue
+                                } else {
+                                    $result | Select-DefaultView -Property ComputerName, InstanceName, SqlInstance, DatabaseName, EncryptionEnabled
+                                }
+                            }
+
+                            $thread.Thread.Dispose()
+                        }
+                    }
+                    Start-Sleep -Milliseconds 500
+                }
+            } finally {
+                Write-Progress -Id 1 -Activity "Disabling encryption" -Completed
+                # A thread that is still running is stopped by Dispose().
+                foreach ($threadEntry in $threads) {
+                    $threadEntry.Thread.Dispose()
+                }
+                $runspacePool.Close()
+                $runspacePool.Dispose()
+            }
         }
     }
 }

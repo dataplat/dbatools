@@ -11,7 +11,7 @@
     RootModule         = 'dbatools.psm1'
 
     # Version number of this module.
-    ModuleVersion      = '2.8.4'
+    ModuleVersion      = '2.9.1'
 
     # ID used to uniquely identify this module
     GUID               = '9d139310-ce45-41ce-8e8b-d76335aa1789'
@@ -31,7 +31,7 @@
     # Modules that must be imported into the global environment prior to importing this module
     RequiredModules    = @{
         ModuleName    = 'dbatools.library';
-        ModuleVersion = '2026.5.3'
+        ModuleVersion = '2026.9.14'
     }
 
     # Assemblies that must be loaded prior to importing this module
@@ -170,6 +170,8 @@
         'Find-DbaDbDisabledIndex',
         'Find-DbaDbDuplicateIndex',
         'Find-DbaDbGrowthEvent',
+        'Find-DbaDbMissingIndex',
+        'Find-DbaDbQueryStoreRegression',
         'Find-DbaDbUnusedIndex',
         'Find-DbaInstance',
         'Find-DbaLoginInGroup',
@@ -402,6 +404,7 @@
         'Get-DbaTopResourceUsage',
         'Get-DbaTrace',
         'Get-DbaTraceFlag',
+        'Get-DbaUnusedLogin',
         'Get-DbaUptime',
         'Get-DbaUserPermission',
         'Get-DbaWaitingTask',
@@ -434,6 +437,7 @@
         'Import-DbaSpConfigure',
         'Import-DbatoolsConfig',
         'Import-DbaXESessionTemplate',
+        'Install-DbaCommunitySoftware',
         'Install-DbaDarlingData',
         'Install-DbaFirstResponderKit',
         'Install-DbaInstance',
@@ -459,6 +463,7 @@
         'Invoke-DbaDbDbccCleanTable',
         'Invoke-DbaDbDbccUpdateUsage',
         'Invoke-DbaDbDecryptObject',
+        "Invoke-DbaDbIndexRebuild",
         'Invoke-DbaDbLogShipping',
         'Invoke-DbaDbLogShipRecovery',
         'Invoke-DbaDbMirrorFailover',
@@ -586,6 +591,7 @@
         'Remove-DbaNetworkCertificate',
         'Remove-DbaPfDataCollectorCounter',
         'Remove-DbaPfDataCollectorSet',
+        'Remove-DbaPrivilege',
         'Remove-DbaRegServer',
         'Remove-DbaRegServerGroup',
         'Remove-DbaRgResourcePool',
@@ -658,6 +664,7 @@
         'Show-DbaDbList',
         'Show-DbaInstanceFileSystem',
         'Start-DbaAgentJob',
+        "Start-DbaAzMigration",
         'Start-DbaEndpoint',
         'Start-DbaMigration',
         'Start-DbaPfDataCollectorSet',
@@ -828,7 +835,7 @@
             Tags         = @('sqlserver', 'migrations', 'sql', 'dba', 'databases', 'mac', 'linux', 'core')
 
             # The web address of an icon which can be used in galleries to represent this module
-            IconUri      = "https://dbatools.io/logo.png"
+            IconUri      = "https://dbatools.io/thor.png"
 
             # The web address of this module's project or support homepage.
             ProjectUri   = "https://dbatools.io"

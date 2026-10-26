@@ -28,6 +28,7 @@ function Measure-DbatoolsImport {
 
     .EXAMPLE
         PS C:\> Measure-DbatoolsImport
+
         Displays the import load times of the dbatools PowerShell module
 
     .EXAMPLE

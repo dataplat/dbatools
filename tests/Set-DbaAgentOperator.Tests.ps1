@@ -61,4 +61,35 @@ Describe $CommandName -Tag IntegrationTests {
             $results.EmailAddress | Should -Be "new@new.com"
         }
     }
+
+    Context "When the instance cannot be reached" {
+        BeforeAll {
+            # Lower the connection timeout so the three failing connection attempts stay fast.
+            $oldConnectionTimeout = Get-DbatoolsConfigValue -FullName sql.connection.timeout
+            $null = Set-DbatoolsConfig -FullName sql.connection.timeout -Value 2
+        }
+
+        AfterAll {
+            $null = Set-DbatoolsConfig -FullName sql.connection.timeout -Value $oldConnectionTimeout
+        }
+
+        It "Warns without eating an iteration of the caller's loop" {
+            # The connection catch used to run Stop-Function -Continue before the operator loop -
+            # the continue escaped the command and consumed an iteration of this very loop, so the
+            # counter fell short (#10638).
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $splatUnreachable = @{
+                    SqlInstance   = "dbatoolsci-nohost"
+                    Operator      = "dbatoolsci_nope"
+                    EmailAddress  = "nope@nope.com"
+                    WarningAction = "SilentlyContinue"
+                }
+                $null = Set-DbaAgentOperator @splatUnreachable
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            ($WarnVar -join " ") | Should -BeLike "*Failed*"
+        }
+    }
 }

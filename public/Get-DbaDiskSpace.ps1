@@ -4,7 +4,7 @@ function Get-DbaDiskSpace {
         Retrieves disk space and filesystem details from SQL Server host systems for capacity monitoring and performance analysis.
 
     .DESCRIPTION
-        Queries Windows disk volumes on SQL Server systems using WMI to gather critical storage information for database administration. Returns comprehensive disk details including capacity, free space, filesystem type, and optional fragmentation analysis.
+        Queries Windows disk volumes on SQL Server systems using WMI to gather critical storage information for database administration. Returns comprehensive disk details including capacity, free space and filesystem type.
 
         Essential for SQL Server capacity planning, this function helps DBAs monitor disk space before growth limits impact database operations. Use it to verify adequate space for backup operations, identify performance bottlenecks from fragmented volumes hosting data or log files, and maintain compliance documentation for storage utilization.
 
@@ -20,23 +20,16 @@ function Get-DbaDiskSpace {
         Credential object used to connect to the computer as a different user.
 
     .PARAMETER Unit
-        This parameter has been deprecated and will be removed in 1.0.0.
-        All size properties (Bytes, KB, MB, GB, TB, PB) are now available simultaneously in the output object but hidden by default for cleaner display.
-
-    .PARAMETER SqlCredential
-        Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
-
-        Windows Authentication, SQL Server Authentication, Active Directory - Password, and Active Directory - Integrated are all supported.
-
-        For MFA support, please use Connect-DbaInstance.
+        Displays the Capacity and Free values in the specified unit: Bytes, KB, MB, GB or TB.
+        By default each value picks a human friendly unit for display ("1.82 TB"). The underlying values are not changed, and every unit stays available through the SizeIn* and FreeIn* properties of the output object.
 
     .PARAMETER ExcludeDrive
         Specifies drive letters to exclude from the disk space report, using the format 'C:\' or 'D:\'.
         Use this to skip system drives or non-SQL storage when focusing on database file locations, or to exclude network drives that may cause timeouts.
 
     .PARAMETER CheckFragmentation
-        Enables filesystem fragmentation analysis for all volumes, which can impact SQL Server I/O performance when database or log files are stored on fragmented drives.
-        This significantly increases runtime (seconds to minutes per volume) but provides critical data for troubleshooting slow database operations or planning defragmentation maintenance.
+        This parameter is deprecated and will cause the command to stop with a warning.
+        The fragmentation analysis was removed from this command because the underlying DefragAnalysis call took minutes per volume.
 
     .PARAMETER Force
         Includes all drive types and hidden volumes in the results, not just local and removable disks (DriveType 2 and 3).
@@ -70,8 +63,8 @@ function Get-DbaDiskSpace {
         - ComputerName: The name of the computer
         - Name: The volume name (drive letter or UNC path, e.g., 'C:\' or '\\server\share')
         - Label: The volume label/name if assigned
-        - Capacity: Total disk capacity in the specified unit (default GB)
-        - Free: Free space available in the specified unit (default GB)
+        - Capacity: Total disk capacity, displayed in a human friendly unit or in the unit requested with -Unit
+        - Free: Free space available, displayed in a human friendly unit or in the unit requested with -Unit
         - PercentFree: Percentage of disk space that is free
         - BlockSize: File system block size in bytes
 
@@ -125,9 +118,8 @@ function Get-DbaDiskSpace {
         [Parameter(ValueFromPipeline)]
         [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME,
         [PSCredential]$Credential,
-        [ValidateSet('Bytes', 'KB', 'MB', 'GB', 'TB', 'PB')]
-        [string]$Unit = 'GB',
-        [PSCredential]$SqlCredential,
+        [ValidateSet("Bytes", "KB", "MB", "GB", "TB")]
+        [string]$Unit,
         [string[]]$ExcludeDrive,
         [switch]$CheckFragmentation,
         [switch]$Force,
@@ -135,10 +127,24 @@ function Get-DbaDiskSpace {
     )
 
     begin {
+        if ($CheckFragmentation) {
+            Stop-Function -Message "The parameter CheckFragmentation is deprecated. The fragmentation analysis has been removed from this command because the underlying DefragAnalysis call took minutes per volume."
+            return
+        }
 
         $condition = " WHERE DriveType = 2 OR DriveType = 3"
         if (Test-Bound 'Force') {
             $condition = ""
+        }
+
+        # The Capacity and Free properties are Size objects that pick a human friendly display unit.
+        # A requested unit overrides that display without changing the underlying values.
+        if (Test-Bound "Unit") {
+            if ($Unit -eq "Bytes") {
+                $unitStyle = [Dataplat.Dbatools.Utility.SizeStyle]::Byte
+            } else {
+                $unitStyle = [Dataplat.Dbatools.Utility.SizeStyle]$Unit
+            }
         }
 
         # Keep track of what computer was already processed to avoid duplicates
@@ -147,6 +153,8 @@ function Get-DbaDiskSpace {
     }
 
     process {
+        if (Test-FunctionInterrupt) { return }
+
         foreach ($computer in $ComputerName) {
             if ($computer.ComputerName -notin $processed) {
                 $null = $processed.Add($computer.ComputerName)
@@ -180,6 +188,11 @@ function Get-DbaDiskSpace {
                 $info.BlockSize = $disk.BlockSize
                 $info.FileSystem = $disk.FileSystem
                 $info.Type = $disk.DriveType
+
+                if ($unitStyle) {
+                    if ($null -ne $info.Capacity) { $info.Capacity.Style = $unitStyle }
+                    if ($null -ne $info.Free) { $info.Free.Style = $unitStyle }
+                }
 
                 $info
             }

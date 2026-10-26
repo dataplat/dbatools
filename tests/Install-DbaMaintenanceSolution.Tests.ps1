@@ -193,6 +193,129 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "The connection of the caller is left alone (#10554)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -NonPooledConnection
+            $null = $callerServer.ConnectionContext.ExecuteNonQuery("CREATE TABLE #dbatoolsci_marker (id INT)")
+
+            # ReplaceExisting takes the code path that drops the existing objects, jobs are left out so that no
+            # SQL Agent command touches the connection - those are separate commands, see #10555.
+            $splatInstall = @{
+                SqlInstance     = $callerServer
+                Database        = "tempdb"
+                BackupLocation  = "NUL"
+                ReplaceExisting = $true
+            }
+            $null = Install-DbaMaintenanceSolution @splatInstall
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $callerServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "leaves the connection open, so the session survives" {
+            { $callerServer.ConnectionContext.ExecuteScalar("SELECT COUNT(*) FROM #dbatoolsci_marker") } | Should -Not -Throw
+        }
+
+        It "leaves the connection in the database it was on" {
+            $callerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()") | Should -Be "master"
+        }
+    }
+
+    Context "Connections it opens are closed when it skips an instance (#10659)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The command opens a non-pooled connection per instance and used to close it only at the end of
+            # the loop body: skipping the instance because the database does not exist left the session behind,
+            # both when the skip was a warning and when it was thrown. Count the sessions through a server
+            # object opened once, and only the sessions of this process.
+            $countServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -NonPooledConnection
+            # Only the sessions that logged in after the start of a round are counted. A count of all sessions, or of
+            # the sleeping ones, also moved when the pool closed idle sessions of earlier tests or a reset session
+            # turned dormant (4 -> 3, 13 -> 1 and 8 -> 9 in full runs, 1 -> 0 on PowerShell 7). A session the command
+            # closed can take a moment to go away on the server, so the count is retried for up to ten seconds; a
+            # session it left behind stays.
+            $getNewSessionCount = {
+                param($Since)
+                $newSessionQuery = @"
+SELECT COUNT(*)
+FROM sys.dm_exec_sessions
+WHERE host_process_id = $PID
+  AND session_id <> @@spid
+  AND login_time > CONVERT(datetime2, '$Since', 121)
+"@
+                $waitUntil = (Get-Date).AddSeconds(10)
+                do {
+                    $newSessionCount = $countServer.ConnectionContext.ExecuteScalar($newSessionQuery)
+                    if ($newSessionCount -eq 0) {
+                        break
+                    }
+                    Start-Sleep -Milliseconds 500
+                } while ((Get-Date) -lt $waitUntil)
+                $newSessionCount
+            }
+            $serverTimeQuery = "SELECT CONVERT(varchar(27), SYSDATETIME(), 121)"
+            $missingDbName = "dbatoolsci_missing_$(Get-Random)"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # One warm-up call so the background connections of the tab expansion exist before the baseline.
+            $null = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceMulti1 -Database $missingDbName -WarningAction SilentlyContinue
+            # And one of the thrown skip, so that a connection either form opens on first use is older than the rounds.
+            try {
+                $null = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceMulti1 -Database $missingDbName -EnableException
+            } catch {
+                $null = $PSItem
+            }
+
+            $roundStart = $countServer.ConnectionContext.ExecuteScalar($serverTimeQuery)
+            foreach ($i in 1..3) {
+                $null = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceMulti1 -Database $missingDbName -WarningAction SilentlyContinue
+            }
+            $warningsAfterWarn = $WarnVar
+            $newSessionsAfterWarn = & $getNewSessionCount $roundStart
+
+            $roundStart = $countServer.ConnectionContext.ExecuteScalar($serverTimeQuery)
+            foreach ($i in 1..3) {
+                try {
+                    $null = Install-DbaMaintenanceSolution -SqlInstance $TestConfig.InstanceMulti1 -Database $missingDbName -EnableException
+                } catch {
+                    $null = $PSItem
+                }
+            }
+            $newSessionsAfterThrow = & $getNewSessionCount $roundStart
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $countServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "warns that the database was not found" {
+            @($warningsAfterWarn) -join " " | Should -BeLike "*$missingDbName not found*"
+        }
+
+        It "leaves no session behind when the skip is a warning" {
+            $newSessionsAfterWarn | Should -Be 0
+        }
+
+        It "leaves no session behind when the skip is thrown" {
+            $newSessionsAfterThrow | Should -Be 0
+        }
+    }
+
     Context "Additional backup parameters all enabled" {
         AfterEach {
             Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Query $jobStep.Command -NoExec -EnableException
@@ -1490,6 +1613,60 @@ Describe $CommandName -Tag IntegrationTests {
             $jobStep = Get-DbaAgentJobStep @splatJobStep
             $backupLocationSetting = (Get-DbaDefaultPath -SqlInstance $TestConfig.InstanceMulti2).Backup
             $jobStep.Command | Should -BeLike "*@Directory = *$backupLocationSetting*"
+        }
+    }
+
+    Context "When the pipeline ends at the result" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $firstOnlyDbName = "dbatoolsci_maintfirst_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $firstOnlyDbName
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. Select-Object -First 1 stops the command at
+            # the result of the first instance. The runspace imports the manifest: an import of the psm1
+            # without a command line skips the type data.
+            $splatFirstOnlyInstall = @{
+                SqlInstance = $TestConfig.InstanceMulti1
+                Database    = $firstOnlyDbName
+            }
+            if ($TestConfig.SqlCred) {
+                $splatFirstOnlyInstall.SqlCredential = $TestConfig.SqlCred
+            }
+            $firstOnlyRunspace = [runspacefactory]::CreateRunspace()
+            $firstOnlyRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $firstOnlyRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $firstOnlyShell = [powershell]::Create()
+            $firstOnlyShell.Runspace = $firstOnlyRunspace
+            $firstOnlyResult = $firstOnlyShell.AddCommand("Install-DbaMaintenanceSolution").AddParameters($splatFirstOnlyInstall).AddCommand("Select-Object").AddParameter("First", 1).Invoke()
+            $firstOnlyRecords = @($firstOnlyShell.Streams.Progress)
+            $firstOnlyShell.Dispose()
+            $firstOnlyRunspace.Dispose()
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Database $firstOnlyDbName
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Installs the solution" {
+            $firstOnlyResult.Results | Should -Be "Success"
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $firstOnlyRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $firstOnlyRecords | Where-Object Activity -eq "Executing Install-DbaMaintenanceSolution" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
         }
     }
 }

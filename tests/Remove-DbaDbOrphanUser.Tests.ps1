@@ -192,3 +192,57 @@ Describe $CommandName -Tag IntegrationTests {
         $results1.Name -contains $loginWindows | Should -Be $false
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "The connection of the caller is left in the database it was in (#10555)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $contextDbName = "dbatoolsci_ctx_orphanremove_$(Get-Random)"
+            $contextLoginName = "dbatoolsci_ctx_login_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $contextDbName
+
+            # A user whose login is gone is an orphan, which is what gives the command something to do.
+            $splatContextLogin = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Login       = $contextLoginName
+                Password    = (ConvertTo-SecureString -String "dbatools.IO" -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatContextLogin
+            $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $contextDbName -Login $contextLoginName -Username $contextLoginName
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $contextLoginName
+
+            # Only a non-pooled connection can show this. A pooled connection that is closed between two
+            # calls reconnects at its default database, which puts the database back by accident.
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $contextBefore = $callerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()")
+
+            $null = Remove-DbaDbOrphanUser -SqlInstance $callerServer -Database $contextDbName
+
+            $contextAfter = $callerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()")
+            $contextUsers = Get-DbaDbUser -SqlInstance $TestConfig.InstanceSingle -Database $contextDbName
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $callerServer | Disconnect-DbaInstance
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $contextDbName -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "still removes the orphaned user" {
+            # Only a command that really did something can move the connection, so without this the
+            # assertion below would pass for the wrong reason.
+            $contextUsers.Name | Should -Not -Contain $contextLoginName
+        }
+
+        It "leaves the connection in the database it was in" {
+            $contextAfter | Should -Be $contextBefore
+        }
+    }
+}

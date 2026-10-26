@@ -63,10 +63,14 @@ function Get-LoginPasswordHash {
             $hashedPass = $server.ConnectionContext.ExecuteScalar($sql)
         } catch {
             try {
-                $hashedPassDt = $server.Databases["master"].ExecuteWithResults($sql)
+                # Same query as above, so it runs on the connection as well. Going through the master
+                # database would leave the connection of the caller there. See #10555.
+                $hashedPassDt = $server.ConnectionContext.ExecuteWithResults($sql)
                 $hashedPass = $hashedPassDt.Tables[0].Rows[0].Item(0)
             } catch {
-                Stop-Function -Message "Failed to retrieve password hash for login $($Login.Name)" -ErrorRecord $_ -Target $Login -Continue
+                # No -Continue here: no loop encloses this catch, so the continue would escape the function
+                # and bypass the null-hash handling of the caller (#10638).
+                Stop-Function -Message "Failed to retrieve password hash for login $($Login.Name)" -ErrorRecord $_ -Target $Login
                 return
             }
         }

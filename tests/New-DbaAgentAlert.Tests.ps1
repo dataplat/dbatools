@@ -113,4 +113,22 @@ Describe $CommandName -Tag IntegrationTests {
             Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceMulti2 -Alert $splatMessageAlert.Alert | Should -Not -BeNullOrEmpty
         }
     }
+
+    Context "When creating a disabled alert" {
+        It "Creates the alert disabled" {
+            # -Disabled was declared and documented but never applied, so every alert came up enabled (#10607).
+            $splatDisabledAlert = @{
+                SqlInstance         = $TestConfig.InstanceMulti1
+                Alert               = "Another Alert"
+                Disabled            = $true
+                NotifyMethod        = "NotifyEmail"
+                NotificationMessage = "Test Notification"
+                Severity            = 17
+                EnableException     = $true
+            }
+            $alert = New-DbaAgentAlert @splatDisabledAlert
+            $alert.IsEnabled | Should -Be $false
+            (Get-DbaAgentAlert -SqlInstance $TestConfig.InstanceMulti1 -Alert "Another Alert").IsEnabled | Should -Be $false
+        }
+    }
 }

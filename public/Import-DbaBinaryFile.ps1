@@ -161,11 +161,16 @@ function Import-DbaBinaryFile {
 
         if ($FilePath) {
             if (-not (Test-Path $FilePath)) {
-                Stop-Function -Message "File $FilePath does not exist" -Continue
+                # No -Continue on these guards: no loop encloses them, so the continue would escape
+                # the command and eat an iteration of whatever loop the caller runs in. The guards
+                # above already stop and return, these two now do the same.
+                Stop-Function -Message "File $FilePath does not exist"
+                return
             }
 
             if ((Get-Item -Path $FilePath).PSIsContainer) {
-                Stop-Function -Message "FilePath must be one or more files, not a directory. For directories, use Path" -Continue
+                Stop-Function -Message "FilePath must be one or more files, not a directory. For directories, use Path"
+                return
             }
         }
 
@@ -235,7 +240,17 @@ function Import-DbaBinaryFile {
                         Write-Message -Level Verbose -Message "Statement: $Statement"
                         $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
                         $cmd.CommandText = $Statement
-                        $cmd.Connection.Open()
+                        # The connection belongs to the caller, so it is only opened and closed again if it was
+                        # closed to begin with. Opening an open connection throws, and closing the connection of
+                        # the caller takes their session with it. See #10554.
+                        # The connection belongs to the caller, so it is only opened and closed again if it was
+                        # closed to begin with. Opening an open connection throws, and closing the connection of
+                        # the caller takes their session with it. See #10554.
+                        $openedConnection = $false
+                        if ($cmd.Connection.State -ne [System.Data.ConnectionState]::Open) {
+                            $cmd.Connection.Open()
+                            $openedConnection = $true
+                        }
 
                         $datatype = ($tbl.Columns | Where-Object Name -eq $BinaryColumn).DataType
                         Write-Message -Level Verbose -Message "Binary column datatype is $datatype"
@@ -246,7 +261,9 @@ function Import-DbaBinaryFile {
                         $null = $cmd.ExecuteScalar()
 
                         try {
-                            $cmd.Connection.Close()
+                            if ($openedConnection) {
+                                $cmd.Connection.Close()
+                            }
                             $cmd.Dispose()
                             $filestream.Close()
                             $filestream.Dispose()
@@ -276,7 +293,6 @@ function Import-DbaBinaryFile {
                             $binaryreader.Close()
                             $binaryreader.Dispose()
                         }
-                        $null = $server | Disconnect-DbaInstance
                     }
                 }
             }

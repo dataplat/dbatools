@@ -65,6 +65,10 @@ Describe "Integration Tests" -Tag "IntegrationTests" {
 
         $results = $dacpac | Publish-DbaDacPackage -PublishXml $publishprofile.FileName -Database $dbname -SqlInstance localhost:14333 -Confirm:$false
         $results.Result | Should -BeLike '*Update complete.*'
+        if (-not [bool]$env:DBATOOLS_GALLERY_TEST) {
+            $results.ConnectionString.Contains("dbatools.IO") | Should -BeFalse
+            $results.ConnectionString | Should -Match "Password=\*{8}"
+        }
         $ids = Invoke-DbaQuery -Database $dbname -SqlInstance localhost:14333 -Query 'SELECT id FROM dbo.example'
         $ids.id | Should -Not -BeNullOrEmpty
     }
@@ -214,6 +218,36 @@ exec sp_addrolemember 'userrole','bob';
         Get-DbaPermission -Database tempdb | Should -Not -Be $null
     }
 
+    # The gallery job imports the released dbatools, which does not have this command until it ships.
+    It -Skip:([bool]$env:DBATOOLS_GALLERY_TEST) "rebuilds a fragmented index" {
+        $indexDbName = "dbatoolsci_idxrebuild_$(Get-Random)"
+        try {
+            $null = New-DbaDatabase -Name $indexDbName
+            $indexDb = Get-DbaDatabase -Database $indexDbName
+            # Inserted row by row on purpose: the GUID keys then arrive out of order and the clustered index really fragments.
+            $indexFixture = @"
+CREATE TABLE dbo.frag1 (
+    id uniqueidentifier NOT NULL CONSTRAINT PK_frag1 PRIMARY KEY CLUSTERED,
+    filler char(2000) NOT NULL
+);
+SET NOCOUNT ON;
+DECLARE @i int = 0;
+WHILE @i < 2000 BEGIN
+    INSERT dbo.frag1 (id, filler) VALUES (NEWID(), 'x');
+    SET @i += 1;
+END
+"@
+            $indexDb.Query($indexFixture)
+
+            $indexResults = Invoke-DbaDbIndexRebuild -Database $indexDbName -Mode Rebuild
+            $indexResults.Operation | Should -Be "Rebuild"
+            $indexResults.Success | Should -Be $true
+            $indexResults.FragmentationAfter | Should -BeLessThan $indexResults.FragmentationBefore
+        } finally {
+            $null = Remove-DbaDatabase -Database $indexDbName -ErrorAction SilentlyContinue
+        }
+    }
+
     # Takes two minutes in GH, very boring
     It -Skip "returns the master key" {
         (Get-DbaDbMasterKey).Database | Should -Be "master"
@@ -319,7 +353,10 @@ exec sp_addrolemember 'userrole','bob';
         $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
 
         $azureUrl = "https://dbatools.blob.core.windows.net/dbatools"
-        $dbName = "dbatoolsci_logship_azure"
+        # The database name is part of the blob name, and the container is shared by every run on every branch.
+        # Scoping it by run id and attempt keeps two runs that reach this backup within the same second from
+        # fighting over one blob (#10667). The cleanup below lists by this prefix, so it still finds its own blobs.
+        $dbName = "dbatoolsci_logship_azure_$($env:GITHUB_RUN_ID)_$($env:GITHUB_RUN_ATTEMPT)"
 
         # Create SAS token credential on both instances
         $primaryServer = Connect-DbaInstance -SqlInstance localhost -SqlCredential $cred
@@ -473,7 +510,8 @@ exec sp_addrolemember 'userrole','bob';
     It -Skip:(-not $env:azurepasswd) "adds a second live secondary without replacing the Azure primary configuration" {
         $PSDefaultParameterValues.Clear()
         $azureUrl = "https://dbatools.blob.core.windows.net/dbatools"
-        $dbName = "dbatoolsci_logship_addsecondary"
+        # Scoped by run id and attempt for the same reason as the SAS token test above (#10667).
+        $dbName = "dbatoolsci_logship_addsecondary_$($env:GITHUB_RUN_ID)_$($env:GITHUB_RUN_ATTEMPT)"
         $secondDbName = "${dbName}_second"
         $missingPrimaryDbName = "${dbName}_missing"
         $sasToken = $env:azurepasswd.TrimStart("?")

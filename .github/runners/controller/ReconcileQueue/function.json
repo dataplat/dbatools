@@ -1,0 +1,11 @@
+{
+  "bindings": [
+    {
+      "name": "QueueItem",
+      "type": "queueTrigger",
+      "direction": "in",
+      "queueName": "%FLEET_QUEUE%",
+      "connection": "AzureWebJobsStorage"
+    }
+  ]
+}

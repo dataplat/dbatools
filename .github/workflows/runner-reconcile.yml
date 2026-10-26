@@ -1,12 +1,17 @@
 # The single VMSS fleet controller. CI requests, per-job completion nudges, maintainer
 # pushes, and the five-minute safety tick all reconcile the same desired state.
 #
-# AppVeyor-style pool policy:
-#   - potatoqualitee: 10 dedicated workers for one hour after a PR or [do ci]
-#   - andreasjordan:  10 dedicated workers for one hour after activity
-#   - niphlod:         10 dedicated workers for one hour after activity
-#   - community:       5 shared workers while CI is live and for 20 minutes after
-#   - no activity or queued work: zero workers
+# AppVeyor-style pool policy. Each maintainer gets a fixed ten-runner dedicated lane
+# while eligible CI is live and for 20 minutes after it completes, then scales to zero.
+# Only community is demand-sized: it is hot while CI is live and 20 minutes after,
+# capped at five shared workers and held at WARM_FLOOR when hot with nothing pending.
+# Demand never heats a cold community lane or sizes a maintainer's fixed lane.
+#
+# ci-azure's matrix jobs are not created until the `needs: authorize` gate clears, so on
+# the workflow_run:requested tick the jobs API shows only the ubuntu-hosted authorize
+# job. The controller estimates a full pool for a live run with no visible pool jobs and
+# corrects it on the next pass; without that, every build would wait a reconcile
+# interval for its first VM.
 #
 # Each Flexible VMSS instance stores its pool in the runnerPool Azure tag and the
 # matching GitHub runner label. Ephemeral agents take one job, unregister, and the
@@ -66,7 +71,8 @@ jobs:
       COMMUNITY_GRACE_MINUTES: 20
       BOOST_USERS: potatoqualitee andreasjordan niphlod
       BOOST_COUNT: 10
-      BOOST_HOURS: 1
+      BOOST_MINUTES: 20
+      WARM_FLOOR: 3
       OPT_IN_PUSH_USERS: potatoqualitee
       CI_MARKER: "[do ci]"
       BOOST_TRIGGER: ${{ inputs.boost_user }}
@@ -80,7 +86,7 @@ jobs:
       BOOTSTRAP_PATH: /tmp/bootstrap-runner.ps1
     steps:
       - name: Azure login (OIDC)
-        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
@@ -130,7 +136,7 @@ jobs:
       contents: read
     steps:
       - name: Azure login (OIDC)
-        uses: azure/login@532459ea530d8321f2fb9bb10d1e0bcf23869a43 # v3.0.0
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}

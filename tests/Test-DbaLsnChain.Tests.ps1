@@ -6,32 +6,16 @@ param(
 )
 
 Describe $CommandName -Tag UnitTests {
-    InModuleScope dbatools {
-        Context "Parameter validation" {
-            It "Should have the expected parameters" {
-                $hasParameters = (Get-Command "Test-DbaLsnChain").Parameters.Values.Name | Where-Object {
-                    $PSItem -notin @(
-                        "Verbose",
-                        "Debug",
-                        "ErrorAction",
-                        "WarningAction",
-                        "InformationAction",
-                        "ProgressAction",
-                        "ErrorVariable",
-                        "WarningVariable",
-                        "InformationVariable",
-                        "OutVariable",
-                        "OutBuffer",
-                        "PipelineVariable"
-                    )
-                }
-                $expectedParameters = @(
-                    "FilteredRestoreFiles",
-                    "Continue",
-                    "EnableException"
-                )
-                Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
-            }
+    Context "Parameter validation" {
+        It "Should have the expected parameters" {
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
+                "FilteredRestoreFiles",
+                "Continue",
+                "EnableException"
+            )
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
 }

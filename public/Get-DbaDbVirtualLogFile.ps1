@@ -114,7 +114,7 @@ function Get-DbaDbVirtualLogFile {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $dbs = $server.Databases | Where-Object IsAccessible
+            $dbs = $server.Databases
 
             if ($Database) {
                 $dbs = $dbs | Where-Object Name -in $Database
@@ -126,6 +126,17 @@ function Get-DbaDbVirtualLogFile {
             if (!$IncludeSystemDBs) {
                 $dbs = $dbs | Where-Object IsSystemObject -eq $false
             }
+
+            # Accessibility is filtered after the name filters rather than before, so that a database
+            # the caller named is reported as skipped instead of silently vanishing. DBCC LOGINFO
+            # reads the VLF headers through the database's own log manager and needs it open.
+            # sys.dm_db_log_info can be called from master for a database that cannot be opened, but
+            # it reports VLF size rounded to two decimals of a megabyte, so it cannot reproduce the
+            # exact FileSize in bytes this command returns.
+            foreach ($skippedDb in ($dbs | Where-Object IsAccessible -eq $false)) {
+                Write-Message -Level Warning -Message "Skipping $skippedDb on $instance because it is not accessible, so its virtual log files cannot be read" -Target $skippedDb
+            }
+            $dbs = $dbs | Where-Object IsAccessible
 
             foreach ($db in $dbs) {
                 try {

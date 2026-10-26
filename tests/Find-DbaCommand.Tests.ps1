@@ -25,6 +25,21 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # The -Rebuild test regenerates bin\dbatools-index.json in place. When the module runs from
+        # a git working copy, that overwrites a tracked release asset and leaves the tree modified
+        # after every run. Back the file up and restore it, so the rebuild is still exercised for
+        # real but leaves no trace.
+        $indexFile = Join-Path (Get-Module $ModuleName).ModuleBase "bin\dbatools-index.json"
+        $indexBackup = "$($TestConfig.Temp)\$CommandName-$(Get-Random)-index.json"
+        Copy-Item -Path $indexFile -Destination $indexBackup
+    }
+
+    AfterAll {
+        Copy-Item -Path $indexBackup -Destination $indexFile -ErrorAction SilentlyContinue
+        Remove-Item -Path $indexBackup -ErrorAction SilentlyContinue
+    }
+
     Context "Command finds jobs using all parameters" {
         It "Should find more than 5 snapshot commands" {
             $results = @(Find-DbaCommand -Pattern "snapshot")

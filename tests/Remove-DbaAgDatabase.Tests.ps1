@@ -47,6 +47,18 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $ag = New-DbaAvailabilityGroup @splatAvailabilityGroup
 
+        # A second availability group without any databases, to prove that a removal scoped
+        # to this group does not touch databases in other availability groups.
+        $agname2 = "dbatoolsci_removeagdb_agroup2"
+        $splatAvailabilityGroup2 = @{
+            Primary      = $TestConfig.InstanceHadr
+            Name         = $agname2
+            ClusterType  = "None"
+            FailoverMode = "Manual"
+            Certificate  = "dbatoolsci_AGCert"
+        }
+        $null = New-DbaAvailabilityGroup @splatAvailabilityGroup2
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -55,12 +67,23 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname
+        $null = Remove-DbaAvailabilityGroup -SqlInstance $server -AvailabilityGroup $agname, $agname2
         $null = Get-DbaEndpoint -SqlInstance $TestConfig.InstanceHadr -Type DatabaseMirroring | Remove-DbaEndpoint
         $null = Remove-DbaDatabase -SqlInstance $server -Database $dbname
         Remove-Item -Path "$($TestConfig.Temp)\$dbname.bak", "$($TestConfig.Temp)\$dbname.trn" -ErrorAction SilentlyContinue
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "honors the AvailabilityGroup filter" {
+        It "does not remove the database when the removal is scoped to another availability group" {
+            $results = Remove-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbname -AvailabilityGroup $agname2
+            $results | Should -BeNullOrEmpty
+            $WarnVar | Should -BeNullOrEmpty
+
+            $agDatabase = Get-DbaAgDatabase -SqlInstance $TestConfig.InstanceHadr -Database $dbname
+            $agDatabase.AvailabilityGroup | Should -Be $agname
+        }
     }
 
     Context "removes ag db" {

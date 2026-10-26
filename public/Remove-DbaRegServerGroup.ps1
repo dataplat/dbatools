@@ -115,7 +115,7 @@ function Remove-DbaRegServerGroup {
                 # try to avoid 'Collection was modified after the enumerator was instantiated' issue
                 if ($regservergroup.ID) {
                     $null = $parentserver.ServerConnection.ExecuteNonQuery($regservergroup.ScriptDrop().GetScript())
-                    $parentserver.ServerConnection.Disconnect()
+                    Disconnect-RegServer -Server $parentserver
                 } else {
                     $regservergroup.Drop()
                 }

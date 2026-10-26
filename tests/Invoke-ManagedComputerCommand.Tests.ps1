@@ -8,10 +8,10 @@ param(
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
-            # This is a private command, so we have to ask the module for it.
-            # We must not do this inside of InModuleScope, because $TestConfig is not available there.
-            $commandInfo = & (Get-Module dbatools) { Get-Command -Name Invoke-ManagedComputerCommand }
-            $hasParameters = $commandInfo.Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+            # This is a private command, but a checkout has no dbatools.dat, so the psm1 exports
+            # every function and plain Get-Command finds it. What still matters is that this stays
+            # outside InModuleScope, where $TestConfig would not be readable in CI.
+            $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
             $expectedParameters = $TestConfig.CommonParameters
             $expectedParameters += @(
                 "ComputerName",

@@ -15,7 +15,10 @@ function Convert-DbaIndexToTable {
     begin {
         # Some parameter checking
         if (-not $SqlInstance) {
-            Stop-Function -Message "Please enter an instance" -Continue
+            # No -Continue here: this block has no enclosing loop, so the continue would escape the command
+            # and eat an iteration of whatever loop the caller runs in (#10638).
+            Stop-Function -Message "Please enter an instance"
+            return
         }
 
         # Get the database

@@ -34,7 +34,7 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
         $waitingTaskSql = "SELECT '$waitingTaskFlag'; WAITFOR DELAY '$waitingTaskTime'"
         $waitingTaskInstance = $TestConfig.InstanceSingle
 
-        $waitingTaskModulePath = "C:\Github\dbatools\dbatools.psm1"
+        $waitingTaskModulePath = (Get-Module -Name dbatools).Path
         $waitingTaskJobName = "YouHaveBeenFoundWaiting"
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
@@ -63,25 +63,39 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
 
     Context "Command functionality with waiting task" {
         BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
             Start-Job -Name $waitingTaskJobName -ScriptBlock {
                 Import-Module $args[0];
                 (Connect-DbaInstance -SqlInstance $args[1] -ClientName dbatools-waiting).ConnectionContext.ExecuteNonQuery($args[2])
             } -ArgumentList $waitingTaskModulePath, $waitingTaskInstance, $waitingTaskSql
 
-            # The job needs some seconds to load the module and to open the connection
-            foreach ($second in 1..30) {
+            # The job needs some seconds to load the module and to open the connection.
+            # On a busy machine this can take more than 30 seconds, so we wait up to 60 seconds and fail loudly instead of continuing with a null spid.
+            foreach ($second in 1..60) {
                 $waitingTaskProcess = Get-DbaProcess -SqlInstance $waitingTaskInstance | Where-Object Program -eq "dbatools-waiting" | Select-Object -ExpandProperty Spid
                 if ($waitingTaskProcess) {
                     break
                 }
                 Start-Sleep -Seconds 1
             }
+            if (-not $waitingTaskProcess) {
+                $waitingTaskJobOutput = Get-Job -Name $waitingTaskJobName | Receive-Job -ErrorAction SilentlyContinue | Out-String
+                throw "The dbatools-waiting session did not appear on $waitingTaskInstance within 60 seconds. Job output: $waitingTaskJobOutput"
+            }
 
-            # Wait another second for the query to start
-            Start-Sleep -Seconds 1
+            # The query needs another moment to start, so we poll until the waiting task is reported.
+            foreach ($second in 1..30) {
+                $results = Get-DbaWaitingTask -SqlInstance $waitingTaskInstance -Spid $waitingTaskProcess
+                if ($results) {
+                    break
+                }
+                Start-Sleep -Seconds 1
+            }
 
-            # Get the results
-            $results = Get-DbaWaitingTask -SqlInstance $waitingTaskInstance -Spid $waitingTaskProcess
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Should have correct properties" {
@@ -108,6 +122,10 @@ Describe $CommandName -Tag IntegrationTests -Skip:$env:appveyor {
 
         It "Should have command of WAITFOR" {
             $results.WaitType | Should -BeLike "*WAITFOR*"
+        }
+
+        It "Should have an InfoUrl for the wait type" {
+            $results.InfoUrl | Should -Be "https://www.sqlskills.com/help/waits/WAITFOR"
         }
     }
 }

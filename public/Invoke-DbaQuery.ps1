@@ -43,6 +43,7 @@ function Invoke-DbaQuery {
     .PARAMETER As
         Controls the format of returned query results. Choose 'DataRow' (default) for typical result sets, 'PSObject' for PowerShell-friendly objects, or 'SingleValue' for scalar results.
         Use 'PSObject' when you need to pipe results to other PowerShell commands that expect objects. Use 'SingleValue' for queries returning a single value like COUNT(*) or configuration checks.
+        SingleValue returns the first column of every row of the first result set: a scalar for one row, an array for several rows and $null for no row. A NULL value comes back as System.DBNull, and further columns and result sets are dropped without a warning.
 
         PSObject and PSObjectArray output introduces overhead but adds flexibility for working with results: https://forums.powershell.org/t/dealing-with-dbnull/2328/2
 
@@ -122,7 +123,7 @@ function Invoke-DbaQuery {
 
         System.Object (when -As SingleValue is specified)
 
-        Returns a single scalar value (the first column of the first row). Use this for queries returning a count, sum, or other single value like SELECT COUNT(*) or SELECT @@SERVERNAME.
+        Returns the first column of every row of the first result set. For a query that returns one row, such as SELECT COUNT(*) or SELECT @@SERVERNAME, this is a single scalar value; several rows are returned as an array and no row returns $null. A NULL value is returned as System.DBNull, not $null. Further columns and further result sets are discarded without a warning.
 
         When -AppendServerInstance is specified, an additional ServerInstance column is added to DataRow and PSObject output, containing the source SQL Server instance name.
 
@@ -496,23 +497,34 @@ function Invoke-DbaQuery {
                 # Again, here we are, but we cannot use the connection when an information is lost, which is that we are:
                 #   - Integrated Security=True
                 #   - using ConnectAsUser, ConnectAsUserName, ConnectAsUserPassword to "log on as a different user"
+                #
+                # The database is tested with ConnectionContext.CurrentDatabase, the database the connection is on
+                # right now, and not with ConnectionContext.DatabaseName, which is only the database the connection
+                # was opened with. The two differ as soon as anything runs a USE, and then reusing the connection
+                # runs the query in the wrong database. Connect-DbaInstance tests CurrentDatabase as well, so both
+                # commands now ask the same question.
 
                 $startedWithAnOpenConnection = # we want to bypass Connect-DbaInstance if
                 ($instance.InputObject.GetType().Name -eq "Server") -and # we have Server SMO object and
                 (-not $ReadOnly) -and # no readonly intent is requested and
-                (-not $Database -or $instance.InputObject.ConnectionContext.DatabaseName -eq $Database) -and # the database is not set or the currently connected and
+                (-not $Database -or $instance.InputObject.ConnectionContext.CurrentDatabase -eq $Database) -and # the database is not set or the connection is on it and
                 (-not $AppendConnectionString) -and # we don't use AppendConnectionString and
                 ($instance.InputObject.ConnectionContext.ConnectAsUserName -eq '') # we don't use a DIFFERENT operating system user than the current logged in
+                # Connect-DbaInstance tells us whether it opened a connection for us. We must only close what we opened
+                # ourselves, because closing a connection of the caller takes their session with it. As we might not
+                # call Connect-DbaInstance at all, we have to set the default here.
+                $isNewConnection = $false
                 if ($startedWithAnOpenConnection) {
                     Write-Message -Level Debug -Message "Current connection will be reused"
                     $server = $instance.InputObject
                 } else {
                     $connDbaInstanceParams = @{
-                        SqlInstance         = $instance
-                        SqlCredential       = $SqlCredential
-                        Database            = $Database
-                        NonPooledConnection = $true           # see #8491 for details, also #7725 is still relevant
-                        Verbose             = $false
+                        SqlInstance              = $instance
+                        SqlCredential            = $SqlCredential
+                        Database                 = $Database
+                        NonPooledConnection      = $true           # see #8491 for details, also #7725 is still relevant
+                        IsNewConnectionReference = [ref]$isNewConnection
+                        Verbose                  = $false
                     }
                     if ($ReadOnly) {
                         $connDbaInstanceParams.ApplicationIntent = "ReadOnly"
@@ -528,23 +540,33 @@ function Invoke-DbaQuery {
             }
             $conncontext = $server.ConnectionContext
             try {
-                if ($File -or $SqlObject) {
-                    foreach ($item in $files) {
-                        if ($null -eq $item) { continue }
-                        $filePath = $(Resolve-Path -LiteralPath $item).ProviderPath
-                        $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
-                        Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile
+                try {
+                    if ($File -or $SqlObject) {
+                        foreach ($item in $files) {
+                            if ($null -eq $item) { continue }
+                            $filePath = $(Resolve-Path -LiteralPath $item).ProviderPath
+                            $QueryfromFile = [System.IO.File]::ReadAllText("$filePath")
+                            Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync -Query $QueryfromFile
+                        }
+                    } else {
+                        Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync
                     }
-                } else {
-                    Invoke-DbaAsync -SQLConnection $conncontext @splatInvokeDbaSqlAsync
+                } catch {
+                    Stop-Function -Message "[$instance] Failed during execution" -ErrorRecord $_ -Target $instance -Continue
                 }
-            } catch {
-                Stop-Function -Message "[$instance] Failed during execution" -ErrorRecord $_ -Target $instance -Continue
-            }
-            # if the given connection started out open, don't close it.
-            if ($connDbaInstanceParams.NonPooledConnection -and -not $startedWithAnOpenConnection) {
-                # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
-                $null = $server | Disconnect-DbaInstance -Verbose:$false
+            } finally {
+                # Only close the connection if Connect-DbaInstance opened a new one for us. Connect-DbaInstance returns the
+                # object that was passed in whenever nothing about it has to change, so testing our own parameters is not
+                # enough - see #10554.
+                # The disconnect sits in a finally, because a failed execution leaves this block through the -Continue of
+                # the catch or through the exception it throws under -EnableException, and both used to skip the disconnect
+                # and leave the non-pooled session behind (#10659). Non-pooled connections are the ones nothing else cleans up.
+                if ($isNewConnection) {
+                    # Close non-pooled connection as this is not done automatically.
+                    # -WhatIf:$false because this is ownership bookkeeping, not the user's operation: Disconnect-DbaInstance
+                    # supports ShouldProcess, so a propagated $WhatIfPreference would skip the actual disconnect.
+                    $null = $server | Disconnect-DbaInstance -Verbose:$false -WhatIf:$false -Confirm:$false
+                }
             }
         }
     }

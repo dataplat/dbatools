@@ -25,6 +25,10 @@ Describe $CommandName -Tag IntegrationTests {
         # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
+        # Remember the state of the instance, so that AfterAll can put it back. The registry value survives everything
+        # except an explicit Disable, so without this the instance stays with force encryption after the test.
+        $forceEncryptionBefore = (Get-DbaForceNetworkEncryption -SqlInstance $TestConfig.InstanceSingle).ForceEncryption
+
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
@@ -32,6 +36,10 @@ Describe $CommandName -Tag IntegrationTests {
     AfterAll {
         # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        if (-not $forceEncryptionBefore) {
+            $null = Disable-DbaForceNetworkEncryption -SqlInstance $TestConfig.InstanceSingle
+        }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

@@ -112,5 +112,18 @@ Describe $CommandName -Tag IntegrationTests {
         It "Should throw an error when data type is missing" {
             { Convert-DbaMaskingValue -Value "whatever" -EnableException } | Should -Throw "Please enter a data type"
         }
+
+        It "Warns without eating an iteration of the caller's loop" {
+            # The validation guards used to run Stop-Function -Continue without an enclosing loop -
+            # without EnableException the continue escaped the function and consumed an iteration of
+            # this very loop, so the counter fell short (#10638).
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = Convert-DbaMaskingValue -Value $null -DataType datetime -WarningAction SilentlyContinue
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*Please enter a value*"
+        }
     }
 }

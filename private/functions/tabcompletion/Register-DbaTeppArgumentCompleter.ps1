@@ -47,6 +47,18 @@ function Register-DbaTeppArgumentCompleter {
             $fakeBoundParameter
         )
 
+        # The asynchronous cache runspace is registered during import but left stopped, because an
+        # unattended session has no use for it and it reconnects to every instance the session has
+        # touched. Someone completing a parameter is the signal that this session is interactive,
+        # so start it here. Start() is a no-op while the runspace is already running, and the
+        # TeppDisabled checks keep an explicit Set-DbatoolsConfig opt-out from being undone.
+        if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled -and -not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled) {
+            $asyncCacheRunspace = [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"]
+            if ($asyncCacheRunspace -and $asyncCacheRunspace.State -eq "Stopped") {
+                $asyncCacheRunspace.Start()
+            }
+        }
+
         if ($teppScript = [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::GetTeppScript($commandName, $parameterName)) {
             $start = Get-Date
             $teppScript.LastExecution = $start

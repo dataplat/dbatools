@@ -102,6 +102,29 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }
 
+    Context "When SharedPath is not accessible" {
+        It "Warns without eating an iteration of the caller's loop" {
+            # The validation guards used to run Stop-Function -Continue without an enclosing loop -
+            # the continue escaped the command before its own return statement ran and consumed an
+            # iteration of this very loop, so the counter fell short (#10638).
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $splatBadPath = @{
+                    Primary       = $TestConfig.InstanceHadr
+                    Name          = "dbatoolsci_agbadpath"
+                    ClusterType   = "None"
+                    FailoverMode  = "Manual"
+                    SharedPath    = "Q:\dbatoolsci\does\not\exist"
+                    WarningAction = "SilentlyContinue"
+                }
+                $null = New-DbaAvailabilityGroup @splatBadPath
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*Cannot access*"
+        }
+    }
+
     Context "When creating availability groups" {
         It "returns an ag with a db named" {
             $splatAg = @{
@@ -127,6 +150,62 @@ Describe $CommandName -Tag IntegrationTests {
             }
             $results = New-DbaAvailabilityGroup @splatAgNoDb
             $results.AvailabilityDatabases.Count | Should -Be 0 -Because "No database was named"
+        }
+    }
+
+    Context "When the pipeline is stopped" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id with records but without a completed one. The pipeline is stopped as soon as the first
+            # record arrives, which is what Ctrl+C does. WhatIf keeps the instance unchanged.
+            # It waits for a record of the command itself: Windows PowerShell writes progress records of its own
+            # while it loads modules. The runspace imports the manifest: an import of the psm1 without a command
+            # line skips the type data.
+            $splatStopAg = @{
+                Primary      = $TestConfig.InstanceHadr
+                Name         = $agName
+                ClusterType  = "None"
+                FailoverMode = "Manual"
+                Certificate  = "dbatoolsci_AGCert"
+                WhatIf       = $true
+            }
+            if ($TestConfig.SqlCred) {
+                $splatStopAg.PrimarySqlCredential = $TestConfig.SqlCred
+            }
+            $stopRunspace = [runspacefactory]::CreateRunspace()
+            $stopRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $stopRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $stopShell = [powershell]::Create()
+            $stopShell.Runspace = $stopRunspace
+            $null = $stopShell.AddCommand("New-DbaAvailabilityGroup").AddParameters($splatStopAg)
+            $stopAsync = $stopShell.BeginInvoke()
+            $stopWatch = [System.Diagnostics.Stopwatch]::StartNew()
+            while (-not ($stopShell.Streams.Progress | Where-Object Activity -eq "Adding new availability group") -and -not $stopAsync.IsCompleted -and $stopWatch.Elapsed.TotalSeconds -lt 60) {
+                Start-Sleep -Milliseconds 10
+            }
+            $stopShell.Stop()
+            $stopState = $stopShell.InvocationStateInfo.State
+            $stopRecords = @($stopShell.Streams.Progress)
+            $stopShell.Dispose()
+            $stopRunspace.Dispose()
+        }
+
+        It "Was stopped while it was running" {
+            $stopState | Should -Be "Stopped"
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $stopRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $stopRecords | Where-Object Activity -eq "Adding new availability group" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
         }
     }
 }

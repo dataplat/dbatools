@@ -38,8 +38,12 @@ jobs:
           # subprocess under bubblewrap with secrets (OAuth token, GITHUB_TOKEN, cloud
           # creds) scrubbed from its environment. The CLI refuses to start if bubblewrap
           # is missing, so install it on the runner before invoking the action.
+          # socat is the second half of the pair: it relays sandboxed network traffic
+          # through the sandbox proxy. Without it every Bash command that touches the
+          # network (gh, git push) dies on sandbox init. Neither package ships in the
+          # ubuntu-latest image. Ref: https://code.claude.com/docs/en/sandboxing
           sudo apt-get update
-          sudo apt-get install -y bubblewrap
+          sudo apt-get install -y bubblewrap socat
           # Ubuntu 24.04 (ubuntu-latest) blocks unprivileged user namespaces via AppArmor,
           # which bubblewrap needs. Rather than globally disabling the kernel restriction
           # (kernel.apparmor_restrict_unprivileged_userns), load a dedicated AppArmor profile
@@ -62,10 +66,29 @@ jobs:
           # letting the Claude Code install fail later with a less obvious error.
           bwrap --ro-bind / / --unshare-user true
           echo "bubblewrap ready: $(bwrap --version)"
+          # The sandbox keeps commands from editing config dotfiles by bind-mounting
+          # over each one, and bwrap has to CREATE the mount point when the file does
+          # not exist. One set of those paths resolves under /home, which is root-owned
+          # on the runner, so the create fails and the sandbox aborts before bash ever
+          # starts. Every Bash tool call in the session then dies with
+          #   bwrap: Can't create file at /home/.mcp.json: Permission denied
+          # which reads like a permissions denial on the command but is really sandbox
+          # bootstrap failing. Pre-create the paths so bwrap binds over something that
+          # already exists. Ref: https://github.com/anthropics/claude-code/issues/17258
+          for name in .gitconfig .gitmodules .bashrc .bash_profile .zshrc .zprofile .profile .ripgreprc; do
+            [ -e "/home/$name" ] || sudo install -m 644 /dev/null "/home/$name"
+          done
+          # Valid-but-empty JSON rather than a zero-byte file, in case anything on the
+          # runner parses this one as an MCP config instead of just mounting over it.
+          [ -e /home/.mcp.json ] || printf '{"mcpServers":{}}\n' | sudo tee /home/.mcp.json > /dev/null
+          for name in .vscode .idea .claude/commands .claude/agents; do
+            [ -d "/home/$name" ] || sudo install -d -m 755 "/home/$name"
+          done
+          echo "sandbox mount points ready in /home"
 
       - name: Run Claude Code
         id: claude
-        uses: anthropics/claude-code-action@be7b93b1907a4abad570368f3c74b6fe3807510b # v1
+        uses: anthropics/claude-code-action@16f9f71ab9c490faf367f94dd294897edc25be33 # v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
@@ -73,11 +96,13 @@ jobs:
           additional_permissions: |
             actions: read
 
-          # Keep public-triggered Claude runs read-only. Use a maintainer-run
-          # local session or a separate protected workflow for code-writing tasks.
+          # The job-level if: gates this workflow to named maintainers, so Claude is
+          # trusted to change code here. Edit and Write are what let it act on that:
+          # the action already grants git add/commit/rm/push, so without them Claude
+          # could commit but never author, and burned a whole run finding that out.
           claude_args: >-
             --max-turns 100
-            --allowedTools "Read,Glob,Grep,Bash(gh issue view:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh run view:*)"
+            --allowedTools "Read,Glob,Grep,Edit,Write,Bash(gh issue view:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh run view:*)"
 
           # Optional: Give a custom prompt to Claude. If this is not specified, Claude will perform the instructions specified in the comment that tagged it.
           # prompt: 'Update the pull request description to include a summary of changes.'

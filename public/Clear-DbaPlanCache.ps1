@@ -102,7 +102,7 @@ function Clear-DbaPlanCache {
                         Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $result.SqlInstance -Continue
                     }
 
-                    $server.Query("DBCC FREESYSTEMCACHE('SQL Plans')")
+                    $null = $server.Query("DBCC FREESYSTEMCACHE('SQL Plans')")
                     [PSCustomObject]@{
                         ComputerName = $result.ComputerName
                         InstanceName = $result.InstanceName

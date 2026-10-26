@@ -47,11 +47,16 @@ Describe $CommandName -Tag IntegrationTests {
             $db1QSOptions = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $db1Name
             $originalQSOptionValue = $db1QSOptions.DataFlushIntervalInSeconds
             $updatedQSOptionValue = $db1QSOptions.DataFlushIntervalInSeconds + 1
+            # Not the default of 200, so that a copy that leaves MaxPlansPerQuery out is seen. Copy needs
+            # SQL Server 2016, which has MAX_PLANS_PER_QUERY, so this is asserted on every instance.
+            $originalMaxPlansValue = $db1QSOptions.MaxPlansPerQuery
+            $updatedMaxPlansValue = 321
             $splatSetOptions = @{
-                SqlInstance   = $TestConfig.InstanceSingle
-                Database      = $db1Name
-                FlushInterval = $updatedQSOptionValue
-                State         = "ReadWrite"
+                SqlInstance      = $TestConfig.InstanceSingle
+                Database         = $db1Name
+                FlushInterval    = $updatedQSOptionValue
+                MaxPlansPerQuery = $updatedMaxPlansValue
+                State            = "ReadWrite"
             }
             $null = Set-DbaDbQueryStoreOption @splatSetOptions
 
@@ -85,6 +90,7 @@ Describe $CommandName -Tag IntegrationTests {
 
             $db2QSOptions = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $db2Name
             $db2QSOptions.DataFlushIntervalInSeconds | Should -Be $updatedQSOptionValue
+            $db2QSOptions.MaxPlansPerQuery | Should -Be $updatedMaxPlansValue
         }
 
         It "Apply to all databases except db4" {
@@ -112,9 +118,11 @@ Describe $CommandName -Tag IntegrationTests {
 
             $dbQSOptions = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $db1Name, $db2Name, $db3Name
             ($dbQSOptions | Where-Object { $PSItem.DataFlushIntervalInSeconds -eq ($originalQSOptionValue + 1) }).Count | Should -Be 3
+            ($dbQSOptions | Where-Object MaxPlansPerQuery -eq $updatedMaxPlansValue).Count | Should -Be 3
 
             $db4QSOptions = Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceSingle -Database $db4Name
             $db4QSOptions.DataFlushIntervalInSeconds | Should -Be $originalQSOptionValue
+            $db4QSOptions.MaxPlansPerQuery | Should -Be $originalMaxPlansValue
         }
     }
 }

@@ -86,3 +86,72 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "When stopping sessions repeatedly" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Stop() used to make SFC reconnect the store connection that Get-DbaXESession had returned,
+            # and nothing returned it again: one new session on the instance per stopped session (#10658).
+            # Count the sessions of this process through a server object opened once, because a per-call
+            # counting command would open connections of its own. Every status is counted, not only
+            # sleeping: a pooled session flips between sleeping and dormant around a reset, which made a
+            # sleeping-only count move by one without any new session.
+            $countServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $countQuery = @"
+select count(*)
+from sys.dm_exec_sessions
+where host_process_id = $PID
+  and session_id <> @@spid
+"@
+            # The session is started through the counting connection between the rounds, so that only
+            # the command under test touches the store.
+            $countSession = "dbatoolsci_session_count_$(Get-Random)"
+            $startQuery = "ALTER EVENT SESSION [$countSession] ON SERVER STATE = START;"
+            $countServer.Query("CREATE EVENT SESSION [$countSession] ON SERVER ADD EVENT sqlserver.lock_acquired;")
+
+            # One warm-up round of each form so the pooled connections they need exist before the
+            # baseline is taken.
+            $countServer.Query($startQuery)
+            $null = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session $countSession | Stop-DbaXESession
+            $countServer.Query($startQuery)
+            $null = Stop-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session $countSession
+            $sessionsBefore = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            foreach ($i in 1..3) {
+                $countServer.Query($startQuery)
+                $null = Get-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session $countSession | Stop-DbaXESession
+            }
+            $sessionsAfterPipeline = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            foreach ($i in 1..3) {
+                $countServer.Query($startQuery)
+                $null = Stop-DbaXESession -SqlInstance $TestConfig.InstanceSingle -Session $countSession
+            }
+            $sessionsAfterParameter = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $countServer.Query("IF EXISTS (SELECT * FROM sys.server_event_sessions WHERE name = '$countSession') DROP EVENT SESSION [$countSession] ON SERVER;")
+            $countServer.ConnectionContext.Disconnect()
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Leaves no session behind when the sessions come from the pipeline" {
+            $sessionsAfterPipeline | Should -Be $sessionsBefore
+        }
+
+        It "Leaves no session behind when the instance is given" {
+            $sessionsAfterParameter | Should -Be $sessionsBefore
+        }
+    }
+}

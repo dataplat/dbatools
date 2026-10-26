@@ -150,81 +150,89 @@ function Find-DbaView {
 
             $totalcount = 0
             $dbcount = $dbs.count
-            foreach ($db in $dbs) {
-                Write-Message -Level Verbose -Message "Searching on database $db"
+            # Working through a Database object moves the connection into that database and never moves it
+            # back - the query below runs there, and so does every enumeration of a database level
+            # collection. The database of the caller is put back when the work is done. See #10555.
+            $callerDatabase = $server.ConnectionContext.CurrentDatabase
+            try {
+                foreach ($db in $dbs) {
+                    Write-Message -Level Verbose -Message "Searching on database $db"
 
-                # If system objects aren't needed, find view text using SQL
-                # This prevents SMO from having to enumerate
+                    # If system objects aren't needed, find view text using SQL
+                    # This prevents SMO from having to enumerate
 
-                if (!$IncludeSystemObjects) {
-                    Write-Message -Level Debug -Message $sql
-                    $rows = $db.ExecuteWithResults($sql).Tables.Rows
-                    $vwcount = 0
+                    if (!$IncludeSystemObjects) {
+                        Write-Message -Level Debug -Message $sql
+                        $rows = $db.Query($sql)
+                        $vwcount = 0
 
-                    foreach ($row in $rows) {
-                        $totalcount++; $vwcount++; $everyservervwcount++
+                        foreach ($row in $rows) {
+                            $totalcount++; $vwcount++; $everyservervwcount++
 
-                        $viewSchema = $row.ViewSchema
-                        $view = $row.name
+                            $viewSchema = $row.ViewSchema
+                            $view = $row.name
 
-                        Write-Message -Level Verbose -Message "Looking in View: $viewSchema.$view TextBody for $pattern"
-                        if ($row.TextBody -match $Pattern) {
-                            $vw = $db.Views | Where-Object { $_.Schema -eq $viewSchema -and $_.Name -eq $view }
+                            Write-Message -Level Verbose -Message "Looking in View: $viewSchema.$view TextBody for $pattern"
+                            if ($row.TextBody -match $Pattern) {
+                                $vw = $db.Views | Where-Object { $_.Schema -eq $viewSchema -and $_.Name -eq $view }
 
-                            $viewText = $vw.TextBody.split($eol)
-                            $vwTextFound = $viewText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
+                                $viewText = $vw.TextBody.split($eol)
+                                $vwTextFound = $viewText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
 
-                            [PSCustomObject]@{
-                                ComputerName   = $server.ComputerName
-                                SqlInstance    = $server.ServiceName
-                                Database       = $db.Name
-                                DatabaseId     = $db.ID
-                                Schema         = $vw.Schema
-                                Name           = $vw.Name
-                                Owner          = $vw.Owner
-                                IsSystemObject = $vw.IsSystemObject
-                                CreateDate     = $vw.CreateDate
-                                LastModified   = $vw.DateLastModified
-                                ViewTextFound  = $vwTextFound -join "`n"
-                                View           = $vw
-                                ViewFullText   = $vw.TextBody
-                            } | Select-DefaultView -ExcludeProperty View, ViewFullText
+                                [PSCustomObject]@{
+                                    ComputerName   = $server.ComputerName
+                                    SqlInstance    = $server.ServiceName
+                                    Database       = $db.Name
+                                    DatabaseId     = $db.ID
+                                    Schema         = $vw.Schema
+                                    Name           = $vw.Name
+                                    Owner          = $vw.Owner
+                                    IsSystemObject = $vw.IsSystemObject
+                                    CreateDate     = $vw.CreateDate
+                                    LastModified   = $vw.DateLastModified
+                                    ViewTextFound  = $vwTextFound -join "`n"
+                                    View           = $vw
+                                    ViewFullText   = $vw.TextBody
+                                } | Select-DefaultView -ExcludeProperty View, ViewFullText
+                            }
+                        }
+                    } else {
+                        $Views = $db.Views
+
+                        foreach ($vw in $Views) {
+                            $totalcount++; $vwcount++; $everyservervwcount++
+
+                            $viewSchema = $row.ViewSchema
+                            $view = $vw.Name
+
+                            Write-Message -Level Verbose -Message "Looking in View: $viewSchema.$view TextBody for $pattern"
+                            if ($vw.TextBody -match $Pattern) {
+
+                                $viewText = $vw.TextBody.split($eol)
+                                $vwTextFound = $viewText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
+
+                                [PSCustomObject]@{
+                                    ComputerName   = $server.ComputerName
+                                    SqlInstance    = $server.ServiceName
+                                    Database       = $db.Name
+                                    DatabaseId     = $db.ID
+                                    Schema         = $vw.Schema
+                                    Name           = $vw.Name
+                                    Owner          = $vw.Owner
+                                    IsSystemObject = $vw.IsSystemObject
+                                    CreateDate     = $vw.CreateDate
+                                    LastModified   = $vw.DateLastModified
+                                    ViewTextFound  = $vwTextFound -join "`n"
+                                    View           = $vw
+                                    ViewFullText   = $vw.TextBody
+                                } | Select-DefaultView -ExcludeProperty View, ViewFullText
+                            }
                         }
                     }
-                } else {
-                    $Views = $db.Views
-
-                    foreach ($vw in $Views) {
-                        $totalcount++; $vwcount++; $everyservervwcount++
-
-                        $viewSchema = $row.ViewSchema
-                        $view = $vw.Name
-
-                        Write-Message -Level Verbose -Message "Looking in View: $viewSchema.$view TextBody for $pattern"
-                        if ($vw.TextBody -match $Pattern) {
-
-                            $viewText = $vw.TextBody.split($eol)
-                            $vwTextFound = $viewText | Select-String -Pattern $Pattern | ForEach-Object { "(LineNumber: $($_.LineNumber)) $($_.ToString().Trim())" }
-
-                            [PSCustomObject]@{
-                                ComputerName   = $server.ComputerName
-                                SqlInstance    = $server.ServiceName
-                                Database       = $db.Name
-                                DatabaseId     = $db.ID
-                                Schema         = $vw.Schema
-                                Name           = $vw.Name
-                                Owner          = $vw.Owner
-                                IsSystemObject = $vw.IsSystemObject
-                                CreateDate     = $vw.CreateDate
-                                LastModified   = $vw.DateLastModified
-                                ViewTextFound  = $vwTextFound -join "`n"
-                                View           = $vw
-                                ViewFullText   = $vw.TextBody
-                            } | Select-DefaultView -ExcludeProperty View, ViewFullText
-                        }
-                    }
+                    Write-Message -Level Verbose -Message "Evaluated $vwcount views in $db"
                 }
-                Write-Message -Level Verbose -Message "Evaluated $vwcount views in $db"
+            } finally {
+                Restore-DatabaseContext -Server $server -Database $callerDatabase
             }
             Write-Message -Level Verbose -Message "Evaluated $totalcount total views in $dbcount databases"
         }

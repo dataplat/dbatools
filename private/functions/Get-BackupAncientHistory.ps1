@@ -54,6 +54,9 @@ function Get-BackupAncientHistory {
     }
 
     process {
+        # Without this guard a failed connection was followed by method calls on the missing server object (#10655).
+        if (Test-FunctionInterrupt) { return }
+
         foreach ($db in $Database) {
             Write-Message -Level Verbose -Message "Processing database $db"
             $sql = "

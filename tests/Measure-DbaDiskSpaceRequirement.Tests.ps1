@@ -64,4 +64,74 @@ Describe $CommandName -Tag IntegrationTests {
             $results[0].FileLocation | Should -Be "Only on Source"
         }
     }
+
+    Context "When the mount points cannot be read" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $dbName = "dbatoolsci_measure_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Name $dbName
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Name $dbName
+            $extraFileName = "dbatoolsci_extra"
+            $null = Add-DbaDbFile -SqlInstance $TestConfig.InstanceCopy2 -Database $dbName -FileGroup PRIMARY -FileName $extraFileName
+            $extraFile = (Get-DbaDbFile -SqlInstance $TestConfig.InstanceCopy2 -Database $dbName | Where-Object LogicalName -eq $extraFileName).PhysicalName
+
+            # A credential that cannot query WMI on the destination computer: remotely it is refused, locally
+            # WMI does not take credentials at all. Either way reading the mount points fails.
+            $splatPassword = @{
+                String      = "dbatools.IO$(Get-Random)!"
+                AsPlainText = $true
+                Force       = $true
+            }
+            $badCredential = New-Object System.Management.Automation.PSCredential ("dbatoolsci_nouser", (ConvertTo-SecureString @splatPassword))
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $dbName -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        # The helpers called Stop-Function -Continue, which has no loop in the helper: the continue escaped into
+        # the loop over the files and skipped the row, and the code that cached and returned "?" never ran.
+        It "Returns every file, with ? as mount point, when the destination database does not exist" {
+            $splatMeasure = @{
+                Source              = $TestConfig.InstanceCopy1
+                Database            = $dbName
+                Destination         = $TestConfig.InstanceCopy2
+                DestinationDatabase = "dbatoolsci_notthere_$(Get-Random)"
+                Credential          = $badCredential
+                WarningAction       = "SilentlyContinue"
+            }
+            $results = @(Measure-DbaDiskSpaceRequirement @splatMeasure)
+            $results | Should -HaveCount 2
+            $results.MountPoint | Should -Be @("?", "?")
+            @($WarnVar -like "*Can't connect to*") | Should -HaveCount 1
+        }
+
+        It "Returns every file, with ? as mount point, when the destination database exists" {
+            $results = @(Measure-DbaDiskSpaceRequirement -Source $TestConfig.InstanceCopy1 -Database $dbName -Destination $TestConfig.InstanceCopy2 -Credential $badCredential -WarningAction SilentlyContinue)
+            $results | Should -HaveCount 3
+            $results.MountPoint | Should -Be @("?", "?", "?")
+        }
+
+        It "Names the file of a row that exists only on the destination" {
+            # The row read the file name from the variable of an earlier loop instead of its own file.
+            $results = @(Measure-DbaDiskSpaceRequirement -Source $TestConfig.InstanceCopy1 -Database $dbName -Destination $TestConfig.InstanceCopy2 -Credential $badCredential -WarningAction SilentlyContinue)
+            $destinationOnly = $results | Where-Object FileLocation -eq "Only on Destination"
+            $destinationOnly.DestinationLogicalName | Should -Be $extraFileName
+            $destinationOnly.DestinationFileName | Should -Be $extraFile
+        }
+
+        It "Warns when the source database does not exist" {
+            # -Database is mandatory, so the old check with Test-Bound never fired.
+            $results = Measure-DbaDiskSpaceRequirement -Source $TestConfig.InstanceCopy1 -Database "dbatoolsci_nodb_$(Get-Random)" -Destination $TestConfig.InstanceCopy2 -WarningAction SilentlyContinue
+            $results | Should -BeNullOrEmpty
+            $WarnVar | Should -BeLike "*MUST exist on Source Instance*"
+        }
+    }
 }

@@ -27,6 +27,7 @@ function Get-DbaDbTable {
     .PARAMETER IncludeSystemDBs
         Includes system databases (master, model, msdb, tempdb) in the table scan.
         By default system databases are excluded since they rarely contain user tables of interest.
+        Databases requested explicitly with -Database are always processed, whether they are system databases or not.
 
     .PARAMETER Table
         Specifies specific tables to retrieve using one, two, or three-part naming (table, schema.table, or database.schema.table).
@@ -170,7 +171,18 @@ function Get-DbaDbTable {
         if (Test-FunctionInterrupt) { return }
 
         foreach ($instance in $SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase | Where-Object IsAccessible
+            $splatGetDatabase = @{
+                SqlInstance     = $instance
+                SqlCredential   = $SqlCredential
+                Database        = $Database
+                ExcludeDatabase = $ExcludeDatabase
+            }
+            # An explicitly requested database is always honored, even a system database.
+            # The switch only decides whether a scan of the whole instance includes the system databases.
+            if (-not $Database -and -not $IncludeSystemDBs) {
+                $splatGetDatabase.ExcludeSystem = $true
+            }
+            $InputObject += Get-DbaDatabase @splatGetDatabase | Where-Object IsAccessible
         }
 
         foreach ($db in $InputObject) {

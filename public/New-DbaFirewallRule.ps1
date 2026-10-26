@@ -428,7 +428,10 @@ function New-DbaFirewallRule {
                 }
 
                 if (-not $dacMessage) {
-                    Write-Message -Level Warning -Message "No information about the dedicated admin connection (DAC) found in ERRORLOG, cannot create firewall rule for DAC. Use 'Set-DbaSpConfigure -SqlInstance '$instance' -Name RemoteDacConnectionsEnabled -Value 1' to enable remote DAC and try again."
+                    # SQL Server writes this message when the instance starts, and we only read the
+                    # current ERRORLOG. A log that was cycled since the last start therefore looks
+                    # exactly like a disabled DAC, so we must not claim the DAC is disabled here.
+                    Write-Message -Level Warning -Message "No information about the dedicated admin connection (DAC) found in the current ERRORLOG, cannot create firewall rule for DAC. That message is only written when the instance starts, so it is missing if the ERRORLOG was cycled since then. If remote DAC is disabled on $instance, enable it with Set-DbaSpConfigure -Name RemoteDacConnectionsEnabled -Value 1 and restart the instance."
                 } elseif ($dacMessage -match 'locally') {
                     Write-Message -Level Verbose -Message "Dedicated admin connection is only listening locally, so no firewall rule is needed."
                 } else {

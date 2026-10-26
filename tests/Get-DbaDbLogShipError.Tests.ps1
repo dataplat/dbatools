@@ -42,4 +42,14 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status.Count | Should -BeExactly 0
         }
     }
+
+    Context "When databases are excluded" {
+        It "Accepts -ExcludeDatabase and returns nothing for an instance without log shipping" {
+            # -ExcludeDatabase was declared and documented but never applied to the results (#10607). An instance
+            # without log shipping has no errors to filter, so this only proves the parameter is wired and harmless.
+            $results = @(Get-DbaDbLogShipError -SqlInstance $TestConfig.InstanceSingle -ExcludeDatabase master)
+            $results.Status.Count | Should -BeExactly 0
+            $WarnVar | Should -BeNullOrEmpty
+        }
+    }
 }

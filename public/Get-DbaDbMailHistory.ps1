@@ -167,8 +167,12 @@ function Get-DbaDbMailHistory {
                 }
 
                 if ($Status) {
-                    $Status = $Status -join "', '"
-                    $wherearray += "sent_status IN ('$Status')"
+                    # The sysmail_allitems view emits sent_status in lowercase, so compare lowercased or the
+                    # documented values (Sent, Unsent, Failed, Retrying) never match on a case sensitive instance.
+                    # Invariantly: a culture-sensitive lowercase turns the I of FAILED or RETRYING into a
+                    # dotless i under Turkish rules, which never matches the ASCII tokens sysmail stores.
+                    $Status = ($Status -join "', '").ToLowerInvariant()
+                    $wherearray += "LOWER(sent_status) IN ('$Status')"
                 }
 
                 $wherearray = $wherearray -join ' AND '

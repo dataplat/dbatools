@@ -365,3 +365,82 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "The connections of the caller are left in the database they were in (#10555)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $contextDbName = "dbatoolsci_ctx_copylogin_$(Get-Random)"
+            $contextLoginName = "dbatoolsci_ctx_login_$(Get-Random)"
+
+            # The database exists on both servers and the login has a user in it on the source, so the
+            # permission sync walks the database level collections of both servers - which is the leak
+            # this context guards against.
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Name $contextDbName
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Name $contextDbName
+            $splatContextLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Login       = $contextLoginName
+                Password    = (ConvertTo-SecureString -String "dbatools.IO" -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatContextLogin
+            $splatContextUser = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Database    = $contextDbName
+                Login       = $contextLoginName
+                Username    = $contextLoginName
+            }
+            $null = New-DbaDbUser @splatContextUser
+
+            # Only a non-pooled connection can show this. A pooled connection that is closed between two
+            # calls reconnects at its default database, which puts the database back by accident.
+            $sourceCallerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1 -NonPooledConnection
+            $destCallerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2 -NonPooledConnection
+            $sourceContextBefore = $sourceCallerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()")
+            $destContextBefore = $destCallerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()")
+
+            $splatCopyLogin = @{
+                Source      = $sourceCallerServer
+                Destination = $destCallerServer
+                Login       = $contextLoginName
+            }
+            $contextResult = Copy-DbaLogin @splatCopyLogin
+
+            $sourceContextAfter = $sourceCallerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()")
+            $destContextAfter = $destCallerServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()")
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $sourceCallerServer | Disconnect-DbaInstance
+            $null = $destCallerServer | Disconnect-DbaInstance
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Database $contextDbName -ErrorAction SilentlyContinue
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Login $contextLoginName -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "copies the login and syncs its database user" {
+            # Only a command that really did something can move the connections, so without this the
+            # assertions below would pass for the wrong reason.
+            $contextResult.Status | Should -Be "Successful"
+            (Get-DbaLogin -SqlInstance $TestConfig.InstanceCopy2 -Login $contextLoginName).Name | Should -Be $contextLoginName
+            (Get-DbaDbUser -SqlInstance $TestConfig.InstanceCopy2 -Database $contextDbName).Name | Should -Contain $contextLoginName
+        }
+
+        It "leaves the source connection in the database it was in" {
+            $sourceContextAfter | Should -Be $sourceContextBefore
+        }
+
+        It "leaves the destination connection in the database it was in" {
+            $destContextAfter | Should -Be $destContextBefore
+        }
+    }
+}

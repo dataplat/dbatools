@@ -20,6 +20,14 @@ Describe $CommandName -Tag UnitTests {
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
+
+        It "Should accept an array of Software values" {
+            (Get-Command $CommandName).Parameters["Software"].ParameterType | Should -Be ([string[]])
+        }
+
+        It "Should allow All as a Software value" {
+            (Get-Command $CommandName).Parameters["Software"].Attributes.ValidValues | Should -Contain "All"
+        }
     }
 
 }
@@ -64,5 +72,73 @@ Describe $CommandName -Tag IntegrationTests {
 
         Get-ChildItem -Path $targetDirectory -Recurse -Filter "CommandExecute.sql" | Should -Not -BeNullOrEmpty
         Test-Path -Path (Join-Path -Path $targetDirectory -ChildPath "stale.txt") | Should -BeFalse
+    }
+
+    It "warns instead of downloading when LocalDirectory is combined with multiple Software values" {
+        Save-DbaCommunitySoftware -Software MaintenanceSolution, DarlingData -LocalDirectory $targetDirectory -WarningAction SilentlyContinue
+
+        $WarnVar | Should -Match "single -Software value"
+    }
+
+    It "warns instead of downloading when LocalDirectory is combined with All" {
+        Save-DbaCommunitySoftware -Software All -LocalDirectory $targetDirectory -WarningAction SilentlyContinue
+
+        $WarnVar | Should -Match "single -Software value"
+    }
+
+    Context "Downloading multiple tools to an isolated cache" {
+        BeforeEach {
+            # Software's per-tool cache paths default from Path.DbatoolsData, so these tests
+            # point that config at a throwaway TestDrive folder instead of touching the real
+            # shared cache, and restore it afterwards.
+            $originalDbatoolsData = Get-DbatoolsConfigValue -FullName "Path.DbatoolsData"
+            $isolatedDbatoolsData = Join-Path -Path $TestDrive -ChildPath "dbatoolsdata-$(Get-Random)"
+            $null = New-Item -Path $isolatedDbatoolsData -ItemType Directory
+            Set-DbatoolsConfig -FullName "Path.DbatoolsData" -Value $isolatedDbatoolsData
+        }
+
+        AfterEach {
+            Set-DbatoolsConfig -FullName "Path.DbatoolsData" -Value $originalDbatoolsData
+        }
+
+        It "downloads each tool when Software is passed as an array" {
+            Save-DbaCommunitySoftware -Software MaintenanceSolution, DarlingData -EnableException
+
+            $splatMaintenanceCheck = @{
+                Path    = Join-Path -Path $isolatedDbatoolsData -ChildPath "sql-server-maintenance-solution-main"
+                Recurse = $true
+                Filter  = "CommandExecute.sql"
+            }
+            Get-ChildItem @splatMaintenanceCheck | Should -Not -BeNullOrEmpty
+
+            $splatDarlingCheck = @{
+                Path    = Join-Path -Path $isolatedDbatoolsData -ChildPath "DarlingData-main"
+                Recurse = $true
+                Filter  = "*.sql"
+            }
+            Get-ChildItem @splatDarlingCheck | Should -Not -BeNullOrEmpty
+        }
+
+        It "downloads every tool when Software is All" {
+            Save-DbaCommunitySoftware -Software All -EnableException
+
+            $expectedFolders = @(
+                "sql-server-maintenance-solution-main",
+                "SQL-Server-First-Responder-Kit-main",
+                "DarlingData-main",
+                "SQLWATCH",
+                "WhoIsActive",
+                "dba-multitool-main",
+                "AzSqlTips"
+            )
+            foreach ($expectedFolder in $expectedFolders) {
+                $splatFolderCheck = @{
+                    Path    = Join-Path -Path $isolatedDbatoolsData -ChildPath $expectedFolder
+                    Recurse = $true
+                    File    = $true
+                }
+                Get-ChildItem @splatFolderCheck | Should -Not -BeNullOrEmpty
+            }
+        }
     }
 }

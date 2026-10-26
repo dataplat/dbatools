@@ -44,7 +44,10 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Validate standard output for all databases" {
-        BeforeAll {
+        BeforeDiscovery {
+            # -ForEach is read while Pester discovers the tests. Built in the BeforeAll below, as
+            # they were before, these two lists were still empty at discovery and neither of the
+            # property tests existed at all.
             $propsInputBuffer = @(
                 "ComputerName",
                 "InstanceName",
@@ -62,6 +65,9 @@ Describe $CommandName -Tag IntegrationTests {
                 "Buffer",
                 "HexBuffer"
             )
+        }
+
+        BeforeAll {
             $resultInputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.InstanceSingle -Operation InputBuffer -All
             $resultOutputBuffer = Get-DbaDbccSessionBuffer -SqlInstance $TestConfig.InstanceSingle -Operation OutputBuffer -All
         }

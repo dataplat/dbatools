@@ -19,8 +19,25 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
-<#
-    Integration test should appear below and are custom to the command you are writing.
-    Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
-    for more guidence.
-#>
+
+Describe $CommandName -Tag IntegrationTests {
+    # This Describe deliberately carries no pwsh skip: until #10662 the command refused to run on
+    # PowerShell 7 even on Windows, so running it here on both editions is the regression test.
+
+    Context "Getting the policy store" {
+        BeforeAll {
+            $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $results = Get-DbaPbmStore -SqlInstance $TestConfig.InstanceSingle
+        }
+
+        It "Returns the store of the instance without warnings" {
+            $WarnVar | Should -BeNullOrEmpty
+            $results | Should -Not -BeNullOrEmpty
+            $results.SqlInstance | Should -Be $server.DomainInstanceName
+        }
+
+        It "Reaches the policies through the store" {
+            $results.Policies.Count | Should -BeGreaterThan 0
+        }
+    }
+}

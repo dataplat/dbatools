@@ -125,6 +125,13 @@ function Update-DbaInstance {
         Use this to control where temporary installation files are placed, especially on servers with limited C: drive space.
         Defaults to system temporary directory if not specified, but consider using a dedicated drive with sufficient space.
 
+    .PARAMETER KeepExtractedFiles
+        Leaves the extracted update files on the target computers instead of deleting them as soon as setup.exe has finished.
+        Use this when deleting them is slow, for example while endpoint protection scans them, and you prefer to remove them after the restart and recovery of the instance.
+        The files are kept whatever the outcome, including a failed installation or a partial extraction, and removing them is up to you.
+        Each update extracts to a folder dbatools_KB<KB>_Extract_<32 hex characters> below ExtractPath, which the ExtractPath property of the output reports.
+        Specify a dedicated ExtractPath so these folders can be found and removed even when no result came back, for example after a lost remote session.
+
     .OUTPUTS
         PSCustomObject
 
@@ -140,6 +147,7 @@ function Update-DbaInstance {
         - Successful (bool) - Boolean indicating whether the patch installation completed successfully
         - Restarted (bool) - Boolean indicating whether the server was restarted after patching
         - Notes (object[]) - Array of messages describing the installation process, any warnings, or errors encountered
+        - ExtractPath (string) - The folder on the target computer the update was extracted to. Not displayed by default, use Select-Object * to see it
 
     .LINK
         https://dbatools.io/Update-DbaInstance
@@ -199,6 +207,12 @@ function Update-DbaInstance {
         Extracts the files in local driver on Server1 C:\temp.
 
     .EXAMPLE
+        PS C:\> Update-DbaInstance -ComputerName Server1 -Path \\network\share -ExtractPath "D:\SqlUpdates" -KeepExtractedFiles -Confirm:$false
+
+        Updates all applicable SQL Server installations on Server1 with the most recent patch and leaves the extracted files in D:\SqlUpdates on Server1.
+        Remove the dbatools_KB*_Extract_* folders below D:\SqlUpdates once the instances are back and verified.
+
+    .EXAMPLE
         PS C:\> Update-DbaInstance -ComputerName Server1 -Path \\network\share -ArgumentList "/SkipRules=RebootRequiredCheck"
 
         Updates all applicable SQL Server installations on Server1 with the most recent patch.
@@ -246,6 +260,7 @@ function Update-DbaInstance {
         [switch]$UseSSL = (Get-DbatoolsConfigValue -FullName "PSRemoting.PsSession.UseSSL" -Fallback $false),
         [nullable[int]]$Port = (Get-DbatoolsConfigValue -FullName "PSRemoting.PsSession.Port" -Fallback $null),
         [string]$ExtractPath,
+        [switch]$KeepExtractedFiles,
         [string[]]$ArgumentList,
         [switch]$Download,
         [switch]$NoPendingRenameCheck = (Get-DbatoolsConfigValue -Name 'OS.PendingRename' -Fallback $false),
@@ -468,70 +483,49 @@ function Update-DbaInstance {
         $downloads = @()
         :computers foreach ($resolvedName in $resolvedComputers) {
             $activity = "Preparing to update SQL Server on $resolvedName"
-            ## Find the current version on the computer
-            Write-ProgressHelper -ExcludePercent -Activity $activity -StepNumber 0 -Message "Gathering all SQL Server instance versions"
             try {
-                $splatSqlInstanceComponent = @{
-                    ComputerName   = $resolvedName
-                    Credential     = $Credential
-                    Authentication = $Authentication
-                }
-                $components = Get-SQLInstanceComponent @splatSqlInstanceComponent
-            } catch {
-                Stop-Function -Message "Error while looking for SQL Server installations on $resolvedName" -Continue -ErrorRecord $_
-            }
-            if (!$components) {
-                Stop-Function -Message "No SQL Server installations found on $resolvedName" -Continue
-            }
-            Write-Message -Level Debug -Message "Found $(($components | Measure-Object).Count) existing SQL Server instance components: $(($components | ForEach-Object { "$($_.InstanceName)($($_.InstanceType) $($_.Version.NameLevel))" }) -join ',')"
-            # Filter for specific instance name
-            if ($InstanceName) {
-                $components = $components | Where-Object { $_.InstanceName -eq $InstanceName }
-            }
-            try {
-                $splatPendingReboot = @{
-                    ComputerName    = $resolvedName
-                    Credential      = $Credential
-                    Authentication  = $Authentication
-                    NoPendingRename = $NoPendingRenameCheck
-                }
-                $restartNeeded = Test-PendingReboot @splatPendingReboot
-            } catch {
-                Stop-Function -Message "Failed to get reboot status from $resolvedName" -Continue -ErrorRecord $_
-            }
-            if ($restartNeeded -and (-not $Restart -or ([DbaInstanceParameter]$resolvedName).IsLocalHost)) {
-                #Exit the actions loop altogether - nothing can be installed here anyways
-                Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue
-            }
-            # test connection
-            if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost) {
-                $totalSteps += 1
-                Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Testing $Authentication protocol"
-                Write-Message -Level Verbose -Message "Attempting to test $Authentication protocol for remote connections"
+                ## Find the current version on the computer
+                Write-ProgressHelper -ExcludePercent -Activity $activity -StepNumber 0 -Message "Gathering all SQL Server instance versions"
                 try {
-                    $splatRemoteTest = @{
+                    $splatSqlInstanceComponent = @{
                         ComputerName   = $resolvedName
                         Credential     = $Credential
                         Authentication = $Authentication
-                        ScriptBlock    = { $true }
-                        Raw            = $true
-                        UseSSL         = $UseSSL
                     }
-                    if (($null -ne $Port) -and ($Port -gt 0)) {
-                        $splatRemoteTest.Port = $Port
-                    }
-                    $connectSuccess = Invoke-Command2 @splatRemoteTest
+                    $components = Get-SQLInstanceComponent @splatSqlInstanceComponent
                 } catch {
-                    $connectSuccess = $false
+                    Stop-Function -Message "Error while looking for SQL Server installations on $resolvedName" -Continue -ErrorRecord $_
                 }
-                # if we use CredSSP, we might be able to configure it
-                if (-not $connectSuccess -and $Authentication -eq 'Credssp') {
+                if (!$components) {
+                    Stop-Function -Message "No SQL Server installations found on $resolvedName" -Continue
+                }
+                Write-Message -Level Debug -Message "Found $(($components | Measure-Object).Count) existing SQL Server instance components: $(($components | ForEach-Object { "$($_.InstanceName)($($_.InstanceType) $($_.Version.NameLevel))" }) -join ',')"
+                # Filter for specific instance name
+                if ($InstanceName) {
+                    $components = $components | Where-Object { $_.InstanceName -eq $InstanceName }
+                }
+                try {
+                    $splatPendingReboot = @{
+                        ComputerName    = $resolvedName
+                        Credential      = $Credential
+                        Authentication  = $Authentication
+                        NoPendingRename = $NoPendingRenameCheck
+                    }
+                    $restartNeeded = Test-PendingReboot @splatPendingReboot
+                } catch {
+                    Stop-Function -Message "Failed to get reboot status from $resolvedName" -Continue -ErrorRecord $_
+                }
+                if ($restartNeeded -and (-not $Restart -or ([DbaInstanceParameter]$resolvedName).IsLocalHost)) {
+                    #Exit the actions loop altogether - nothing can be installed here anyways
+                    Stop-Function -Message "$resolvedName is pending a reboot. Reboot the computer before proceeding." -Continue
+                }
+                # test connection
+                if ($Credential -and -not ([DbaInstanceParameter]$resolvedName).IsLocalHost) {
                     $totalSteps += 1
-                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Configuring CredSSP protocol"
-                    Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
+                    Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Testing $Authentication protocol"
+                    Write-Message -Level Verbose -Message "Attempting to test $Authentication protocol for remote connections"
                     try {
-                        Initialize-CredSSP -ComputerName $resolvedName -Credential $Credential -EnableException $true
-                        $splatRemoteTestCredSSP = @{
+                        $splatRemoteTest = @{
                             ComputerName   = $resolvedName
                             Credential     = $Credential
                             Authentication = $Authentication
@@ -540,90 +534,114 @@ function Update-DbaInstance {
                             UseSSL         = $UseSSL
                         }
                         if (($null -ne $Port) -and ($Port -gt 0)) {
-                            $splatRemoteTestCredSSP.Port = $Port
+                            $splatRemoteTest.Port = $Port
                         }
-                        $connectSuccess = Invoke-Command2 @splatRemoteTestCredSSP
+                        $connectSuccess = Invoke-Command2 @splatRemoteTest
                     } catch {
                         $connectSuccess = $false
-                        # tell the user why we could not configure CredSSP
-                        Write-Message -Level Warning -Message $_
                     }
-                }
-                # in case we are still not successful, ask the user to use unsecure protocol once
-                if (-not $connectSuccess -and -not $notifiedUnsecure) {
-                    if ($PSCmdlet.ShouldProcess($resolvedName, "Primary protocol ($Authentication) failed, sending credentials via potentially unsecure protocol")) {
-                        $notifiedUnsecure = $true
-                    } else {
-                        Stop-Function -Message "Failed to connect to $resolvedName through $Authentication protocol. No actions will be performed on that computer." -Continue -ContinueLabel computers
-                    }
-                }
-            }
-            $upgrades = @()
-            :actions foreach ($actionItem in $actions) {
-                # Clone action to use as a splat
-                $currentAction = $actionItem.Clone()
-                # Pass only relevant components
-                if ($currentAction.MajorVersion) {
-                    Write-Message -Level Debug -Message "Limiting components to version $($currentAction.MajorVersion)"
-                    $selectedComponents = $components | Where-Object { $_.Version.NameLevel -contains $currentAction.MajorVersion }
-                    $currentAction.Remove('MajorVersion')
-                } else {
-                    $selectedComponents = $components
-                }
-                Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Looking for a KB file for a chosen version"
-                Write-Message -Level Debug -Message "Looking for appropriate KB file on $resolvedName with following params: $($currentAction | ConvertTo-Json -Depth 1 -Compress)"
-                # get upgrade details for each component
-                $upgradeDetails = Get-SqlInstanceUpdate @currentAction -ComputerName $resolvedName -Credential $Credential -Component $selectedComponents
-                if ($upgradeDetails.Successful -contains $false) {
-                    #Exit the actions loop altogether - upgrade cannot be performed
-                    $upgradeDetails
-                    Stop-Function -Message "Update cannot be applied to $resolvedName | $($upgradeDetails.Notes -join ' | ')" -Continue -ContinueLabel computers
-                }
-
-                foreach ($detail in $upgradeDetails) {
-                    # search for installer for each target upgrade
-                    $kbLookupParams = @{
-                        ComputerName   = $resolvedName
-                        Credential     = $Credential
-                        Authentication = $Authentication
-                        Architecture   = $detail.Architecture
-                        MajorVersion   = $detail.MajorVersion
-                        Path           = $Path
-                        KB             = $detail.KB
-                    }
-                    try {
-                        $installer = Find-SqlInstanceUpdate @kbLookupParams
-                    } catch {
-                        Stop-Function -Message "Failed to enumerate files in -Path" -ErrorRecord $_ -Continue
-                    }
-                    if ($installer) {
-                        $detail.Installer = $installer.FullName
-                    } elseif ($Download) {
-                        $downloads += [PSCustomObject]@{ KB = $detail.KB; Architecture = $detail.Architecture }
-                    } else {
-                        Stop-Function -Message "Could not find installer for the SQL$($detail.MajorVersion) update KB$($detail.KB)" -Continue
-                    }
-                    # update components to mirror the updated version - will be used for multi-step upgrades
-                    foreach ($component in $components) {
-                        if ($component.Version.NameLevel -eq $detail.TargetVersion.NameLevel) {
-                            $component.Version = $detail.TargetVersion
+                    # if we use CredSSP, we might be able to configure it
+                    if (-not $connectSuccess -and $Authentication -eq 'Credssp') {
+                        $totalSteps += 1
+                        Write-ProgressHelper -TotalSteps $totalSteps -Activity $activity -StepNumber ($stepCounter++) -Message "Configuring CredSSP protocol"
+                        Write-Message -Level Verbose -Message "Attempting to configure CredSSP for remote connections"
+                        try {
+                            Initialize-CredSSP -ComputerName $resolvedName -Credential $Credential -EnableException $true
+                            $splatRemoteTestCredSSP = @{
+                                ComputerName   = $resolvedName
+                                Credential     = $Credential
+                                Authentication = $Authentication
+                                ScriptBlock    = { $true }
+                                Raw            = $true
+                                UseSSL         = $UseSSL
+                            }
+                            if (($null -ne $Port) -and ($Port -gt 0)) {
+                                $splatRemoteTestCredSSP.Port = $Port
+                            }
+                            $connectSuccess = Invoke-Command2 @splatRemoteTestCredSSP
+                        } catch {
+                            $connectSuccess = $false
+                            # tell the user why we could not configure CredSSP
+                            Write-Message -Level Warning -Message $_
                         }
                     }
-                    # finally, add the upgrade details to the upgrade list
-                    $upgrades += $detail
-                }
-            }
-            if ($upgrades) {
-                Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Preparing installation"
-                $chosenVersions = ($upgrades | ForEach-Object { "$($_.MajorVersion) to $($_.TargetLevel) (KB$($_.KB))" }) -join ', '
-                if ($PSCmdlet.ShouldProcess($resolvedName, "Update $chosenVersions")) {
-                    $installActions += [PSCustomObject]@{
-                        ComputerName = $resolvedName
-                        Actions      = $upgrades
+                    # in case we are still not successful, ask the user to use unsecure protocol once
+                    if (-not $connectSuccess -and -not $notifiedUnsecure) {
+                        if ($PSCmdlet.ShouldProcess($resolvedName, "Primary protocol ($Authentication) failed, sending credentials via potentially unsecure protocol")) {
+                            $notifiedUnsecure = $true
+                        } else {
+                            Stop-Function -Message "Failed to connect to $resolvedName through $Authentication protocol. No actions will be performed on that computer." -Continue -ContinueLabel computers
+                        }
                     }
                 }
+                $upgrades = @()
+                :actions foreach ($actionItem in $actions) {
+                    # Clone action to use as a splat
+                    $currentAction = $actionItem.Clone()
+                    # Pass only relevant components
+                    if ($currentAction.MajorVersion) {
+                        Write-Message -Level Debug -Message "Limiting components to version $($currentAction.MajorVersion)"
+                        $selectedComponents = $components | Where-Object { $_.Version.NameLevel -contains $currentAction.MajorVersion }
+                        $currentAction.Remove('MajorVersion')
+                    } else {
+                        $selectedComponents = $components
+                    }
+                    Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Looking for a KB file for a chosen version"
+                    Write-Message -Level Debug -Message "Looking for appropriate KB file on $resolvedName with following params: $($currentAction | ConvertTo-Json -Depth 1 -Compress)"
+                    # get upgrade details for each component
+                    $upgradeDetails = Get-SqlInstanceUpdate @currentAction -ComputerName $resolvedName -Credential $Credential -Component $selectedComponents
+                    if ($upgradeDetails.Successful -contains $false) {
+                        #Exit the actions loop altogether - upgrade cannot be performed
+                        $upgradeDetails
+                        Stop-Function -Message "Update cannot be applied to $resolvedName | $($upgradeDetails.Notes -join ' | ')" -Continue -ContinueLabel computers
+                    }
+
+                    foreach ($detail in $upgradeDetails) {
+                        # search for installer for each target upgrade
+                        $kbLookupParams = @{
+                            ComputerName   = $resolvedName
+                            Credential     = $Credential
+                            Authentication = $Authentication
+                            Architecture   = $detail.Architecture
+                            MajorVersion   = $detail.MajorVersion
+                            Path           = $Path
+                            KB             = $detail.KB
+                        }
+                        try {
+                            $installer = Find-SqlInstanceUpdate @kbLookupParams
+                        } catch {
+                            Stop-Function -Message "Failed to enumerate files in -Path" -ErrorRecord $_ -Continue
+                        }
+                        if ($installer) {
+                            $detail.Installer = $installer.FullName
+                        } elseif ($Download) {
+                            $downloads += [PSCustomObject]@{ KB = $detail.KB; Architecture = $detail.Architecture }
+                        } else {
+                            Stop-Function -Message "Could not find installer for the SQL$($detail.MajorVersion) update KB$($detail.KB)" -Continue
+                        }
+                        # update components to mirror the updated version - will be used for multi-step upgrades
+                        foreach ($component in $components) {
+                            if ($component.Version.NameLevel -eq $detail.TargetVersion.NameLevel) {
+                                $component.Version = $detail.TargetVersion
+                            }
+                        }
+                        # finally, add the upgrade details to the upgrade list
+                        $upgrades += $detail
+                    }
+                }
+                if ($upgrades) {
+                    Write-ProgressHelper -ExcludePercent -Activity $activity -Message "Preparing installation"
+                    $chosenVersions = ($upgrades | ForEach-Object { "$($_.MajorVersion) to $($_.TargetLevel) (KB$($_.KB))" }) -join ', '
+                    if ($PSCmdlet.ShouldProcess($resolvedName, "Update $chosenVersions")) {
+                        $installActions += [PSCustomObject]@{
+                            ComputerName = $resolvedName
+                            Actions      = $upgrades
+                        }
+                    }
+                }
+            } finally {
+                Write-Progress -Activity $activity -Completed
             }
-            Write-Progress -Activity $activity -Completed
         }
         # Download and distribute updates if needed
         $downloadedKbs = @()
@@ -686,6 +704,7 @@ function Update-DbaInstance {
                 Credential           = $Credential
                 EnableException      = $EnableException
                 ExtractPath          = $ExtractPath
+                KeepExtractedFiles   = $KeepExtractedFiles
                 Authentication       = $Authentication
                 ArgumentList         = $ArgumentList
                 NoPendingRenameCheck = $NoPendingRenameCheck

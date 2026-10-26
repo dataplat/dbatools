@@ -73,4 +73,54 @@ Describe $CommandName -Tag IntegrationTests {
             $results.ComputerName | Should -Be $computerName
         }
     }
+
+    Context "When a subdirectory is given" {
+        It "Imports the collector set with that subdirectory" {
+            # -Subdirectory was declared and documented but never written into the template (#10607).
+            $splatImport = @{
+                ComputerName = $computerName
+                Template     = $collectorSetName
+                Subdirectory = "dbatoolsci_sub"
+            }
+            $results = Import-DbaPfDataCollectorSetTemplate @splatImport
+            $results.Name | Should -Be $collectorSetName
+            $results.Subdirectory | Should -Be "dbatoolsci_sub"
+        }
+    }
+
+    Context "When a subdirectory is given for a template without a Subdirectory element" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Unlike Long Running Queries, the four PAL templates carry no Subdirectory element.
+            $palCollectorSetName = "PAL - SQL Server 2014 and Up"
+            $null = Get-DbaPfDataCollectorSet -ComputerName $computerName -CollectorSet $palCollectorSetName | Remove-DbaPfDataCollectorSet
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Get-DbaPfDataCollectorSet -ComputerName $computerName -CollectorSet $palCollectorSetName | Remove-DbaPfDataCollectorSet
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Creates the element and imports the collector set with that subdirectory" {
+            # The element was assigned as if it existed, which threw for these templates and skipped the import.
+            $splatImportPal = @{
+                ComputerName = $computerName
+                Template     = $palCollectorSetName
+                Subdirectory = "dbatoolsci_palsub"
+            }
+            $results = Import-DbaPfDataCollectorSetTemplate @splatImportPal
+            $WarnVar | Should -BeNullOrEmpty
+            $results.Name | Should -Be $palCollectorSetName
+            $results.Subdirectory | Should -Be "dbatoolsci_palsub"
+        }
+    }
 }

@@ -20,9 +20,11 @@ Describe $CommandName -Tag UnitTests {
         }
     }
     Context "Validate input" {
+        # The mock needs -ModuleName dbatools, otherwise it never applies to the code under test and
+        # the test only asserts that DNS really fails for DoesNotExist142 on the machine running it.
         It "Cannot resolve hostname of computer" {
-            Mock Resolve-DbaNetworkName { $null }
-            { Get-DbaComputerSystem -ComputerName "DoesNotExist142" -WarningAction Stop 3> $null } | Should -Throw -ExpectedMessage "*DNS name DoesNotExist142 not found*"
+            Mock Resolve-DbaNetworkName -ModuleName dbatools { $null }
+            { Get-DbaComputerSystem -ComputerName "DoesNotExist142" -WarningAction Stop 3> $null } | Should -Throw -ExpectedMessage "*Unable to resolve hostname of DoesNotExist142*"
         }
     }
 }

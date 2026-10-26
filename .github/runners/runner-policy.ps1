@@ -81,6 +81,16 @@ function Test-CiRunEligible {
     if ([string]$Run.event -eq "pull_request") {
         return $true
     }
+    # A push run is a merge: ci-azure.yml only fires on: push for development, and since
+    # #10508 the workflow runs the full matrix for every merge, marker or not. Requiring
+    # the marker here starved merge runs of runners while their jobs sat queued. The
+    # exemption is deliberately run-scoped: a push filtered out by paths-ignore creates
+    # no run, so it heats nothing, and push events and webhook triggers stay marker-gated.
+    # -ceq because GitHub branch names are case-sensitive, and the head_branch check
+    # keeps this honest if the push trigger is ever widened beyond development.
+    if ([string]$Run.event -eq "push" -and [string]$Run.head_branch -ceq "development") {
+        return $true
+    }
     $message = Get-CiRunMessage -Run $Run
     return Test-CiMarker -Message $message -Marker $Marker
 }
@@ -119,6 +129,198 @@ function Test-MaintainerActivityEvent {
     return Test-CiMarker -Message $message -Marker $Marker
 }
 
+function Get-PoolJobDemandFromJobs {
+    param(
+        [object[]]$Jobs = @(),
+        [string]$PoolLabelPrefix = "dbatools-pool-"
+    )
+    # Demand is read from each job's own dbatools-pool-* label rather than from the
+    # run's actor. That is exact: it counts only jobs that actually queue against this
+    # fleet (ci-azure.yml's authorize job runs on ubuntu-latest and carries no pool
+    # label), and it already honours the [pool:...] display-title override, because
+    # the workflow resolved inputs.pool_user into runs-on before the job was created.
+    #
+    # Anything not "completed" needs a runner, so the filter is negative rather than a
+    # whitelist -- GitHub has added job statuses (waiting, pending, requested) since
+    # this fleet was written and will add more.
+    $demand = @{ }
+    foreach ($job in $Jobs) {
+        if ([string]$job.status -eq "completed") {
+            continue
+        }
+        $poolLabel = @($job.labels | Where-Object { $PSItem -like "$PoolLabelPrefix*" } | Select-Object -First 1)
+        if (-not $poolLabel) {
+            continue
+        }
+        $pool = ([string]$poolLabel[0]).Substring($PoolLabelPrefix.Length)
+        if (-not $demand.ContainsKey($pool)) {
+            $demand[$pool] = 0
+        }
+        $demand[$pool] += 1
+    }
+    $demand
+}
+
+function Get-PoolJobDemandFromRuns {
+    [CmdletBinding()]
+    param(
+        [object[]]$WorkflowRuns = @(),
+        [hashtable]$JobsByRun = @{ },
+        [Parameter(Mandatory)]
+        [string[]]$Maintainers,
+        [Parameter(Mandatory)]
+        [string[]]$OptInPushUsers,
+        [Parameter(Mandatory)]
+        [string]$Marker,
+        [Parameter(Mandatory)]
+        [int]$MaintainerCount,
+        [Parameter(Mandatory)]
+        [int]$CommunityCount,
+        [string]$PoolLabelPrefix = "dbatools-pool-"
+    )
+
+    $demand = @{ }
+    $eligibleLiveRuns = @($WorkflowRuns | Where-Object {
+            $splatEligibility = @{
+                Run            = $PSItem
+                OptInPushUsers = $OptInPushUsers
+                Marker         = $Marker
+            }
+            [string]$PSItem.status -ne "completed" -and (Test-CiRunEligible @splatEligibility)
+        })
+    foreach ($run in $eligibleLiveRuns) {
+        $runId = [string]$run.id
+        $jobs = @()
+        if ($JobsByRun.ContainsKey($runId)) {
+            $jobs = @($JobsByRun[$runId])
+        }
+        $fleetJobs = @($jobs | Where-Object {
+                @($PSItem.labels | Where-Object { $PSItem -like "$PoolLabelPrefix*" }).Count -gt 0
+            })
+        if (-not $fleetJobs) {
+            # The authorization job exists before the fleet matrix. Estimate one full
+            # pool for that short gap; once any fleet-labelled job exists, even a
+            # completed one, the real pending count replaces the estimate.
+            $pool = Get-CiRunActor -Run $run
+            $poolSize = $MaintainerCount
+            if ($pool -notin $Maintainers) {
+                $pool = "community"
+                $poolSize = $CommunityCount
+            }
+            if (-not $demand.ContainsKey($pool) -or $demand[$pool] -lt $poolSize) {
+                $demand[$pool] = $poolSize
+            }
+            continue
+        }
+
+        $runDemand = Get-PoolJobDemandFromJobs -Jobs $fleetJobs -PoolLabelPrefix $PoolLabelPrefix
+        foreach ($pool in $runDemand.Keys) {
+            if (-not $demand.ContainsKey($pool)) {
+                $demand[$pool] = 0
+            }
+            $demand[$pool] += $runDemand[$pool]
+        }
+    }
+    $demand
+}
+
+function Get-VmssCapacityPlan {
+    [CmdletBinding()]
+    param(
+        [ValidateRange(0, 35)]
+        [int]$NominalCapacity,
+        [ValidateRange(0, 35)]
+        [int]$ActualCapacity,
+        [ValidateRange(0, 35)]
+        [int]$TargetCapacity
+    )
+
+    if ($NominalCapacity -gt $ActualCapacity) {
+        $ActualCapacity
+    }
+    if ($ActualCapacity -lt $TargetCapacity) {
+        $TargetCapacity
+    }
+}
+
+function Get-FleetCapacityStep {
+    [CmdletBinding()]
+    param(
+        [string]$ProvisioningState,
+        [int]$NominalCapacity,
+        [int]$ActualCapacity,
+        [ValidateRange(0, 35)]
+        [int]$TargetCapacity
+    )
+
+    # The Function controller PATCHes capacity fire-and-forget, so unlike the CLI script
+    # it cannot run Get-VmssCapacityPlan's normalize-then-scale sequence: awaiting the
+    # normalization would reintroduce the in-line wait that put the queue 3.3 hours
+    # behind, and taking one plan step per pass starves scale-out entirely, because
+    # ephemeral deletes mint fresh phantom capacity between passes and normalization
+    # wins the slot every time -- the fleet drained from 8 VMs to 3 against a target of
+    # 20 that way (2026-08-08). So the scale-out step compensates for the drift instead
+    # of repairing it first: raising nominal by exactly the shortfall makes Azure create
+    # target-minus-actual instances no matter how stale the bookkeeping is, in a single
+    # mutation. Normalization above zero members is gone entirely: production proved
+    # (2026-08-08, six consecutive observations during the drain, then ten busy runners
+    # killed mid-job in one CI run) that a down-PATCH deletes nominal-minus-newValue
+    # LIVE instances, and that every capacity PATCH conserves the nominal-over-actual
+    # gap, so normalizing can never even catch the drift it chases. The gap grows on
+    # per-VM deletes and clears only at the zero-crossing, where a down-PATCH has no
+    # members left to take -- that reclaim to zero is the one down-step this function
+    # emits. A drifted nominal anywhere above it, runaway or pinned at the ceiling or
+    # demand-met surplus, stays untouched and costs at most gap-many slots of ceiling
+    # headroom until the fleet next empties on its own. While the scale set is
+    # mid-mutation a nominal-over-actual gap is Azure still working, not phantom
+    # capacity -- normalizing it away would cancel the instances being created -- so
+    # only the ARM terminal states may mutate: an unknown or missing state is
+    # indistinguishable from an operation in flight, and the cost of skipping a pass is
+    # one safety-tick delay while the cost of overlapping PATCHes is cancelled
+    # instances. Failed and Canceled still mutate: a capacity PATCH is how a stuck
+    # scale set recovers, and skipping them would freeze the fleet.
+    if ($ProvisioningState -notin @("Succeeded", "Failed", "Canceled")) {
+        return $null
+    }
+    if ($NominalCapacity -lt 0 -or $ActualCapacity -lt 0) {
+        # Negative telemetry is a garbled ARM read, not a real fleet state, and it must
+        # not leak into a PATCH body. Skipping the pass costs one safety tick and the
+        # next read starts clean; a ValidateRange would crash the pass instead, which
+        # is the exact failure mode the missing attributes above avoid.
+        return $null
+    }
+    if ($ActualCapacity -lt $TargetCapacity) {
+        # 35 matches the ValidateRange every capacity function in this file shares.
+        # It is the MAX_RUNNERS hard ceiling, and in this function only Target still
+        # carries the gate, because the controller chooses it. Nominal and actual are
+        # ARM-read telemetry and deliberately carry no range gate: the janitor runbook
+        # treats capacity above the ceiling as a real state, and validating it here
+        # would crash every pass that observes it -- a ParameterBindingException is not
+        # TransientFleetException, so nothing catches it and the controller stops
+        # scaling entirely. The min bounds what this function emits; a nominal already
+        # at or past the ceiling gets no step here and unwinds through the
+        # zero-crossing reclaim below.
+        $unclipped = $NominalCapacity + ($TargetCapacity - $ActualCapacity)
+        $compensated = [math]::Min(35, $unclipped)
+        if ($ActualCapacity -eq 0 -and $NominalCapacity -gt 0 -and $compensated -lt $unclipped) {
+            # A clipped step on an empty fleet would create fewer than target instances
+            # and then pin there, below target, until the drift unwinds. With zero
+            # members the zero-crossing reclaim is free, so repay the whole drift now
+            # and let the next pass create the full target from a clean nominal. A
+            # clipped step over a nonzero fleet has no such option -- reclaiming would
+            # delete the live members -- so it still takes whatever headroom remains.
+            return 0
+        }
+        if ($compensated -gt $NominalCapacity) {
+            return $compensated
+        }
+    }
+    if ($ActualCapacity -eq 0 -and $NominalCapacity -gt 0) {
+        return 0
+    }
+    return $null
+}
+
 function Get-DesiredRunnerPools {
     [CmdletBinding()]
     param(
@@ -145,7 +347,10 @@ function Get-DesiredRunnerPools {
         [AllowEmptyString()]
         [string]$DirectTriggerActor = "",
         [AllowEmptyString()]
-        [string]$DirectTriggerMessage = ""
+        [string]$DirectTriggerMessage = "",
+        [hashtable]$PoolJobDemand = @{ },
+        [ValidateRange(0, 35)]
+        [int]$WarmFloor = 0
     )
 
     $maintainerCutoff = $Now.AddMinutes(-$MaintainerWindowMinutes)
@@ -161,15 +366,17 @@ function Get-DesiredRunnerPools {
                 Test-MaintainerActivityEvent -ActivityEvent $PSItem -Maintainer $maintainer -OptInPushUsers $OptInPushUsers -Marker $Marker -Cutoff $maintainerCutoff
             }).Count -gt 0
         $liveCi = @($liveRuns | Where-Object { (Get-CiRunActor -Run $PSItem) -eq $maintainer }).Count -gt 0
+        $recentlyCompletedCi = @($eligibleRuns | Where-Object {
+                (Get-CiRunActor -Run $PSItem) -eq $maintainer -and
+                [string]$PSItem.status -eq "completed" -and
+                [DateTimeOffset]::Parse([string]$PSItem.updated_at) -gt $maintainerCutoff
+            }).Count -gt 0
         $directTrigger = $DirectTriggerActor -eq $maintainer
         if ($directTrigger -and $maintainer -in $OptInPushUsers) {
             $directTrigger = Test-CiMarker -Message $DirectTriggerMessage -Marker $Marker
         }
-        $desired[$maintainer] = if ($recentActivity -or $liveCi -or $directTrigger) {
-            $MaintainerCount
-        } else {
-            0
-        }
+        $hot = $recentActivity -or $liveCi -or $recentlyCompletedCi -or $directTrigger
+        $desired[$maintainer] = if ($hot) { $MaintainerCount } else { 0 }
     }
 
     $communityLive = @($liveRuns | Where-Object {
@@ -181,10 +388,17 @@ function Get-DesiredRunnerPools {
             [DateTimeOffset]::Parse([string]$PSItem.updated_at) -gt $communityCutoff
         }).Count -gt 0
     $directCommunityTrigger = $DirectTriggerActor -and $DirectTriggerActor -notin $Maintainers
-    $desired["community"] = if ($communityLive -or $communityRecentlyCompleted -or $directCommunityTrigger) {
-        $CommunityCount
-    } else {
+    $communityHot = $communityLive -or $communityRecentlyCompleted -or $directCommunityTrigger
+    $communityPending = 0
+    if ($PoolJobDemand.ContainsKey("community")) {
+        $communityPending = [int]$PoolJobDemand["community"]
+    }
+    $desired["community"] = if (-not $communityHot) {
         0
+    } elseif ($communityPending -gt 0) {
+        [math]::Min($CommunityCount, $communityPending)
+    } else {
+        [math]::Min($CommunityCount, $WarmFloor)
     }
 
     $total = ($desired.Values | Measure-Object -Sum).Sum

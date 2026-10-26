@@ -30,3 +30,134 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "When Path is not a directory" {
+        BeforeAll {
+            $notADirectory = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_notadirectory_$(Get-Random).txt"
+            Set-Content -Path $notADirectory -Value "dbatoolsci"
+        }
+
+        AfterAll {
+            Remove-Item -Path $notADirectory -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Warns and exports nothing" {
+            # The check used to read Test-Bound -ParamterName, a misspelled parameter that Test-Bound quietly ignored,
+            # so a file passed as -Path was never rejected and the plans were exported into a path under that file
+            # instead (#10655).
+            $splatExport = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Path          = $notADirectory
+                WarningAction = "SilentlyContinue"
+            }
+            $results = Export-DbaExecutionPlan @splatExport
+            $results | Should -BeNullOrEmpty
+            ($WarnVar -join " ") | Should -BeLike "*must be a directory*"
+        }
+    }
+
+    Context "When Path is omitted and the configured export directory does not exist" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $exportPathBefore = Get-DbatoolsConfigValue -FullName "Path.DbatoolsExport"
+            $missingExportPath = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_export_$(Get-Random)"
+            Set-DbatoolsConfig -FullName "Path.DbatoolsExport" -Value $missingExportPath
+            # A cached plan in tempdb to export: the plan of an ad hoc statement carries the database it was compiled
+            # in, and the second run makes sure a full plan is cached even with optimize for ad hoc workloads on.
+            foreach ($i in 1..2) {
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query "SELECT 1 AS dbatoolsci_plan_probe"
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            Set-DbatoolsConfig -FullName "Path.DbatoolsExport" -Value $exportPathBefore
+            Remove-Item -Path $missingExportPath -Recurse -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Creates the directory and exports into it" {
+            # Test-Bound does not see a default, so the bootstrap never ran for an omitted -Path and the plans were
+            # saved into a directory that did not exist.
+            $results = Export-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database tempdb -WarningAction SilentlyContinue
+            Test-Path -Path $missingExportPath -PathType Container | Should -BeTrue
+            ($results | Measure-Object).Count | Should -BeGreaterThan 0
+            $results.OutputFile | Should -BeLike "$missingExportPath\*"
+            Get-ChildItem -Path $missingExportPath -Filter "*.sqlplan" | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "When the plan query is refused" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # A login without VIEW SERVER STATE connects, and the query on sys.dm_exec_query_stats fails on the server.
+            $loginName = "dbatoolsci_execplan_$(Get-Random)"
+            $splatPassword = @{
+                String      = "dbatools.IO$(Get-Random)!"
+                AsPlainText = $true
+                Force       = $true
+            }
+            $securePassword = ConvertTo-SecureString @splatPassword
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $loginName -SecurePassword $securePassword
+            $lowCredential = New-Object System.Management.Automation.PSCredential ($loginName, $securePassword)
+            $refusedExportPath = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_execplan_$(Get-Random)"
+            $null = New-Item -ItemType Directory -Path $refusedExportPath
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $loginName -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path $refusedExportPath -Recurse -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Warns instead of failing on its own error handling" {
+            # The catch passed -ErroRecord, a parameter Stop-Function does not have, so the call failed with a
+            # parameter binding error instead of warning.
+            $results = Export-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -SqlCredential $lowCredential -Path $refusedExportPath -WarningAction SilentlyContinue
+            $results | Should -BeNullOrEmpty
+            $WarnVar | Should -BeLike "*Issue collecting execution plans*"
+        }
+    }
+
+    Context "When several plans are passed to -InputObject" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $inputExportPath = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_execplan_$(Get-Random)"
+            $null = New-Item -ItemType Directory -Path $inputExportPath
+            foreach ($i in 1..2) {
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query "SELECT 1 AS dbatoolsci_plan_probe_one"
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database tempdb -Query "SELECT 2 AS dbatoolsci_plan_probe_two"
+            }
+            $plans = @(Get-DbaExecutionPlan -SqlInstance $TestConfig.InstanceSingle -Database tempdb | Select-Object -First 2)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            Remove-Item -Path $inputExportPath -Recurse -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Exports every plan, not only the first" {
+            # The return sat inside the loop over -InputObject, so only the first plan was exported.
+            $plans | Should -HaveCount 2
+            $results = Export-DbaExecutionPlan -InputObject $plans -Path $inputExportPath
+            $results | Should -HaveCount 2
+        }
+    }
+}

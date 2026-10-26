@@ -128,7 +128,7 @@ Describe $CommandName -Tag UnitTests {
 
     Context "Testing non-EnableException: Continue & ContinueLabel" {
         BeforeAll {
-            Mock -CommandName "Write-Warning" -MockWith { param ($Message) }
+            # Stop-Function runs in the module, so a mock without -ModuleName never applies to it
 
             #region Run Tests
             try {
@@ -263,7 +263,7 @@ Describe $CommandName -Tag UnitTests {
 
     Context "Testing silent: Continue & ContinueLabel" {
         BeforeAll {
-            Mock -CommandName "Write-Error" -MockWith { param ($Message) }
+            # Stop-Function runs in the module, so a mock without -ModuleName never applies to it
 
             #region Run Tests
             try {

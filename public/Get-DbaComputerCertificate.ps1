@@ -64,7 +64,7 @@ function Get-DbaComputerCertificate {
         - ComputerName: The name of the computer where the certificate is stored
         - Store: The certificate store location (CurrentUser or LocalMachine)
         - Folder: The certificate folder/container name (My, Root, AddressBook, etc.)
-        - Name: The friendly name of the certificate (added via Add-Member)
+        - Name: The friendly name of the certificate (added via Add-Member; FriendlyName carries the same value, also for remote computers)
         - DnsNameList: Collection of DNS names associated with the certificate
         - Thumbprint: The SHA-1 hash fingerprint uniquely identifying the certificate
         - NotBefore: DateTime when the certificate becomes valid
@@ -232,9 +232,22 @@ function Get-DbaComputerCertificate {
             foreach ($currentStore in $Store) {
                 foreach ($currentFolder in $Folder) {
                     try {
-                        Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $thumbprint, $currentStore, $currentFolder, $Path -ErrorAction Stop | Select-DefaultView -Property ComputerName, Store, Folder, Name, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer, Algorithm
+                        $certificates = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $thumbprint, $currentStore, $currentFolder, $Path -ErrorAction Stop
                     } catch {
                         Stop-Function -Message "Issue connecting to computer" -ErrorRecord $_ -Target $computer -Continue
+                    }
+                    foreach ($certificate in $certificates) {
+                        # Remoting rebuilds the certificate on this side from its raw bytes, and the friendly name is a
+                        # property of the store entry, not of the certificate - so it arrives empty from a remote computer.
+                        # The scriptblock carries it over as Name; put it back where callers expect it.
+                        if (-not $certificate.FriendlyName -and $certificate.Name) {
+                            try {
+                                $certificate.FriendlyName = $certificate.Name
+                            } catch {
+                                Write-Message -Level Verbose -Message "Could not restore the friendly name $($certificate.Name) on the certificate object: $PSItem"
+                            }
+                        }
+                        $certificate | Select-DefaultView -Property ComputerName, Store, Folder, Name, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer, Algorithm
                     }
                 }
             }

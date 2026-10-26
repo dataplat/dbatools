@@ -332,6 +332,117 @@ INSERT INTO $tableName VALUES (3, 'Charlie', 300.25, '2024-03-25 09:15:00');
         }
     }
 
+    Context "When exporting repeatedly" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The command used to open a database-scoped connection per call and never close it,
+            # one new sleeping session per call. Count sessions through a server object opened once,
+            # because a per-call counting command would open connections of its own.
+            $countServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $countQuery = @"
+select count(*)
+from sys.dm_exec_sessions
+where program_name like 'dbatools%'
+  and status = 'sleeping'
+  and session_id <> @@spid
+"@
+
+            # One warm-up call so the shared pooled connection exists before the baseline is taken.
+            $splatLeakExport = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "tempdb"
+                Table       = $tableName
+            }
+            $null = Export-DbaCsv @splatLeakExport -Path "$testExportPath\leak-0.csv"
+            $sleepingBefore = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            foreach ($i in 1..3) {
+                $null = Export-DbaCsv @splatLeakExport -Path "$testExportPath\leak-$i.csv"
+            }
+            $sleepingAfter = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            # -WhatIf still opens the connection before ShouldProcess skips the export, and
+            # Disconnect-DbaInstance supports ShouldProcess itself - the ownership disconnect has
+            # to ignore the propagated WhatIf preference or every -WhatIf call leaks its session.
+            foreach ($i in 1..3) {
+                $null = Export-DbaCsv @splatLeakExport -Path "$testExportPath\leak-whatif-$i.csv" -WhatIf
+            }
+            $sleepingAfterWhatIf = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $countServer.ConnectionContext.Disconnect()
+        }
+
+        It "Leaves no sleeping session behind" {
+            $sleepingAfter | Should -Be $sleepingBefore
+        }
+
+        It "Leaves no sleeping session behind with -WhatIf" {
+            $sleepingAfterWhatIf | Should -Be $sleepingBefore
+        }
+    }
+
+    Context "When writing the file fails on a connection of the caller" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            # The command does not disconnect a server object it was given, so only its own cleanup can close the
+            # reader on that connection. Connect-DbaInstance hands back that object itself when it already is in the
+            # database the command asks for, master here; for any other database the command works on a copy of its
+            # own, which it disconnects. The second connection checks the server from outside.
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $checkServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The file is held open without sharing, so the CSV writer cannot open it. The writer is created after
+            # the query has started, and the cross join makes sure the server has far more rows to send than the
+            # client has read by then. The marker in the SELECT finds the request afterwards, the session of the
+            # check is excluded because the text of the check contains the marker too.
+            $lockedPath = "$testExportPath\locked-$(Get-Random).csv"
+            $lockedFile = [System.IO.File]::Open($lockedPath, [System.IO.FileMode]::Create, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
+            $readerQuery = "SELECT 'dbatoolsci_csvreader_marker' AS id FROM sys.all_objects AS a CROSS JOIN sys.all_objects AS b"
+            $readerRequestQuery = "SELECT r.session_id FROM sys.dm_exec_requests AS r CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) AS t WHERE t.text LIKE '%dbatoolsci_csvreader_marker%' AND r.session_id <> @@SPID"
+            try {
+                $splatLockedExport = @{
+                    SqlInstance   = $callerServer
+                    Database      = "master"
+                    Query         = $readerQuery
+                    Path          = $lockedPath
+                    WarningAction = "SilentlyContinue"
+                }
+                $lockedResult = Export-DbaCsv @splatLockedExport
+                $lockedWarning = $WarnVar
+            } finally {
+                $lockedFile.Dispose()
+            }
+        }
+
+        AfterAll {
+            # A request left behind by the old code would keep running until its session is gone.
+            foreach ($leakedRequest in $checkServer.Query($readerRequestQuery)) {
+                $null = $checkServer.Query("KILL $($leakedRequest.session_id)")
+            }
+            $callerServer.ConnectionContext.Disconnect()
+            $checkServer.ConnectionContext.Disconnect()
+        }
+
+        It "Warns and returns nothing" {
+            $lockedResult | Should -BeNullOrEmpty
+            ($lockedWarning -join " ") | Should -BeLike "*Failed to export data from*"
+        }
+
+        It "Stops the query on the server" {
+            @($checkServer.Query($readerRequestQuery)).Count | Should -Be 0
+        }
+
+        It "Leaves the connection of the caller usable" {
+            $callerServer.Query("SELECT 1 AS one").one | Should -Be 1
+        }
+    }
+
     Context "Compression options (issue #8646)" {
         It "exports with each compression type" {
             $compressionTypes = @("None", "GZip", "Deflate")

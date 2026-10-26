@@ -182,6 +182,10 @@ function Invoke-GhaStage {
         # instance setup run without dbatools and the suite fails in confusing ways.
         $stageWatch.Stop()
         Write-Output "::error title=$Script::stage threw: $($_.Exception.Message)"
+        # The message alone does not say where the stage died, see #10714.
+        if ($_.ScriptStackTrace) {
+            Write-Host -Object "Stack trace of the stage exception:`n$($_.ScriptStackTrace)" -ForegroundColor Red
+        }
         Write-Host -Object "===== stage FAILED: $Script ($([int]$stageWatch.Elapsed.TotalSeconds)s) =====" -ForegroundColor Red
         exit 1
     }

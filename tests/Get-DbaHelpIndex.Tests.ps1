@@ -36,7 +36,7 @@ Describe $CommandName -Tag IntegrationTests {
         $random = Get-Random
         $dbname = "dbatoolsci_$random"
         $server.Query("CREATE DATABASE $dbname")
-        $server.Query("Create Table Test (col1 varchar(50) PRIMARY KEY, col2 int)", $dbname)
+        $server.Query("Create Table test (col1 varchar(50) PRIMARY KEY, col2 int)", $dbname)
         $server.Query("Insert into test values ('value1',1),('value2',2)", $dbname)
         $server.Query("create statistics dbatools_stats on test (col2)", $dbname)
         $server.Query("select * from test", $dbname)
@@ -58,7 +58,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Command works for indexes" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName test
         }
 
         It "Results should be returned" {
@@ -79,7 +79,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Command works when including statistics" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test -IncludeStats | Where-Object { $PSItem.Statistics }
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName test -IncludeStats | Where-Object { $PSItem.Statistics }
         }
 
         It "Results should be returned" {
@@ -92,7 +92,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Command output includes data types" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test -IncludeDataTypes
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName test -IncludeDataTypes
         }
 
         It "Results should be returned" {
@@ -105,7 +105,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Formatting is correct" {
         It "Formatted as strings" {
-            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test -IncludeFragmentation
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName test -IncludeFragmentation
             $results.IndexReads | Should -BeOfType "String"
             $results.IndexUpdates | Should -BeOfType "String"
             $results.Size | Should -BeOfType "String"
@@ -117,7 +117,7 @@ Describe $CommandName -Tag IntegrationTests {
     }
     Context "Formatting is correct for raw" {
         BeforeAll {
-            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName Test -raw -IncludeFragmentation
+            $results = Get-DbaHelpIndex -SqlInstance $TestConfig.InstanceSingle -Database $dbname -ObjectName test -raw -IncludeFragmentation
         }
 
         It "Formatted as Long" {

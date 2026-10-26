@@ -234,6 +234,10 @@ function New-DbaAgentAlert {
                                 }
                             }
 
+                            if ($Disabled) {
+                                $newalert.IsEnabled = $false
+                            }
+
                             $newalert.Create()
 
                             if ($Operator -and $NotifyMethod) {

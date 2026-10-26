@@ -94,6 +94,37 @@ jobs:
           # Keep the runner topology in parity with integration-tests.yml
           docker run -p 14334:1433 --volume shared:/shared:z --name mssql3 --hostname mssql3 --network localnet -e MSSQL_MEMORY_LIMIT_MB=1024 -d dbatools/sqlinstance2
 
+      - name: Wait for the SQL Server containers to be ready
+        run: |
+          # The containers start detached and nothing waited for them, so the first test that needed the second
+          # instance failed whenever it was still starting (#10590). A login is not enough for the mirroring test:
+          # the mirroring endpoint on mssql2 has to be listening as well, so every instance is polled until it
+          # accepts a login and every mirroring endpoint it has reports STARTED (state 0 in sys.endpoints).
+          Import-Module dbatools
+          $password = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+          $cred = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList "sqladmin", $password
+          foreach ($instance in "localhost", "localhost:14333", "localhost:14334") {
+              $ready = $false
+              foreach ($attempt in 1..36) {
+                  try {
+                      $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $cred -TrustServerCertificate
+                      $endpointsNotStarted = $server.Query("SELECT name FROM sys.database_mirroring_endpoints WHERE state <> 0")
+                      if (-not $endpointsNotStarted) {
+                          Write-Host "$instance is ready (version $($server.VersionString))"
+                          $ready = $true
+                          break
+                      }
+                      Write-Host "Attempt $attempt of 36: $instance accepts logins, but its mirroring endpoint has not started yet"
+                  } catch {
+                      Write-Host "Attempt $attempt of 36: $instance is not ready yet ($($PSItem.Exception.Message))"
+                  }
+                  Start-Sleep -Seconds 5
+              }
+              if (-not $ready) {
+                  throw "$instance did not become ready in time"
+              }
+          }
+
       - name: 👥 Clone appveyor repo
         working-directory: /tmp
         run: |

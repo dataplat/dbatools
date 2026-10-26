@@ -47,6 +47,10 @@ function Export-DbaInstance {
         1. Default behavior creates new timestamped folders for historical archiving
         2. Using -Force overwrites files in the same location, ideal for scheduled exports that feed into version control systems
 
+        Exporting credentials and linked servers includes their stored passwords. Decrypting those requires a dedicated admin connection (DAC) to the instance and Windows administrator access to its host; when this command runs on a different machine than the instance, that means remote admin connections enabled on the instance, its DAC TCP port reachable, and PowerShell remoting to its host. As SQL Server only allows one DAC per instance, this command opens a single one and hands it to both export operations instead of letting each open its own. See Export-DbaCredential and Export-DbaLinkedServer for the details and prerequisites.
+
+        Use -ExcludePassword, or exclude both Credentials and LinkedServers, if no DAC should be opened at all.
+
         For more granular control, please use one of the -Exclude parameters and use the other functions available within the dbatools module.
 
     .PARAMETER SqlInstance
@@ -110,6 +114,7 @@ function Export-DbaInstance {
     .PARAMETER ExcludePassword
         Omits passwords from exported scripts for logins, credentials, and linked servers, replacing them with placeholder text.
         Essential for security compliance when export scripts will be stored in version control or shared with other team members.
+        Also use it when the dedicated admin connection or PowerShell remoting described above is not available, because the export then needs neither.
 
     .PARAMETER ScriptingOption
         Provides a Microsoft.SqlServer.Management.Smo.ScriptingOptions object to customize script generation behavior.
@@ -339,7 +344,13 @@ function Export-DbaInstance {
                     if ($Exclude -notcontains 'CustomErrors') {
                         Write-Message -Level Verbose -Message "Exporting custom errors (user defined messages)"
                         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting custom errors (user defined messages)"
-                        $null = Get-DbaCustomError -SqlInstance $server -EnableException:$EnableException | Export-DbaScript -FilePath "$exportPath\customererrors.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
+                        # sp_addmessage rejects a localized message whose us_english version does not exist yet,
+                        # and SMO returns the messages sorted by language name. So we script all us_english
+                        # messages first, the same way Copy-DbaCustomError orders them.
+                        $allCustomErrors = @(Get-DbaCustomError -SqlInstance $server -EnableException:$EnableException)
+                        $orderedCustomErrors = @($allCustomErrors | Where-Object Language -eq "us_english")
+                        $orderedCustomErrors += $allCustomErrors | Where-Object Language -ne "us_english"
+                        $null = $orderedCustomErrors | Export-DbaScript -FilePath "$exportPath\customererrors.sql" -BatchSeparator $BatchSeparator -ScriptingOptionsObject $ScriptingOption -NoPrefix:$NoPrefix -EnableException:$EnableException
                         Get-ChildItem -ErrorAction Ignore -Path "$exportPath\customererrors.sql"
                     }
 
@@ -440,10 +451,10 @@ function Export-DbaInstance {
                         Get-ChildItem -ErrorAction Ignore -Path "$exportPath\endpoints.sql"
                     }
 
-                    if ($Exclude -notcontains 'PolicyManagement' -and $PSVersionTable.PSEdition -eq "Core") {
-                        Write-Message -Level Verbose -Message "Skipping Policy Management -- not supported by PowerShell Core"
+                    if ($Exclude -notcontains "PolicyManagement" -and ($IsLinux -or $IsMacOS)) {
+                        Write-Message -Level Verbose -Message "Skipping Policy Management -- not supported on Linux or macOS"
                     }
-                    if ($Exclude -notcontains 'PolicyManagement' -and $PSVersionTable.PSEdition -ne "Core") {
+                    if ($Exclude -notcontains "PolicyManagement" -and -not ($IsLinux -or $IsMacOS)) {
                         Write-Message -Level Verbose -Message "Exporting Policy Management"
                         Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Exporting Policy Management"
 

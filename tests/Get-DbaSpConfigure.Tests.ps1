@@ -28,11 +28,18 @@ Describe $CommandName -Tag IntegrationTests {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $configs = $server.Query("sp_configure")
             $remoteQueryTimeout = $configs | Where-Object name -match "remote query timeout"
+
+            # sp_configure only lists the basic options unless "show advanced options" is turned on,
+            # which is 25 rows against the 86 the command returns. sys.configurations lists them all
+            # without changing the configuration of the instance, so it is the comparable set.
+            # The sp_configure result is kept for the test below, which reads its config_value and
+            # run_value columns.
+            $allConfigs = $server.Query("SELECT name FROM sys.configurations")
         }
 
         It "returns equal to results of the straight T-SQL query" {
             $results = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle
-            $results.count -eq $configs.count
+            $results.Count | Should -Be $allConfigs.Count
         }
 
         It "returns two results" {
@@ -42,7 +49,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "returns two results less than all data" {
             $results = Get-DbaSpConfigure -SqlInstance $TestConfig.InstanceSingle -ExcludeName "remote query timeout (s)", AllowUpdates
-            $results.Count -eq $configs.count - 2
+            $results.Count | Should -Be ($allConfigs.Count - 2)
         }
 
         It "matches the output of sp_configure" {

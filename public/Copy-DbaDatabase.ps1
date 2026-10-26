@@ -8,7 +8,7 @@ function Copy-DbaDatabase {
 
         Offers two migration methods: backup/restore (safer, supports cross-version migrations) and detach/attach (faster, requires same SQL Server version). The backup/restore method creates copy-only backups to avoid breaking your existing backup chain, while detach/attach physically moves database files via administrative shares.
 
-        Automatically handles file path mapping, preserves database properties like ownership chaining and trustworthy settings, and includes safety checks for Availability Groups, mirroring, and replication. By default, databases are placed in the destination server's default data and log directories, but you can preserve the original folder structure.
+        Automatically handles file path mapping, preserves database properties like ownership chaining and trustworthy settings, and includes safety checks for Availability Groups, mirroring, and replication. By default, databases are placed in the destination server's default data and log directories, but you can preserve the original folder structure or, with backup/restore, name the data, log and FILESTREAM directories.
 
         Works with named instances, clusters, SQL Server Express Edition, and Azure blob storage for cloud scenarios. Supports multiple destination servers, database renaming, and batch operations for migrating multiple databases efficiently.
 
@@ -103,6 +103,21 @@ function Copy-DbaDatabase {
         Use this when destination servers have identical drive layouts or when preserving specific organizational folder structures.
         The destination instance must have matching directory paths available.
 
+    .PARAMETER DestinationDataDirectory
+        Specifies the directory on the destination instance where the data files (.mdf, .ndf) are restored.
+        Use this to place a migrated database on a specific drive or in its own folder instead of the default data directory of the destination.
+        When specified alone, the log files are placed in this directory as well. A directory that does not exist yet is created.
+        Only available with -BackupRestore. Cannot be combined with -ReuseSourceFolderStructure or used with an Azure SQL Managed Instance destination.
+
+    .PARAMETER DestinationLogDirectory
+        Specifies the directory on the destination instance where the transaction log files (.ldf) are restored.
+        Can only be used together with -DestinationDataDirectory.
+
+    .PARAMETER DestinationFileStreamDirectory
+        Specifies the directory on the destination instance where the FILESTREAM containers are restored.
+        Without it, FILESTREAM containers are placed in the data directory.
+        Can only be used together with -DestinationDataDirectory and requires FILESTREAM to be enabled on the destination instance.
+
     .PARAMETER IncludeSupportDbs
         Migrates SQL Server feature databases including ReportServer, ReportServerTempDB, SSISDB, and distribution databases.
         Use this when migrating servers that host Reporting Services, Integration Services, or replication components.
@@ -128,7 +143,9 @@ function Copy-DbaDatabase {
     .PARAMETER NewName
         Renames the database during migration when copying a single database.
         The database name and physical file names are updated to use the new name.
-        Cannot be used with multiple databases or together with -Prefix parameter.
+        Cannot be used with multiple databases, with pipeline input, or together with -Prefix parameter.
+        To rename a database, specify it with -Database and provide -NewName.
+        An empty or whitespace value is treated as if -NewName was not specified, so scripts can pass a NewName variable unconditionally and leave it empty to copy under the original names.
 
     .PARAMETER Prefix
         Adds a prefix to all migrated database names and their physical file names.
@@ -196,19 +213,19 @@ function Copy-DbaDatabase {
         Migrates a single user database TestDB using Backup and restore from instance sql2014a to sql2014b. Backup files are stored in \\fileshare\sql\migration.
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2012 -Destination sql2014, sql2016 -DetachAttach -Reattach
+        PS C:\> Copy-DbaDatabase -Source sql2012 -Destination sql2014, sql2016 -AllDatabases -DetachAttach -Reattach
 
         Databases will be migrated from sql2012 to both sql2014 and sql2016 using the detach/copy files/attach method. The following will be performed: kick all users out of the database, detach all data/log files, files copied to the admin share (\\SqlSERVER\M$\MSSql...) of destination server, attach file on destination server, reattach at source. If the database files (*.mdf, *.ndf, *.ldf) on *destination* exist and aren't in use, they will be overwritten.
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -BackupRestore -UseLastBackup -Force
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster, sql2016 -AllDatabases -BackupRestore -UseLastBackup -Force
 
-        Migrates all user databases to sqlcluster and sql2016 using the last Full, Diff and Log backups from sql204a. If the databases exist on the destinations, they will be dropped prior to attach.
+        Migrates all user databases to sqlcluster and sql2016 using the last Full, Diff and Log backups from sql2014a. If the databases exist on the destinations, they will be dropped prior to attach.
 
         Note that the backups must exist in a location accessible by all destination servers, such a network share.
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -SharedPath \\fileshare\sql\migration
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -AllDatabases -ExcludeDatabase Northwind, pubs -IncludeSupportDbs -Force -BackupRestore -SharedPath \\fileshare\sql\migration
 
         Migrates all user databases except for Northwind and pubs by using backup/restore (copy-only). Backup files are stored in \\fileshare\sql\migration. If the database exists on the destination, it will be dropped prior to attach.
 
@@ -224,7 +241,7 @@ function Copy-DbaDatabase {
         Migrates Mydb from instance sql2014 to AzureDb on the specified Azure SQL Manage Instance, replacing the existing AzureDb if it exists, using the blob storage account https://someblob.blob.core.windows.net/sql using the Sql Server Credential AzBlobCredential
 
     .EXAMPLE
-        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -BackupRestore -SharedPath \\FS\Backup -AdvancedBackupParams @{ CompressBackup = $true }
+        PS C:\> Copy-DbaDatabase -Source sql2014a -Destination sqlcluster -AllDatabases -BackupRestore -SharedPath \\FS\Backup -AdvancedBackupParams @{ CompressBackup = $true }
 
         Migrates all user databases to sqlcluster. Uses the parameter CompressBackup with the backup command to save some space on the shared path.
 
@@ -232,6 +249,29 @@ function Copy-DbaDatabase {
         PS C:\> Copy-DbaDatabase -Source sqlcs -Destination sqlcs -Database t -DetachAttach -NewName t_copy -Reattach
 
         Copies database t from sqlcs to the same server (sqlcs) using the detach/copy/attach method. The new database will be named t_copy and the original database will be reattached.
+
+    .EXAMPLE
+        PS C:\> Get-DbaDatabase -SqlInstance sql2014a -Database db1, db2 | Copy-DbaDatabase -Destination sqlcluster -BackupRestore -SharedPath \\FS\Backup -NewName $rename
+
+        Copies db1 and db2 to sqlcluster under their original names when $rename is an empty string. An empty or whitespace -NewName is treated as not specified, so a script can pass the same variable unconditionally and only set it when a single database should be renamed.
+
+    .EXAMPLE
+        PS C:\> $databases = Get-DbaDatabase -SqlInstance sql2014a -ExcludeSystem
+        PS C:\> foreach ($db in $databases) {
+        >>     $splatCopy = @{
+        >>         Source                         = "sql2014a"
+        >>         Destination                    = "sql2022"
+        >>         Database                       = $db.Name
+        >>         BackupRestore                  = $true
+        >>         SharedPath                     = "\\fileshare\sql\migration"
+        >>         DestinationDataDirectory       = "D:\Data\$($db.Name)"
+        >>         DestinationLogDirectory        = "E:\Log\$($db.Name)"
+        >>         DestinationFileStreamDirectory = "F:\FileStream\$($db.Name)"
+        >>     }
+        >>     Copy-DbaDatabase @splatCopy
+        >> }
+
+        Migrates every user database of sql2014a to sql2022 and restores each one into its own data, log and FILESTREAM folder named after the database. Missing folders are created on the destination.
     #>
     [CmdletBinding(DefaultParameterSetName = "DbBackup", SupportsShouldProcess, ConfirmImpact = "Medium")]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseOutputTypeCorrectly", "", Justification = "PSSA Rule Ignored by BOH")]
@@ -280,6 +320,12 @@ function Copy-DbaDatabase {
         [parameter(ParameterSetName = "DbAttachDetach")]
         [switch]$ReuseSourceFolderStructure,
         [parameter(ParameterSetName = "DbBackup")]
+        [string]$DestinationDataDirectory,
+        [parameter(ParameterSetName = "DbBackup")]
+        [string]$DestinationLogDirectory,
+        [parameter(ParameterSetName = "DbBackup")]
+        [string]$DestinationFileStreamDirectory,
+        [parameter(ParameterSetName = "DbBackup")]
         [parameter(ParameterSetName = "DbAttachDetach")]
         [switch]$IncludeSupportDbs,
         [parameter(ParameterSetName = "DbBackup")]
@@ -300,6 +346,15 @@ function Copy-DbaDatabase {
     )
     begin {
         $CopyOnly = -not $NoCopyOnly
+
+        # An empty name slips through every downstream -Database filter, which then means
+        # "all databases" and lets commands like Set-DbaDbOwner sweep the whole destination (#10512)
+        # Unbinding the parameter makes every later Test-Bound check treat it as not specified,
+        # so scripts can pass -NewName unconditionally and leave it empty to mean "no rename"
+        if ((Test-Bound "NewName") -and [string]::IsNullOrWhiteSpace($NewName)) {
+            Write-Message -Level Verbose -Message "Empty -NewName supplied, copying databases under their original names."
+            $null = $PSBoundParameters.Remove("NewName")
+        }
 
         if (-not $InputObject -and -not $Source) {
             Stop-Function -Message "With no piped input a -Source must be specified."
@@ -325,6 +380,20 @@ function Copy-DbaDatabase {
             Stop-Function -Message "-Continue cannot be used without -UseLastBackup"
             return
         }
+        # Restore-DbaDatabase would refuse these combinations as well, but only after the destination
+        # database was dropped and the source was backed up, so reject them before any work (#10587)
+        if ($ReuseSourceFolderStructure -and ($DestinationDataDirectory -or $DestinationLogDirectory -or $DestinationFileStreamDirectory)) {
+            Stop-Function -Message "-ReuseSourceFolderStructure cannot be combined with -DestinationDataDirectory, -DestinationLogDirectory or -DestinationFileStreamDirectory"
+            return
+        }
+        if ($DestinationLogDirectory -and -not $DestinationDataDirectory) {
+            Stop-Function -Message "-DestinationLogDirectory can only be used together with -DestinationDataDirectory"
+            return
+        }
+        if ($DestinationFileStreamDirectory -and -not $DestinationDataDirectory) {
+            Stop-Function -Message "-DestinationFileStreamDirectory can only be used together with -DestinationDataDirectory"
+            return
+        }
 
         if ($Force) {
             $ConfirmPreference = 'none'
@@ -335,155 +404,164 @@ function Copy-DbaDatabase {
             };
             $databaseProgressbar = 0
 
-            foreach ($db in $databaseList) {
-                Write-Progress -Id 1 -Activity "Processing database file structure" -PercentComplete ($databaseProgressbar / $dbCount * 100) -Status "Processing $databaseProgressbar of $dbCount."
-                $dbName = $db.Name
-                Write-Message -Level Verbose -Message $dbName
+            try {
+                foreach ($db in $databaseList) {
+                    Write-Progress -Id 1 -Activity "Processing database file structure" -PercentComplete ($databaseProgressbar / $dbCount * 100) -Status "Processing $databaseProgressbar of $dbCount."
+                    $dbName = $db.Name
+                    Write-Message -Level Verbose -Message $dbName
 
-                $databaseProgressbar++
-                $dbStatus = $db.status.toString()
-                if ($dbStatus.StartsWith("Normal") -eq $false) {
-                    continue
-                }
-                $destinstancefiles = @{
-                }; $sourcefiles = @{
-                }
-
-                $where = "Filetype <> 'LOG' and Filetype <> 'FULLTEXT'"
-
-                $datarows = $dbFileTable.Tables.Select("dbname = '$dbName' and $where")
-
-                # Data Files
-                foreach ($file in $datarows) {
-                    # Destination File Structure
-                    $d = @{
+                    $databaseProgressbar++
+                    $dbStatus = $db.status.toString()
+                    if ($dbStatus.StartsWith("Normal") -eq $false) {
+                        continue
                     }
-                    if ($ReuseSourceFolderStructure) {
-                        $d.physical = $file.filename
-                    } elseif ($WithReplace) {
-                        $name = $file.Name
-                        $destfile = $remoteDbFileTable.Tables[0].Select("dbname = '$dbName' and name = '$name'")
-                        $d.physical = $destfile.filename
+                    $destinstancefiles = @{
+                    }; $sourcefiles = @{
+                    }
 
-                        if ($null -eq $d.physical) {
+                    $where = "Filetype <> 'LOG' and Filetype <> 'FULLTEXT'"
+
+                    $datarows = $dbFileTable.Tables.Select("dbname = '$dbName' and $where")
+
+                    # Data Files
+                    foreach ($file in $datarows) {
+                        # Destination File Structure
+                        $d = @{
+                        }
+                        if ($ReuseSourceFolderStructure) {
+                            $d.physical = $file.filename
+                        } elseif ($WithReplace) {
+                            $name = $file.Name
+                            $destfile = $remoteDbFileTable.Tables[0].Select("dbname = '$dbName' and name = '$name'")
+                            $d.physical = $destfile.filename
+
+                            if ($null -eq $d.physical) {
+                                $directory = Get-SqlDefaultPaths $destServer data
+                                $fileName = Split-Path $file.filename -Leaf
+                                $d.physical = "$directory\$fileName"
+                            }
+                        } else {
                             $directory = Get-SqlDefaultPaths $destServer data
                             $fileName = Split-Path $file.filename -Leaf
                             $d.physical = "$directory\$fileName"
                         }
-                    } else {
-                        $directory = Get-SqlDefaultPaths $destServer data
-                        $fileName = Split-Path $file.filename -Leaf
-                        $d.physical = "$directory\$fileName"
-                    }
-                    $d.logical = $file.Name
+                        $d.logical = $file.Name
 
-                    $d.remotefilename = Join-AdminUNC $destFullComputerName $d.physical
-                    $destinstancefiles.add($file.Name, $d)
-
-                    # Source File Structure
-                    $s = @{
-                    }
-                    $s.logical = $file.Name
-                    $s.physical = $file.filename
-                    $s.remotefilename = Join-AdminUNC $sourceFullComputerName $s.physical
-                    $sourcefiles.add($file.Name, $s)
-                }
-
-                # Add support for Full Text Catalogs in SQL Server 2005 and below
-                if ($sourceServer.VersionMajor -lt 10) {
-                    try {
-                        $fttable = $null = $sourceServer.Databases[$dbName].ExecuteWithResults('sp_help_fulltext_catalogs')
-                        $allrows = $fttable.Tables[0].rows
-                    } catch {
-                        # Nothing, it's just not enabled
-                        # here to avoid an empty catch
-                        $null = 1
-                    }
-
-                    foreach ($ftc in $allrows) {
-                        # Destination File Structure
-                        $d = @{
-                        }
-                        $pre = "sysft_"
-                        $name = $ftc.Name
-                        $physical = $ftc.Path # RootPath
-                        $logical = "$pre$name"
-                        if ($ReuseSourceFolderStructure) {
-                            $d.physical = $physical
-                        } else {
-                            $directory = Get-SqlDefaultPaths $destServer data
-                            if ($destServer.VersionMajor -lt 10) {
-                                $directory = "$directory\FTDATA"
-                            }
-                            $fileName = Split-Path($physical) -Leaf
-                            $d.physical = "$directory\$fileName"
-                        }
-                        $d.logical = $logical
                         $d.remotefilename = Join-AdminUNC $destFullComputerName $d.physical
-                        $destinstancefiles.add($logical, $d)
+                        $destinstancefiles.add($file.Name, $d)
 
                         # Source File Structure
                         $s = @{
                         }
-                        $pre = "sysft_"
-                        $name = $ftc.Name
-                        $physical = $ftc.Path # RootPath
-                        $logical = "$pre$name"
-
-                        $s.logical = $logical
-                        $s.physical = $physical
+                        $s.logical = $file.Name
+                        $s.physical = $file.filename
                         $s.remotefilename = Join-AdminUNC $sourceFullComputerName $s.physical
-                        $sourcefiles.add($logical, $s)
+                        $sourcefiles.add($file.Name, $s)
                     }
-                }
 
-                $where = "Filetype = 'LOG'"
-                $datarows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and $where")
+                    # Add support for Full Text Catalogs in SQL Server 2005 and below
+                    if ($sourceServer.VersionMajor -lt 10) {
+                        try {
+                            # This used to read "$fttable = $null = ...", which assigns $null to $fttable, so
+                            # $allrows was always empty and no full text catalog was ever copied.
+                            # The Query script method runs the procedure in that database like ExecuteWithResults
+                            # of SMO does, by issuing a USE on the connection context of the parent server, which
+                            # belongs to the caller - but it puts the previous database back. It returns the rows,
+                            # so there is no table to unwrap. See #10555.
+                            $fttable = $sourceServer.Databases[$dbName].Query("sp_help_fulltext_catalogs")
+                            $allrows = $fttable
+                        } catch {
+                            # Nothing, it's just not enabled
+                            # here to avoid an empty catch
+                            $null = 1
+                        }
 
-                # Log Files
-                foreach ($file in $datarows) {
-                    $d = @{
+                        foreach ($ftc in $allrows) {
+                            # Destination File Structure
+                            $d = @{
+                            }
+                            $pre = "sysft_"
+                            $name = $ftc.Name
+                            $physical = $ftc.Path # RootPath
+                            $logical = "$pre$name"
+                            if ($ReuseSourceFolderStructure) {
+                                $d.physical = $physical
+                            } else {
+                                $directory = Get-SqlDefaultPaths $destServer data
+                                if ($destServer.VersionMajor -lt 10) {
+                                    $directory = "$directory\FTDATA"
+                                }
+                                $fileName = Split-Path($physical) -Leaf
+                                $d.physical = "$directory\$fileName"
+                            }
+                            $d.logical = $logical
+                            $d.remotefilename = Join-AdminUNC $destFullComputerName $d.physical
+                            $destinstancefiles.add($logical, $d)
+
+                            # Source File Structure
+                            $s = @{
+                            }
+                            $pre = "sysft_"
+                            $name = $ftc.Name
+                            $physical = $ftc.Path # RootPath
+                            $logical = "$pre$name"
+
+                            $s.logical = $logical
+                            $s.physical = $physical
+                            $s.remotefilename = Join-AdminUNC $sourceFullComputerName $s.physical
+                            $sourcefiles.add($logical, $s)
+                        }
                     }
-                    if ($ReuseSourceFolderStructure) {
-                        $d.physical = $file.filename
-                    } elseif ($WithReplace) {
-                        $name = $file.Name
-                        $destfile = $remoteDbFileTable.Tables[0].Select("dbname = '$dbName' and name = '$name'")
-                        $d.physical = $destfile.filename
 
-                        if ($null -eq $d.physical) {
+                    $where = "Filetype = 'LOG'"
+                    $datarows = $dbFileTable.Tables[0].Select("dbname = '$dbName' and $where")
+
+                    # Log Files
+                    foreach ($file in $datarows) {
+                        $d = @{
+                        }
+                        if ($ReuseSourceFolderStructure) {
+                            $d.physical = $file.filename
+                        } elseif ($WithReplace) {
+                            $name = $file.Name
+                            $destfile = $remoteDbFileTable.Tables[0].Select("dbname = '$dbName' and name = '$name'")
+                            $d.physical = $destfile.filename
+
+                            if ($null -eq $d.physical) {
+                                $directory = Get-SqlDefaultPaths $destServer log
+                                $fileName = Split-Path $file.filename -Leaf
+                                $d.physical = "$directory\$fileName"
+                            }
+                        } else {
                             $directory = Get-SqlDefaultPaths $destServer log
                             $fileName = Split-Path $file.filename -Leaf
                             $d.physical = "$directory\$fileName"
                         }
-                    } else {
-                        $directory = Get-SqlDefaultPaths $destServer log
-                        $fileName = Split-Path $file.filename -Leaf
-                        $d.physical = "$directory\$fileName"
-                    }
-                    $d.logical = $file.Name
-                    $d.remotefilename = Join-AdminUNC $destFullComputerName $d.physical
-                    $destinstancefiles.add($file.Name, $d)
+                        $d.logical = $file.Name
+                        $d.remotefilename = Join-AdminUNC $destFullComputerName $d.physical
+                        $destinstancefiles.add($file.Name, $d)
 
-                    $s = @{
+                        $s = @{
+                        }
+                        $s.logical = $file.Name
+                        $s.physical = $file.filename
+                        $s.remotefilename = Join-AdminUNC $sourceFullComputerName $s.physical
+                        $sourcefiles.add($file.Name, $s)
                     }
-                    $s.logical = $file.Name
-                    $s.physical = $file.filename
-                    $s.remotefilename = Join-AdminUNC $sourceFullComputerName $s.physical
-                    $sourcefiles.add($file.Name, $s)
-                }
 
-                $location = @{
+                    $location = @{
+                    }
+                    $location.add("Destination", $destinstancefiles)
+                    $location.add("Source", $sourcefiles)
+                    $dbcollection.Add($($db.Name), $location)
                 }
-                $location.add("Destination", $destinstancefiles)
-                $location.add("Source", $sourcefiles)
-                $dbcollection.Add($($db.Name), $location)
+            } finally {
+                Write-Progress -Id 1 -Activity "Processing database file structure" -Status "Completed" -Completed
             }
 
             $fileStructure = [PSCustomObject]@{
                 "databases" = $dbcollection
             }
-            Write-Progress -Id 1 -Activity "Processing database file structure" -Status "Completed" -Completed
             return $fileStructure
         }
 
@@ -736,13 +814,33 @@ function Copy-DbaDatabase {
             return
         }
 
+        # Piped input arrives one database per process block, so the total count is unknown
+        # until the pipeline ends - by which time the first database would already have been
+        # copied under the new name (#10512). Reject before any work rather than after a
+        # partial migration; a parameter-bound -InputObject array falls through to the
+        # count-based guard below because its full count is known up front.
+        if ((Test-Bound "NewName") -and $InputObject -and $MyInvocation.ExpectingInput) {
+            Stop-Function -Message "Cannot use NewName with piped databases because the total number of piped databases is not known before copying begins. To copy a single database under a new name, use -Database with -NewName."
+            return
+        }
+
         if ($InputObject) {
             $Source = $InputObject[0].Parent
             $Database = $InputObject.Name
         }
 
         if ($Database -contains "master" -or $Database -contains "msdb" -or $Database -contains "tempdb") {
-            Stop-Function -Message "Migrating system databases is not currently supported." -Continue
+            # This rejects one input, not the command: a plain Stop-Function sets the interrupt flag that
+            # Test-FunctionInterrupt reads at the top of this block, which would drop every database piped in
+            # after this one, and -Continue has no loop to continue here (#10638). So throw under
+            # -EnableException, otherwise warn, and return from this process invocation only.
+            $systemDbMessage = "Migrating system databases is not currently supported."
+            if ($EnableException) {
+                Stop-Function -Message $systemDbMessage -EnableException $true
+            } else {
+                Write-Message -Level Warning -Message $systemDbMessage
+            }
+            return
         }
 
         try {
@@ -814,6 +912,9 @@ function Copy-DbaDatabase {
             if ($destServer.DatabaseEngineEdition -eq 'SqlManagedInstance') {
                 # we have a managed instance destination, set an internal flag to disable switches that don't work
                 $miRestore = $True
+            }
+            if ($miRestore -and ($DestinationDataDirectory -or $DestinationLogDirectory -or $DestinationFileStreamDirectory)) {
+                Stop-Function -Message "-DestinationDataDirectory, -DestinationLogDirectory and -DestinationFileStreamDirectory cannot be used with the managed instance $destinstance, which places the restored files itself. Skipping this destination." -Target $destinstance -Continue
             }
             if ($DetachAttach) {
                 if ($sourceServer.ComputerName -eq $env:COMPUTERNAME -or $destServer.ComputerName -eq $env:COMPUTERNAME) {
@@ -966,7 +1067,7 @@ function Copy-DbaDatabase {
             Write-Message -Level Verbose -Message "Performing count."
             $dbCount = $databaseList.Count
 
-            if ((Test-Bound 'NewName') -and $dbCount -gt 1) {
+            if ((Test-Bound "NewName") -and $dbCount -gt 1) {
                 Stop-Function -Message "Cannot use NewName when copying multiple databases"
                 return
             }
@@ -980,7 +1081,11 @@ function Copy-DbaDatabase {
                 $sql = "SELECT db.Name AS dbname, type_desc AS FileType, mf.Name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN sys.databases db ON db.database_id = mf.database_id"
             }
 
-            $dbFileTable = $sourceServer.Databases['master'].ExecuteWithResults($sql)
+            # Read on the server connection and not through the master database: the statement queries
+            # sys.master_files and never needed a database context, and going through the Database object
+            # would move the connection of the caller into master. See #10555. ExecuteWithResults of the
+            # connection context returns the same DataSet, which the Select calls below rely on.
+            $dbFileTable = $sourceServer.ConnectionContext.ExecuteWithResults($sql)
 
             if ($destServer.VersionMajor -eq 8) {
                 $sql = "SELECT DB_NAME (dbid) AS dbname, name, filename, CASE WHEN groupid = 0 THEN 'LOG' ELSE 'ROWS' END AS filetype FROM sysaltfiles"
@@ -988,7 +1093,8 @@ function Copy-DbaDatabase {
                 $sql = "SELECT db.Name AS dbname, type_desc AS FileType, mf.Name, Physical_Name AS filename FROM sys.master_files mf INNER JOIN sys.databases db ON db.database_id = mf.database_id"
             }
 
-            $remoteDbFileTable = $destServer.Databases['master'].ExecuteWithResults($sql)
+            # See the comment above - the same for the destination.
+            $remoteDbFileTable = $destServer.ConnectionContext.ExecuteWithResults($sql)
 
             $fileStructure = Get-SqlFileStructure -sourceserver $sourceServer -destserver $destServer -databaselist $databaseList -ReuseSourceFolderStructure $ReuseSourceFolderStructure
 
@@ -1011,6 +1117,27 @@ function Copy-DbaDatabase {
                         Write-Message -Level Verbose -Message "Prefix supplied, copying $dbName as $destinationDbName"
                     }
 
+                    $copyDatabaseStatus = [PSCustomObject]@{
+                        SourceServer        = $sourceServer.Name
+                        DestinationServer   = $destServer.Name
+                        Name                = $dbName
+                        DestinationDatabase = $destinationDbName
+                        Type                = "Database"
+                        Status              = $null
+                        Notes               = $null
+                        DateTime            = [DbaDateTime](Get-Date)
+                    }
+
+                    # Belt and suspenders: an empty destination name must never reach the
+                    # restore or the post-restore owner/state/property commands, where an
+                    # empty -Database filter means "all databases" (#10512)
+                    if ([string]::IsNullOrWhiteSpace($destinationDbName)) {
+                        $copyDatabaseStatus.Status = "Failed"
+                        $copyDatabaseStatus.Notes = "Destination database name resolved to an empty string"
+                        $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        Stop-Function -Message "Destination database name for $dbName resolved to an empty string. Skipping this database to protect the destination." -Continue
+                    }
+
                     $filestructure.databases[$dbName]['destinationDbName'] = $destinationDbName
                     ForEach ($key in $filestructure.databases[$dbName].Destination.Keys) {
                         $splitFileName = Split-Path $fileStructure.databases[$dbName].Destination[$key].remotefilename -Leaf
@@ -1027,17 +1154,6 @@ function Copy-DbaDatabase {
                         }
                         $splitFileName = $prefix + $splitFileName
                         $filestructure.databases[$dbName].Destination.$key.physical = Join-DbaPath -Path $SplitPath -ChildPath $splitFileName
-                    }
-
-                    $copyDatabaseStatus = [PSCustomObject]@{
-                        SourceServer        = $sourceServer.Name
-                        DestinationServer   = $destServer.Name
-                        Name                = $dbName
-                        DestinationDatabase = $destinationDbName
-                        Type                = "Database"
-                        Status              = $null
-                        Notes               = $null
-                        DateTime            = [DbaDateTime](Get-Date)
                     }
 
                     Write-Message -Level Verbose -Message "`n######### Database: $dbName #########"
@@ -1268,6 +1384,40 @@ function Copy-DbaDatabase {
                                 }
                             }
 
+                            if (-not $UseLastBackup -and $SharedPath -notlike "http*") {
+                                # The destination's SMB client caches a negative lookup for 5 seconds
+                                # (FileNotFoundCacheLifetime), so a freshly written backup probed too
+                                # early can stay "not found" for the restore and fail with OS error 2
+                                # although the file exists (#10512). Poll from the destination until
+                                # the file is visible or the negative-cache window has passed.
+                                $backupPathList = @($backupTmpResult | Select-Object -ExpandProperty FullName -Unique)
+                                $visibilityDeadline = (Get-Date).AddSeconds(8)
+                                do {
+                                    # Test-DbaPath emits nothing when its own connection attempt fails, so an
+                                    # empty or incomplete result set is indeterminate - only a conclusive
+                                    # result for every path counts as visible.
+                                    $pathResults = @(Test-DbaPath -SqlInstance $destServer -Path $backupPathList)
+                                    $allBackupsVisible = ($backupPathList.Count -gt 0) -and ($pathResults.Count -eq $backupPathList.Count)
+                                    if ($allBackupsVisible) {
+                                        foreach ($pathResult in $pathResults) {
+                                            if ($pathResult -is [bool]) {
+                                                if (-not $pathResult) {
+                                                    $allBackupsVisible = $false
+                                                }
+                                            } elseif (-not $pathResult.FileExists) {
+                                                $allBackupsVisible = $false
+                                            }
+                                        }
+                                    }
+                                    if (-not $allBackupsVisible -and (Get-Date) -lt $visibilityDeadline) {
+                                        Start-Sleep -Seconds 1
+                                    }
+                                } while (-not $allBackupsVisible -and (Get-Date) -lt $visibilityDeadline)
+                                if (-not $allBackupsVisible) {
+                                    Write-Message -Level Warning -Message "Backup file(s) for $dbName under $SharedPath are still not visible from $destinstance after waiting out the SMB negative-cache window. The restore will surface the underlying error if they remain inaccessible."
+                                }
+                            }
+
                             # For BackupRestore, set source offline after backup completes but before restore
                             if ($SetSourceOffline) {
                                 Write-Message -Level Verbose -Message "Setting source database $dbName to offline after backup."
@@ -1285,11 +1435,48 @@ function Copy-DbaDatabase {
                                 if ($miRestore) {
                                     $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $destinationDbName -TrustDbBackupHistory -WithReplace:$WithReplace -EnableException -AzureCredential $AzureCredential
                                 } else {
-                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase -SqlInstance $destServer -DatabaseName $destinationDbName -ReuseSourceFolderStructure:$ReuseSourceFolderStructure -NoRecovery:$NoRecovery -TrustDbBackupHistory -WithReplace:$WithReplace -Continue:$Continue -EnableException -ReplaceDbNameInFile -AzureCredential $AzureCredential -KeepCDC:$KeepCDC -KeepReplication:$KeepReplication
+                                    $splatRestore = @{
+                                        SqlInstance          = $destServer
+                                        DatabaseName         = $destinationDbName
+                                        NoRecovery           = $NoRecovery
+                                        TrustDbBackupHistory = $true
+                                        WithReplace          = $WithReplace
+                                        Continue             = $Continue
+                                        EnableException      = $true
+                                        ReplaceDbNameInFile  = $true
+                                        AzureCredential      = $AzureCredential
+                                        KeepCDC              = $KeepCDC
+                                        KeepReplication      = $KeepReplication
+                                    }
+                                    # Restore-DbaDatabase counts every bound location parameter, even a switch bound as $false,
+                                    # so only the ones in use are passed. Without any of them it keeps using the default
+                                    # directories of the destination, as before (#10587)
+                                    if ($ReuseSourceFolderStructure) {
+                                        $splatRestore.ReuseSourceFolderStructure = $true
+                                    }
+                                    if ($DestinationDataDirectory) {
+                                        $splatRestore.DestinationDataDirectory = $DestinationDataDirectory
+                                    }
+                                    if ($DestinationLogDirectory) {
+                                        $splatRestore.DestinationLogDirectory = $DestinationLogDirectory
+                                    }
+                                    if ($DestinationFileStreamDirectory) {
+                                        $splatRestore.DestinationFileStreamDirectory = $DestinationFileStreamDirectory
+                                    }
+                                    $restoreResultTmp = $backupTmpResult | Restore-DbaDatabase @splatRestore
                                 }
                             } catch {
                                 $msg = $_.Exception.InnerException.InnerException.InnerException.InnerException.Message
-                                Stop-Function -Message "Failure attempting to restore $dbName to $destinstance" -Exception $_.Exception.InnerException.InnerException.InnerException.InnerException
+                                if (-not $msg) {
+                                    $msg = $_.Exception.Message
+                                }
+                                $copyDatabaseStatus.Status = "Failed"
+                                $copyDatabaseStatus.Notes = $msg
+                                $copyDatabaseStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                # -Continue so the interrupt flag is not set: that flag persists
+                                # across process blocks and used to silently discard every database
+                                # piped in after one failed restore (#10512)
+                                Stop-Function -Message "Failure attempting to restore $dbName to $destinstance" -Exception $_.Exception.InnerException.InnerException.InnerException.InnerException -Continue
                             }
                             $restoreResult = $restoreResultTmp.RestoreComplete
 
@@ -1364,6 +1551,15 @@ function Copy-DbaDatabase {
                             If ($Pscmdlet.ShouldProcess($destServer.Name, "Setting db owner to $dbowner for $destinationDbName")) {
                                 # needed because the newly restored database doesn't show up
                                 $destServer.Databases.Refresh()
+                                # Refresh() on the collection only updates its membership. A database that
+                                # already existed on the destination - a copy with -WithReplace or -Continue -
+                                # keeps the property values SMO cached while the restore had it inaccessible,
+                                # and Set-DbaDbOwner would then skip it as not accessible. Refreshing the
+                                # object itself rereads those values.
+                                $destDb = $destServer.Databases[$destinationDbName]
+                                if ($destDb) {
+                                    $destDb.Refresh()
+                                }
                                 $dbOwner = $sourceServer.Databases[$dbName].Owner
                                 if ($null -eq $dbOwner -or $destServer.Logins.Name -notcontains $dbOwner) {
                                     $dbOwner = Get-SaLoginName -SqlInstance $destServer

@@ -1,0 +1,15 @@
+# Configuration for actionlint (https://github.com/rhysd/actionlint).
+# Run the linter locally with .github/scripts/Test-ActionlintWorkflows.ps1
+
+# Labels for the self-hosted Azure VMSS runners. Without these, actionlint flags
+# every "runs-on" that targets our own fleet as an unknown runner label.
+self-hosted-runner:
+  labels:
+    - dbatools-modern
+    # ci-azure.yml builds the pool label dynamically from the triggering user so
+    # each maintainer lane keeps its own workers. Keep this list in sync with the
+    # pool expression in ci-azure.yml.
+    - dbatools-pool-potatoqualitee
+    - dbatools-pool-andreasjordan
+    - dbatools-pool-niphlod
+    - dbatools-pool-community

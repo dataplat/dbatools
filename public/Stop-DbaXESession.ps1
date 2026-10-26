@@ -130,6 +130,13 @@ function Stop-DbaXESession {
                             $xe.Stop()
                         } catch {
                             Stop-Function -Message "Could not stop XEvent Session on $instance" -Target $session -ErrorRecord $_ -Continue
+                        } finally {
+                            # Stop() makes SFC reconnect the store connection that Get-DbaXESession returned after
+                            # enumerating, and nothing returned it again, so every stopped session parked one more
+                            # sleeping session on the instance until the process ended. Return it here. The store is
+                            # reached through the Store note property: Parent is overwritten with the SMO server by
+                            # Get-DbaXESession. See #10658.
+                            $xe.Store.SfcConnection.Disconnect()
                         }
                     }
                 } else {

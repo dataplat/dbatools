@@ -99,11 +99,11 @@ function Remove-DbaAgentJobStep {
                 Write-Message -Level Verbose -Message "Processing job $j"
                 # Check if the job exists
                 if ($Server.JobServer.Jobs.Name -notcontains $j) {
-                    Stop-Function -Message "Job $j doesnn't exist on $instance." -Continue -ContinueLabel main -Target $instance -Category InvalidData
+                    Stop-Function -Message "Job $j doesn't exist on $instance." -Continue -Target $instance -Category InvalidData
                 } else {
                     # Check if the job step exists
                     if ($Server.JobServer.Jobs[$j].JobSteps.Name -notcontains $StepName) {
-                        Stop-Function -Message "Step $StepName doesn't exist for $job on $instance." -Continue -ContinueLabel main -Target $instance -Category InvalidData
+                        Stop-Function -Message "Step $StepName doesn't exist for $j on $instance." -Continue -Target $instance -Category InvalidData
                     } else {
                         # Execute
                         if ($PSCmdlet.ShouldProcess($instance, "Removing the job step $StepName for job $j")) {

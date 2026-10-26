@@ -149,11 +149,15 @@ function Add-DbaReplArticle {
 
         # Check that $CreationScriptOptions is a valid object
         if ($CreationScriptOptions -and ($CreationScriptOptions -isnot [Microsoft.SqlServer.Replication.CreationScriptOptions])) {
-            Stop-Function -Message "CreationScriptOptions should be the right type. Use New-DbaReplCreationScriptOptions to create the object" -Target $instance -Continue
+            # No -Continue on these guards: they sit before the instance loop, so the continue would
+            # escape the command and eat an iteration of whatever loop the caller runs in.
+            Stop-Function -Message "CreationScriptOptions should be the right type. Use New-DbaReplCreationScriptOptions to create the object" -Target $instance
+            return
         }
 
-        if ($Filter -like 'WHERE*') {
-            Stop-Function -Message "Filter should not include the word 'WHERE'" -Target $instance -Continue
+        if ($Filter -like "WHERE*") {
+            Stop-Function -Message "Filter should not include the word WHERE" -Target $instance
+            return
         }
 
         foreach ($instance in $SqlInstance) {

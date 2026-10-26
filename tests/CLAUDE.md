@@ -1,31 +1,84 @@
-# dbatools Pester v5 Test Guide
+# dbatools Pester 6 Test Guide
 
-This guide provides the standards and best practices for writing Pester v5 tests in the dbatools project.
+This guide provides the ongoing standards and best practices for running and writing dbatools tests with Pester 6.0.0.
 
-## Local (not appveyor) Testing Setup
+**This file is the single source for test policy.** General PowerShell style remains authoritative in the repository's root `CLAUDE.md` and applies to test files too.
+
+## Local (not CI) Testing Setup
 
 To test commands locally during development:
 
 ```powershell
-# 1. Import the module directly from the psm1 file
+# 1. Install the supported test runtime
+Install-Module Pester -RequiredVersion 6.0.0 -Force -SkipPublisherCheck
+
+# 2. Import the module directly from the psm1 file
 Import-Module .\dbatools.psm1
-# 1a. ONLY IF any errors about dbatools.library
+# 2a. ONLY IF any errors about dbatools.library
 Import-Module C:\gallery\dbatools.library
 
-# 2. Get the test configuration (private command)
+# 3. Get the test configuration (private command)
 $TestConfig = Get-TestConfig
 
-# 3. Now you can use $TestConfig properties in your tests
+# 4. Now you can use $TestConfig properties in your tests
 $TestConfig.InstanceSingle    # Test SQL instance for tests that only need one instance
 $TestConfig.InstanceMulti1    # First test SQL instance for tests that need multiple instances
 $TestConfig.InstanceMulti2    # Second test SQL instance for tests that need multiple instances
 $TestConfig.SqlCred           # Test credentials, all connections need this
 $TestConfig.Temp              # Temp directory for test files
-# 4. Set the default paras for sqlcred
+# 5. Set the default params for SqlCredential
 $PSDefaultParameterValues["*:SqlCredential"] = $TestConfig.SqlCred
 ```
 
 This allows you to manually test commands against actual SQL Server instances before running the full test suite using `Invoke-ManualPester`
+
+## CHOOSING A TEST INSTANCE
+
+`$TestConfig` exposes several SQL Server instances, defined in `private/testing/Get-TestConfig.ps1`. The choice is not cosmetic: `pester.groups.ps1` autodetects which `$TestConfig.Instance*` variable a test file references and assigns the file to that CI scenario. **Always pick the lightest instance that can demonstrate the behaviour** - reaching for a heavier one moves the test into a scarcer, slower scenario for no benefit.
+
+| Instance | Use it for | Scenario |
+|---|---|---|
+| `InstanceSingle` | Anything needing one instance. The default choice by a wide margin. | SINGLE |
+| `InstanceMulti1` / `InstanceMulti2` | Behaviour that needs two instances but does not copy between them. | MULTI |
+| `InstanceCopy1` / `InstanceCopy2` | `Copy-Dba*` commands and anything that moves objects between instances. | COPY |
+| `InstanceHadr` | Availability groups, mirroring, log shipping. | HADR |
+| `InstanceRestart` | Anything that restarts the service or changes service-level configuration: network certificates, TCP ports, extended protection, filestream, service accounts. | RESTART |
+
+`Get-TestInstanceUsage` (private, available after importing the psm1) reports the same autodetection, so you can see which lane a test file lands in without reading `pester.groups.ps1`:
+
+```powershell
+Get-TestInstanceUsage -Command Get-DbaDb*
+Get-TestInstanceUsage | Group-Object -Property InstanceList -NoElement | Sort-Object -Property Count -Descending
+```
+
+Two consequences worth knowing before you write the test:
+
+- **Every scenario runs on the self-hosted Azure runners** driven by `.github/workflows/ci-azure.yml`, so `InstanceCopy*`, `InstanceHadr` and `InstanceRestart` all get exercised there. The container-based `integration-tests.yml` workflow is narrower: only `InstanceSingle`, `InstanceMulti1` and `InstanceMulti2` exist on it. For new or changed command behavior, the required real-boundary coverage must run on one of these; provision the needed boundary instead of omitting the regression test.
+- **`InstanceRestart` tests share machine state.** They run in file order within a `Describe`, and one test's leftovers become the next test's fixture. If a test mutates machine state that `AfterAll` cannot reliably undo - archived certificates, service accounts, registry values - restore it in a `try`/`finally` inside the `It` itself.
+
+## TESTING FOR WARNINGS
+
+`Get-TestConfig` sets a global warning variable, so every test can assert on what a command warned about:
+
+```powershell
+$config = [ordered]@{
+    CommonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
+    Defaults         = [System.Management.Automation.DefaultParameterDictionary]@{
+        # We want the tests as readable as possible so we want to set Confirm globally to $false.
+        "*-Dba*:Confirm"         = $false
+        # We use a global warning variable so that we can always test
+        # that the command does not write a warning
+        # or that the command does write the expected warning.
+        "*-Dba*:WarningVariable" = "WarnVar"
+    }
+    # We want all the tests to only write to this location.
+    # When testing a remote SQL Server instance this must be a network share
+    # where both the SQL Server instance and the test script can write to.
+    Temp             = "C:\Temp"
+}
+```
+
+So `$WarnVar` can be used with `$WarnVar | Should -Be` to test for warnings.
 
 ## MANDATORY HEADER STRUCTURE
 
@@ -40,6 +93,8 @@ param(
 )
 ```
 
+The suite runs on Pester 6.0.0. The `ModuleVersion="5.0"` declaration is intentionally retained as a minimum-version header: `#Requires` reads it as "5.0 or newer", so it is satisfied by 6.0.0. `Invoke-ManualPester` refuses to run a test file that does not carry it, because dbatools has no Pester 4 tests left and a missing header is a mistake in the file.
+
 **Critical Requirements:**
 - Use a **static command name** as a string literal (e.g., "Get-DbaDatabase")
 - NEVER derive the command name dynamically from file paths or directory structures
@@ -47,15 +102,16 @@ param(
 
 ## TEST BLOCK ORGANIZATION
 
-Pester v5 enforces strict organization of test code. Follow these rules:
+Pester 6 enforces strict organization of test code. Follow these rules:
 
 ### Code Placement Rules
 
 - **All setup code** must be in `BeforeAll` or `BeforeEach` blocks
 - **All cleanup code** must be in `AfterAll` or `AfterEach` blocks
 - **All test assertions** must be in `It` blocks
+- **All discovery-time code** must be in a `BeforeDiscovery` block, see [Discovery Time vs Run Time](#discovery-time-vs-run-time)
 - **No loose code** is allowed in `Describe` or `Context` blocks, with one exception: computing a value that a `-Skip:` needs, see [Skip Conditions](#skip-conditions)
-- **Never use the `-ForEach` parameter** on any test blocks
+- **Only use the `-ForEach` parameter** with cases built in `BeforeDiscovery`, see [Data-Driven Tests](#data-driven-tests)
 
 ### Standard Test Structure
 
@@ -89,7 +145,7 @@ Describe $CommandName -Tag IntegrationTests {
         $testDbName = "dbatoolsci_testdb_$(Get-Random)"
 
         # Create the objects.
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $testDbName
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $testDbName
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -100,7 +156,7 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         # Cleanup all created objects.
-        $null = Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName -ErrorAction SilentlyContinue
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName -ErrorAction SilentlyContinue
 
         # Remove the backup directory.
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
@@ -116,7 +172,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should do something specific" {
             # Test assertions only
-            $result = Get-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $testDbName
+            $result = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
             $result | Should -Not -BeNullOrEmpty
         }
     }
@@ -125,7 +181,7 @@ Describe $CommandName -Tag IntegrationTests {
 
 ## VARIABLE SCOPING
 
-Pester v5 has strict variable scoping rules:
+Pester 6 has strict variable scoping rules:
 
 ### Scope Modifiers
 
@@ -138,7 +194,7 @@ Pester v5 has strict variable scoping rules:
 Describe $CommandName {
     BeforeAll {
         # This variable is available in all It blocks within this Describe
-        $instanceName = $TestConfig.instance2
+        $instanceName = $TestConfig.InstanceSingle
 
         # For cross-block persistence, use $global: if needed
         $global:sharedResource = New-DbaDatabase -SqlInstance $instanceName -Name "testdb"
@@ -152,94 +208,11 @@ Describe $CommandName {
 }
 ```
 
-## DBATOOLS STYLE REQUIREMENTS
+## REPOSITORY-WIDE POWERSHELL STYLE
 
-### String and Quote Standards
-- **Always use double quotes** for strings (SQL Server module standard)
-- Properly escape quotes when needed
-- Convert all single quotes to double quotes for string literals
+All test code follows the repository-wide style in root `CLAUDE.md`. This guide adds only test-specific policy.
 
-### Hashtable Alignment (MANDATORY)
-
-**CRITICAL FORMATTING REQUIREMENT**: ALL hashtable assignments must be perfectly aligned using spaces:
-
-```powershell
-# REQUIRED FORMAT - Aligned = signs
-$splatConnection = @{
-    SqlInstance     = $TestConfig.instance2
-    SqlCredential   = $TestConfig.SqlCredential
-    Database        = $dbName
-    EnableException = $true
-    Confirm         = $false
-}
-
-# FORBIDDEN - Misaligned hashtables
-$splat = @{
-    SqlInstance = $instance
-    Database = $db
-    EnableException = $true
-}
-```
-
-The equals signs must line up vertically to create clean, professional-looking code.
-
-### Variable Naming Conventions
-
-- Use `$splat<Purpose>` for 3+ parameters (never plain `$splat`)
-- Use direct parameters for 1-2 parameters
-- Create unique variable names across all scopes to prevent collisions
-
-```powershell
-# Good - descriptive splat names with aligned formatting
-$splatPrimary = @{
-    Primary      = $TestConfig.instance3
-    Name         = $primaryAgName
-    ClusterType  = "None"
-    FailoverMode = "Manual"
-    Certificate  = "dbatoolsci_AGCert"
-    Confirm      = $false
-}
-
-$splatReplica = @{
-    Secondary   = $TestConfig.instance2
-    Name        = $replicaAgName
-    ClusterType = "None"
-    Confirm     = $false
-}
-
-# Direct parameters for 1-2 parameters
-$ag = Get-DbaLogin -SqlInstance $instance -Login $loginName
-```
-
-### Unique Names Across Scopes
-
-Use unique, descriptive variable names across scopes to avoid collisions:
-
-```powershell
-Describe $CommandName -Tag IntegrationTests {
-    BeforeAll {
-        $primaryAgName = "dbatoolsci_agroup"
-        $splatPrimary = @{
-            Primary = $TestConfig.instance3
-            Name    = $primaryAgName
-        }
-        $primaryAg = New-DbaAvailabilityGroup @splatPrimary
-    }
-
-    Context "When adding AG replicas" {
-        BeforeAll {
-            $replicaAgName = "dbatoolsci_add_replicagroup"
-            $splatRepAg = @{
-                Primary = $TestConfig.instance3
-                Name    = $replicaAgName
-            }
-            $replicaAg = New-DbaAvailabilityGroup @splatRepAg
-        }
-    }
-}
-```
-
-## PESTER v5 SYNTAX STANDARDS
+## PESTER 6 SYNTAX STANDARDS
 
 ### Variable References
 
@@ -276,8 +249,9 @@ Pester evaluates `-Skip:` while it discovers the tests, before any `BeforeAll` r
 ```powershell
 Describe $CommandName -Tag IntegrationTests {
     # These tests need the Microsoft Update Catalog. If it does not answer, every one of them waits
-    # 100 seconds for the default timeout of Invoke-WebRequest and then fails for a reason that has
-    # nothing to do with dbatools. So we probe it once here and skip the tests instead.
+    # for the timeout of Invoke-WebRequest and then fails for a reason that has nothing to do with
+    # dbatools. So we probe it once here and skip the tests instead. We probe for the download button
+    # the command itself looks for, because the catalog also answers 200 with an empty results page.
     try {
         $splatCatalog = @{
             Uri             = "https://www.catalog.update.microsoft.com/Search.aspx?q=KB2992080"
@@ -285,7 +259,8 @@ Describe $CommandName -Tag IntegrationTests {
             TimeoutSec      = 30
             ErrorAction     = "Stop"
         }
-        $catalogReachable = (Invoke-WebRequest @splatCatalog).StatusCode -eq 200
+        $catalogResponse = Invoke-WebRequest @splatCatalog
+        $catalogReachable = [bool]($catalogResponse.InputFields | Where-Object { $PSItem.type -eq "Button" -and $PSItem.class -eq "flatBlueButtonDownload focus-only" })
     } catch {
         $catalogReachable = $false
     }
@@ -304,9 +279,64 @@ Keep the exception narrow:
 
 Examples in the tree: `Get-DbaKbUpdate.Tests.ps1` and `Save-DbaKbUpdate.Tests.ps1` test whether the Microsoft Update Catalog answers, `New-DbaFirewallRule.Tests.ps1` tests whether the instance uses dynamic ports.
 
+A `BeforeDiscovery` block inside the `Describe` is the tidier home for the same code and is preferred when the `-Skip:` sits on a `Context` or an `It`. It only fails to help when the `-Skip:` sits on the `Describe` itself, because there is no place inside a block to compute a value the block header already needs.
+
+### Discovery Time vs Run Time
+
+Pester reads a test file twice. First it **discovers** the tests: it runs the file top to bottom, evaluates every `Describe`, `Context` and `It` *header*, and builds the tree. Only then does it **run** the tests: the `BeforeAll`, `BeforeEach`, `It` and `AfterAll` *bodies*.
+
+Anything a header needs - `-Skip:`, `-ForEach`, the test name - has to exist at discovery time. Anything a body needs has to exist at run time. The two do not share variables, and this is the single biggest source of confusion when writing a test file.
+
+`BeforeDiscovery` is the block for discovery-time code. It keeps that code out of the `Describe` body while still running early enough:
+
+```powershell
+Describe $CommandName -Tag UnitTests {
+    BeforeDiscovery {
+        # Runs during discovery. Its variables are visible to -ForEach and -Skip: on the blocks below.
+        $editions = @("Standard", "Enterprise")
+    }
+
+    BeforeAll {
+        # Runs during the test run. Its variables are visible inside It bodies.
+        $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+    }
+}
+```
+
+### Data-Driven Tests
+
+Use `-ForEach` when the same assertions apply to a list of cases. It is the only correct way to do this - a `foreach` loop that emits `It` blocks looks like it works, but the loop variables are gone by the time the bodies run, so every generated test silently tests nothing. `Update-DbaInstance.Tests.ps1` carried 44 such tests for years.
+
+The rules:
+
+- **Build the cases in `BeforeDiscovery`.** A `BeforeAll` runs after discovery, so `-ForEach` would see an empty array.
+- **Use an array of hashtables.** Pester turns each key into a variable inside the `It` body and expands `<Key>` in the test name. `$_` holds the whole hashtable.
+- **Everything the body needs must be a key.** A variable from `BeforeDiscovery` is not visible inside the body. Scriptblocks survive in a hashtable, so mock bodies can travel this way too.
+- **Name the test from the case**, so a failure identifies itself.
+
+```powershell
+Describe $CommandName -Tag UnitTests {
+    BeforeDiscovery {
+        $recoveryCases = @(
+            @{ ModelName = "Full"; ExpectedLogReuse = "LogBackup" }
+            @{ ModelName = "Simple"; ExpectedLogReuse = "Nothing" }
+        )
+    }
+
+    It "reports <ExpectedLogReuse> for a database in <ModelName> recovery" -ForEach $recoveryCases {
+        $result = Get-DbaDbRecoveryModel -SqlInstance $TestConfig.InstanceSingle -Database $testDbName
+        $result.RecoveryModel | Should -Be $ModelName
+        $result.LogReuseWaitStatus | Should -Be $ExpectedLogReuse
+    }
+}
+```
+
+Do not reach for `-ForEach` when there are two or three cases and the assertions differ between them - separate `It` blocks read better. It earns its place when the case list is long or generated from a table.
+
 ### Array Operations
 
-- Use `$results.Status.Count` for accurate counting in dbatools context
+- Count the output of a command itself with `@($results).Count`. A property of the results, such as `$results.Status.Count`, skips a `$null` in the output, `Select-Object -First` does too, and a check like `-gt 0` cannot tell. That is how the `$null` that bare `Query()` calls wrote into the output of many commands went unnoticed (#10794).
+- When the number of results is not known, assert that the output holds no `$null`: `$results | Where-Object { $null -eq $PSItem }` sees it.
 - Initialize arrays explicitly: `$array = @()`
 - Wrap result collection in array subexpression operator when needed
 
@@ -315,8 +345,12 @@ Examples in the tree: `Get-DbaKbUpdate.Tests.ps1` and `Save-DbaKbUpdate.Tests.ps
 $databases = @()
 $databases = @(Get-DbaDatabase -SqlInstance $instance)
 
-# CORRECT - Use .Status.Count for dbatools commands
-$count = $results.Status.Count
+# CORRECT - Count the output itself
+@($results).Count | Should -Be 1
+@($results | Where-Object { $null -eq $PSItem }).Count | Should -Be 0
+
+# WRONG - A $null in the output is not counted
+$results.Status.Count | Should -Be 1
 ```
 
 ### Parameter Quoting
@@ -334,26 +368,6 @@ Describe "$CommandName" -Tag "IntegrationTests" {
     # Test code
 }
 ```
-
-## WHERE-OBJECT USAGE
-
-Prefer direct property comparison over script blocks when possible:
-
-```powershell
-# PREFERRED - Direct property comparison
-$master = $databases | Where-Object Name -eq "master"
-$systemDbs = $databases | Where-Object Name -in "master", "model", "msdb", "tempdb"
-$largeDbs = $databases | Where-Object Size -gt 1024
-
-# REQUIRED - Script block only for complex filtering
-$hasParameters = (Get-Command $CommandName).Parameters.Values.Name |
-    Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-```
-
-Use script blocks only when:
-- Performing complex boolean logic
-- Using operators not supported by direct comparison
-- Accessing nested properties or methods
 
 ## RESOURCE MANAGEMENT
 
@@ -375,7 +389,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         # Create test resources
         $testDb = "dbatoolsci_test_$(Get-Random)"
-        $null = New-DbaDatabase -SqlInstance $TestConfig.instance2 -Name $testDb
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $testDb
         $databasesToCleanup += $testDb
 
         # Disable exceptions for actual tests
@@ -389,7 +403,7 @@ Describe $CommandName -Tag IntegrationTests {
         # Clean up all resources with error suppression
         Remove-Item -Path $backupPath -Recurse -ErrorAction SilentlyContinue
         Remove-Item -Path $filesToRemove -ErrorAction SilentlyContinue
-        Remove-DbaDatabase -SqlInstance $TestConfig.instance2 -Database $databasesToCleanup -ErrorAction SilentlyContinue
+        Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $databasesToCleanup -ErrorAction SilentlyContinue
     }
 
     # Test code here
@@ -428,7 +442,7 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When connecting to SQL Server" {
         BeforeAll {
             $allResults = @()
-            foreach ($instance in $TestConfig.Instances) {
+            foreach ($instance in $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2) {
                 $allResults += Get-DbaDatabase -SqlInstance $instance
             }
         }
@@ -446,6 +460,101 @@ Describe $CommandName -Tag IntegrationTests {
 }
 ```
 
+## BEHAVIORAL AND INTEGRATION COVERAGE
+
+A boundary is an external system such as SQL Server, S3, Azure Storage, SMTP, LDAP, or a file share.
+
+- Every new or changed command behavior must have at least one behavioral or integration test that executes the real implementation against a separately running boundary on GitHub Actions or an Azure test runner.
+- The boundary may be the real dependency, a production-grade compatible service, or an official emulator, but not an in-process fake or purpose-built test double.
+- Pester mocks, fabricated SMO objects, source, AST, or text assertions, and call-count assertions do not substitute for behavioral coverage unless the user explicitly approves that exception.
+- Pure unit tests may accompany behavioral coverage, but do not count as it and must not use mocks or fakes to stand in for external behavior.
+- S3-compatible tests must provision a separately running production-grade compatible service such as MinIO.
+- Azure Storage tests must provision the official Azurite emulator or use the repository's configured Azure Storage credentials and runners.
+- A skipped placeholder is not coverage. If a required dependency was not provisioned, the behavioral test and runner setup must fail rather than skip. Skipping remains appropriate when the tested server version does not support the targeted feature.
+- Regression integration tests are expected when a bug crosses a boundary. Add the smallest focused test that fails for the old behavior and passes for the fix.
+
+### The one boundary CI does not have: Windows failover clusters
+
+`Get-DbaWsfc*` is the documented exception to "must fail rather than skip". A Windows failover cluster cannot be provisioned on any current runner - not on the container workflow, not on the self-hosted Azure runners - and there is deliberately no `CLUSTER` scenario in `pester.groups.ps1`, because scenarios exist to schedule CI lanes and no CI lane can host a cluster.
+
+So these tests read their cluster from `$TestConfig.ClusterStorage` and `$TestConfig.ClusterWitness`, which are `$null` in `Get-TestConfig` and set only by a local configuration whose lab has clusters. The integration `Context` carries `-Skip:(-not $TestConfig.ClusterStorage)`, so it skips in CI and runs for real against a lab.
+
+The lab those names describe needs more than a bare cluster: one cluster shared volume, one shared disk that every node can see but that is deliberately *not* part of the cluster, and a file share witness. Without them `Get-DbaWsfcSharedVolume` and `Get-DbaWsfcAvailableDisk` return nothing at all and cannot fail, which is exactly how a wrong WMI class name survived in `Get-DbaWsfcSharedVolume` from 2018 until August 2026.
+
+Do not copy this exception to any other command family. It applies where the boundary is a Windows feature that no runner can provide, not where provisioning is merely inconvenient.
+
+### The other boundary CI does not have: Azure SQL Database
+
+The same shape, for the same reason. Azure SQL Database is the only engine that refuses to switch the database of a connection it has already opened - it answers a `USE` with error 40508 and wants a new connection whose `Initial Catalog` names the target. Azure SQL Managed Instance takes the `USE` like every other engine, so it does not stand in for one. Any code that changes the database of an existing connection is therefore correct everywhere CI can reach and wrong only here, which is how `Connect-DbaInstance` shipped a fallback that could not work on Azure SQL Database at all (#10584).
+
+No CI environment has one, so `Get-TestConfig` leaves `AzureSqlDbServer`, `AzureSqlDbName` and `AzureSqlDbCred` empty and the tests carry `-Skip:(-not $script:hasAzureSqlDb)`. A local configuration whose lab has an Azure SQL Database sets all three, and the tests then run for real.
+
+Two things keep that skip honest, and both are worth copying:
+
+- **Assert the engine first.** The Azure tests begin with an `It` that fails unless `DatabaseEngineEdition` is `SqlDatabase`. Pointed at anything else the rest would pass while proving nothing, because every other engine simply takes the `USE`.
+- **Assert the message, not just the failure.** Where the command has to refuse, the test also asserts that the error is *not* the raw "USE statement is not supported" - that is what fails if the code ever reaches `ChangeDatabase` again.
+
+## STRUCTURAL CHECKS OF THE COMMANDS
+
+The "command structure" Describe in `dbatools.Tests.ps1` enforces rules 1 and 3 of the command invariants in the repository `CLAUDE.md` (COMMAND INVARIANTS), which explains why they exist. It parses `public/` and `private/functions/` without SQL Server, so it runs with the Compliance tag:
+
+```powershell
+Invoke-Pester -Path .\tests\dbatools.Tests.ps1 -TagFilter Compliance
+```
+
+- The analyzer lives in `dbatools.CommandStructure.ps1`. A change to it needs a positive or negative fixture in the "command structure analyzer" Describe.
+- A new rule 1 exception (a helper that deliberately continues its caller's loop) needs the reason in the exception list, a comment at the site and a behavioral test of the calling command. Prefer restructuring the helper.
+- The same Describe reports every `Query()` call whose value goes to the output of its function: `Query()` returns `$null` for a batch without a result set (#10794). Put `$null = ` in front of the call. Only a call that returns the rows of a SELECT as the output belongs in the exception list next to the rule 1 exceptions, with the exact number of sites and the reason.
+- The structural checks do not replace behavioral coverage. A fix for a flow-control defect still gets a command-level regression test that fails on the old code, such as a caller loop that counts its iterations.
+
+## TEST MANAGEMENT GUIDELINES
+
+The dbatools test suite must remain manageable in size while ensuring adequate coverage for important functionality.
+
+### When to Add or Update Tests
+
+- **ALWAYS update parameter validation tests** when parameters are added or removed from a command
+- **ALWAYS add focused tests for your changes** - New parameters, features, and bug fixes need tests that verify the changed behavior
+- **Use the smallest sufficient set** - Prefer a few focused tests, but add every case needed to demonstrate the behavior and regression
+- **For new commands, ALWAYS create tests** - Follow this guide
+
+### Parameter Validation Updates
+
+When you add or remove parameters from a command, you MUST update the parameter validation test:
+
+```powershell
+Context "Parameter validation" {
+    It "Should have the expected parameters" {
+        $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+        $expectedParameters = @(
+            "SqlInstance",
+            "SqlCredential",
+            "Database",
+            "NewParameter",  # ADD new parameters here
+            "EnableException"
+            # REMOVE deleted parameters from this list
+        )
+        Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+    }
+}
+```
+
+### What Makes a Good Test
+
+Good tests are:
+- **Focused** - Test one specific behavior or feature
+- **Practical** - Test real-world usage scenarios
+- **Proportionate** - The smallest set that proves the behavior and important regression cases
+- **Relevant** - Test your changes, not unrelated functionality
+
+### Balance is Key
+
+When making changes:
+- Fixing a bug? Add a regression test
+- Adding a parameter? Add a test that uses it
+- Creating a new command? Add parameter validation and the required behavioral or integration coverage
+- Refactoring without behavior changes? Existing tests may be sufficient
+
 ## VERIFICATION CHECKLIST
 
 **Header and Structure:**
@@ -455,7 +564,9 @@ Describe $CommandName -Tag IntegrationTests {
 - [ ] All cleanup code is in `AfterAll` or `AfterEach` blocks
 - [ ] All test assertions are in `It` blocks
 - [ ] No loose code in `Describe` or `Context` blocks, except computing a `-Skip:` condition
-- [ ] No `-ForEach` parameters used on test blocks
+- [ ] Discovery-time code is in `BeforeDiscovery`, not in `BeforeAll` and not loose
+- [ ] Every `-ForEach` gets its cases from `BeforeDiscovery`, and every value an `It` body uses is a key of the case hashtable
+- [ ] No `foreach` loop emits `It` blocks - use `-ForEach` instead
 
 **Variable Scoping:**
 - [ ] `$global:` used for variables that persist across Pester blocks
@@ -465,18 +576,19 @@ Describe $CommandName -Tag IntegrationTests {
 **Syntax Standards:**
 - [ ] `$PSItem` used instead of `$_` (except where compatibility requires `$_`)
 - [ ] Boolean values used for skip conditions, not strings
-- [ ] Array operations use `.Status.Count` for dbatools commands
+- [ ] Output counted with `@($results).Count`, not through a property such as `.Status.Count`
 - [ ] Explicit array initialization used where needed
 - [ ] Unnecessary quotes removed from parameter values
 - [ ] Where-Object uses direct property comparison where possible
 
 **Style Requirements:**
-- [ ] Double quotes used for all strings
-- [ ] **MANDATORY**: Hashtable assignments perfectly aligned
-- [ ] Splat variables use descriptive `$splat<Purpose>` format
-- [ ] Variable names are unique across scopes
-- [ ] OTBS formatting applied throughout
-- [ ] No trailing spaces anywhere
+- [ ] File follows the repository-wide PowerShell style in root `CLAUDE.md`
+
+**Behavioral Coverage:**
+- [ ] Every new or changed command behavior has real-boundary coverage on GitHub Actions or an Azure test runner
+- [ ] Unit tests and mocks supplement rather than replace real behavioral coverage
+- [ ] Required boundaries are provisioned and missing dependencies fail instead of producing skipped placeholders
+- [ ] Bug fixes include a focused regression test when the behavior crosses a boundary
 
 **Resource Management:**
 - [ ] Cleanup code with error suppression in `AfterAll`/`AfterEach` blocks

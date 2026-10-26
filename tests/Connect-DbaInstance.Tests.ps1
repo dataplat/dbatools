@@ -5,6 +5,22 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
+BeforeDiscovery {
+    $script:hasCredentialSspiProvider = $null -ne ("Dataplat.Dbatools.Connection.NetworkCredentialSspiContextProvider" -as [type])
+    # A dedicated admin connection to an instance on the machine running the tests takes a different path
+    # than one to a remote instance: it goes to ADMIN:localhost and forces TrustServerCertificate, because
+    # the certificate of the instance does not have to match "localhost" (#10254). That path can only be
+    # exercised where the instance really is local, which is the case on the CI runners and not in a lab
+    # of remote instances. The value decides a Skip, so it has to exist at discovery time.
+    $script:instanceIsLocalHost = ([DbaInstanceParameter]$TestConfig.InstanceMulti1).IsLocalHost
+    # Azure SQL Database is the only engine that refuses to switch the database of a connection it has
+    # already opened - it answers a USE with error 40508 and wants a new connection instead. Every branch
+    # that depends on that can therefore only be covered against a real one, which a lab configuration
+    # supplies through AzureSqlDbServer. Everywhere else these tests skip themselves. The value decides a
+    # Skip, so it has to exist at discovery time.
+    $script:hasAzureSqlDb = -not [string]::IsNullOrWhiteSpace($TestConfig.AzureSqlDbServer)
+}
+
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
@@ -18,6 +34,8 @@ Describe $CommandName -Tag UnitTests {
                 "AzureUnsupported",
                 "BatchSeparator",
                 "ClientName",
+                "ConnectRetryCount",
+                "ConnectRetryInterval",
                 "ConnectTimeout",
                 "EncryptConnection",
                 "FailoverPartner",
@@ -44,9 +62,24 @@ Describe $CommandName -Tag UnitTests {
                 "AccessToken",
                 "AuthenticationType",
                 "DedicatedAdminConnection",
+                "IsNewConnectionReference",
                 "DisableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+
+        It "rejects ConnectRetryCount values outside 0 to 255" {
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryCount -1 } | Should -Throw -ErrorId "ParameterArgumentValidationError,Connect-DbaInstance"
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryCount 256 } | Should -Throw -ErrorId "ParameterArgumentValidationError,Connect-DbaInstance"
+        }
+
+        It "rejects ConnectRetryInterval values outside 1 to 60" {
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryInterval 0 } | Should -Throw -ErrorId "ParameterArgumentValidationError,Connect-DbaInstance"
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryInterval 61 } | Should -Throw -ErrorId "ParameterArgumentValidationError,Connect-DbaInstance"
+        }
+
+        It "rejects negative ConnectTimeout values" {
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectTimeout -1 } | Should -Throw -ErrorId "ParameterArgumentValidationError,Connect-DbaInstance"
         }
     }
 
@@ -200,6 +233,89 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 
+    Context "Ignored parameter warnings" {
+        BeforeAll {
+            function New-MockIgnoredParameterServer {
+                param(
+                    $Connection
+                )
+
+                $connectionString = $Connection.ConnectionString
+                $sqlConnectionObject = [PSCustomObject]@{
+                    ConnectionString = $connectionString
+                }
+                $connectionContext = [PSCustomObject]@{
+                    ConnectionString    = $connectionString
+                    SqlConnectionObject = $sqlConnectionObject
+                    StatementTimeout    = 0
+                }
+
+                Add-Member -InputObject $connectionContext -Name ExecuteWithResults -MemberType ScriptMethod -Value {
+                    param($Query)
+                } -Force
+
+                [PSCustomObject]@{
+                    ConnectionContext = $connectionContext
+                }
+            }
+
+            Mock Add-ConnectionHashValue { } -ModuleName dbatools
+            Mock New-Object { & (Get-Command -Name "New-Object" -CommandType Cmdlet) @PesterBoundParameters } -ModuleName dbatools
+            Mock New-Object {
+                New-MockIgnoredParameterServer -Connection $ArgumentList[0]
+            } -ModuleName dbatools -ParameterFilter {
+                $TypeName -eq "Microsoft.SqlServer.Management.Smo.Server"
+            }
+        }
+
+        It "warns when a connection-string input ignores ConnectRetryCount" {
+            $warnings = @()
+            $splatConnection = @{
+                SqlInstance       = "Server=sqlretry;Integrated Security=true"
+                ConnectRetryCount = 2
+                SqlConnectionOnly = $true
+                WarningAction     = "SilentlyContinue"
+                WarningVariable   = "warnings"
+            }
+
+            $null = Connect-DbaInstance @splatConnection
+
+            $warnings | Should -Match "Additional parameters are passed in, but they will be ignored"
+        }
+
+        It "still warns when TrustServerCertificate is honored alongside an ignored parameter" {
+            $warnings = @()
+            $splatConnection = @{
+                SqlInstance            = "Server=sqlretry;Integrated Security=true"
+                ConnectRetryCount      = 2
+                SqlConnectionOnly      = $true
+                TrustServerCertificate = $true
+                WarningAction          = "SilentlyContinue"
+                WarningVariable        = "warnings"
+            }
+
+            $null = Connect-DbaInstance @splatConnection
+
+            $warnings | Should -Match "Additional parameters are passed in, but they will be ignored"
+        }
+
+        It "warns when a SqlConnection input ignores ConnectRetryInterval" {
+            $warnings = @()
+            $connection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList "Server=sqlretry;Integrated Security=true"
+            $splatConnection = @{
+                SqlInstance          = $connection
+                ConnectRetryInterval = 2
+                SqlConnectionOnly    = $true
+                WarningAction        = "SilentlyContinue"
+                WarningVariable      = "warnings"
+            }
+
+            $null = Connect-DbaInstance @splatConnection
+
+            $warnings | Should -Match "Additional parameters are passed in, but they will be ignored"
+        }
+    }
+
     Context "AuthenticationType behavior" {
         BeforeAll {
             function New-MockAuthenticationServer {
@@ -207,8 +323,12 @@ Describe $CommandName -Tag UnitTests {
                     $ServerConnection
                 )
 
-                $sqlConnectionObject = [PSCustomObject]@{
-                    ConnectionString = $ServerConnection.ConnectionString
+                if ($ServerConnection.SqlConnectionObject) {
+                    $sqlConnectionObject = $ServerConnection.SqlConnectionObject
+                } else {
+                    $sqlConnectionObject = [PSCustomObject]@{
+                        ConnectionString = $ServerConnection.ConnectionString
+                    }
                 }
                 $connectionContext = [PSCustomObject]@{
                     ConnectionString    = $sqlConnectionObject.ConnectionString
@@ -228,8 +348,14 @@ Describe $CommandName -Tag UnitTests {
             Mock Add-ConnectionHashValue { } -ModuleName dbatools
             Mock New-Object { & (Get-Command -Name 'New-Object' -CommandType Cmdlet) @PesterBoundParameters } -ModuleName dbatools
             Mock New-Object {
+                $sqlConnectionObject = if ($ArgumentList[0] -is [Microsoft.Data.SqlClient.SqlConnection]) {
+                    $ArgumentList[0]
+                } else {
+                    $null
+                }
                 $script:lastServerConnection = [PSCustomObject]@{
                     ConnectionString      = $ArgumentList[0].ConnectionString
+                    SqlConnectionObject   = $sqlConnectionObject
                     ConnectAsUser         = $false
                     ConnectAsUserName     = $null
                     ConnectAsUserPassword = $null
@@ -264,6 +390,65 @@ Describe $CommandName -Tag UnitTests {
             $result.ConnectionString | Should -Not -Match "Integrated Security=True"
             $script:lastServerConnection.ConnectAsUser | Should -Be $false
             $script:lastServerConnection.ConnectAsUserName | Should -BeNullOrEmpty
+        }
+
+        It "uses explicit connection resiliency values instead of AppendConnectionString values" {
+            $splatConnection = @{
+                SqlInstance            = "sqlretry"
+                ConnectRetryCount      = 0
+                ConnectRetryInterval   = 2
+                ConnectTimeout         = 0
+                AppendConnectionString = "ConnectRetryCount=8;ConnectRetryInterval=9;Connect Timeout=60"
+                SqlConnectionOnly      = $true
+            }
+            $result = Connect-DbaInstance @splatConnection
+            $connectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $result.ConnectionString
+
+            $connectionStringBuilder.ConnectRetryCount | Should -Be 0
+            $connectionStringBuilder.ConnectRetryInterval | Should -Be 2
+            $connectionStringBuilder.ConnectTimeout | Should -Be 0
+        }
+
+        It "uses the SqlClient SSPI provider for explicit Windows credentials" -Skip:(-not $script:hasCredentialSspiProvider) {
+            $splatPassword = @{
+                String      = "password"
+                AsPlainText = $true
+                Force       = $true
+            }
+            $securePassword = ConvertTo-SecureString @splatPassword
+            $credential = New-Object System.Management.Automation.PSCredential ("CONTOSO\user", $securePassword)
+            $splatConnect = @{
+                SqlInstance       = "sqlauth"
+                SqlCredential     = $credential
+                SqlConnectionOnly = $true
+            }
+
+            $result = Connect-DbaInstance @splatConnect
+
+            $result.SspiContextProvider | Should -BeOfType Dataplat.Dbatools.Connection.NetworkCredentialSspiContextProvider
+            $script:lastServerConnection.ConnectAsUser | Should -Be $false
+            $script:lastServerConnection.ConnectAsUserName | Should -BeNullOrEmpty
+            Should -Invoke Add-ConnectionHashValue -Times 0 -Exactly -ModuleName dbatools
+        }
+
+        It "uses SMO impersonation when the SqlClient SSPI provider is unavailable" -Skip:$script:hasCredentialSspiProvider {
+            $splatPassword = @{
+                String      = "password"
+                AsPlainText = $true
+                Force       = $true
+            }
+            $securePassword = ConvertTo-SecureString @splatPassword
+            $credential = New-Object System.Management.Automation.PSCredential ("user@CONTOSO", $securePassword)
+            $splatConnect = @{
+                SqlInstance       = "sqlauth"
+                SqlCredential     = $credential
+                SqlConnectionOnly = $true
+            }
+
+            $null = Connect-DbaInstance @splatConnect
+
+            $script:lastServerConnection.ConnectAsUser | Should -Be $true
+            $script:lastServerConnection.ConnectAsUserName | Should -Be "user@CONTOSO"
         }
     }
 }
@@ -313,6 +498,8 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $params = @{
                 BatchSeparator           = "GO"
+                ConnectRetryCount        = 2
+                ConnectRetryInterval     = 1
                 ConnectTimeout           = 1
                 Database                 = "tempdb"
                 LockTimeout              = 1
@@ -335,6 +522,9 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "sets connectioncontext parameters that are provided" {
             foreach ($param in $params.GetEnumerator()) {
+                if ($param.Key -in "ConnectRetryCount", "ConnectRetryInterval") {
+                    continue
+                }
                 if ($param.Key -eq "Database") {
                     $propName = "DatabaseName"
                 } else {
@@ -342,6 +532,28 @@ Describe $CommandName -Tag IntegrationTests {
                 }
                 $server.ConnectionContext.PSObject.Properties[$propName].Value | Should -Be $param.Value
             }
+        }
+
+        It "sets connection retry parameters in the connection string" {
+            $retryConnectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $server.ConnectionContext.ConnectionString
+            $retryConnectionStringBuilder.ConnectRetryCount | Should -Be 2
+            $retryConnectionStringBuilder.ConnectRetryInterval | Should -Be 1
+        }
+
+        It "gives explicit connection parameters precedence over AppendConnectionString" {
+            $splatConnection = @{
+                SqlInstance            = $TestConfig.InstanceMulti1
+                ConnectRetryCount      = 3
+                ConnectRetryInterval   = 2
+                ConnectTimeout         = 5
+                AppendConnectionString = "ConnectRetryCount=8;ConnectRetryInterval=9;Connect Timeout=60"
+            }
+            $precedenceServer = Connect-DbaInstance @splatConnection
+            $precedenceConnectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $precedenceServer.ConnectionContext.ConnectionString
+
+            $precedenceConnectionStringBuilder.ConnectRetryCount | Should -Be 3
+            $precedenceConnectionStringBuilder.ConnectRetryInterval | Should -Be 2
+            $precedenceConnectionStringBuilder.ConnectTimeout | Should -Be 5
         }
 
         It "returns more than one database" {
@@ -359,6 +571,46 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "sets StatementTimeout to 0" {
             $server.ConnectionContext.StatementTimeout | Should -Be 0
+        }
+    }
+
+    Context "IsNewConnectionVariable tells the caller whether a connection was opened" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # We predefine the variables so that a test fails if Connect-DbaInstance does not set them at all.
+            $newFromString = $null
+            $newFromServer = $null
+            $newFromCopy = $null
+
+            $serverFromString = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -NonPooledConnection -IsNewConnectionReference ([ref]$newFromString)
+            $serverFromServer = Connect-DbaInstance -SqlInstance $serverFromString -IsNewConnectionReference ([ref]$newFromServer)
+            # Asking for a different database forces Connect-DbaInstance to copy the connection context, so this is a new connection.
+            $serverFromCopy = Connect-DbaInstance -SqlInstance $serverFromString -Database tempdb -IsNewConnectionReference ([ref]$newFromCopy)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = $serverFromString, $serverFromCopy | Disconnect-DbaInstance
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "is true when the connection is opened from a string" {
+            $newFromString | Should -BeTrue
+        }
+
+        It "is false when the server object is passed back in" {
+            $newFromServer | Should -BeFalse
+        }
+
+        It "returns the object that was passed in when nothing has to change" {
+            [object]::ReferenceEquals($serverFromServer, $serverFromString) | Should -BeTrue
+        }
+
+        It "is true when the connection context has to be copied" {
+            $newFromCopy | Should -BeTrue
         }
     }
 
@@ -428,6 +680,400 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "ignored retry parameters for existing connection inputs" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $retryConnectionString = "Data Source=$($TestConfig.InstanceMulti1);Initial Catalog=tempdb;Integrated Security=True;Encrypt=False;Trust Server Certificate=True;ConnectRetryCount=7;ConnectRetryInterval=8"
+            $sqlRetryConnection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList $retryConnectionString
+            $registeredRetryServer = New-Object -TypeName Microsoft.SqlServer.Management.RegisteredServers.RegisteredServer -ArgumentList "dbatoolsci_retry"
+            $registeredRetryServer.ConnectionString = $retryConnectionString
+            $connectionStringWarnings = @()
+            $sqlConnectionWarnings = @()
+            $registeredServerWarnings = @()
+
+            $splatConnectionString = @{
+                SqlInstance            = $retryConnectionString
+                ConnectRetryCount      = 2
+                TrustServerCertificate = $true
+                WarningAction          = "SilentlyContinue"
+                WarningVariable        = "connectionStringWarnings"
+            }
+            $serverFromConnectionString = Connect-DbaInstance @splatConnectionString
+
+            $splatSqlConnection = @{
+                SqlInstance          = $sqlRetryConnection
+                ConnectRetryInterval = 2
+                WarningAction        = "SilentlyContinue"
+                WarningVariable      = "sqlConnectionWarnings"
+            }
+            $serverFromSqlConnection = Connect-DbaInstance @splatSqlConnection
+
+            $splatRegisteredServer = @{
+                SqlInstance       = $registeredRetryServer
+                ConnectRetryCount = 3
+                WarningAction     = "SilentlyContinue"
+                WarningVariable   = "registeredServerWarnings"
+            }
+            $serverFromRegisteredServer = Connect-DbaInstance @splatRegisteredServer
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $serversToDisconnect = @(
+                $serverFromConnectionString
+                $serverFromSqlConnection
+                $serverFromRegisteredServer
+            ) | Where-Object { $null -ne $PSItem }
+            $null = $serversToDisconnect | Disconnect-DbaInstance -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "warns for an ignored retry count on a connection-string input" {
+            $connectionStringWarnings | Should -Match "Additional parameters are passed in, but they will be ignored"
+        }
+
+        It "keeps the retry count from the connection-string input" {
+            $connectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $serverFromConnectionString.ConnectionContext.ConnectionString
+            $connectionStringBuilder.ConnectRetryCount | Should -Be 7
+        }
+
+        It "warns for an ignored retry interval on a SqlConnection input" {
+            $sqlConnectionWarnings | Should -Match "Additional parameters are passed in, but they will be ignored"
+        }
+
+        It "keeps the retry interval from the SqlConnection input" {
+            $sqlConnectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $serverFromSqlConnection.ConnectionContext.ConnectionString
+            $sqlConnectionStringBuilder.ConnectRetryInterval | Should -Be 8
+        }
+
+        It "warns for an ignored retry count on a RegisteredServer input" {
+            $registeredServerWarnings | Should -Match "Additional parameters are passed in, but they will be ignored"
+        }
+
+        It "keeps the retry count from the RegisteredServer input" {
+            $registeredServerStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $serverFromRegisteredServer.ConnectionContext.ConnectionString
+            $registeredServerStringBuilder.ConnectRetryCount | Should -Be 7
+        }
+    }
+
+    Context "connection is properly cloned from a connection that was created from a SqlConnection" {
+        BeforeAll {
+            # A ServerConnection that was built from a SqlConnection has its connection string set, and
+            # SMO then refuses assignments to DatabaseName, NonPooledConnection and ServerInstance, so
+            # cloning such a server has to go through the connection string instead. CI never noticed
+            # because it covers SqlConnection to Server and Server to another Database, but never the
+            # two of them chained. See #10584.
+            [Microsoft.Data.SqlClient.SqlConnection]$sqlConnectionToClone = "Data Source=$($TestConfig.InstanceMulti1);Integrated Security=True;Encrypt=False;Trust Server Certificate=True"
+            $serverFromSqlConnection = Connect-DbaInstance -SqlInstance $sqlConnectionToClone
+        }
+
+        AfterAll {
+            $null = $serverFromSqlConnection | Disconnect-DbaInstance
+        }
+
+        It "clones when using parameter Database" {
+            $serverClone = Connect-DbaInstance -SqlInstance $serverFromSqlConnection -Database tempdb
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+            $serverFromSqlConnection.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "master"
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+
+        It "clones when using parameter Database together with NonPooledConnection" {
+            $serverClone = Connect-DbaInstance -SqlInstance $serverFromSqlConnection -Database tempdb -NonPooledConnection
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+            $serverClone.ConnectionContext.ConnectionString | Should -Match "Pooling=False"
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+
+        It "clones when using parameter ApplicationIntent" {
+            # ApplicationIntent is not one of the properties SMO refuses to assign, so this used to look
+            # like it worked: the property took the value and read it back. On a fixed connection string
+            # the assignment never reaches the string, and the string is what the login is made with -
+            # SQL Server reads the intent at login time and routes on it then. So the context reported
+            # ReadOnly over a connection that had logged in as ReadWrite, and with no other setting to
+            # apply, nothing rebuilt the string to correct it.
+            $serverClone = Connect-DbaInstance -SqlInstance $serverFromSqlConnection -ApplicationIntent ReadOnly
+            $cloneStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $serverClone.ConnectionContext.ConnectionString
+            $cloneStringBuilder["ApplicationIntent"] | Should -Be "ReadOnly"
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "master"
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+
+        It "clones when using parameter Database together with ApplicationIntent" {
+            $serverClone = Connect-DbaInstance -SqlInstance $serverFromSqlConnection -Database tempdb -ApplicationIntent ReadOnly
+            $cloneStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $serverClone.ConnectionContext.ConnectionString
+            $cloneStringBuilder["ApplicationIntent"] | Should -Be "ReadOnly"
+            $cloneStringBuilder["Initial Catalog"] | Should -Be "tempdb"
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+
+        It "clones when using parameter DedicatedAdminConnection" {
+            $serverClone = Connect-DbaInstance -SqlInstance $serverFromSqlConnection -DedicatedAdminConnection
+            $serverClone.ConnectionContext.ConnectionString | Should -Match "ADMIN:"
+            # The connection context cannot be asked here, because ServerInstance is one of the properties
+            # that cannot be assigned on such a context, so ask the session which endpoint it is on.
+            $dacQuery = "SELECT COUNT(*) FROM sys.dm_exec_sessions AS s JOIN sys.endpoints AS e ON e.endpoint_id = s.endpoint_id WHERE e.is_admin_endpoint = 1 AND s.session_id = @@SPID"
+            $serverClone.ConnectionContext.ExecuteScalar($dacQuery) | Should -Be 1
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+
+        It "keeps the forced certificate trust of a local dedicated admin connection" -Skip:(-not $script:instanceIsLocalHost) {
+            # A local DAC goes to ADMIN:localhost and forces TrustServerCertificate, because the
+            # certificate of the instance does not have to match "localhost" (#10254). On a context whose
+            # connection string is fixed, assigning that property succeeds and reads back as True while
+            # the string still says False - and the string is what the new connection is built from. So
+            # the trust has to be put into the string as well, or the local DAC fails on the certificate.
+            # Starts from Trust Server Certificate=False on purpose: with True the assertion would pass
+            # even if the command did nothing at all.
+            $localDacConnectionString = "Data Source=$($TestConfig.InstanceMulti1);Integrated Security=True;Encrypt=False;Trust Server Certificate=False"
+            [Microsoft.Data.SqlClient.SqlConnection]$localDacConnection = $localDacConnectionString
+            $serverForLocalDac = Connect-DbaInstance -SqlInstance $localDacConnection
+            try {
+                $serverClone = Connect-DbaInstance -SqlInstance $serverForLocalDac -DedicatedAdminConnection
+
+                # Read back through a builder rather than matching the string: a connection string builder
+                # keeps the spelling it was given, so the same setting reads as "Trust Server Certificate"
+                # or "TrustServerCertificate" depending on how the caller wrote it.
+                $cloneStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $serverClone.ConnectionContext.ConnectionString
+                $cloneStringBuilder["Trust Server Certificate"] | Should -BeTrue
+                $cloneStringBuilder["Data Source"] | Should -Match "^ADMIN:localhost"
+                $null = $serverClone | Disconnect-DbaInstance
+            } finally {
+                $null = $serverForLocalDac | Disconnect-DbaInstance
+            }
+        }
+    }
+
+    Context "connection is properly cloned from an open SQL authenticated SqlConnection" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Once a SqlConnection has been opened with Persist Security Info=False, SqlClient hides the
+            # password: the connection string that can be read back no longer carries one. Anything that
+            # rebuilds the connection string from it therefore produces a connection that cannot log in,
+            # so the database has to be switched on the connection that already exists. See #10584.
+            $sqlAuthLogin = "dbatoolsci_clone_$(Get-Random)"
+            $sqlAuthPassword = "dbatools.IO_$(Get-Random)"
+            $splatSqlAuthLogin = @{
+                SqlInstance = $TestConfig.InstanceMulti1
+                Login       = $sqlAuthLogin
+                Password    = (ConvertTo-SecureString -String $sqlAuthPassword -AsPlainText -Force)
+                Force       = $true
+            }
+            $null = New-DbaLogin @splatSqlAuthLogin
+            $null = Set-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login $sqlAuthLogin -AddRole sysadmin
+
+            $sqlAuthConnectionString = "Data Source=$($TestConfig.InstanceMulti1);Initial Catalog=master;User ID=$sqlAuthLogin;Password=$sqlAuthPassword;Persist Security Info=False;Encrypt=False;Trust Server Certificate=True"
+            $sqlAuthConnection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList $sqlAuthConnectionString
+            $sqlAuthConnection.Open()
+            $serverFromSqlAuth = Connect-DbaInstance -SqlInstance $sqlAuthConnection
+
+            # The session counting of the tests below goes through a connection of its own, opened once
+            # here. Passing an instance name to Get-DbaProcess instead would open a new connection on
+            # every call, and each of those registers itself with the tab expansion cache under the same
+            # instance key - which drops the reference to whatever was stored there before, and with it
+            # the leaked connection these tests are looking for. Counting would then hide the growth it
+            # is supposed to prove.
+            $serverForCounting = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $serverFromSqlAuth, $serverForCounting | Disconnect-DbaInstance
+            $sqlAuthConnection.Close()
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login $sqlAuthLogin -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "hides the password from the connection string, which is what makes this case hard" {
+            $serverFromSqlAuth.ConnectionContext.ConnectionString | Should -Not -Match "Password="
+        }
+
+        It "clones when using parameter Database" {
+            $serverClone = Connect-DbaInstance -SqlInstance $serverFromSqlAuth -Database tempdb
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+            $serverClone.ConnectionContext.ExecuteScalar("select suser_sname()") | Should -Be $sqlAuthLogin
+            $serverFromSqlAuth.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "master"
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+
+        It "refuses instead of returning a server that cannot log in" {
+            # This one needs a new connection, and the password for it is gone, so the command has to say
+            # so rather than hand back something that fails on first use. Connect-DbaInstance throws by
+            # default, which is why this is not a warning.
+            { Connect-DbaInstance -SqlInstance $serverFromSqlAuth -Database tempdb -NonPooledConnection } |
+                Should -Throw -ExpectedMessage "*cannot be reproduced from its connection string*"
+        }
+
+        It "keeps the session count flat over repeated refusals" {
+            # A refusal happens after the connection context has been copied, and Copy() clones an open
+            # connection as an open connection. Nothing but the returned server object can ever close that
+            # copy, so a refusal that simply returns leaves a session behind that nothing can reuse - the
+            # same orphaned connection this whole change is about, only on the failure path. Repeated on
+            # purpose: one sleeping pooled session is legitimate, growth is not.
+            $countPerCycle = @()
+            foreach ($cycle in 1..5) {
+                { Connect-DbaInstance -SqlInstance $serverFromSqlAuth -Database tempdb -NonPooledConnection } | Should -Throw
+                $countPerCycle += @(Get-DbaProcess -SqlInstance $serverForCounting -Login $sqlAuthLogin).Count
+            }
+            ($countPerCycle | Select-Object -Unique).Count | Should -Be 1
+        }
+
+        It "keeps the session count flat over repeated failed database switches" {
+            # The other way out of the same block: the copy exists and is open, and switching it to a
+            # database that does not exist throws from inside SMO rather than through Stop-Function.
+            $countPerCycle = @()
+            foreach ($cycle in 1..5) {
+                { Connect-DbaInstance -SqlInstance $serverFromSqlAuth -Database "dbatoolsci_does_not_exist_$cycle" } | Should -Throw
+                $countPerCycle += @(Get-DbaProcess -SqlInstance $serverForCounting -Login $sqlAuthLogin).Count
+            }
+            ($countPerCycle | Select-Object -Unique).Count | Should -Be 1
+        }
+
+        It "keeps the session count flat over repeated successful clones" {
+            # And the path that succeeds. This one switches the database on the connection the copy holds,
+            # which leaves that connection open, and an open connection was then copied a second time for
+            # the tab expansion cache and kept there for the life of the process. That copy was reachable
+            # by nothing, so every call parked another session: the count went 3, 4, 5, 6, 7, 8.
+            $countPerCycle = @()
+            foreach ($cycle in 1..5) {
+                $serverClone = Connect-DbaInstance -SqlInstance $serverFromSqlAuth -Database tempdb
+                $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+                $null = $serverClone | Disconnect-DbaInstance
+                $countPerCycle += @(Get-DbaProcess -SqlInstance $serverForCounting -Login $sqlAuthLogin).Count
+            }
+            ($countPerCycle | Select-Object -Unique).Count | Should -Be 1
+        }
+    }
+
+    Context "connection is properly cloned on Azure SQL Database" -Skip:(-not $script:hasAzureSqlDb) {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Azure SQL Database answers a USE with error 40508 and wants a new connection for another
+            # database. Every other engine, Azure SQL Managed Instance included, takes the USE, so the
+            # branch that switches the database on an existing connection looks correct everywhere else
+            # and is wrong only here. See #10584.
+            # A serverless database that has been idle is paused and takes up to a minute to wake up. A
+            # generous ConnectTimeout does not cover that: while the database resumes, Azure does not
+            # keep the attempt waiting, it answers it right away with error 40613 "Database ... is not
+            # currently available. Please retry the connection later." So the first connection is
+            # retried until the database is up, and only an error that says something else is thrown
+            # immediately.
+            $splatAzureConnect = @{
+                SqlInstance    = $TestConfig.AzureSqlDbServer
+                Database       = $TestConfig.AzureSqlDbName
+                SqlCredential  = $TestConfig.AzureSqlDbCred
+                ConnectTimeout = 120
+            }
+            $azureResumeAttempt = 0
+            while ($null -eq $serverAzure) {
+                $azureResumeAttempt++
+                try {
+                    $serverAzure = Connect-DbaInstance @splatAzureConnect
+                } catch {
+                    if ($azureResumeAttempt -ge 10 -or $PSItem.Exception.Message -notmatch "is not currently available") {
+                        throw
+                    }
+                    Start-Sleep -Seconds 15
+                }
+            }
+
+            # The same login again, but through a SqlConnection, which gives the server a fixed connection
+            # string and so takes the code path that cannot assign DatabaseName. Persist Security Info is
+            # on, so the password survives being read back and a new connection can be built from it.
+            $azurePassword = $TestConfig.AzureSqlDbCred.GetNetworkCredential().Password
+            $azureConnectionString = @(
+                "Data Source=$($TestConfig.AzureSqlDbServer)"
+                "Initial Catalog=$($TestConfig.AzureSqlDbName)"
+                "User ID=$($TestConfig.AzureSqlDbCred.UserName)"
+                "Password=$azurePassword"
+                "Encrypt=True"
+                "Persist Security Info=True"
+                "Connect Timeout=120"
+            ) -join ";"
+            $azureConnection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList $azureConnectionString
+            $azureConnection.Open()
+            $serverAzureFromSqlConnection = Connect-DbaInstance -SqlInstance $azureConnection
+
+            # And once more with the password hidden, which is what an opened connection looks like by
+            # default. Nothing can rebuild a connection string from this one.
+            $azureHiddenConnectionString = $azureConnectionString -replace "Persist Security Info=True", "Persist Security Info=False"
+            $azureHiddenConnection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList $azureHiddenConnectionString
+            $azureHiddenConnection.Open()
+            $serverAzureHiddenPassword = Connect-DbaInstance -SqlInstance $azureHiddenConnection
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The BeforeAll can fail partway through - an Azure SQL Database that stays unavailable is the
+            # realistic case - and then the variables below it were never assigned. Calling a method on
+            # one of them throws from the teardown, and Pester reports that null reference on every test
+            # of the block instead of the error that really happened.
+            $null = $serverAzure, $serverAzureFromSqlConnection, $serverAzureHiddenPassword | Where-Object { $null -ne $PSItem } | Disconnect-DbaInstance
+            if ($azureConnection) {
+                $azureConnection.Close()
+            }
+            if ($azureHiddenConnection) {
+                $azureHiddenConnection.Close()
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "really is an Azure SQL Database, which is what makes this case different" {
+            # Guards the three tests below: against anything else they would pass without proving
+            # anything, because every other engine simply takes the USE.
+            $serverAzure.DatabaseEngineEdition | Should -Be "SqlDatabase"
+        }
+
+        It "clones when using parameter Database" {
+            $serverClone = Connect-DbaInstance -SqlInstance $serverAzure -Database master
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "master"
+            $serverAzure.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be $TestConfig.AzureSqlDbName
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+
+        It "clones when using parameter Database from a server that was created from a SqlConnection" {
+            # The regression: a fixed connection string cannot take DatabaseName, and switching the
+            # database on the connection instead is exactly what Azure SQL Database refuses. The database
+            # has to go into the connection string as Initial Catalog, which is also the only thing that
+            # gives it the right connection pool.
+            $serverClone = Connect-DbaInstance -SqlInstance $serverAzureFromSqlConnection -Database master
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "master"
+            $serverClone.ConnectionContext.ExecuteScalar("select suser_sname()") | Should -Be $TestConfig.AzureSqlDbCred.UserName
+            $serverAzureFromSqlConnection.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be $TestConfig.AzureSqlDbName
+            $null = $serverClone | Disconnect-DbaInstance
+        }
+
+        It "refuses rather than trying to switch the database on the connection" {
+            # No new connection can be built here, because the password is gone, and the fallback that
+            # every other engine uses cannot work on Azure SQL Database. The command has to say so. The
+            # last assertion is the one with teeth: it fails if the code ever reaches ChangeDatabase,
+            # which answers with "USE statement is not supported to switch between databases".
+            $errorRecord = $null
+            try {
+                $null = Connect-DbaInstance -SqlInstance $serverAzureHiddenPassword -Database master
+            } catch {
+                $errorRecord = $PSItem
+            }
+            $errorRecord | Should -Not -BeNullOrEmpty
+            $errorRecord.Exception.Message | Should -BeLike "*Azure SQL Database does not support switching the database*"
+            $errorRecord.Exception.Message | Should -Not -BeLike "*USE statement is not supported*"
+        }
+    }
+
     Context "connection is properly cloned from an existing connection" {
         BeforeAll {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
@@ -443,10 +1089,40 @@ Describe $CommandName -Tag IntegrationTests {
             $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
         }
 
+        It "hands the clone a connection that Disconnect-DbaInstance can close" {
+            # The clone used to be built with GetDatabaseConnection, which opened the connection on an
+            # intermediate copy and returned a different context. The clone therefore did not own its
+            # connection and Disconnect-DbaInstance closed nothing, so every call left a session parked
+            # in the database holding a shared lock on it.
+            # Repeated on purpose. With pooling, a sleeping session that stays behind is legitimate - it
+            # belongs to the pool and the next call reuses it. What must not happen is that their number
+            # grows with every call, which is what an orphaned connection looks like: nothing can reuse
+            # it and nothing can close it. Against the old implementation the count went up on almost
+            # every cycle, so a single cycle is not enough to tell the two apart.
+            $countPerCycle = @()
+            foreach ($cycle in 1..5) {
+                $serverParked = Connect-DbaInstance -SqlInstance $server -Database tempdb
+                $serverParked.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+                $null = $serverParked | Disconnect-DbaInstance
+                $countPerCycle += @(Get-DbaProcess -SqlInstance $server -Database tempdb | Where-Object Program -match "dbatools").Count
+            }
+
+            # Every cycle has to land on the same number, not just the first and the last. A sequence like
+            # 4, 5, 4, 5, 4 starts and ends the same way and still means the pool is churning.
+            ($countPerCycle | Select-Object -Unique).Count | Should -Be 1
+        }
+
         It "clones when using parameter ApplicationIntent" {
             $serverClone = Connect-DbaInstance -SqlInstance $server -ApplicationIntent ReadOnly
             $server.ConnectionContext.ApplicationIntent | Should -BeNullOrEmpty
             $serverClone.ConnectionContext.ApplicationIntent | Should -Be "ReadOnly"
+        }
+
+        It "clones when using parameter Database together with NonPooledConnection" {
+            $serverClone = Connect-DbaInstance -SqlInstance $server -Database tempdb -NonPooledConnection
+            $serverClone.ConnectionContext.ExecuteScalar("select db_name()") | Should -Be "tempdb"
+            $serverClone.ConnectionContext.NonPooledConnection | Should -Be $true
+            $null = $serverClone | Disconnect-DbaInstance
         }
 
         It "clones when using parameter NonPooledConnection" {
@@ -470,17 +1146,112 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "clones when using Backup-DabInstace" {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -Database tempdb
-            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb
+            # The backups have to go to the shared temp folder. Without a path they land in the default
+            # backup folder of the instance, which is a path on the SQL Server, so the Remove-Item below
+            # runs against a path that does not exist on the machine running the tests and silently does
+            # nothing. The backup was then left behind on every remote instance, and because this file
+            # runs early in the suite, every later test file reported it as a leftover of its own.
+            # Each backup gets its own file name, because two backups within the same minute share the
+            # default name and the second one appends to the first.
+            $backupFiles = @()
+            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -Path $TestConfig.Temp -FilePath "msdb_$(Get-Random).bak"
             if ($results.FullName) {
-                Remove-Item -Path $results.FullName -ErrorAction SilentlyContinue
+                $backupFiles += $results.FullName
             }
 
-            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -WarningVariable warn
+            $results = Backup-DbaDatabase -SqlInstance $server -Database msdb -Path $TestConfig.Temp -FilePath "msdb_$(Get-Random).bak" -WarningVariable warn
             $warn | Should -BeNullOrEmpty
 
             if ($results.FullName) {
-                Remove-Item -Path $results.FullName -ErrorAction SilentlyContinue
+                $backupFiles += $results.FullName
             }
+
+            # Right after the backup the share can still hold the file open for a moment, and a silently
+            # failed removal left it behind once. Retry a few times and then insist that it is gone.
+            foreach ($backupFile in $backupFiles) {
+                $attempts = 0
+                while ((Test-Path -Path $backupFile) -and $attempts -lt 5) {
+                    $attempts++
+                    Remove-Item -Path $backupFile -ErrorAction SilentlyContinue
+                    if (Test-Path -Path $backupFile) {
+                        Start-Sleep -Seconds 1
+                    }
+                }
+                Test-Path -Path $backupFile | Should -BeFalse
+            }
+        }
+    }
+
+    Context "the connection of a server object that is passed in with -Database is returned to the pool" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # A server object that was connected without -Database has an empty CurrentDatabase until its
+            # connection is opened once, so a call with -Database has to open it to compare the two. The
+            # command used to leave that connection open: SMO returns a pooled connection after each batch
+            # only when it opened the connection itself, and an explicit Connect() keeps it checked out
+            # until Disconnect(). One session per server object then stayed behind for the life of the
+            # process, and a loop over fresh server objects exhausted the pool after a hundred of them.
+            # Clear-DbaConnectionPool closes every idle pooled connection, so what a count sees right after
+            # it are the connections that are still checked out. The count itself runs on a non-pooled
+            # connection that stays open for the whole context and is excluded by its spid.
+            $countServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -NonPooledConnection
+            $countQuery = @"
+SELECT COUNT(*)
+FROM sys.dm_exec_sessions
+WHERE host_process_id = $PID
+  AND host_name = HOST_NAME()
+  AND session_id <> @@SPID
+"@
+            # Each server object needs a connection string of its own, because the command hands back the
+            # cached object for a connection string it has seen before.
+            $clientNames = @(
+                "dbatoolsci_pool_1",
+                "dbatoolsci_pool_2",
+                "dbatoolsci_pool_3"
+            )
+
+            # The sessions of closed connections vanish from the server a moment after the close, so the
+            # count waits a little after every clear.
+            Clear-DbaConnectionPool
+            Start-Sleep -Milliseconds 500
+            $sessionsBefore = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            foreach ($clientName in $clientNames) {
+                $inputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -ClientName $clientName
+                $sameServer = Connect-DbaInstance -SqlInstance $inputServer -Database master
+                $sameServer.ConnectionContext.ExecuteScalar("SELECT DB_NAME()") | Should -Be "master"
+            }
+            Clear-DbaConnectionPool
+            Start-Sleep -Milliseconds 500
+            $sessionsAfterSameDatabase = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            foreach ($clientName in $clientNames) {
+                $inputServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -ClientName $clientName
+                $null = Invoke-DbaQuery -SqlInstance $inputServer -Database tempdb -Query "SELECT DB_NAME()"
+            }
+            Clear-DbaConnectionPool
+            Start-Sleep -Milliseconds 500
+            $sessionsAfterInvokeDbaQuery = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Get-DbaConnectedInstance | Disconnect-DbaInstance
+            $null = $countServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "leaves no checked-out connection behind when the database already matches" {
+            $sessionsAfterSameDatabase | Should -Be $sessionsBefore
+        }
+
+        It "leaves no checked-out connection behind when Invoke-DbaQuery clones it for another database" {
+            $sessionsAfterInvokeDbaQuery | Should -Be $sessionsBefore
         }
     }
 
@@ -523,6 +1294,72 @@ Describe $CommandName -Tag IntegrationTests {
             $server = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -DedicatedAdminConnection
             $server.Count | Should -Be 2
             $null = $server | Disconnect-DbaInstance
+        }
+    }
+
+    Context "MinimumVersion decides based on a version it can read" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $versionServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $smoVersionMajor = $versionServer.VersionMajor
+            $connectionVersionMajor = $versionServer.ConnectionContext.ServerVersion.Major
+            $productVersionQuery = @"
+SELECT SERVERPROPERTY('ProductVersion')
+"@
+            $tsqlVersionMajor = [int](($versionServer.ConnectionContext.ExecuteScalar($productVersionQuery) -split "\.")[0])
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "returns the connection when the instance meets the minimum" {
+            $result = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -MinimumVersion $smoVersionMajor
+            $result.VersionMajor | Should -Be $smoVersionMajor
+        }
+
+        It "refuses the connection when the instance is below the minimum" {
+            { Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -MinimumVersion ($smoVersionMajor + 1) } | Should -Throw "*SQL Server version $($smoVersionMajor + 1) required*"
+        }
+
+        It "warns instead of throwing when exceptions are disabled" {
+            $splatTooNew = @{
+                SqlInstance      = $TestConfig.InstanceMulti1
+                MinimumVersion   = $smoVersionMajor + 1
+                DisableException = $true
+                WarningVariable  = "minimumVersionWarning"
+                WarningAction    = "SilentlyContinue"
+            }
+            $result = Connect-DbaInstance @splatTooNew
+            $result | Should -BeNullOrEmpty
+            $minimumVersionWarning | Should -Match "SQL Server version $($smoVersionMajor + 1) required"
+        }
+
+        It "can read the same major version from the connection as from SMO" {
+            # The check falls back to ConnectionContext.ServerVersion where SMO cannot serve
+            # VersionMajor, which is every instance below SQL Server 2008. No instance in the
+            # matrix is that old, so this guards the fallback source instead: if it ever stops
+            # agreeing with SMO, the fallback stops refusing the versions it exists to refuse.
+            $connectionVersionMajor | Should -Be $smoVersionMajor
+        }
+
+        It "can read the same major version from T-SQL as from SMO" {
+            # The last fallback, and the only one proven to answer on SQL Server 2005, where both
+            # properties above come back empty. Guarded here for the same reason: the versions it
+            # exists to refuse are not in the matrix, but its source is readable everywhere.
+            $tsqlVersionMajor | Should -Be $smoVersionMajor
+        }
+    }
+
+    Context "tab completion cache of instance names" {
+        It "keeps every connected instance as its own entry" {
+            # The cache starts as $null, and $null += "x" made it a string. Every further name was then
+            # concatenated onto that string and the completer offered one long blob instead of names.
+            $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti2
+            $cache = [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"]
+            $cache -is [array] | Should -BeTrue
+            $cache | Should -Contain $TestConfig.InstanceMulti1.ToLowerInvariant()
+            $cache | Should -Contain $TestConfig.InstanceMulti2.ToLowerInvariant()
         }
     }
 }

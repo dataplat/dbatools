@@ -8,50 +8,6 @@ function Set-FileSystemSetting {
         [int]$FilestreamLevel,
         [switch]$EnableException
     )
-    begin {
-        function Get-FilestreamReturnValue {
-            [CmdletBinding()]
-            param (
-                [object]$Value
-            )
-            switch ($Value) {
-                2147217396 {
-                    "Filestream not supported on instance"
-                }
-                2147217386 {
-                    "Filestream cannot change share"
-                }
-                2147024713 {
-                    "Duplicate sharename"
-                }
-                2147024891 {
-                    "Access denied"
-                }
-                2147023681 {
-                    "Invalid sharename"
-                }
-                2147024690 {
-                    "Sharename too long"
-                }
-                2147019889 {
-                    "Primary node not enabled "
-                }
-                2147019848 {
-                    "Sharename node mismatch"
-                }
-                214721740 {
-                    "General error"
-                }
-                { 2147021885 -or 2147945411 -or 0 } {
-                    "The requested operation is successful. Changes will not be effective until the service is restarted."
-                }
-                default {
-                    $Value
-                }
-            }
-        }
-    }
-
     process {
         if ($Force -or $PSCmdlet.ShouldProcess($Instance, "Setting filestream")) {
             try {
@@ -72,8 +28,7 @@ function Set-FileSystemSetting {
                             ShareName   = $ShareName
                         }
                         $return = Invoke-CimMethod -InputObject $fileStreamCim -MethodName EnableFilestream -Arguments $arguments
-                        $returnvalue = Get-FilestreamReturnValue -Value $return.ReturnValue
-                        $returnvalue
+                        Get-FilestreamReturnValue -Value $return.ReturnValue
                     } else {
                         Stop-Function -Message "No cim object for class FilestreamSettings found"
                     }

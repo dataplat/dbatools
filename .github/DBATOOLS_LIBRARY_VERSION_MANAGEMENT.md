@@ -102,6 +102,12 @@ To update the dbatools.library version across all workflows:
 
 3. **Verify**: All subsequent workflow runs will use the new version automatically.
 
+4. **SMO enumeration floors**: `xplat-import.yml` compares the version floors that the SMO of the pinned library declares for each object type (`min_major` and `cloud_min_major` in the XML resources of `Microsoft.SqlServer.SqlEnum.dll`) with the reviewed baseline in `.github/smo-resource-floors.json`. It fails when a floor changed or a resource disappeared, because a raised floor silently drops SQL Server versions that `Connect-DbaInstance -MinimumVersion` still accepts (see #10600). When it fails, check the commands that use the affected object types, then refresh the baseline and commit it together with the pin:
+   ```powershell
+   Import-Module ./dbatools.psd1
+   ./.github/scripts/Test-SmoResourceFloor.ps1 -UpdateBaseline
+   ```
+
 ### Using Preview Versions
 
 Preview versions follow the pattern: `YYYY.M.D-preview-branch-YYYYMMDD.HHMMSS`
@@ -150,7 +156,7 @@ The install script implements a two-tier approach:
 
 All GitHub Actions workflows follow this consistent pattern. Currently integrated workflows:
 
-- **[`xplat-import.yml`](.workflows/xplat-import.yml)**: Cross-platform import testing on Ubuntu, Windows, and macOS
+- **[`xplat-import.yml`](.workflows/xplat-import.yml)**: Cross-platform import testing on Ubuntu, Windows, and macOS, plus the SMO enumeration floor check (`.github/scripts/Test-SmoResourceFloor.ps1`)
 - **[`integration-tests.yml`](.workflows/integration-tests.yml)**: Full integration test suite with Docker containers
 - **[`gallery.yml`](.workflows/gallery.yml)**: PowerShell Gallery version testing
 

@@ -8,6 +8,9 @@
         'PSReservedParams',
         'PSAvoidUsingWMICmdlet',
         'PSMisleadingBacktick',
+        # The style test in dbatools.Tests.ps1 fails the build on a trailing space, so the profile
+        # that is meant to be run before pushing has to report it too.
+        'PSAvoidTrailingWhitespace',
         'PSMissingModuleManifestField',
         'PSPossibleIncorrectComparisonWithNull',
         'PSUseApprovedVerbs',
@@ -54,7 +57,11 @@
         PSUseConsistentWhitespace  = @{
             Enable          = $true
             CheckInnerBrace = $true
-            CheckOpenBrace  = $true
+            # CheckOpenBrace reports "Use space before open brace" for every statement that starts
+            # with a script block, which is what { Get-DbaFoo } | Should -Throw looks like. Across
+            # the test tree it produced 180 findings, 178 of them that idiom, so the rule buried
+            # everything else it found. The remaining checks still cover real spacing mistakes.
+            CheckOpenBrace  = $false
             CheckOpenParen  = $true
             CheckOperator   = $false
             CheckPipe       = $true

@@ -27,7 +27,9 @@ Internal function. Returns dictionary object that contains file structures for S
 
     if ($filestream) {
         $sql = "SELECT COALESCE(SERVERPROPERTY('FilestreamConfiguredLevel'),0) AS fs"
-        $fscheck = $server.databases['master'].ExecuteWithResults($sql)
+        # SERVERPROPERTY does not depend on the current database, so this runs on the connection. Going
+        # through the master database would leave the connection of the caller there. See #10555.
+        $fscheck = $server.ConnectionContext.ExecuteWithResults($sql)
         if ($fscheck.tables.fs -eq 0) { return $false }
     }
 

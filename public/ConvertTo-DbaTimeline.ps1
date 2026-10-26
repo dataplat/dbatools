@@ -244,7 +244,7 @@ function ConvertTo-DbaTimeline {
 </head>
 <body>
     <div class="container-fluid">
-    <div class="pull-left"><h3><code>$($CallerName)</code> timeline for <code>$($servers -join ', ')</code></h3></div><div class="pull-right text-right"><img class="text-right" style="vertical-align:bottom; margin-top: 10px;" src="https://dbatools.io/wp-content/uploads/2016/05/dbatools-logo-1.png" width=150></div>
+    <div class="pull-left"><h3><code>$($CallerName)</code> timeline for <code>$($servers -join ', ')</code></h3></div><div class="pull-right text-right"><img class="text-right" style="vertical-align:bottom; margin-top: 10px;" src="https://dbatools.io/thor.png" width=150></div>
          <div class="clearfix"></div>
          <div class="col-12">
             <div class="chart" id="Chart"></div>

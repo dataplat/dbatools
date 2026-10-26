@@ -105,8 +105,17 @@ function Get-DbaDbExtentDiff {
     process {
 
         foreach ($instance in $SqlInstance) {
+            # Connect-DbaInstance tells us whether it opened a connection for us. We must only close what we opened
+            # ourselves, because closing a connection of the caller takes their session with it. See #10554.
+            $isNewConnection = $false
+            $splatConnect = @{
+                SqlInstance              = $instance
+                SqlCredential            = $SqlCredential
+                NonPooledConnection      = $true
+                IsNewConnectionReference = [ref]$isNewConnection
+            }
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -NonPooledConnection
+                $server = Connect-DbaInstance @splatConnect
             } catch {
                 Stop-Function -Message "Error occurred while establishing connection to $instance" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
@@ -133,14 +142,17 @@ function Get-DbaDbExtentDiff {
             #Available from 2016 SP2
             if ($server.Version -ge [version]'13.0.5026') {
                 foreach ($db in $sourcedbs) {
+                    # The database is named in the query instead of running the query in the database, because
+                    # running it in the database leaves the connection there and it belongs to the caller. See #10555.
+                    $dbNameEscaped = $db.Name.Replace("]", "]]")
                     $DBCCPageQueryDMV = "
                         SELECT
                         SUM(total_page_count) / 8 AS [ExtentsTotal],
                         SUM(modified_extent_page_count) / 8 AS [ExtentsChanged],
                         100.0 * SUM(modified_extent_page_count)/SUM(total_page_count) AS [ChangedPerc]
-                        FROM sys.dm_db_file_space_usage
+                        FROM [$dbNameEscaped].sys.dm_db_file_space_usage
                     "
-                    $DBCCPageResults = $server.Query($DBCCPageQueryDMV, $db.Name)
+                    $DBCCPageResults = $server.Query($DBCCPageQueryDMV)
                     [PSCustomObject]@{
                         ComputerName   = $server.ComputerName
                         InstanceName   = $server.ServiceName
@@ -187,8 +199,10 @@ function Get-DbaDbExtentDiff {
                 }
             }
 
-            # Close non-pooled connection as this is not done automatically. If it is a reused Server SMO, connection will be opened again automatically on next request.
-            $null = $server | Disconnect-DbaInstance
+            if ($isNewConnection) {
+                # Close non-pooled connection as this is not done automatically.
+                $null = $server | Disconnect-DbaInstance
+            }
         }
     }
 }

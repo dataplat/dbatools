@@ -54,4 +54,32 @@ Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Maj
             "$($allCertificates.EnhancedKeyUsageList)" -match "1\.3\.6\.1\.5\.5\.7\.3\.1" | Should -Be $true
         }
     }
+
+    Context "Friendly name" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $friendlyName = "dbatoolsci_friendly_$(Get-Random)"
+            $friendlyCertificate = New-DbaComputerCertificate -SelfSigned -FriendlyName $friendlyName
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaComputerCertificate -Thumbprint $friendlyCertificate.Thumbprint -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "returns the friendly name as Name and as FriendlyName" {
+            # For a remote computer the FriendlyName arrives empty from the remoting serializer and the command
+            # restores it from Name; on this local run both come straight from the store. The remote path has
+            # no boundary in CI, so it was verified in the lab against a second computer, on both PowerShell editions.
+            $result = Get-DbaComputerCertificate -Thumbprint $friendlyCertificate.Thumbprint
+            $result.Name | Should -Be $friendlyName
+            $result.FriendlyName | Should -Be $friendlyName
+        }
+    }
 }

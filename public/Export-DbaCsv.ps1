@@ -93,6 +93,12 @@ function Export-DbaCsv {
     .PARAMETER NoClobber
         Prevents overwriting an existing file. Returns an error if the file already exists.
 
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
         This avoids overwhelming you with "sea of red" exceptions, but is inconvenient because it basically disables advanced scripting.
@@ -277,63 +283,98 @@ function Export-DbaCsv {
 
         # Process SQL queries
         foreach ($instance in $SqlInstance) {
+            # Connect-DbaInstance tells us whether it opened a connection for us. We must only close what we
+            # opened ourselves, because closing a connection of the caller takes their session with it (#10554).
+            $isNewConnection = $false
             try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -Database $Database
+                $splatConnect = @{
+                    SqlInstance              = $instance
+                    SqlCredential            = $SqlCredential
+                    Database                 = $Database
+                    IsNewConnectionReference = [ref]$isNewConnection
+                }
+                $server = Connect-DbaInstance @splatConnect
             } catch {
                 Stop-Function -Message "Failed to connect to $instance" -ErrorRecord $_ -Target $instance -Continue
             }
 
-            $sqlToExecute = $null
+            # The finally makes sure the connection is also closed when the export fails and the catch
+            # continues with the next instance, and when -WhatIf skips the export altogether.
+            $cmd = $null
+            $reader = $null
+            try {
+                $sqlToExecute = $null
 
-            if ($PSBoundParameters.Query) {
-                $sqlToExecute = $Query
-            } elseif ($PSBoundParameters.Table) {
-                # Parse table name using Get-ObjectNameParts so that bracketed names
-                # (e.g. [My.Table]) and two-part names (e.g. schema.[My.Table]) are
-                # handled correctly instead of relying on a naive dot-split regex.
-                $parsedTable = Get-ObjectNameParts -ObjectName $Table
-                if ($parsedTable.Parsed -and $parsedTable.Schema) {
-                    $schemaName = $parsedTable.Schema
-                    $tableName  = $parsedTable.Name
-                } elseif ($parsedTable.Parsed) {
-                    $schemaName = "dbo"
-                    $tableName  = $parsedTable.Name
-                } else {
-                    $schemaName = "dbo"
-                    $tableName  = $Table
+                if ($PSBoundParameters.Query) {
+                    $sqlToExecute = $Query
+                } elseif ($PSBoundParameters.Table) {
+                    # Parse table name using Get-ObjectNameParts so that bracketed names
+                    # (e.g. [My.Table]) and two-part names (e.g. schema.[My.Table]) are
+                    # handled correctly instead of relying on a naive dot-split regex.
+                    $parsedTable = Get-ObjectNameParts -ObjectName $Table
+                    if ($parsedTable.Parsed -and $parsedTable.Schema) {
+                        $schemaName = $parsedTable.Schema
+                        $tableName  = $parsedTable.Name
+                    } elseif ($parsedTable.Parsed) {
+                        $schemaName = "dbo"
+                        $tableName  = $parsedTable.Name
+                    } else {
+                        $schemaName = "dbo"
+                        $tableName  = $Table
+                    }
+                    $sqlToExecute = "SELECT * FROM [$schemaName].[$tableName]"
                 }
-                $sqlToExecute = "SELECT * FROM [$schemaName].[$tableName]"
-            }
 
 
-            if ($PSCmdlet.ShouldProcess($instance, "Exporting data to $Path")) {
-                try {
-                    Write-Message -Level Verbose -Message "Executing query on $instance"
+                if ($PSCmdlet.ShouldProcess($instance, "Exporting data to $Path")) {
+                    try {
+                        Write-Message -Level Verbose -Message "Executing query on $instance"
 
-                    # Execute query and get data reader
-                    $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
-                    $cmd.CommandText = $sqlToExecute
-                    $cmd.CommandTimeout = 0
+                        # Execute query and get data reader
+                        $cmd = $server.ConnectionContext.SqlConnectionObject.CreateCommand()
+                        $cmd.CommandText = $sqlToExecute
+                        $cmd.CommandTimeout = 0
 
-                    if ($server.ConnectionContext.SqlConnectionObject.State -ne "Open") {
-                        $server.ConnectionContext.SqlConnectionObject.Open()
+                        if ($server.ConnectionContext.SqlConnectionObject.State -ne "Open") {
+                            $server.ConnectionContext.SqlConnectionObject.Open()
+                        }
+
+                        $reader = $cmd.ExecuteReader()
+
+                        # Create writer if not already created
+                        if ($null -eq $writer) {
+                            $writer = New-Object Dataplat.Dbatools.Csv.Writer.CsvWriter($Path, $writerOptions)
+                        }
+
+                        # Write data from reader
+                        $rowsWritten += $writer.WriteFromReader($reader)
+
+                        $reader.Close()
+                        $reader.Dispose()
+
+                    } catch {
+                        Stop-Function -Message "Failed to export data from $instance" -ErrorRecord $_ -Target $instance -Continue
                     }
-
-                    $reader = $cmd.ExecuteReader()
-
-                    # Create writer if not already created
-                    if ($null -eq $writer) {
-                        $writer = New-Object Dataplat.Dbatools.Csv.Writer.CsvWriter($Path, $writerOptions)
+                }
+            } finally {
+                # The reader is only closed inside the try after a successful write. When the writer fails, the reader
+                # stays open on the connection with the rest of the rows unread. A connection the caller passed in is
+                # not disconnected below, so their next query on it fails because of the open reader.
+                if ($reader -and -not $reader.IsClosed) {
+                    try {
+                        # Cancel the command first: closing a reader with unread rows would otherwise drain the whole
+                        # remaining result set from the server before it returns.
+                        $cmd.Cancel()
+                        $reader.Close()
+                    } catch {
+                        Write-Message -Level Debug -Message "Failed to close the reader: $PSItem"
                     }
-
-                    # Write data from reader
-                    $rowsWritten += $writer.WriteFromReader($reader)
-
-                    $reader.Close()
-                    $reader.Dispose()
-
-                } catch {
-                    Stop-Function -Message "Failed to export data from $instance" -ErrorRecord $_ -Target $instance -Continue
+                }
+                if ($isNewConnection) {
+                    # -WhatIf:$false because this is ownership bookkeeping, not the user's operation:
+                    # Disconnect-DbaInstance supports ShouldProcess, so a propagated $WhatIfPreference
+                    # would skip the actual disconnect and leak the connection this command opened.
+                    $null = $server | Disconnect-DbaInstance -Verbose:$false -WhatIf:$false -Confirm:$false
                 }
             }
         }

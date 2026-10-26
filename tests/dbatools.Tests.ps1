@@ -29,6 +29,446 @@ Describe "$ModuleName Aliases" -Tag Aliases, Build {
     }
 }
 
+Describe "$ModuleName TEPP asynchronous cache" -Tag UnitTests {
+    <#
+    The asynchronous TEPP cache runspace imports a second copy of dbatools and reconnects to every
+    instance the session has touched, every few minutes, for as long as the session lives. A
+    scheduled task or a build agent never tab completes anything, so it gets those connections for
+    nothing. Importing the module must therefore register the runspace without starting it, and the
+    first tab completion must start it. Since a tab completion is now what starts it, both opt-outs
+    have to survive one rather than be undone by it, and anyone who wants the old start-at-import
+    behaviour back has to be able to ask for it.
+
+    These are read out of a fresh PowerShell, because the runspace starts at most once per process.
+    Asserting inside this one would depend on whether an earlier test file happened to start it.
+    #>
+    BeforeAll {
+        $ModulePath = Split-Path $PSScriptRoot -Parent
+
+        $teppProbePath = Join-Path ([System.IO.Path]::GetTempPath()) "dbatools-teppasync-$(Get-Random)"
+        $null = New-Item -Path $teppProbePath -ItemType Directory
+
+        # The probe lives in a file so nothing has to survive a round trip through nested command
+        # line quoting.
+        $teppProbeScript = Join-Path $teppProbePath "teppasync-probe.ps1"
+        Set-Content -Path $teppProbeScript -Value @'
+param(
+    $ModulePath
+)
+
+# Report on the module's behaviour, not on whatever this machine has persisted or exported. The
+# $global:dbatools_config scriptblock is invoked during import, after persisted configuration has
+# been read and well before the asynchronous cache script runs, so it decides the settings the
+# module imports with. Without it a contributor who has switched TEPP off would see these fail.
+Remove-Item -Path Env:\DBATOOLS_DISABLE_TEPP -ErrorAction SilentlyContinue
+$global:dbatools_config = {
+    Set-DbatoolsConfig -FullName "TabExpansion.Disable" -Value $false
+    Set-DbatoolsConfig -FullName "TabExpansion.Disable.Asynchronous" -Value $false
+}
+
+Import-Module (Join-Path $ModulePath "dbatools.psd1") -ErrorAction Stop
+
+Remove-Variable -Name dbatools_config -Scope Global
+
+function Get-AsyncCacheState {
+    $asyncCacheRunspace = [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"]
+    if ($null -eq $asyncCacheRunspace) {
+        return "NotRegistered"
+    }
+    return $asyncCacheRunspace.State
+}
+
+# Reported alongside the states so that a failure carries the settings that decide it.
+"TeppDisabled=$([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppDisabled)"
+"TeppAsyncDisabled=$([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppAsyncDisabled)"
+
+"AfterImport=$(Get-AsyncCacheState)"
+
+# TabExpansion2 is the completion entry point the console calls when someone presses Tab, so this
+# drives the real completer rather than reaching into the module.
+$teppCompletionInput = "Get-DbaDatabase -Database "
+$null = TabExpansion2 -inputScript $teppCompletionInput -cursorColumn $teppCompletionInput.Length
+
+"AfterCompletion=$(Get-AsyncCacheState)"
+
+# Someone who switches the cache off has to stay switched off. Now that a tab completion is what
+# starts the runspace, the opt-out has to survive one rather than be undone by it.
+Set-DbatoolsConfig -FullName "TabExpansion.Disable.Asynchronous" -Value $true
+
+"AfterOptOut=$(Get-AsyncCacheState)"
+
+$null = TabExpansion2 -inputScript $teppCompletionInput -cursorColumn $teppCompletionInput.Length
+
+"AfterOptOutCompletion=$(Get-AsyncCacheState)"
+
+# Switching it back on must not start it either, since enabling TEPP and starting the cache are
+# separate decisions now. The completion after it has to work, so that a container which has
+# already run once can be started again rather than being spent.
+Set-DbatoolsConfig -FullName "TabExpansion.Disable.Asynchronous" -Value $false
+
+"AfterReEnable=$(Get-AsyncCacheState)"
+
+$null = TabExpansion2 -inputScript $teppCompletionInput -cursorColumn $teppCompletionInput.Length
+
+"AfterReEnableCompletion=$(Get-AsyncCacheState)"
+
+# The global switch is the one most people reach for and it runs a different handler, so it gets
+# its own case. The asynchronous switch is on at this point, so the global one holds on its own.
+Set-DbatoolsConfig -FullName "TabExpansion.Disable" -Value $true
+
+$null = TabExpansion2 -inputScript $teppCompletionInput -cursorColumn $teppCompletionInput.Length
+
+"AfterGlobalDisableCompletion=$(Get-AsyncCacheState)"
+'@
+
+        $teppProbeHost = (Get-Process -Id $PID).Path
+        $teppProbeOutput = & $teppProbeHost -NoProfile -NonInteractive -File $teppProbeScript -ModulePath $ModulePath 2>&1
+
+        $teppImportLine = $teppProbeOutput | Where-Object { $PSItem -match "^AfterImport=" }
+        $teppReEnableLine = $teppProbeOutput | Where-Object { $PSItem -match "^AfterReEnable=" }
+        $teppCompletionLine = $teppProbeOutput | Where-Object { $PSItem -match "^AfterCompletion=" }
+        $teppOptOutLine = $teppProbeOutput | Where-Object { $PSItem -match "^AfterOptOut=" }
+        $teppOptOutCompletionLine = $teppProbeOutput | Where-Object { $PSItem -match "^AfterOptOutCompletion=" }
+        $teppReEnableCompletionLine = $teppProbeOutput | Where-Object { $PSItem -match "^AfterReEnableCompletion=" }
+        $teppGlobalDisableLine = $teppProbeOutput | Where-Object { $PSItem -match "^AfterGlobalDisableCompletion=" }
+        $stateAfterImport = "$teppImportLine" -replace "^AfterImport=", ""
+        $stateAfterReEnable = "$teppReEnableLine" -replace "^AfterReEnable=", ""
+        $stateAfterReEnableCompletion = "$teppReEnableCompletionLine" -replace "^AfterReEnableCompletion=", ""
+        $stateAfterCompletion = "$teppCompletionLine" -replace "^AfterCompletion=", ""
+        $stateAfterOptOut = "$teppOptOutLine" -replace "^AfterOptOut=", ""
+        $stateAfterOptOutCompletion = "$teppOptOutCompletionLine" -replace "^AfterOptOutCompletion=", ""
+        $stateAfterGlobalDisable = "$teppGlobalDisableLine" -replace "^AfterGlobalDisableCompletion=", ""
+
+        # Starting at import is an import-time decision, so the opt-in needs a process of its own.
+        $teppStartProbeScript = Join-Path $teppProbePath "teppasync-startonimport-probe.ps1"
+        Set-Content -Path $teppStartProbeScript -Value @'
+param(
+    $ModulePath
+)
+
+Remove-Item -Path Env:\DBATOOLS_DISABLE_TEPP -ErrorAction SilentlyContinue
+$global:dbatools_config = {
+    Set-DbatoolsConfig -FullName "TabExpansion.Disable" -Value $false
+    Set-DbatoolsConfig -FullName "TabExpansion.Disable.Asynchronous" -Value $false
+    Set-DbatoolsConfig -FullName "TabExpansion.Asynchronous.StartOnImport" -Value $true
+}
+
+Import-Module (Join-Path $ModulePath "dbatools.psd1") -ErrorAction Stop
+
+Remove-Variable -Name dbatools_config -Scope Global
+
+$asyncCacheRunspace = [Dataplat.Dbatools.Runspace.RunspaceHost]::Runspaces["dbatools-teppasynccache"]
+if ($null -eq $asyncCacheRunspace) {
+    "AfterImport=NotRegistered"
+} else {
+    "AfterImport=$($asyncCacheRunspace.State)"
+}
+'@
+
+        $teppStartProbeOutput = & $teppProbeHost -NoProfile -NonInteractive -File $teppStartProbeScript -ModulePath $ModulePath 2>&1
+
+        $teppStartImportLine = $teppStartProbeOutput | Where-Object { $PSItem -match "^AfterImport=" }
+        $stateStartOnImport = "$teppStartImportLine" -replace "^AfterImport=", ""
+    }
+
+    AfterAll {
+        Remove-Item -Path $teppProbePath -Recurse -ErrorAction SilentlyContinue
+    }
+
+    It "registers the asynchronous cache runspace on import" {
+        # A missing runspace would let the next assertion pass for the wrong reason.
+        $stateAfterImport | Should -Not -Be "NotRegistered" -Because "the probe reported: $teppProbeOutput"
+    }
+
+    It "does not start the asynchronous cache runspace on import" {
+        $stateAfterImport | Should -Be "Stopped" -Because "the probe reported: $teppProbeOutput"
+    }
+
+    It "starts the asynchronous cache runspace on the first tab completion" {
+        $stateAfterCompletion | Should -Be "Running" -Because "the probe reported: $teppProbeOutput"
+    }
+
+    It "stops the asynchronous cache runspace when it is switched off" {
+        $stateAfterOptOut | Should -Be "Stopped" -Because "the probe reported: $teppProbeOutput"
+    }
+
+    It "does not restart the asynchronous cache runspace once it is switched off" {
+        $stateAfterOptOutCompletion | Should -Be "Stopped" -Because "the probe reported: $teppProbeOutput"
+    }
+
+    It "does not start the asynchronous cache runspace when it is switched back on" {
+        $stateAfterReEnable | Should -Be "Stopped" -Because "the probe reported: $teppProbeOutput"
+    }
+
+    It "starts the asynchronous cache runspace again after it has been switched back on" {
+        $stateAfterReEnableCompletion | Should -Be "Running" -Because "the probe reported: $teppProbeOutput"
+    }
+
+    It "does not start the asynchronous cache runspace while TEPP is globally disabled" {
+        $stateAfterGlobalDisable | Should -Be "Stopped" -Because "the probe reported: $teppProbeOutput"
+    }
+
+    It "starts the asynchronous cache runspace on import when asked to" {
+        $stateStartOnImport | Should -Be "Running" -Because "the probe reported: $teppStartProbeOutput"
+    }
+}
+
+Describe "$ModuleName maintenance runspace" -Tag UnitTests {
+    <#
+    The maintenance runspace imports a second copy of dbatools a few seconds after Import-Module.
+    Nobody tab completes in a background runspace, so that import has to skip TEPP. The runspace
+    says so with $global:disablerunspacetepp, because the module cannot see the script scope of
+    the code that imports it.
+
+    This is read out of a fresh PowerShell, like the asynchronous cache above. A maintenance task
+    runs inside the runspace and writes down what its copy of the module loaded.
+    #>
+    BeforeAll {
+        $ModulePath = Split-Path $PSScriptRoot -Parent
+
+        $maintenanceProbePath = Join-Path ([System.IO.Path]::GetTempPath()) "dbatools-maintenance-$(Get-Random)"
+        $null = New-Item -Path $maintenanceProbePath -ItemType Directory
+
+        $maintenanceProbeScript = Join-Path $maintenanceProbePath "maintenance-probe.ps1"
+        Set-Content -Path $maintenanceProbeScript -Value @'
+param(
+    $ModulePath,
+    $ResultPath
+)
+
+# Both switches would keep the part under test from loading at all.
+Remove-Item -Path Env:\DBATOOLS_DISABLE_TEPP -ErrorAction SilentlyContinue
+Remove-Item -Path Env:\DBATOOLS_DISABLE_LOGGING -ErrorAction SilentlyContinue
+
+Import-Module (Join-Path $ModulePath "dbatools.psd1") -ErrorAction Stop
+$module = Get-Module dbatools
+
+# The import of the session itself, so that a probe which cannot see TEPP at all fails instead of passing.
+& $module { $script:dbatools_ImportPerformance.Action } | ForEach-Object { "Session=$PSItem" }
+
+$taskScript = [ScriptBlock]::Create("& (Get-Module dbatools) { `$script:dbatools_ImportPerformance.Action } | Set-Content -Path `"$ResultPath`"")
+& $module { param($TaskScript) Register-DbaMaintenanceTask -Name "dbatoolsci_maintenance_probe" -ScriptBlock $TaskScript -Once } $taskScript
+
+$deadline = (Get-Date).AddSeconds(120)
+while (-not (Test-Path -Path $ResultPath) -and (Get-Date) -lt $deadline) {
+    Start-Sleep -Milliseconds 500
+}
+# The task writes the file, so give it a moment to finish.
+Start-Sleep -Seconds 1
+Get-Content -Path $ResultPath -ErrorAction SilentlyContinue | ForEach-Object { "Maintenance=$PSItem" }
+'@
+
+        $maintenanceResultPath = Join-Path $maintenanceProbePath "maintenance-result.txt"
+        $maintenanceProbeHost = (Get-Process -Id $PID).Path
+        $maintenanceProbeOutput = & $maintenanceProbeHost -NoProfile -NonInteractive -File $maintenanceProbeScript -ModulePath $ModulePath -ResultPath $maintenanceResultPath 2>&1
+
+        $sessionActions = $maintenanceProbeOutput | Where-Object { $PSItem -match "^Session=" } | ForEach-Object { "$PSItem" -replace "^Session=", "" }
+        $maintenanceActions = $maintenanceProbeOutput | Where-Object { $PSItem -match "^Maintenance=" } | ForEach-Object { "$PSItem" -replace "^Maintenance=", "" }
+    }
+
+    AfterAll {
+        Remove-Item -Path $maintenanceProbePath -Recurse -ErrorAction SilentlyContinue
+    }
+
+    It "loads TEPP in the session" {
+        $sessionActions | Should -Contain "Loading TEPP" -Because "the probe reported: $maintenanceProbeOutput"
+    }
+
+    It "runs the maintenance task that reports the import of the maintenance runspace" {
+        $maintenanceActions | Should -Contain "Loading Script: Maintenance" -Because "the probe reported: $maintenanceProbeOutput"
+    }
+
+    It "does not load TEPP in the maintenance runspace" {
+        $maintenanceActions | Should -Not -Contain "Loading TEPP" -Because "the probe reported: $maintenanceProbeOutput"
+        $maintenanceActions | Should -Not -Contain "Loading Script: Asynchronous TEPP Cache" -Because "the probe reported: $maintenanceProbeOutput"
+    }
+}
+
+Describe "$ModuleName maintenance task tempcleanup" -Tag UnitTests {
+    <#
+    The task runs one minute after every import, in every process, and removes dbatools* items from the temp folder.
+    Items that are still in use by a running command or test of any process must survive it, and so must the export
+    folder that falls back to the temp folder when the account has no Documents folder.
+
+    A fresh PowerShell points TEMP at a scenario folder and runs the registered task there, so the real temp folder
+    and the maintenance task of this process stay out of it. The probe folder must not be named dbatools* itself.
+    Every Context is one run of the task in a scenario folder of its own, with the export path in another spelling.
+    #>
+    BeforeAll {
+        $ModulePath = Split-Path $PSScriptRoot -Parent
+
+        $cleanupProbePath = Join-Path ([System.IO.Path]::GetTempPath()) "tempcleanup_dbatoolsci_$(Get-Random)"
+        $null = New-Item -Path $cleanupProbePath -ItemType Directory
+        $cleanupStaleTime = (Get-Date).AddDays(-2)
+
+        $cleanupProbeScript = Join-Path $cleanupProbePath "cleanup-probe.ps1"
+        Set-Content -Path $cleanupProbeScript -Value @'
+param(
+    $ModulePath,
+    $TempPath,
+    $ExportPath
+)
+
+$Env:TEMP = $TempPath
+Import-Module (Join-Path $ModulePath "dbatools.psd1") -ErrorAction Stop
+Set-DbatoolsConfig -FullName "Path.DbatoolsExport" -Value $ExportPath
+& ([Dataplat.Dbatools.Maintenance.MaintenanceHost]::Tasks["tempcleanup"].ScriptBlock)
+"Done"
+'@
+
+        $cleanupProbeHost = (Get-Process -Id $PID).Path
+
+        function Invoke-TempCleanupProbe {
+            param (
+                [string]$TempPath,
+                [string]$ExportPath
+            )
+            $splatProbe = @{
+                ModulePath = $ModulePath
+                TempPath   = $TempPath
+                ExportPath = $ExportPath
+            }
+            & $cleanupProbeHost -NoProfile -NonInteractive -File $cleanupProbeScript @splatProbe 2>&1
+        }
+
+        # A folder with a stale file in it, the way a user export or a crashed run leaves it behind.
+        function New-TempCleanupStaleFolder {
+            param (
+                [string]$Path
+            )
+            $staleFolder = New-Item -Path $Path -ItemType Directory -Force
+            $staleFile = New-Item -Path (Join-Path $staleFolder.FullName "export.sql") -ItemType File
+            $staleFile.LastWriteTime = $cleanupStaleTime
+            $staleFolder.LastWriteTime = $cleanupStaleTime
+            $staleFolder
+        }
+    }
+
+    AfterAll {
+        Remove-Item -Path $cleanupProbePath -Recurse -ErrorAction SilentlyContinue
+    }
+
+    Context "The export folder is spelled like the temp folder" {
+        BeforeAll {
+            $samePath = Join-Path $cleanupProbePath "same-spelling"
+            $null = New-Item -Path $samePath -ItemType Directory
+
+            $freshFolder = New-Item -Path (Join-Path $samePath "dbatools-fresh-folder") -ItemType Directory
+            $null = New-Item -Path (Join-Path $freshFolder.FullName "in-use.txt") -ItemType File
+            $freshFile = New-Item -Path (Join-Path $samePath "dbatools-fresh.sql") -ItemType File
+
+            $staleFolder = New-TempCleanupStaleFolder -Path (Join-Path $samePath "dbatools-stale-folder")
+            $staleFile = New-Item -Path (Join-Path $samePath "dbatools-stale.sql") -ItemType File
+            $staleFile.LastWriteTime = $cleanupStaleTime
+
+            # The same folder the fallback of paths.ps1 picks when the account has no Documents folder.
+            $exportFolder = New-TempCleanupStaleFolder -Path (Join-Path $samePath "DbatoolsExport")
+
+            $otherFile = New-Item -Path (Join-Path $samePath "other-stale.txt") -ItemType File
+            $otherFile.LastWriteTime = $cleanupStaleTime
+
+            $sameOutput = Invoke-TempCleanupProbe -TempPath $samePath -ExportPath $exportFolder.FullName
+        }
+
+        It "runs the task" {
+            $sameOutput | Should -Contain "Done" -Because "the probe reported: $sameOutput"
+        }
+
+        It "keeps dbatools* items that were written to recently" {
+            Join-Path $freshFolder.FullName "in-use.txt" | Should -Exist
+            $freshFile.FullName | Should -Exist
+        }
+
+        It "removes dbatools* items that were not written to for more than a day" {
+            $staleFolder.FullName | Should -Not -Exist
+            $staleFile.FullName | Should -Not -Exist
+        }
+
+        It "keeps the export folder even when it is stale" {
+            Join-Path $exportFolder.FullName "export.sql" | Should -Exist
+        }
+
+        It "keeps items that are not named dbatools*" {
+            $otherFile.FullName | Should -Exist
+        }
+    }
+
+    Context "The export path is spelled with forward slashes" {
+        BeforeAll {
+            $slashPath = Join-Path $cleanupProbePath "forward-slashes"
+            $slashExportFolder = New-TempCleanupStaleFolder -Path (Join-Path $slashPath "DbatoolsExport")
+            $slashStaleFolder = New-TempCleanupStaleFolder -Path (Join-Path $slashPath "dbatools-stale-folder")
+
+            $slashOutput = Invoke-TempCleanupProbe -TempPath $slashPath -ExportPath ($slashExportFolder.FullName -replace "\\", "/")
+        }
+
+        It "keeps the export folder" {
+            Join-Path $slashExportFolder.FullName "export.sql" | Should -Exist -Because "the probe reported: $slashOutput"
+        }
+
+        It "removes the other stale dbatools* items" {
+            $slashStaleFolder.FullName | Should -Not -Exist -Because "the probe reported: $slashOutput"
+        }
+    }
+
+    Context "The export folder is below a stale dbatools* folder" {
+        BeforeAll {
+            $nestedPath = Join-Path $cleanupProbePath "nested"
+            $nestedExportFolder = New-TempCleanupStaleFolder -Path (Join-Path $nestedPath "dbatools-work\exports")
+            $nestedParentFolder = $nestedExportFolder.Parent
+            $nestedParentFolder.LastWriteTime = $cleanupStaleTime
+            $nestedStaleFolder = New-TempCleanupStaleFolder -Path (Join-Path $nestedPath "dbatools-stale-folder")
+
+            $nestedOutput = Invoke-TempCleanupProbe -TempPath $nestedPath -ExportPath $nestedExportFolder.FullName
+        }
+
+        It "keeps the dbatools* folder that holds the export folder" {
+            Join-Path $nestedExportFolder.FullName "export.sql" | Should -Exist -Because "the probe reported: $nestedOutput"
+        }
+
+        It "removes the other stale dbatools* items" {
+            $nestedStaleFolder.FullName | Should -Not -Exist -Because "the probe reported: $nestedOutput"
+        }
+    }
+
+    Context "The export path is spelled with short 8.3 names" {
+        BeforeAll {
+            # TEMP often holds a short name like C:\Users\ADMIN~1.ORD, so an export path built from it has one too,
+            # while Get-ChildItem reports the long names. The space makes Windows give the folder a short name of its own.
+            $shortLongPath = Join-Path $cleanupProbePath "short name probe"
+            $shortExportFolder = New-TempCleanupStaleFolder -Path (Join-Path $shortLongPath "DbatoolsExport")
+            $shortStaleFolder = New-TempCleanupStaleFolder -Path (Join-Path $shortLongPath "dbatools-stale-folder")
+
+            $shortPath = $null
+            try {
+                $shortPath = (New-Object -ComObject Scripting.FileSystemObject).GetFolder($shortLongPath).ShortPath
+            } catch {
+                # No FileSystemObject outside of Windows, and no short names there either.
+            }
+            $shortNamesExist = $shortPath -and $shortPath -ne $shortLongPath
+            if ($shortNamesExist) {
+                $shortOutput = Invoke-TempCleanupProbe -TempPath $shortLongPath -ExportPath (Join-Path $shortPath "DbatoolsExport")
+            }
+        }
+
+        It "keeps the export folder" {
+            if (-not $shortNamesExist) {
+                Set-ItResult -Skipped -Because "the volume of the temp folder creates no short 8.3 names"
+                return
+            }
+            Join-Path $shortExportFolder.FullName "export.sql" | Should -Exist -Because "the probe reported: $shortOutput"
+        }
+
+        It "removes the other stale dbatools* items" {
+            if (-not $shortNamesExist) {
+                Set-ItResult -Skipped -Because "the volume of the temp folder creates no short 8.3 names"
+                return
+            }
+            $shortStaleFolder.FullName | Should -Not -Exist -Because "the probe reported: $shortOutput"
+        }
+    }
+}
+
 Describe "$ModuleName style" -Tag Compliance {
     <#
     Ensures common formatting standards are applied:
@@ -188,6 +628,1330 @@ Describe "$ModuleName Function Name" -Tag Compliance {
         }
 
         $functionNameDbaErrors | Should -BeNullOrEmpty
+    }
+}
+
+Describe "$ModuleName test file structure" -Tag Compliance {
+    <#
+    Static checks over tests\*.Tests.ps1, so that a test file that cannot do its job is caught here
+    rather than by someone eventually noticing.
+
+    Several of these are not style. A loop that emits It blocks, a -ForEach fed from a BeforeAll and
+    an assertion that is never piped to Should all produce a green test report while testing nothing
+    at all - Update-DbaInstance.Tests.ps1 carried 44 such tests for years.
+
+    The findings are collected per rule rather than asserted per file. The per-file form produces one
+    test result for every rule and every file, which is 14000 results and two and a half minutes; the
+    failure message still names every file it found.
+
+    The checks tagged Goal are the ones the tree does not meet yet, so they are skipped unless
+    $env:DbatoolsTestFileGoals is set. To work on that backlog:
+        $env:DbatoolsTestFileGoals = 1
+        Invoke-Pester -Path .\tests\dbatools.Tests.ps1 -TagFilter Compliance
+    #>
+    BeforeDiscovery {
+        # -Skip: is read while the tests are discovered, so the switch cannot come from a BeforeAll.
+        $includeGoals = [bool]$env:DbatoolsTestFileGoals
+    }
+
+    BeforeAll {
+        $ModulePath = Split-Path $PSScriptRoot -Parent
+
+        # The only files in tests\ that are not the test of a single command, so the only ones that
+        # cannot follow the layout. Everything else - including the tests of private functions like
+        # Stop-Function - can and does.
+        $notACommandTest = @(
+            "appveyor.common.Tests.ps1",
+            "appveyor.watchdog.Tests.ps1",
+            "dbatools.Tests.ps1",
+            "InModule.Commands.Tests.ps1",
+            "InModule.Help.Tests.ps1"
+        )
+
+        $parseErrorFiles = @()
+        $paramBlockFiles = @()
+        $topLevelFiles = @()
+        $noUnitTestFiles = @()
+        $loopBuiltTests = @()
+        $unbalancedEnableException = @()
+        $discardedComparisons = @()
+        $forEachNotFromDiscovery = @()
+        $stringSkips = @()
+        $quotedCommandNames = @()
+        $oldInstanceNames = @()
+        $backtickContinuations = @()
+        $plainSplats = @()
+        $missingEnableException = @()
+        $mocksWithoutModuleName = @()
+        $integrationWithoutCleanup = @()
+        $tempWithoutRandom = @()
+        $underscoreVariables = @()
+        $bareSkips = @()
+
+        $testFiles = Get-ChildItem -Path "$ModulePath\tests\*.Tests.ps1" | Sort-Object -Property Name
+
+        foreach ($testFile in $testFiles) {
+            $isCommandTest = $testFile.Name -notin $notACommandTest
+            # Get-DbaFoo.Tests.ps1 tests Get-DbaFoo, and so does the supplementary
+            # Get-DbaFoo.Something.Tests.ps1 - which is why the command name is the first segment.
+            $commandName = $testFile.Name -replace "^([^.]+)(.+)?\.Tests\.ps1$", "`$1"
+            $isSupplementary = $testFile.Name -notmatch "^[^.]+\.Tests\.ps1$"
+
+            $tokens = $null
+            $errors = $null
+            $ast = [System.Management.Automation.Language.Parser]::ParseFile($testFile.FullName, [ref]$tokens, [ref]$errors)
+            if ($errors) {
+                $parseErrorFiles += "$($testFile.Name): $($errors.Count) parse errors, first at line $($errors[0].Extent.StartLineNumber)"
+                continue
+            }
+
+            # One walk over the tree rather than one per rule. The walk is what this Describe spends
+            # its time on, so the nodes are collected once and then filtered in memory.
+            $allNodes = $ast.FindAll({
+                    $args[0] -is [System.Management.Automation.Language.CommandAst] -or
+                    $args[0] -is [System.Management.Automation.Language.LoopStatementAst]
+                }, $true)
+            $commandNodes = @($allNodes | Where-Object { $PSItem -is [System.Management.Automation.Language.CommandAst] })
+            $loopNodes = @($allNodes | Where-Object { $PSItem -is [System.Management.Automation.Language.LoopStatementAst] })
+
+            $describeNodes = @($commandNodes | Where-Object { $PSItem.CommandElements[0].Value -eq "Describe" })
+            $blockNodes = @($commandNodes | Where-Object { $PSItem.CommandElements[0].Value -in "Describe", "Context", "It" })
+            $itNodes = @($commandNodes | Where-Object { $PSItem.CommandElements[0].Value -eq "It" })
+            $mockNodes = @($commandNodes | Where-Object { $PSItem.CommandElements[0].Value -eq "Mock" })
+            $inModuleScopeNodes = @($commandNodes | Where-Object { $PSItem.CommandElements[0].Value -eq "InModuleScope" })
+            $beforeDiscoveryNodes = @($commandNodes | Where-Object { $PSItem.CommandElements[0].Value -eq "BeforeDiscovery" })
+
+            # Returns every tag of a block, handling -Tag and its alias -Tags, the -Tag:Value form,
+            # and both a single value and an array literal. Reading only "-Tag <bareword>" missed
+            # "-Tags IntegrationTests" and "-Tag UnitTests, 'Something'", and a block missed here
+            # silently skipped the checks below instead of running them.
+            $tagsOf = {
+                param($CommandAst)
+                $elements = $CommandAst.CommandElements
+                for ($i = 0; $i -lt $elements.Count; $i++) {
+                    if ($elements[$i] -isnot [System.Management.Automation.Language.CommandParameterAst]) { continue }
+                    if ($elements[$i].ParameterName -notin "Tag", "Tags") { continue }
+                    # -Tag:Value binds the value to the parameter itself, -Tag Value puts it next
+                    $value = $elements[$i].Argument
+                    if (-not $value -and $i -lt $elements.Count - 1) { $value = $elements[$i + 1] }
+                    if ($value -is [System.Management.Automation.Language.ArrayLiteralAst]) {
+                        return @($value.Elements.Value)
+                    }
+                    return @($value.Value)
+                }
+            }
+
+            $unitTestBlocks = @($describeNodes | Where-Object { "UnitTests" -in (& $tagsOf $PSItem) })
+            $integrationTestBlocks = @($describeNodes | Where-Object { "IntegrationTests" -in (& $tagsOf $PSItem) })
+
+            if ($isCommandTest) {
+                $paramBlockParameters = $ast.ParamBlock.Parameters
+                $paramNames = $paramBlockParameters.Name.VariablePath.UserPath
+                $declaredCommandName = ($paramBlockParameters | Where-Object { $PSItem.Name.VariablePath.UserPath -eq "CommandName" }).DefaultValue.Value
+                $declaredModuleName = ($paramBlockParameters | Where-Object { $PSItem.Name.VariablePath.UserPath -eq "ModuleName" }).DefaultValue.Value
+                $declaredDefaults = ($paramBlockParameters | Where-Object { $PSItem.Name.VariablePath.UserPath -eq "PSDefaultParameterValues" }).DefaultValue.Extent.Text
+                # A supplementary file may name either the command or its own basename, both of
+                # which are unambiguous - Connect-DbaInstance.WindowsSspi.Tests.ps1 tests
+                # Connect-DbaInstance, appveyor.watchdog.Tests.ps1 tests appveyor.watchdog.
+                $allowedCommandNames = @($commandName, ($testFile.Name -replace "\.Tests\.ps1$", ""))
+                if ($paramBlockParameters.Count -ne 3 -or
+                    "ModuleName" -notin $paramNames -or
+                    "CommandName" -notin $paramNames -or
+                    "PSDefaultParameterValues" -notin $paramNames -or
+                    $declaredModuleName -ne "dbatools" -or
+                    $declaredCommandName -notin $allowedCommandNames -or
+                    $declaredDefaults -ne "`$TestConfig.Defaults") {
+                    $paramBlockFiles += $testFile.Name
+                }
+
+                # No dot sourcing: a private function does not need it, because a checkout has no
+                # dbatools.dat and the psm1 then exports every function, private ones included.
+                $allowedTopLevel = @("Describe", "InModuleScope", "BeforeDiscovery")
+                $topLevelStatements = $ast.EndBlock.Statements
+                $notACommand = @($topLevelStatements | Where-Object { $PSItem.PipelineElements[0] -isnot [System.Management.Automation.Language.CommandAst] })
+                # Note the ForEach-Object: the CommandElements of all statements flatten into a
+                # single list, so indexing [0] into that returns the first element of the first
+                # command and nothing else, and a top level Write-Host passes.
+                $topLevelNames = $topLevelStatements.PipelineElements |
+                    Where-Object { $PSItem -is [System.Management.Automation.Language.CommandAst] } |
+                    ForEach-Object { $PSItem.CommandElements[0].Value }
+                $otherCommands = @($topLevelNames | Where-Object { $PSItem -notin $allowedTopLevel })
+                if ($notACommand -or $otherCommands) {
+                    $topLevelFiles += "$($testFile.Name): $(@($notACommand).Count) statements that are not commands, $(@($otherCommands | Sort-Object -Unique) -join ", ")"
+                }
+
+                # A supplementary file adds integration coverage to a command whose unit tests live
+                # in its own file, so it does not need a UnitTests Describe of its own.
+                if (-not $unitTestBlocks -and -not $isSupplementary) {
+                    $noUnitTestFiles += $testFile.Name
+                }
+            }
+
+            # A loop that builds test blocks runs while Pester discovers the tests, and its variables
+            # no longer exist when the bodies run. The generated tests are either missing entirely or
+            # assert nothing, and in both cases the test report looks healthy. InModule.Help.Tests.ps1
+            # was the one file this had to be relaxed for, and it produced zero tests for years - it
+            # is fixed now, so the check applies to every file again.
+            foreach ($loop in $loopNodes) {
+                $blocksInLoop = @($blockNodes | Where-Object {
+                        $PSItem.Extent.StartOffset -ge $loop.Extent.StartOffset -and
+                        $PSItem.Extent.EndOffset -le $loop.Extent.EndOffset
+                    })
+                if ($blocksInLoop) {
+                    $loopBuiltTests += "$($testFile.Name):$($loop.Extent.StartLineNumber)"
+                }
+            }
+
+            # A statement inside an It that computes a comparison and throws the result away. It
+            # reads like an assertion, it runs, and it can never fail. Only comparisons are flagged,
+            # a bare method call is usually a deliberate side effect.
+            foreach ($itNode in $itNodes) {
+                $body = $itNode.CommandElements | Where-Object { $PSItem -is [System.Management.Automation.Language.ScriptBlockExpressionAst] } | Select-Object -First 1
+                if (-not $body) { continue }
+                foreach ($statement in $body.ScriptBlock.EndBlock.Statements) {
+                    if ($statement -isnot [System.Management.Automation.Language.PipelineAst]) { continue }
+                    if ($statement.PipelineElements.Count -ne 1) { continue }
+                    $element = $statement.PipelineElements[0]
+                    if ($element -isnot [System.Management.Automation.Language.CommandExpressionAst]) { continue }
+                    if ($element.Expression -is [System.Management.Automation.Language.BinaryExpressionAst]) {
+                        $discardedComparisons += "$($testFile.Name):$($statement.Extent.StartLineNumber): $($statement.Extent.Text)"
+                    }
+                }
+            }
+
+            # -ForEach is read at discovery, so its cases have to be built in a BeforeDiscovery. Fed
+            # from a BeforeAll the variable is still empty at discovery and the block produces no
+            # tests at all - the same failure as a foreach loop around It, spelled differently.
+            $discoveryVariables = @()
+            foreach ($beforeDiscovery in $beforeDiscoveryNodes) {
+                $discoveryVariables += $beforeDiscovery.FindAll({ $args[0] -is [System.Management.Automation.Language.AssignmentStatementAst] }, $true) |
+                    ForEach-Object { $PSItem.Left.Extent.Text.TrimStart("`$") }
+            }
+            foreach ($block in $blockNodes) {
+                $elements = $block.CommandElements
+                for ($i = 0; $i -lt $elements.Count; $i++) {
+                    if ($elements[$i] -isnot [System.Management.Automation.Language.CommandParameterAst]) { continue }
+                    if ($elements[$i].ParameterName -ne "ForEach") { continue }
+                    $value = $elements[$i].Argument
+                    if (-not $value -and $i -lt $elements.Count - 1) { $value = $elements[$i + 1] }
+                    if ($value -is [System.Management.Automation.Language.VariableExpressionAst] -and $value.VariablePath.UserPath -notin $discoveryVariables) {
+                        $forEachNotFromDiscovery += "$($testFile.Name):$($block.Extent.StartLineNumber): $($block.CommandElements[0].Value) $($block.CommandElements[1].Extent.Text)"
+                    }
+                }
+            }
+
+            # Blocks switched off with a bare -Skip, so no condition can ever switch them back on.
+            # Not wrong in itself, but nothing makes it visible afterwards, and Update-DbaInstance
+            # hid 69 unit tests behind one for two years.
+            foreach ($block in $blockNodes) {
+                $bareSkip = $block.CommandElements | Where-Object {
+                    $PSItem -is [System.Management.Automation.Language.CommandParameterAst] -and
+                    $PSItem.ParameterName -eq "Skip" -and -not $PSItem.Argument
+                }
+                if ($bareSkip) {
+                    $bareSkips += "$($testFile.Name):$($block.Extent.StartLineNumber): $($block.CommandElements[0].Value) $($block.CommandElements[1].Extent.Text)"
+                }
+            }
+
+            # A Mock without -ModuleName does not apply to the code inside the module, so the command
+            # under test runs unmocked while the test looks like it is isolated. Only mocks inside an
+            # InModuleScope are already in the right scope.
+            foreach ($mockNode in $mockNodes) {
+                $hasModuleName = $mockNode.CommandElements | Where-Object {
+                    $PSItem -is [System.Management.Automation.Language.CommandParameterAst] -and $PSItem.ParameterName -eq "ModuleName"
+                }
+                if ($hasModuleName) { continue }
+                $insideInModuleScope = $inModuleScopeNodes | Where-Object {
+                    $mockNode.Extent.StartOffset -ge $PSItem.Extent.StartOffset -and
+                    $mockNode.Extent.EndOffset -le $PSItem.Extent.EndOffset
+                }
+                if (-not $insideInModuleScope) {
+                    $mocksWithoutModuleName += "$($testFile.Name):$($mockNode.Extent.StartLineNumber)"
+                }
+            }
+
+            # An integration Describe that creates objects on the instance but has no AfterAll
+            # anywhere. A heuristic - some of these clean up in a way this cannot see - so it is a
+            # Goal and only reports.
+            foreach ($describeNode in $integrationTestBlocks) {
+                if ($describeNode.Extent.Text -match "New-Dba|Backup-Dba|New-Item" -and $describeNode.Extent.Text -notmatch "AfterAll") {
+                    $integrationWithoutCleanup += "$($testFile.Name):$($describeNode.Extent.StartLineNumber)"
+                }
+            }
+
+            $content = Get-Content -Path $testFile.FullName
+
+            # The setup of the integration tests has to run with EnableException so that the test
+            # fails loudly if the setup fails, instead of testing against a broken state. Where the
+            # two statements are placed is deliberately not tested - both of these are in use:
+            #   BeforeAll { enable ... remove } and AfterAll { enable ... }
+            #   BeforeAll { enable ... }        and AfterAll { ... remove }
+            # What always has to hold is that every enable is matched by a remove, because
+            # $PSDefaultParameterValues is the object from $TestConfig.Defaults and an enable left
+            # behind carries into whatever runs next in the same session.
+            $enableCount = ($content -match [regex]::Escape("`$PSDefaultParameterValues[`"*-Dba*:EnableException`"] = `$true")).Count
+            $removeCount = ($content -match [regex]::Escape("`$PSDefaultParameterValues.Remove(`"*-Dba*:EnableException`")")).Count
+            if ($integrationTestBlocks) {
+                if ($enableCount -ne $removeCount) {
+                    $unbalancedEnableException += "$($testFile.Name): $enableCount enabled, $removeCount removed"
+                }
+                if ($enableCount -eq 0) {
+                    $missingEnableException += $testFile.Name
+                }
+            }
+
+            # Every one of these is wrapped in @() because -match against $null returns the boolean
+            # $false rather than an empty array, and $false is not empty - the check would then fail
+            # on every file instead of none.
+            if (@($content -match "-Skip:\s*`"(true|false)`"")) {
+                $stringSkips += $testFile.Name
+            }
+            # The dollar signs below are escaped twice on purpose: once for PowerShell, so that the
+            # string is not expanded, and once for the regex, where a bare $ is the end of line
+            # anchor and would make the pattern match nothing.
+            if (@($content -match "^\s*(Describe|Context)\s+`"\`$CommandName`"")) {
+                $quotedCommandNames += $testFile.Name
+            }
+            if (@($content -match "\`$TestConfig\.instance[123]\b")) {
+                $oldInstanceNames += $testFile.Name
+            }
+            if (@($content -match "``\s*`$")) {
+                $backtickContinuations += $testFile.Name
+            }
+            if (@($content -match "^\s*\`$splat\s*=")) {
+                $plainSplats += $testFile.Name
+            }
+            if (@($content -match "\`$_\.")) {
+                $underscoreVariables += $testFile.Name
+            }
+            if (@($content -match [regex]::Escape("`$TestConfig.Temp")) -and -not @($content -match "Get-Random")) {
+                $tempWithoutRandom += $testFile.Name
+            }
+        }
+    }
+
+    It "every test file can be parsed" {
+        $parseErrorFiles | Should -BeNullOrEmpty
+    }
+
+    It "every test file has the expected param block" {
+        $paramBlockFiles | Should -BeNullOrEmpty -Because "the header in tests\CLAUDE.md is mandatory"
+    }
+
+    It "every test file has only Describe, InModuleScope and BeforeDiscovery at the top level" {
+        $topLevelFiles | Should -BeNullOrEmpty
+    }
+
+    It "every test file has at least one Describe block for the unit tests" {
+        $noUnitTestFiles | Should -BeNullOrEmpty
+    }
+
+    It "no test file builds test blocks in a loop" {
+        $loopBuiltTests | Should -BeNullOrEmpty -Because "a loop around It runs at discovery and its variables are gone when the body runs - use -ForEach with cases from BeforeDiscovery"
+    }
+
+    It "no It block computes a comparison and throws it away" {
+        $discardedComparisons | Should -BeNullOrEmpty -Because "an assertion has to be piped to Should, otherwise it runs and can never fail"
+    }
+
+    It "every -ForEach case list is built in a BeforeDiscovery" {
+        $forEachNotFromDiscovery | Should -BeNullOrEmpty -Because "-ForEach is read at discovery, so a case list built in BeforeAll is still empty and the block produces no tests"
+    }
+
+    It "every EnableException that is set is removed again" {
+        $unbalancedEnableException | Should -BeNullOrEmpty -Because "an enable left behind carries into whatever runs next in the same session"
+    }
+
+    It "no test file uses a string for -Skip" {
+        $stringSkips | Should -BeNullOrEmpty -Because "a non-empty string is always true, so -Skip:`"false`" skips the test"
+    }
+
+    It "no test file quotes the command name" {
+        $quotedCommandNames | Should -BeNullOrEmpty -Because "Describe `$CommandName does not need quoting"
+    }
+
+    It "no test file uses the retired TestConfig instance names" {
+        $oldInstanceNames | Should -BeNullOrEmpty -Because "instance1, instance2 and instance3 no longer exist, see the instance table in tests\CLAUDE.md"
+    }
+
+    It "no test file uses backtick line continuation" {
+        $backtickContinuations | Should -BeNullOrEmpty -Because "backticks are banned, use splatting or a natural line break"
+    }
+
+    It "every splat is named after its purpose" {
+        $plainSplats | Should -BeNullOrEmpty -Because "a plain `$splat collides across scopes, the guide asks for `$splat<Purpose>"
+    }
+
+    It "every integration test enables EnableException for its setup" -Tag Goal -Skip:(-not $includeGoals) {
+        $missingEnableException | Should -BeNullOrEmpty
+    }
+
+    It "every Mock outside of InModuleScope uses ModuleName" -Tag Goal -Skip:(-not $includeGoals) {
+        $mocksWithoutModuleName | Should -BeNullOrEmpty -Because "a Mock without -ModuleName never applies to the code inside the module"
+    }
+
+    It "every integration test that creates objects cleans up after itself" -Tag Goal -Skip:(-not $includeGoals) {
+        $integrationWithoutCleanup | Should -BeNullOrEmpty -Because "a Describe that creates objects on the instance needs an AfterAll that removes them"
+    }
+
+    It "every temporary path is made unique with Get-Random" -Tag Goal -Skip:(-not $includeGoals) {
+        $tempWithoutRandom | Should -BeNullOrEmpty -Because "two test files sharing a temp path collide when they run in the same lab"
+    }
+
+    It "every test file uses PSItem rather than the underscore variable" -Tag Goal -Skip:(-not $includeGoals) {
+        $underscoreVariables | Should -BeNullOrEmpty -Because "the guide asks for `$PSItem except where compatibility needs `$_"
+    }
+
+    It "no block is switched off with a bare -Skip" -Tag Goal -Skip:(-not $includeGoals) {
+        $bareSkips | Should -BeNullOrEmpty -Because "a block skipped without a condition can never run again"
+    }
+}
+
+Describe "$ModuleName command structure" -Tag Compliance {
+    <#
+    The command invariants in CLAUDE.md that the AST can prove, checked over public\ and
+    private\functions\. Rule 1: a Stop-Function that can continue has a loop or switch to continue in
+    the same function or scriptblock. Rule 3: a begin block that can set the interrupt flag is followed
+    by if (Test-FunctionInterrupt) { return } as the first statement of process. Next to them: no
+    Query() call writes its value into the output, unless it is listed as meant (#10794). The analyzer
+    is in dbatools.CommandStructure.ps1, its own fixtures are in the next Describe.
+    #>
+    BeforeAll {
+        $ModulePath = Split-Path $PSScriptRoot -Parent
+        . "$PSScriptRoot\dbatools.CommandStructure.ps1"
+        $stopFunctionParameter = Get-DbaStopFunctionParameterMap -Path "$ModulePath\private\functions\flowcontrol\Stop-Function.ps1"
+
+        # Helpers whose continue is meant to bind at run time to a loop of the command that calls them.
+        # Every call site sits inside a loop of that command, so the continue skips one item and does
+        # not escape the command (triaged in #10638). Each entry names the exact number of sites: a new
+        # site in the same helper, or one that is gone, fails the check until the entry is updated.
+        $dynamicContinueExceptions = @(
+            [PSCustomObject]@{
+                File     = "Copy-DbaSsisCatalog.ps1"
+                Function = "Invoke-ProjectDeployment"
+                Sites    = 2
+                Reason   = "called only inside the loops over the projects"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaAgentJobHistory.ps1"
+                Function = "Get-JobHistory"
+                Sites    = 1
+                Reason   = "all three call sites sit inside loops of the command"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaHelp.ps1"
+                Function = "Get-DbaHelp"
+                Sites    = 1
+                Reason   = "private; its only caller, Find-DbaCommand, runs it inside the foreach over all commands"
+            },
+            [PSCustomObject]@{
+                File     = "Import-DbaCsv.ps1"
+                Function = "New-SqlTable"
+                Sites    = 1
+                Reason   = "called only inside the loop over the files"
+            },
+            [PSCustomObject]@{
+                File     = "Import-DbaCsv.ps1"
+                Function = "New-SqlTableWithInferredSchema"
+                Sites    = 1
+                Reason   = "called only inside the loop over the files"
+            },
+            [PSCustomObject]@{
+                File     = "Import-DbaParquet.ps1"
+                Function = "New-SqlTable"
+                Sites    = 1
+                Reason   = "called only inside the loop over the files"
+            },
+            [PSCustomObject]@{
+                File     = "Import-DbaPfDataCollectorSetTemplate.ps1"
+                Function = "Import-DbaPfDataCollectorSetTemplate"
+                Sites    = 1
+                Reason   = "in the scriptblock that is invoked inside the loops over the computers and the files"
+            },
+            [PSCustomObject]@{
+                File     = "Invoke-DbaPfRelog.ps1"
+                Function = "Invoke-DbaPfRelog"
+                Sites    = 9
+                Reason   = "in the relog scriptblock that is invoked once per file inside the foreach; documented at the sites (#10643)"
+            },
+            [PSCustomObject]@{
+                File     = "Test-ElevationRequirement.ps1"
+                Function = "Test-ElevationRequirement"
+                Sites    = 1
+                Reason   = "private; forwards -Continue, -ContinueLabel and -SilentlyContinue of its caller, and the callers that pass them call it inside their loops, except Install-DbaSqlPackage (open defect, fixed separately)"
+            }
+        )
+
+        # Query() calls whose value is meant as output: each returns the rows of a SELECT. The check
+        # cannot tell a SELECT from a batch without a result set, which returns $null, so each one is
+        # listed with the exact number of sites, as above.
+        $queryOutputExceptions = @(
+            [PSCustomObject]@{
+                File     = "Find-DbaDbDuplicateIndex.ps1"
+                Function = "Find-DbaDbDuplicateIndex"
+                Sites    = 1
+                Reason   = "the rows of the duplicate or overlapping index SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Find-DbaDbUnusedIndex.ps1"
+                Function = "Find-DbaDbUnusedIndex"
+                Sites    = 1
+                Reason   = "the rows of the index usage SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaConnection.ps1"
+                Function = "Get-DbaConnection"
+                Sites    = 1
+                Reason   = "the rows of the connection SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaDatabase.ps1"
+                Function = "Invoke-QueryDatabaseSizes"
+                Sites    = 1
+                Reason   = "helper; the rows of the size SELECT are its return value, which the command assigns"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaDatabase.ps1"
+                Function = "Invoke-QueryDBlastUsed"
+                Sites    = 1
+                Reason   = "helper; the rows of the last used SELECT are its return value, which the command assigns"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaDatabase.ps1"
+                Function = "Invoke-QueryRawDatabases"
+                Sites    = 3
+                Reason   = "helper; the rows of the sys.databases SELECT for each version are its return value, which the command assigns"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaDbFeatureUsage.ps1"
+                Function = "Get-DbaDbFeatureUsage"
+                Sites    = 1
+                Reason   = "the rows of the feature SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaDbPageInfo.ps1"
+                Function = "Get-DbaDbPageInfo"
+                Sites    = 1
+                Reason   = "the rows of the page SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaDbPhysicalFile.ps1"
+                Function = "Get-DbaDbPhysicalFile"
+                Sites    = 1
+                Reason   = "private; the rows of the file SELECT are its return value"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaExecutionPlan.ps1"
+                Function = "Get-DbaExecutionPlan"
+                Sites    = 1
+                Reason   = "with -Force the rows of the plan SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaOpenTransaction.ps1"
+                Function = "Get-DbaOpenTransaction"
+                Sites    = 1
+                Reason   = "the rows of the transaction SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaPermission.ps1"
+                Function = "Get-DbaPermission"
+                Sites    = 2
+                Reason   = "the rows of the server and the database permission SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Get-DbaTempdbUsage.ps1"
+                Function = "Get-DbaTempdbUsage"
+                Sites    = 1
+                Reason   = "the rows of the tempdb usage SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Read-DbaTraceFile.ps1"
+                Function = "Read-DbaTraceFile"
+                Sites    = 1
+                Reason   = "the rows of the fn_trace_gettable SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Read-DbaTransactionLog.ps1"
+                Function = "Read-DbaTransactionLog"
+                Sites    = 1
+                Reason   = "the rows of the fn_dblog SELECT are the output"
+            },
+            [PSCustomObject]@{
+                File     = "Test-DbaDiskSpeed.ps1"
+                Function = "Test-DbaDiskSpeed"
+                Sites    = 1
+                Reason   = "the rows of the file stats SELECT are the output"
+            }
+        )
+
+        $parseErrorFiles = @()
+        $functionFiles = Get-ChildItem -Path "$ModulePath\public", "$ModulePath\private\functions" -Filter "*.ps1" -Recurse | Sort-Object -Property Name
+        $allFindings = foreach ($functionFile in $functionFiles) {
+            $parseErrors = $null
+            $functionAst = [System.Management.Automation.Language.Parser]::ParseFile($functionFile.FullName, [ref]$null, [ref]$parseErrors)
+            if ($parseErrors) {
+                $parseErrorFiles += "$($functionFile.Name): $($parseErrors.Count) parse errors, first at line $($parseErrors[0].Extent.StartLineNumber)"
+                continue
+            }
+            Get-DbaCommandStructureFinding -Ast $functionAst -File $functionFile.Name -StopFunctionParameter $stopFunctionParameter
+            Get-DbaBareQueryFinding -Ast $functionAst -File $functionFile.Name
+        }
+
+        $formatFinding = {
+            param($Finding)
+            "$($Finding.File):$($Finding.Line) $($Finding.Function) - $($Finding.Message)"
+        }
+
+        $argumentFindings = @($allFindings | Where-Object Rule -eq "Arguments" | ForEach-Object { & $formatFinding $PSItem })
+        $guardFindings = @($allFindings | Where-Object Rule -eq "3" | ForEach-Object { & $formatFinding $PSItem })
+
+        # The findings an exception list does not cover: a function that is not listed, a listed one
+        # with another number of sites, and an entry whose sites are all gone.
+        $getUncoveredFinding = {
+            param($Findings, $Exceptions, $SiteName)
+            foreach ($functionGroup in ($Findings | Group-Object -Property File, Function)) {
+                $firstFinding = $functionGroup.Group[0]
+                $exception = $Exceptions | Where-Object { $PSItem.File -eq $firstFinding.File -and $PSItem.Function -eq $firstFinding.Function }
+                if (-not $exception) {
+                    $functionGroup.Group | ForEach-Object { & $formatFinding $PSItem }
+                } elseif ($exception.Sites -ne $functionGroup.Count) {
+                    "$($firstFinding.File) $($firstFinding.Function) - $($functionGroup.Count) $SiteName, the exception list expects $($exception.Sites) (lines $($functionGroup.Group.Line -join ", "))"
+                }
+            }
+            foreach ($exception in $Exceptions) {
+                $matchingFindings = @($Findings | Where-Object { $PSItem.File -eq $exception.File -and $PSItem.Function -eq $exception.Function })
+                if (-not $matchingFindings) {
+                    "$($exception.File) $($exception.Function) - the exception list expects $($exception.Sites) $SiteName and there are none, remove the entry"
+                }
+            }
+        }
+
+        $continueFindings = @(& $getUncoveredFinding @($allFindings | Where-Object Rule -eq "1") $dynamicContinueExceptions "dynamic continue sites")
+        $queryFindings = @(& $getUncoveredFinding @($allFindings | Where-Object Rule -eq "Query") $queryOutputExceptions "Query() sites with output")
+    }
+
+    It "every command file can be parsed" {
+        $parseErrorFiles | Should -BeNullOrEmpty
+    }
+
+    It "every Stop-Function call binds its parameters" {
+        $argumentFindings | Should -BeNullOrEmpty -Because "a parameter that binds to nothing fails the call, and a switch the check cannot read cannot be checked"
+    }
+
+    It "every Stop-Function that can continue has a loop or switch to continue in the same function" {
+        $continueFindings | Should -BeNullOrEmpty -Because "without a local target the continue leaves the command and skips an item of the loop of the caller, or ends the whole calling script when a label matches nothing (CLAUDE.md, rule 1)"
+    }
+
+    It "every begin block that can set the interrupt flag is followed by the process guard" {
+        $guardFindings | Should -BeNullOrEmpty -Because "without the guard process runs on after begin stopped (CLAUDE.md, rule 3)"
+    }
+
+    It "every Query() call whose value goes to the output is listed as meant" {
+        $queryFindings | Should -BeNullOrEmpty -Because "Query() returns `$null for a batch without a result set, and a call whose value nothing takes writes it into the output of the command; put `$null = in front of it (#10794)"
+    }
+}
+
+Describe "$ModuleName command structure analyzer" -Tag Compliance {
+    <#
+    Fixtures for Get-DbaCommandStructureFinding: each case is a small function, parsed and checked the
+    same way as the commands, so a change to the analyzer that stops catching a case, or starts
+    reporting a correct one, fails here rather than silently in the command structure Describe.
+    #>
+    BeforeAll {
+        $ModulePath = Split-Path $PSScriptRoot -Parent
+        . "$PSScriptRoot\dbatools.CommandStructure.ps1"
+        $stopFunctionParameter = Get-DbaStopFunctionParameterMap -Path "$ModulePath\private\functions\flowcontrol\Stop-Function.ps1"
+
+        $findingsOf = {
+            param($Code, $Rule)
+            $fixtureAst = [System.Management.Automation.Language.Parser]::ParseInput($Code, [ref]$null, [ref]$null)
+            @(Get-DbaCommandStructureFinding -Ast $fixtureAst -File "fixture.ps1" -StopFunctionParameter $stopFunctionParameter | Where-Object Rule -eq $Rule)
+        }
+
+        $queryFindingsOf = {
+            param($Code)
+            $fixtureAst = [System.Management.Automation.Language.Parser]::ParseInput($Code, [ref]$null, [ref]$null)
+            @(Get-DbaBareQueryFinding -Ast $fixtureAst -File "fixture.ps1")
+        }
+    }
+
+    Context "Rule 1, a local target for continue" {
+        It "reports -Continue without a loop, with the line and function" {
+            $code = @'
+function Get-Fixture {
+    process {
+        Stop-Function -Message "x" -Continue
+    }
+}
+'@
+            $findings = & $findingsOf $code "1"
+            $findings | Should -HaveCount 1
+            $findings[0].Line | Should -Be 3
+            $findings[0].Function | Should -Be "Get-Fixture"
+        }
+
+        It "accepts -Continue inside a foreach, a while and a switch" {
+            $code = @'
+function Get-Fixture {
+    process {
+        foreach ($item in $InputObject) { Stop-Function -Message "x" -Continue }
+        while ($true) { Stop-Function -Message "x" -Continue }
+        switch ($InputObject) { default { Stop-Function -Message "x" -Continue } }
+    }
+}
+'@
+            & $findingsOf $code "1" | Should -BeNullOrEmpty
+        }
+
+        It "reports -SilentlyContinue alone, which continues under EnableException" {
+            $code = @'
+function Get-Fixture {
+    process {
+        Stop-Function -Message "x" -SilentlyContinue
+    }
+}
+'@
+            & $findingsOf $code "1" | Should -HaveCount 1
+        }
+
+        It "accepts -Continue:`$false and reports -Continue:`$variable" {
+            $code = @'
+function Get-Fixture {
+    process {
+        Stop-Function -Message "x" -Continue:$false
+        Stop-Function -Message "x" -Continue:$shouldContinue
+    }
+}
+'@
+            $findings = & $findingsOf $code "1"
+            $findings | Should -HaveCount 1
+            $findings[0].Line | Should -Be 4
+        }
+
+        It "reads the switches from a splat assigned in the same function" {
+            $code = @'
+function Get-Fixture {
+    process {
+        $splatStop = @{
+            Message  = "x"
+            Continue = $true
+        }
+        Stop-Function @splatStop
+        $splatQuiet = @{
+            Message  = "x"
+            Continue = $false
+        }
+        Stop-Function @splatQuiet
+    }
+}
+'@
+            $findings = & $findingsOf $code "1"
+            $findings | Should -HaveCount 1
+            $findings[0].Line | Should -Be 7
+        }
+
+        It "reports a splat it cannot resolve, both as unresolved and as a possible continue" {
+            $code = @'
+function Get-Fixture {
+    param($SplatFromCaller)
+    process {
+        Stop-Function @SplatFromCaller
+    }
+}
+'@
+            & $findingsOf $code "Arguments" | Should -HaveCount 1
+            & $findingsOf $code "1" | Should -HaveCount 1
+        }
+
+        It "reports a splat whose key is changed after the literal, and does not read the literal" {
+            $code = @'
+function Get-Fixture {
+    process {
+        $splatStop = @{ Message = "x"; Continue = $false }
+        $splatStop.Continue = $true
+        Stop-Function @splatStop
+    }
+}
+'@
+            $argumentFindings = & $findingsOf $code "Arguments"
+            $argumentFindings | Should -HaveCount 1
+            $argumentFindings[0].Line | Should -Be 5
+            & $findingsOf $code "1" | Should -HaveCount 1
+        }
+
+        It "reports a splat changed by an index, a method, [ref], ++ or a variable cmdlet" {
+            $code = @'
+function Get-Fixture1 {
+    $splatStop = @{ Message = "x" }
+    $splatStop["Continue"] = $true
+    Stop-Function @splatStop
+}
+function Get-Fixture2 {
+    $splatStop = @{ Message = "x" }
+    $splatStop.Add("Continue", $true)
+    Stop-Function @splatStop
+}
+function Get-Fixture3 {
+    $splatStop = @{ Message = "x" }
+    Update-Splat -Reference ([ref]$splatStop)
+    Stop-Function @splatStop
+}
+function Get-Fixture4 {
+    $splatStop = @{ Message = "x"; Continue = 0 }
+    $splatStop.Continue++
+    Stop-Function @splatStop
+}
+function Get-Fixture5 {
+    $splatStop = @{ Message = "x" }
+    Set-Variable -Name splatStop -Value @{ Message = "x"; Continue = $true }
+    Stop-Function @splatStop
+}
+function Get-Fixture6 {
+    $splatStop = @{ Message = "x" }
+    $alias = $splatStop
+    $alias.Continue = $true
+    Stop-Function @splatStop
+}
+'@
+            $argumentFindings = & $findingsOf $code "Arguments"
+            $argumentFindings | Should -HaveCount 6
+            $argumentFindings.Function | Should -Be @("Get-Fixture1", "Get-Fixture2", "Get-Fixture3", "Get-Fixture4", "Get-Fixture5", "Get-Fixture6")
+        }
+
+        It "reports a splat assigned only under a condition or in an uncalled nested helper" {
+            $conditional = @'
+function Get-Fixture {
+    process {
+        $splatStop = @{ Message = "x"; Continue = $false }
+        if ($Force) {
+            $splatStop = @{ Message = "x"; Continue = $true }
+        }
+        Stop-Function @splatStop
+    }
+}
+'@
+            $helperAssignment = @'
+function Get-Fixture {
+    process {
+        function Set-Splat {
+            $splatStop = @{ Message = "x"; Continue = $false }
+        }
+        Stop-Function @splatStop
+    }
+}
+'@
+            $helperMutation = @'
+function Get-Fixture {
+    process {
+        function Update-Splat {
+            $splatStop.Continue = $true
+        }
+        $splatStop = @{ Message = "x"; Continue = $false }
+        Update-Splat
+        Stop-Function @splatStop
+    }
+}
+'@
+            & $findingsOf $conditional "Arguments" | Should -HaveCount 1
+            & $findingsOf $helperAssignment "Arguments" | Should -HaveCount 1
+            & $findingsOf $helperMutation "Arguments" | Should -HaveCount 1
+        }
+
+        It "reports a splat changed later in the loop around the call" {
+            $code = @'
+function Get-Fixture {
+    process {
+        $splatStop = @{ Message = "x"; Continue = $false }
+        foreach ($item in $InputObject) {
+            Stop-Function @splatStop
+            $splatStop.Continue = $true
+        }
+    }
+}
+'@
+            & $findingsOf $code "Arguments" | Should -HaveCount 1
+        }
+
+        It "resolves a splat name reused for several literals, each directly before its call" {
+            $code = @'
+function Get-Fixture {
+    process {
+        foreach ($item in $InputObject) {
+            $splatStop = @{ Message = "x"; Continue = $true }
+            Write-Message -Level Verbose -Message "$splatStop $($splatStop.Message)"
+            Stop-Function @splatStop
+        }
+        $splatStop = @{ Message = "x"; Continue = $false }
+        Stop-Function @splatStop
+        return
+    }
+}
+'@
+            & $findingsOf $code "Arguments" | Should -BeNullOrEmpty
+            & $findingsOf $code "1" | Should -BeNullOrEmpty
+        }
+
+        It "accepts a label that names an enclosing loop and reports one that does not" {
+            $code = @'
+function Get-Fixture {
+    process {
+        :main foreach ($instance in $SqlInstance) {
+            foreach ($database in $Database) {
+                Stop-Function -Message "x" -Continue -ContinueLabel main
+                Stop-Function -Message "x" -Continue -ContinueLabel other
+            }
+        }
+    }
+}
+'@
+            $findings = & $findingsOf $code "1"
+            $findings | Should -HaveCount 1
+            $findings[0].Line | Should -Be 6
+        }
+
+        It "reports a label that cannot be read statically" {
+            $code = @'
+function Get-Fixture {
+    process {
+        :main foreach ($instance in $SqlInstance) {
+            Stop-Function -Message "x" -Continue -ContinueLabel $labelName
+        }
+    }
+}
+'@
+            & $findingsOf $code "1" | Should -HaveCount 1
+        }
+
+        It "reports a nested helper even when a loop surrounds its definition or its call" {
+            $code = @'
+function Get-Fixture {
+    process {
+        foreach ($item in $InputObject) {
+            function Invoke-Helper {
+                Stop-Function -Message "x" -Continue
+            }
+            Invoke-Helper
+        }
+    }
+}
+'@
+            $findings = & $findingsOf $code "1"
+            $findings | Should -HaveCount 1
+            $findings[0].Function | Should -Be "Invoke-Helper"
+        }
+
+        It "reports a callback that relies on a loop outside it, and accepts one with its own loop" {
+            $code = @'
+function Get-Fixture {
+    process {
+        foreach ($item in $InputObject) {
+            $item | ForEach-Object { Stop-Function -Message "x" -Continue }
+            $item | ForEach-Object { foreach ($part in $PSItem) { Stop-Function -Message "x" -Continue } }
+        }
+    }
+}
+'@
+            $findings = & $findingsOf $code "1"
+            $findings | Should -HaveCount 1
+            $findings[0].Line | Should -Be 4
+        }
+
+        It "resolves aliases and unique prefixes and reports a parameter that binds to nothing" {
+            $code = @'
+function Get-Fixture {
+    process {
+        foreach ($item in $InputObject) {
+            Stop-Function -Message "x" -InnerErrorRecord $PSItem -Continue
+            Stop-Function -Message "x" -Error $PSItem -Continue
+            Stop-Function -Message "x" -ErroRecord $PSItem -Continue
+        }
+        Stop-Function -Message "x" -Silent
+    }
+}
+'@
+            $argumentFindings = & $findingsOf $code "Arguments"
+            $argumentFindings | Should -HaveCount 1
+            $argumentFindings[0].Line | Should -Be 6
+            $continueFindings = & $findingsOf $code "1"
+            $continueFindings | Should -HaveCount 1
+            $continueFindings[0].Line | Should -Be 8
+        }
+
+        It "reads -EnableException as a value, so the next argument is not taken for a switch" {
+            $code = @'
+function Get-Fixture {
+    process {
+        Stop-Function -Message "x" -EnableException $true
+        return
+    }
+}
+'@
+            & $findingsOf $code "1" | Should -BeNullOrEmpty
+            & $findingsOf $code "Arguments" | Should -BeNullOrEmpty
+        }
+
+        It "matches parameter names without regard to case" {
+            $code = @'
+function Get-Fixture {
+    process {
+        stop-function -message "x" -continue
+    }
+}
+'@
+            & $findingsOf $code "Arguments" | Should -BeNullOrEmpty
+            & $findingsOf $code "1" | Should -HaveCount 1
+        }
+    }
+
+    Context "Rule 3, the process guard after a begin block that can stop" {
+        It "accepts a begin stop followed by the guard as the first statement of process" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x"
+        return
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+        "work"
+    }
+}
+'@
+            & $findingsOf $code "3" | Should -BeNullOrEmpty
+        }
+
+        It "reports a missing guard" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x"
+        return
+    }
+    process {
+        "work"
+    }
+}
+'@
+            $findings = & $findingsOf $code "3"
+            $findings | Should -HaveCount 1
+            $findings[0].Line | Should -Be 6
+            $findings[0].Message | Should -BeLike "*does not start with*"
+        }
+
+        It "reports a guard that is not the first statement" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x"
+    }
+    process {
+        "work"
+        if (Test-FunctionInterrupt) { return }
+    }
+}
+'@
+            $findings = & $findingsOf $code "3"
+            $findings | Should -HaveCount 1
+            $findings[0].Message | Should -BeLike "*not the first statement*"
+        }
+
+        It "requires the guard for -SilentlyContinue alone, which sets the flag in the default mode" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x" -SilentlyContinue
+    }
+    process {
+        "work"
+    }
+}
+'@
+            & $findingsOf $code "3" | Should -HaveCount 1
+        }
+
+        It "does not require the guard for -Continue, which never sets the flag without throwing" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        foreach ($item in $Path) { Stop-Function -Message "x" -Continue }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            & $findingsOf $code "3" | Should -BeNullOrEmpty
+        }
+
+        It "requires the guard for -Continue whose exception a catch in begin swallows" {
+            $caughtThrow = @'
+function Get-Fixture {
+    begin {
+        foreach ($item in $Path) {
+            try { Stop-Function -Message "x" -Continue -EnableException $true } catch { }
+        }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            $callerMode = @'
+function Get-Fixture {
+    begin {
+        foreach ($item in $Path) {
+            try { Stop-Function -Message "x" -Continue -EnableException:$EnableException } catch { }
+        }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            $trap = @'
+function Get-Fixture {
+    begin {
+        trap { continue }
+        foreach ($item in $Path) { Stop-Function -Message "x" -Continue }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            $findings = & $findingsOf $caughtThrow "3"
+            $findings | Should -HaveCount 1
+            $findings[0].Message | Should -BeLike "*(line 4)*"
+            & $findingsOf $callerMode "3" | Should -HaveCount 1
+            & $findingsOf $trap "3" | Should -HaveCount 1
+        }
+
+        It "does not require the guard for a caught -Continue that cannot throw" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        foreach ($item in $Path) {
+            try { Stop-Function -Message "x" -Continue -EnableException $false } catch { }
+            try { Stop-Function -Message "x" -Continue -SilentlyContinue } catch { }
+        }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            & $findingsOf $code "3" | Should -BeNullOrEmpty
+        }
+
+        It "rejects a guard whose result is redirected, or that passes arguments" {
+            $redirected = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x"
+        return
+    }
+    process {
+        if (Test-FunctionInterrupt > $null) { return }
+        "work"
+    }
+}
+'@
+            $withArgument = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x"
+        return
+    }
+    process {
+        if (Test-FunctionInterrupt -Force) { return }
+        "work"
+    }
+}
+'@
+            $allStreams = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x"
+        return
+    }
+    process {
+        if (Test-FunctionInterrupt *> $null) { return }
+        "work"
+    }
+}
+'@
+            & $findingsOf $redirected "3" | Should -HaveCount 1
+            & $findingsOf $withArgument "3" | Should -HaveCount 1
+            & $findingsOf $allStreams "3" | Should -HaveCount 1
+        }
+
+        It "does not count a helper function or a scriptblock run in a new scope" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        function Invoke-Helper { Stop-Function -Message "x" }
+        & { Stop-Function -Message "x" }
+        Invoke-Command -ScriptBlock { Stop-Function -Message "x" }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            & $findingsOf $code "3" | Should -BeNullOrEmpty
+        }
+
+        It "counts a dot-sourced scriptblock and a ForEach-Object callback, which run in the command scope" {
+            $dotSourced = @'
+function Get-Fixture {
+    begin {
+        . { Stop-Function -Message "x" }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            $callback = @'
+function Get-Fixture {
+    begin {
+        $Path | ForEach-Object { Stop-Function -Message "x" }
+    }
+    process {
+        "work"
+    }
+}
+'@
+            & $findingsOf $dotSourced "3" | Should -HaveCount 1
+            & $findingsOf $callback "3" | Should -HaveCount 1
+        }
+
+        It "reports a scriptblock it cannot place for review instead of treating it as safe" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        $null = Register-EngineEvent -SourceIdentifier Fixture -Action { Stop-Function -Message "x" }
+    }
+    process {
+        if (Test-FunctionInterrupt) { return }
+    }
+}
+'@
+            $findings = & $findingsOf $code "3"
+            $findings | Should -HaveCount 1
+            $findings[0].Message | Should -BeLike "*cannot determine*"
+        }
+
+        It "reports a begin block that can stop when there is no process block to guard" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        Stop-Function -Message "x"
+    }
+    end {
+        "work"
+    }
+}
+'@
+            & $findingsOf $code "3" | Should -HaveCount 1
+        }
+    }
+
+    Context "Query() calls whose value goes to the output" {
+        It "reports a call of its own, with the line and function" {
+            $code = @'
+function Get-Fixture {
+    process {
+        $server.Query("DROP TABLE dbo.Fixture")
+    }
+}
+'@
+            $findings = & $queryFindingsOf $code
+            $findings | Should -HaveCount 1
+            $findings[0].Line | Should -Be 3
+            $findings[0].Function | Should -Be "Get-Fixture"
+        }
+
+        It "accepts a value that is assigned, cast, piped on, redirected, returned or used" {
+            $code = @'
+function Get-Fixture {
+    process {
+        $null = $server.Query("x")
+        [void]$server.Query("x")
+        $server.Query("x") | Out-Null
+        $server.Query("x") > $null
+        $count = $server.Query("x").Rows.Count
+        Export-Csv -InputObject $server.Query("x") -Path $Path
+        foreach ($row in @($server.Query("x"))) { $row }
+        if ($server.Query("x")) { "found" }
+        switch ($server.Query("x")) { default { "found" } }
+        $text = "$($server.Query("x"))"
+        $rows = if ($Force) { $server.Query("x") } else { $server.Query("y") }
+        $scriptBlock = { $server.Query("x") }
+        throw $server.Query("x")
+        return $server.Query("x")
+    }
+}
+'@
+            & $queryFindingsOf $code | Should -BeNullOrEmpty
+        }
+
+        It "follows the value through if, try, loops, switch and subexpressions" {
+            $code = @'
+function Get-Fixture {
+    process {
+        if ($Force) { $server.Query("x") } else { $server.Query("x") }
+        try { $server.Query("x") } catch { $server.Query("x") } finally { $server.Query("x") }
+        foreach ($db in $InputObject) { $db.Query("x") }
+        switch ($Mode) { default { $server.Query("x") } }
+        $($server.Query("x"))
+        @($server.Query("x"))
+        ($server.Query("x"))
+        $server.Query("x"), "done"
+        $server.Query("x") 2>&1
+        trap { $server.Query("x") }
+    }
+}
+'@
+            & $queryFindingsOf $code | Should -HaveCount 13
+        }
+
+        It "follows the output of a scriptblock to what runs it, up to a pipeline that goes on" {
+            $code = @'
+function Get-Fixture {
+    process {
+        $InputObject | ForEach-Object { $PSItem.Query("x") }
+        $InputObject | ForEach-Object -Process:{ $PSItem.Query("x") }
+        $InputObject.ForEach({ $PSItem.Query("x") })
+        & { $server.Query("x") }
+        . { $server.Query("x") }
+        $null = $InputObject | ForEach-Object { $PSItem.Query("x") }
+        $InputObject | ForEach-Object { $PSItem.Query("x") } | Out-Null
+    }
+}
+'@
+            $findings = & $queryFindingsOf $code
+            $findings | Should -HaveCount 5
+            $findings.Line -join ", " | Should -Be "3, 4, 5, 6, 7"
+        }
+
+        It "reports a call in a helper under the name of the helper, in any spelling of the method" {
+            $code = @'
+function Get-Fixture {
+    begin {
+        function Invoke-FixtureHelper {
+            $server.query("x")
+        }
+    }
+    process {
+        $null = Invoke-FixtureHelper
+    }
+}
+'@
+            $findings = & $queryFindingsOf $code
+            $findings | Should -HaveCount 1
+            $findings[0].Function | Should -Be "Invoke-FixtureHelper"
+        }
     }
 }
 

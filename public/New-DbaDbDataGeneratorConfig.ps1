@@ -122,7 +122,10 @@ function New-DbaDbDataGeneratorConfig {
         try {
             $columnTypes = Get-Content -Path "$script:PSModuleRoot\bin\datamasking\columntypes.json" | ConvertFrom-Json
         } catch {
-            Stop-Function -Message "Something went wrong importing the column types" -Continue
+            # No -Continue here: no loop encloses this call, so the continue would escape the
+            # command and eat an iteration of whatever loop the caller runs in.
+            Stop-Function -Message "Something went wrong importing the column types"
+            return
         }
 
         # Check if the Path is accessible
@@ -275,7 +278,10 @@ function New-DbaDbDataGeneratorConfig {
                                 $MaxValue = 32767
                             }
                             "smalldatetime" {
-                                $subType = "Date"
+                                # This only set the subtype, so it stayed on the default masking type and
+                                # produced Random/Date, which is not a combination that exists.
+                                $type = "Date"
+                                $subType = "Past"
                                 $MaxValue = $null
                             }
                             "tinyint" {
@@ -362,7 +368,9 @@ function New-DbaDbDataGeneratorConfig {
                     Get-ChildItem -Path $temppath
                 }
             } catch {
-                Stop-Function -Message "Something went wrong writing the results to the Path" -Target $Path -Continue -ErrorRecord $_
+                # No -Continue here either, see the begin block.
+                Stop-Function -Message "Something went wrong writing the results to the Path" -Target $Path -ErrorRecord $_
+                return
             }
         } else {
             Write-Message -Message "No tables to save for database $($db.Name) on $($server.Name)" -Level Verbose

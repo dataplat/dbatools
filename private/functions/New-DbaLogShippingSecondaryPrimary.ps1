@@ -243,7 +243,10 @@ function New-DbaLogShippingSecondaryPrimary {
 
         # Check the MonitorServerSecurityMode if it's SQL Server authentication
         if ($MonitorServerSecurityMode -eq 0 -and -not $MonitorCredential) {
-            Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -Target $SqlInstance -Continue
+            # No -Continue on any stop in this function: no loop encloses them, so the continue would
+            # escape into the caller (before the return below ever ran) and bypass the catch that
+            # Invoke-DbaDbLogShipping wraps around it.
+            Stop-Function -Message "The MonitorServerCredential cannot be empty when using SQL Server authentication." -Target $SqlInstance
             return
         } elseif ($MonitorServerSecurityMode -eq 0 -and $MonitorCredential) {
             # Get the username and password from the credential
@@ -252,14 +255,14 @@ function New-DbaLogShippingSecondaryPrimary {
 
             # Check if the user is in the database
             if ($ServerSecondary.Databases['master'].Users.Name -notcontains $MonitorLogin) {
-                Stop-Function -Message "User $MonitorLogin for monitor login must be in the master database." -Target $SqlInstance -Continue
+                Stop-Function -Message "User $MonitorLogin for monitor login must be in the master database." -Target $SqlInstance
                 return
             }
         }
 
         # Check if the database is present on the primary sql server
         if ($ServerPrimary.Databases.Name -notcontains $PrimaryDatabase) {
-            Stop-Function -Message "Database $PrimaryDatabase is not available on instance $PrimaryServer" -Target $PrimaryServer -Continue
+            Stop-Function -Message "Database $PrimaryDatabase is not available on instance $PrimaryServer" -Target $PrimaryServer
             return
         }
     }
@@ -327,10 +330,11 @@ function New-DbaLogShippingSecondaryPrimary {
         try {
             Write-Message -Message "Configuring logshipping making settings for the primary database." -Level Verbose
             Write-Message -Message "Executing query:`n$Query" -Level Verbose
-            $ServerSecondary.Query($Query)
+            $null = $ServerSecondary.Query($Query)
         } catch {
             Write-Message -Message "$($_.Exception.InnerException.InnerException.InnerException.InnerException.Message)" -Level Warning
-            Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)"  -ErrorRecord $_ -Target $SqlInstance -Continue
+            Stop-Function -Message "Error executing the query.`n$($_.Exception.Message)"  -ErrorRecord $_ -Target $SqlInstance
+            return
         }
     }
 

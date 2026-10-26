@@ -24,9 +24,9 @@ function Get-DbaDbQueryStoreOption {
         - QueryCaptureMode: Query capture mode (All, Auto, None, or Custom)
         - SizeBasedCleanupMode: Cleanup mode when max storage is exceeded (Off, Auto)
         - StaleQueryThresholdInDays: Number of days after which a query is considered stale for cleanup
+        - MaxPlansPerQuery: Maximum number of plans tracked per query
 
         Additional properties for SQL Server 2017 (v14) and later:
-        - MaxPlansPerQuery: Maximum number of plans tracked per query
         - WaitStatsCaptureMode: Wait statistics capture mode (Off, On)
 
         Additional properties for SQL Server 2019 (v15) and later:
@@ -51,8 +51,10 @@ function Get-DbaDbQueryStoreOption {
         Specifies which user databases to retrieve Query Store configuration from. Accepts database names, wildcards, or arrays for multiple databases.
         Use this when you need to audit Query Store settings for specific databases rather than scanning your entire instance.
 
+        master and tempdb are skipped with a warning, because SQL Server never reports Query Store settings for them. model is skipped with a warning before SQL Server 2022, where sys.database_query_store_options stays empty; from SQL Server 2022 on it reports its configuration like any other database.
+
     .PARAMETER ExcludeDatabase
-        Excludes specific databases from Query Store configuration retrieval. System databases (master, tempdb, model) are automatically excluded.
+        Excludes specific databases from Query Store configuration retrieval. master, tempdb and model are excluded on top of whatever you list here unless model is named explicitly in -Database on SQL Server 2022 or later.
         Useful for skipping databases that you know don't need Query Store monitoring or have restricted access permissions.
 
     .PARAMETER EnableException
@@ -97,10 +99,6 @@ function Get-DbaDbQueryStoreOption {
         [object[]]$ExcludeDatabase,
         [switch]$EnableException
     )
-    begin {
-        # We exclude model because SMO cannot tell if Query Store is enabled there
-        $ExcludeDatabase += 'master', 'tempdb', "model"
-    }
     process {
         foreach ($instance in $SqlInstance) {
             try {
@@ -109,17 +107,46 @@ function Get-DbaDbQueryStoreOption {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            # We have to exclude system databases since they cannot have the Query Store feature enabled
-            $dbs = Get-DbaDatabase -SqlInstance $server -ExcludeDatabase $ExcludeDatabase -Database $Database | Where-Object IsAccessible
+            # Which options exist depends on the engine, not only on the version, so this asks the feature rules
+            # instead of comparing VersionMajor. See #10600.
+            try {
+                $supportsMaxPlansPerQuery = Test-DbaFeatureSupport -Server $server -Feature QueryStoreMaxPlansPerQuery
+                $supportsWaitStats = Test-DbaFeatureSupport -Server $server -Feature QueryStoreWaitStats
+                $supportsCustomCapturePolicy = Test-DbaFeatureSupport -Server $server -Feature QueryStoreCustomCapturePolicy
+            } catch {
+                Stop-Function -Message "Cannot tell which Query Store options $instance supports" -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            # We have to exclude the system databases that cannot have the Query Store feature enabled. Get-DbaDatabase
+            # lets -ExcludeDatabase win over -Database, so this is worked out per instance and warns about anything the
+            # caller named on purpose instead of dropping it silently.
+            $splatUnsupported = @{
+                SqlInstance  = $server
+                Database     = $Database
+                FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+            }
+            $skipDatabase = @($ExcludeDatabase) + (Get-QueryStoreUnsupportedDatabase @splatUnsupported)
+
+            $splatGetDatabase = @{
+                SqlInstance     = $server
+                ExcludeDatabase = $skipDatabase
+                Database        = $Database
+            }
+            $dbs = Get-DbaDatabase @splatGetDatabase | Where-Object IsAccessible
 
             foreach ($db in $dbs) {
                 Write-Message -Level Verbose -Message "Processing $($db.Name) on $instance"
                 $qso = $db.QueryStoreOptions
 
-                if ($server.VersionMajor -eq 14) {
-                    $QueryStoreOptions = Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query "SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode FROM sys.database_query_store_options;" -As PSObject
-                } elseif ($server.VersionMajor -ge 15) {
-                    $QueryStoreOptions = Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query "SELECT max_plans_per_query AS MaxPlansPerQuery, wait_stats_capture_mode_desc AS WaitStatsCaptureMode, capture_policy_execution_count AS CustomCapturePolicyExecutionCount, capture_policy_stale_threshold_hours AS CustomCapturePolicyStaleThresholdHours, capture_policy_total_compile_cpu_time_ms AS CustomCapturePolicyTotalCompileCPUTimeMS, capture_policy_total_execution_cpu_time_ms AS CustomCapturePolicyTotalExecutionCPUTimeMS FROM sys.database_query_store_options;" -As PSObject
+                # Only values that the SMO object does not carry are read from the catalog view. The four
+                # CustomCapturePolicy ones are not properties of QueryStoreOptions at all, so they have to
+                # be added. MaxPlansPerQuery and WaitStatsCaptureMode are, and used to be queried here as
+                # well - on SQL Server 2019 and later the result was then thrown away, and on SQL Server
+                # 2017 it was added over the real property, which turns it into a note property that no
+                # longer follows a Refresh of the object. SMO is the single source for those two now, on
+                # every version. See #10562.
+                if ($supportsCustomCapturePolicy) {
+                    $QueryStoreOptions = Invoke-DbaQuery -SqlInstance $server -Database $db.Name -Query "SELECT capture_policy_execution_count AS CustomCapturePolicyExecutionCount, capture_policy_stale_threshold_hours AS CustomCapturePolicyStaleThresholdHours, capture_policy_total_compile_cpu_time_ms AS CustomCapturePolicyTotalCompileCPUTimeMS, capture_policy_total_execution_cpu_time_ms AS CustomCapturePolicyTotalExecutionCPUTimeMS FROM sys.database_query_store_options;" -As PSObject
                 }
 
                 Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name ComputerName -Value $server.ComputerName
@@ -127,19 +154,36 @@ function Get-DbaDbQueryStoreOption {
                 Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name SqlInstance -Value $server.DomainInstanceName
                 Add-Member -Force -InputObject $qso -MemberType NoteProperty Database -Value $db.Name
 
-                if ($server.VersionMajor -eq 13) {
-                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays
-                } elseif ($server.VersionMajor -eq 14) {
-                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name MaxPlansPerQuery -Value $QueryStoreOptions.MaxPlansPerQuery
-                    Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name WaitStatsCaptureMode -Value $QueryStoreOptions.WaitStatsCaptureMode
-                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode
-                } elseif ($server.VersionMajor -ge 15) {
+                # The default view shows the options the engine has, each asked for on its own: MaxPlansPerQuery
+                # exists from SQL Server 2016 on, WaitStatsCaptureMode from 2017 on.
+                $defaultProperties = @(
+                    "ComputerName",
+                    "InstanceName",
+                    "SqlInstance",
+                    "Database",
+                    "ActualState",
+                    "DataFlushIntervalInSeconds",
+                    "StatisticsCollectionIntervalInMinutes",
+                    "MaxStorageSizeInMB",
+                    "CurrentStorageSizeInMB",
+                    "QueryCaptureMode",
+                    "SizeBasedCleanupMode",
+                    "StaleQueryThresholdInDays"
+                )
+                if ($supportsMaxPlansPerQuery) {
+                    $defaultProperties += "MaxPlansPerQuery"
+                }
+                if ($supportsWaitStats) {
+                    $defaultProperties += "WaitStatsCaptureMode"
+                }
+                if ($supportsCustomCapturePolicy) {
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyExecutionCount -Value $QueryStoreOptions.CustomCapturePolicyExecutionCount
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyTotalCompileCPUTimeMS -Value $QueryStoreOptions.CustomCapturePolicyTotalCompileCPUTimeMS
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyTotalExecutionCPUTimeMS -Value $QueryStoreOptions.CustomCapturePolicyTotalExecutionCPUTimeMS
                     Add-Member -Force -InputObject $qso -MemberType NoteProperty -Name CustomCapturePolicyStaleThresholdHours -Value $QueryStoreOptions.CustomCapturePolicyStaleThresholdHours
-                    Select-DefaultView -InputObject $qso -Property ComputerName, InstanceName, SqlInstance, Database, ActualState, DataFlushIntervalInSeconds, StatisticsCollectionIntervalInMinutes, MaxStorageSizeInMB, CurrentStorageSizeInMB, QueryCaptureMode, SizeBasedCleanupMode, StaleQueryThresholdInDays, MaxPlansPerQuery, WaitStatsCaptureMode, CustomCapturePolicyExecutionCount, CustomCapturePolicyTotalCompileCPUTimeMS, CustomCapturePolicyTotalExecutionCPUTimeMS, CustomCapturePolicyStaleThresholdHours
+                    $defaultProperties += "CustomCapturePolicyExecutionCount", "CustomCapturePolicyTotalCompileCPUTimeMS", "CustomCapturePolicyTotalExecutionCPUTimeMS", "CustomCapturePolicyStaleThresholdHours"
                 }
+                Select-DefaultView -InputObject $qso -Property $defaultProperties
             }
         }
     }

@@ -84,23 +84,34 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should export some text matching create table" {
             $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru
-            $results -match "CREATE TABLE"
+            ($results -join [Environment]::NewLine) | Should -Match "CREATE TABLE"
         }
 
         It "Should include BatchSeparator based on the Formatting.BatchSeparator configuration" {
             $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru
-            $results -match "(Get-DbatoolsConfigValue -FullName 'Formatting.BatchSeparator')"
+            # This used to look for the literal text "(Get-DbatoolsConfigValue -FullName ...)". The
+            # subexpression marker was missing, so it searched the script for the name of the command
+            # instead of for the separator the command is configured to emit.
+            $batchSeparator = Get-DbatoolsConfigValue -FullName "Formatting.BatchSeparator"
+            ($results -join [Environment]::NewLine) | Should -Match ([regex]::Escape($batchSeparator))
         }
 
         It "Should include the defined BatchSeparator" {
             $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
-            $results -match "MakeItSo"
+            ($results -join [Environment]::NewLine) | Should -Match "MakeItSo"
+        }
+
+        It "Should include the defined BatchSeparator with scripting options" {
+            # With a ScriptingOptionsObject, -Passthru added the separator only when ScriptBatchTerminator was set
+            $options = New-DbaScriptingOption
+            $results = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -ScriptingOptionsObject $options -BatchSeparator "MakeItSo"
+            ($results -join [Environment]::NewLine) | Should -Match "(?m)^MakeItSo\r?$"
         }
 
         It "Should not accept non-SMO objects" {
             $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -Passthru -BatchSeparator "MakeItSo"
             $null = [PSCustomObject]@{ Invalid = $true } | Export-DbaScript -WarningVariable invalid -WarningAction SilentlyContinue
-            $invalid -match "not a SQL Management Object"
+            $invalid | Should -Match "not a SQL Management Object"
         }
 
         It "Should not append when using NoPrefix (#7455)" {
@@ -114,6 +125,21 @@ Describe $CommandName -Tag IntegrationTests {
             $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -NoPrefix -FilePath $tempFile -Append
             $linecount3 = (Get-Content $tempFile).Count
             $linecount1 | Should -Not -Be $linecount3
+        }
+
+        It "Should write the statements of scripting options with batch terminators in the encoding of the file" {
+            # SMO appends these statements itself, and used to write them as UTF-16 behind the UTF-8 comment header
+            $tempFile = "$tempPath\msdb-$(Get-Random).sql"
+            $options = New-DbaScriptingOption
+            $options.ScriptBatchTerminator = $true
+            $null = Get-DbaDbTable -SqlInstance $TestConfig.InstanceSingle -Database msdb | Select-Object -First 1 | Export-DbaScript -ScriptingOptionsObject $options -FilePath $tempFile
+            $WarnVar | Should -BeNullOrEmpty
+            $content = Get-Content -Path $tempFile -Raw
+            $content | Should -Match ([regex]::Escape("Created by"))
+            $content | Should -Match "CREATE TABLE"
+            $content | Should -Match "(?m)^GO\r?$"
+            # The encoding of the scripting options is only borrowed for the file
+            $options.Encoding.WebName | Should -Be "utf-16"
         }
     }
 }

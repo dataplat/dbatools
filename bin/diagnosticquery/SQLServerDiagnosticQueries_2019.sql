@@ -1,7 +1,7 @@
 
 -- SQL Server 2019 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: July 14, 2026
+-- Last Modified: September 18, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -114,14 +114,15 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 15.0.4415.2		CU30								12/12/2024		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate30
 -- 15.0.4420.2		CU31								2/13/2025		https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate31
 -- 15.0.4430.1      CU32                                2/27/2025       https://learn.microsoft.com/en-us/troubleshoot/sql/releases/sqlserver-2019/cumulativeupdate32
--- 15.0.4435.7		CU32 + GDR							7-8-2025		https://support.microsoft.com/en-us/topic/kb5058722-description-of-the-security-update-for-sql-server-2019-cu32-july-8-2025-09dc5da9-3a60-4462-a8ac-a8e782d088d5
--- 15.0.4440.1		CU32 + GDR							8-12-2025	    https://support.microsoft.com/en-us/topic/kb5063757-description-of-the-security-update-for-sql-server-2019-cu32-august-12-2025-d4df46ef-6b1e-4a6c-aa8c-914d25f74345
--- 15.0.4445.1      CU32 + GDR							9-9-2025		https://support.microsoft.com/en-us/topic/kb5065222-description-of-the-security-update-for-sql-server-2019-cu32-september-9-2025-152ac456-cb04-4b88-8177-a77fe24ac80d
--- 15.0.4455.2		CU32 + GDR							11-11-2025		https://support.microsoft.com/en-us/topic/kb5068404-description-of-the-security-update-for-sql-server-2019-cu32-november-11-2025-c203bfbf-036e-46d2-bc10-6c01200dc48a
--- 15.0.4460.4		CU32 + GDR							3-10-2026		https://support.microsoft.com/en-us/topic/kb5077469-description-of-the-security-update-for-sql-server-2019-cu32-march-10-2026-5ec2c609-35cb-483d-aa80-5e66821e5c97
--- 15.0.4465.1		CU32 + GDR							4-14-2026		https://support.microsoft.com/en-us/topic/kb5084816-description-of-the-security-update-for-sql-server-2019-cu32-april-14-2026-b135e76b-1601-4477-9185-0520debd95a6
--- 15.0.4470.1		CU32 + GDR							5-12-2026		https://support.microsoft.com/en-us/topic/kb5090407-description-of-the-security-update-for-sql-server-2019-cu32-may-12-2026-3551e15f-b89c-4255-bb6a-97f745e642af
--- 15.0.4480.2      CU32 + GDR							7-14-2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2019/general-distribution-release/kb5102335-july
+-- 15.0.4435.7		CU32 + GDR							7/8/2025		https://support.microsoft.com/en-us/topic/kb5058722-description-of-the-security-update-for-sql-server-2019-cu32-july-8-2025-09dc5da9-3a60-4462-a8ac-a8e782d088d5
+-- 15.0.4440.1		CU32 + GDR							8/12/2025	    https://support.microsoft.com/en-us/topic/kb5063757-description-of-the-security-update-for-sql-server-2019-cu32-august-12-2025-d4df46ef-6b1e-4a6c-aa8c-914d25f74345
+-- 15.0.4445.1      CU32 + GDR							9/9/2025		https://support.microsoft.com/en-us/topic/kb5065222-description-of-the-security-update-for-sql-server-2019-cu32-september-9-2025-152ac456-cb04-4b88-8177-a77fe24ac80d
+-- 15.0.4455.2		CU32 + GDR							11/11/2025		https://support.microsoft.com/en-us/topic/kb5068404-description-of-the-security-update-for-sql-server-2019-cu32-november-11-2025-c203bfbf-036e-46d2-bc10-6c01200dc48a
+-- 15.0.4460.4		CU32 + GDR							3/10/2026		https://support.microsoft.com/en-us/topic/kb5077469-description-of-the-security-update-for-sql-server-2019-cu32-march-10-2026-5ec2c609-35cb-483d-aa80-5e66821e5c97
+-- 15.0.4465.1		CU32 + GDR							4/14/2026		https://support.microsoft.com/en-us/topic/kb5084816-description-of-the-security-update-for-sql-server-2019-cu32-april-14-2026-b135e76b-1601-4477-9185-0520debd95a6
+-- 15.0.4470.1		CU32 + GDR							5/12/2026		https://support.microsoft.com/en-us/topic/kb5090407-description-of-the-security-update-for-sql-server-2019-cu32-may-12-2026-3551e15f-b89c-4255-bb6a-97f745e642af
+-- 15.0.4480.2      CU32 + GDR							7/14/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2019/general-distribution-release/kb5102335-july
+-- 15.0.4490.9		CU32 + GDR							9/8/2025		https://support.microsoft.com/en-us/servicing/sql/sql-server-2019/general-distribution-release/5122772
 
 
 -- SQL Server 2019 fell out of Mainstream Support on Feb 28, 2025
@@ -398,10 +399,12 @@ ORDER BY CONVERT(INT, h.run_duration) DESC, [Last Start Date] DESC OPTION (RECOM
 
 
 -- Get SQL Server Agent Alert Information (Query 10) (SQL Server Agent Alerts)
-SELECT name, event_source, message_id, severity, [enabled], has_notification, 
-       delay_between_responses, occurrence_count, last_occurrence_date, last_occurrence_time
+SELECT [name] AS [SQL Agent Alert Name], event_source AS [Event Source], 
+		   message_id AS [Message ID], severity AS [Severity], [enabled] AS [Enabled?], has_notification AS [Has Notification?], 
+		   delay_between_responses AS [Delay between Responses (sec)], occurrence_count AS [Occurance Count], 
+		   last_occurrence_date AS [Last Occurrence Date], last_occurrence_time AS [Last Occurrence Time]
 FROM msdb.dbo.sysalerts WITH (NOLOCK)
-ORDER BY name OPTION (RECOMPILE);
+ORDER BY [name] OPTION (RECOMPILE);
 ------
 
 -- Gives you some basic information about your SQL Server Agent Alerts 

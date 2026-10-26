@@ -99,7 +99,7 @@ function Get-DbaWindowsLog {
 
         #region Helper Functions
         function Start-Runspace {
-            $Powershell = [PowerShell]::Create().AddScript($scriptBlock_ParallelRemoting).AddParameter("SqlInstance", $instance).AddParameter("Start", $Start).AddParameter("End", $End).AddParameter("Credential", $Credential).AddParameter("MaxRemoteThreads", $MaxRemoteThreads).AddParameter("ScriptBlock", $scriptBlock_RemoteExecution)
+            $Powershell = [PowerShell]::Create().AddScript($scriptBlock_ParallelRemoting).AddParameter("SqlInstance", $instance).AddParameter("Start", $Start).AddParameter("End", $End).AddParameter("Credential", $Credential).AddParameter("MaxRemoteThreads", $MaxRemoteThreads).AddParameter("ScriptBlock", $scriptBlock_RemoteExecution.ToString())
             $Powershell.RunspacePool = $RunspacePool
             Write-Message -Level Verbose -Message "Launching remote runspace against <c='green'>$instance</c>" -Target $instance
             $null = $RunspaceCollection.Add((New-Object -TypeName PSObject -Property @{ Runspace = $PowerShell.BeginInvoke(); PowerShell = $PowerShell; Instance = $instance.FullSmoName }))
@@ -273,13 +273,20 @@ function Get-DbaWindowsLog {
                 [int]
                 $MaxRemoteThreads,
 
-                [System.Management.Automation.ScriptBlock]
+                [string]
                 $ScriptBlock
             )
 
+            # The script arrives as text and is compiled here so that it belongs to this runspace.
+            # A scriptblock object created by the calling runspace keeps its affinity to that
+            # runspace. Remoting serializes it anyway, but for a local instance Invoke-Command runs
+            # it in process, and Windows PowerShell then executes it against the calling runspace's
+            # session state while that runspace is busy waiting for this one. Get-WinEvent then
+            # intermittently never returns and the command hangs forever (seen on the CI runners,
+            # where the instances are local, and reproduced on 5.1 with a fake startup event).
             $params = @{
                 ArgumentList = $Start, $End, $SqlInstance.InstanceName, $MaxRemoteThreads
-                ScriptBlock  = $ScriptBlock
+                ScriptBlock  = [ScriptBlock]::Create($ScriptBlock)
             }
             if (-not $SqlInstance.IsLocalhost) { $params["ComputerName"] = $SqlInstance.ComputerName }
             if ($Credential) { $params["Credential"] = $Credential }

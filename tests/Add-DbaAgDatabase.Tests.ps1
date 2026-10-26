@@ -198,6 +198,54 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When adding AG database stops with an exception" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id with records but without a completed one.
+            $splatProgressAgDb = @{
+                SqlInstance       = $TestConfig.InstanceHadr
+                AvailabilityGroup = $agName
+                Database          = $existingDbWithoutBackup
+                EnableException   = $true
+            }
+            if ($TestConfig.SqlCred) {
+                $splatProgressAgDb.SqlCredential = $TestConfig.SqlCred
+            }
+            $progressScript = @"
+param(`$ModulePath, `$Splat)
+Import-Module -Name `$ModulePath
+Add-DbaAgDatabase @Splat
+"@
+            $progressRunspace = [runspacefactory]::CreateRunspace()
+            $progressRunspace.Open()
+            $progressShell = [powershell]::Create()
+            $progressShell.Runspace = $progressRunspace
+            $null = $progressShell.AddScript($progressScript).AddArgument((Get-Module -Name $ModuleName | Select-Object -First 1).Path).AddArgument($splatProgressAgDb)
+            $progressError = $null
+            try {
+                $null = $progressShell.Invoke()
+            } catch {
+                $progressError = $PSItem
+            }
+            $progressRecords = @($progressShell.Streams.Progress)
+            $progressShell.Dispose()
+            $progressRunspace.Dispose()
+        }
+
+        It "Throws the error of the instance" {
+            # With EnableException, Stop-Function throws the error of the failed step, not its own message
+            "$progressError" | Should -Match "$existingDbWithoutBackup.*not been backed up"
+        }
+
+        It "Completes every progress bar it started" {
+            $startedIds = @($progressRecords | Where-Object RecordType -eq "Processing" | Select-Object -ExpandProperty ActivityId -Unique)
+            $completedIds = @($progressRecords | Where-Object RecordType -eq "Completed" | Select-Object -ExpandProperty ActivityId -Unique)
+            $startedIds | Should -Not -BeNullOrEmpty
+            $startedIds | Where-Object { $PSItem -notin $completedIds } | Should -BeNullOrEmpty
+        }
+    }
+
     Context "When adding AG database that does not exists" {
         BeforeAll {
             $splatAddAgDb = @{

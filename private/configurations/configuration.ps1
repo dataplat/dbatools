@@ -165,7 +165,9 @@ foreach ($file in (Get-ChildItem -Path ([IO.Path]::Combine($configpath, "setting
     }
 }
 
-if (-not $script:dbatools_ImportFromRegistryDone) {
+# The configuration is static and shared by every runspace of the process, so the persisted values are applied only once per process.
+# The maintenance runspace imports the module a second time, and applying them again would overwrite the values set in the session in the meantime.
+if (-not [Dataplat.Dbatools.Configuration.ConfigurationHost]::ImportFromRegistryDone) {
     # Read config from all settings
     $config_hash = Read-DbatoolsConfigPersisted -Scope 127
 
@@ -198,7 +200,7 @@ if (-not $script:dbatools_ImportFromRegistryDone) {
         }
     }
 
-    $script:dbatools_ImportFromRegistryDone = $true
+    [Dataplat.Dbatools.Configuration.ConfigurationHost]::ImportFromRegistryDone = $true
 
     Write-ImportTime -Text "Config system: Did some final checks"
 }

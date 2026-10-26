@@ -22,7 +22,8 @@ function Set-DbaPrivilege {
     .PARAMETER User
         Specifies a custom user account to receive the privileges instead of automatically discovering SQL Server service accounts.
         Use this when you need to grant privileges to a specific account that will run SQL Server services, or when the automatic service account detection doesn't work in your environment.
-        Accepts domain accounts (DOMAIN\User) or local accounts - ensure the account exists and will be used by SQL Server services.
+        Accepts domain accounts (DOMAIN\User), local accounts (COMPUTER\User, .\User or User), per-service SIDs (NT SERVICE\MSSQLSERVER) or a SID (S-1-5-...) - ensure the account exists and will be used by SQL Server services.
+        An account that cannot be resolved on the target computer is skipped with a warning.
 
     .PARAMETER WhatIf
         If this switch is enabled, no actions are performed but informational messages will be displayed that explain what would happen if the command were to run.
@@ -76,13 +77,44 @@ function Set-DbaPrivilege {
     )
 
     begin {
-        $ResolveAccountToSID = @"
-function Convert-UserNameToSID ([string] `$Acc ) {
-`$objUser = New-Object System.Security.Principal.NTAccount(`"`$Acc`")
-`$strSID = `$objUser.Translate([System.Security.Principal.SecurityIdentifier])
-`$strSID.Value
+        # Dot-sourced into the script block that runs on the target computer, because local accounts and
+        # per-service SIDs can only be resolved there.
+        $ResolveAccountToSID = @'
+function Convert-UserNameToSID ([string] $Acc ) {
+    if ($Acc -match "^\*?(S-1-[\d-]+)$") {
+        return $Matches[1]
+    }
+    # The service manager reports the local system account as LocalSystem, and Windows stores a local service
+    # account as .\Name. NTAccount translates neither form.
+    if ($Acc -eq "LocalSystem") {
+        return "S-1-5-18"
+    }
+    if ($Acc -match "^\.\\(.+)$") {
+        $Acc = "$env:COMPUTERNAME\$($Matches[1])"
+    }
+    try {
+        $objUser = New-Object System.Security.Principal.NTAccount("$Acc")
+        $strSID = $objUser.Translate([System.Security.Principal.SecurityIdentifier])
+        $strSID.Value
+    } catch {
+        $null
+    }
 }
-"@
+function Test-PrivilegeLineHasSid ([string] $Line, [string] $Sid) {
+    # An entry is *SID or an account name - secedit exports a local account by its name, without the computer
+    # name - so every entry is compared by its SID. A -match on the whole line also took a SID for present
+    # when it was only the beginning of another one.
+    if (-not $Line) {
+        return $false
+    }
+    foreach ($entry in $Line.Split("=", 2)[1].Split(",")) {
+        if ($entry.Trim() -and (Convert-UserNameToSID -Acc $entry.Trim()) -eq $Sid) {
+            return $true
+        }
+    }
+    return $false
+}
+'@
         $ComputerName = $ComputerName.ComputerName | Select-Object -Unique
     }
     process {
@@ -90,11 +122,36 @@ function Convert-UserNameToSID ([string] `$Acc ) {
             if ($Pscmdlet.ShouldProcess($computer, "Setting Privilege for SQL Service Account")) {
                 try {
                     $null = Test-ElevationRequirement -ComputerName $Computer -Continue
-                    if (Test-PSRemoting -ComputerName $Computer) {
+                    # Invoke-Command2 executes on the local computer under the process identity and
+                    # ignores -Credential, so the connectivity test and the service discovery below
+                    # have to authenticate the same way: with the credential only for remote targets.
+                    # Otherwise a credential that is valid on the remote computers of a mixed list
+                    # but not locally would reject the local computer although the actual operation
+                    # would succeed. Without a credential the implicit identity is used, which fails
+                    # when it cannot authenticate to the target (double hop).
+                    $useCredentialForPreflight = $Credential -and -not ([DbaInstanceParameter]$computer).IsLocalHost
+                    if ($useCredentialForPreflight) {
+                        $remotingTestResult = Test-PSRemoting -ComputerName $Computer -Credential $Credential
+                    } else {
+                        $remotingTestResult = Test-PSRemoting -ComputerName $Computer
+                    }
+                    if ($remotingTestResult) {
                         Write-Message -Level Verbose -Message "Exporting Privileges on $Computer"
-                        Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock {
-                            $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools.cfg > $NULL;
+                        # A random token keeps this invocation's secedit cfg/db/jfm files from colliding with
+                        # (or being deleted by) another concurrent Set-DbaPrivilege run against the same computer.
+                        $seceditRunToken = Get-Random
+                        $exportPrivilegesScriptBlock = {
+                            param ($ExportRunToken)
+                            $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); secedit /export /cfg $temp\secpolByDbatools-$ExportRunToken.cfg > $NULL;
                         }
+                        $splatExportPrivileges = @{
+                            Raw          = $true
+                            ComputerName = $computer
+                            Credential   = $Credential
+                            ArgumentList = $seceditRunToken
+                            ScriptBlock  = $exportPrivilegesScriptBlock
+                        }
+                        Invoke-Command2 @splatExportPrivileges
 
                         $SQLServiceAccounts = @()
                         $SQLPerServiceSIDs = @()
@@ -103,36 +160,50 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                             $SQLPerServiceSIDs += $User
                         } else {
                             Write-Message -Level Verbose -Message "Getting SQL Service Accounts on $computer"
-                            $services = Get-DbaService -ComputerName $computer -Type Engine
+                            if ($useCredentialForPreflight) {
+                                $services = Get-DbaService -ComputerName $computer -Credential $Credential -Type Engine
+                            } else {
+                                $services = Get-DbaService -ComputerName $computer -Type Engine
+                            }
                             $SQLServiceAccounts += $services.StartName
                             # Per-service SIDs (NT SERVICE\<ServiceName>) are added to the service token by Windows
                             # for all services on Vista/Server 2008 and later. SQL Server uses the per-service SID
                             # for file operations (IFI) and memory operations (LPIM), matching setup.exe behavior.
                             $SQLPerServiceSIDs += $services | ForEach-Object { "NT SERVICE\$($_.ServiceName)" }
                         }
+                        # Instances that run under the same account list it once each. The script block below checks
+                        # each account against the privilege line it read before adding, so a repeated account was added twice.
+                        $SQLServiceAccounts = @($SQLServiceAccounts | Select-Object -Unique)
+                        $SQLPerServiceSIDs = @($SQLPerServiceSIDs | Select-Object -Unique)
                         if ($SQLServiceAccounts.count -ge 1) {
                             Write-Message -Level Verbose -Message "Setting Privileges on $Computer"
-                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -Verbose -ArgumentList $ResolveAccountToSID, $SQLServiceAccounts, $SQLPerServiceSIDs, $Type -ScriptBlock {
+                            $setPrivilegesScriptBlock = {
                                 [CmdletBinding()]
                                 param ($ResolveAccountToSID,
                                     $SQLServiceAccounts,
                                     $SQLPerServiceSIDs,
-                                    $Type
+                                    $Type,
+                                    $ConfigureRunToken
                                 )
                                 . ([ScriptBlock]::Create($ResolveAccountToSID))
                                 $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("");
-                                $tempfile = "$temp\secpolByDbatools.cfg"
+                                $tempfile = "$temp\secpolByDbatools-$ConfigureRunToken.cfg"
                                 if ('BatchLogon' -in $Type) {
                                     $BLline = Get-Content $tempfile | Where-Object { $_ -match "SeBatchLogonRight" }
                                     ForEach ($acc in $SQLServiceAccounts) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
+                                        if (-not $SID) {
+                                            # Without a SID the line would get an empty *, or the SID of the previous account.
+                                            Write-Warning "Cannot resolve $acc to a SID on $env:ComputerName, so it was not added"
+                                            continue
+                                        }
                                         if (-not $BLline) {
                                             $BLline = "SeBatchLogonRight = *$SID"
                                             (Get-Content $tempfile) -replace "\[Privilege Rights\]", "[Privilege Rights]`n$BLline" |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Batch Logon Privileges on $env:ComputerName"
-                                        } elseif ($BLline -notmatch $SID) {
+                                        } elseif (-not (Test-PrivilegeLineHasSid -Line $BLline -Sid $SID)) {
                                             (Get-Content $tempfile) -replace "SeBatchLogonRight = ", "SeBatchLogonRight = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
@@ -149,13 +220,18 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                     # SID for volume maintenance tasks, matching SQL Server setup.exe behavior.
                                     ForEach ($acc in $SQLPerServiceSIDs) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
+                                        if (-not $SID) {
+                                            # Without a SID the line would get an empty *, or the SID of the previous account.
+                                            Write-Warning "Cannot resolve $acc to a SID on $env:ComputerName, so it was not added"
+                                            continue
+                                        }
                                         if (-not $IFIline) {
                                             $IFIline = "SeManageVolumePrivilege = *$SID"
                                             (Get-Content $tempfile) -replace "\[Privilege Rights\]", "[Privilege Rights]`n$IFIline" |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Instant File Initialization Privileges on $env:ComputerName"
-                                        } elseif ($IFIline -notmatch $SID) {
+                                        } elseif (-not (Test-PrivilegeLineHasSid -Line $IFIline -Sid $SID)) {
                                             (Get-Content $tempfile) -replace "SeManageVolumePrivilege = ", "SeManageVolumePrivilege = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
@@ -172,13 +248,18 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                     # SID for locked memory pages, matching SQL Server setup.exe behavior.
                                     ForEach ($acc in $SQLPerServiceSIDs) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
+                                        if (-not $SID) {
+                                            # Without a SID the line would get an empty *, or the SID of the previous account.
+                                            Write-Warning "Cannot resolve $acc to a SID on $env:ComputerName, so it was not added"
+                                            continue
+                                        }
                                         if (-not $LPIMline) {
                                             $LPIMline = "SeLockMemoryPrivilege = *$SID"
                                             (Get-Content $tempfile) -replace "\[Privilege Rights\]", "[Privilege Rights]`n$LPIMline" |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Lock Pages in Memory Privileges on $env:ComputerName"
-                                        } elseif ($LPIMline -notmatch $SID) {
+                                        } elseif (-not (Test-PrivilegeLineHasSid -Line $LPIMline -Sid $SID)) {
                                             (Get-Content $tempfile) -replace "SeLockMemoryPrivilege = ", "SeLockMemoryPrivilege = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
@@ -195,13 +276,18 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                     # SID when writing security audit events, matching SQL Server setup.exe behavior.
                                     ForEach ($acc in $SQLPerServiceSIDs) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
+                                        if (-not $SID) {
+                                            # Without a SID the line would get an empty *, or the SID of the previous account.
+                                            Write-Warning "Cannot resolve $acc to a SID on $env:ComputerName, so it was not added"
+                                            continue
+                                        }
                                         if (-not $SALine) {
                                             $SALine = "SeAuditPrivilege = *$SID"
                                             (Get-Content $tempfile) -replace "\[Privilege Rights\]", "[Privilege Rights]`n$SALine" |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Security Log Privileges on $env:ComputerName"
-                                        } elseif ($SALine -notmatch $SID) {
+                                        } elseif (-not (Test-PrivilegeLineHasSid -Line $SALine -Sid $SID)) {
                                             (Get-Content $tempfile) -replace "SeAuditPrivilege = ", "SeAuditPrivilege = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
@@ -216,13 +302,18 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                     $SLline = Get-Content $tempfile | Where-Object { $_ -match "SeServiceLogonRight" }
                                     ForEach ($acc in $SQLServiceAccounts) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
+                                        if (-not $SID) {
+                                            # Without a SID the line would get an empty *, or the SID of the previous account.
+                                            Write-Warning "Cannot resolve $acc to a SID on $env:ComputerName, so it was not added"
+                                            continue
+                                        }
                                         if (-not $SLline) {
                                             $SLline = "SeServiceLogonRight = *$SID"
                                             (Get-Content $tempfile) -replace "\[Privilege Rights\]", "[Privilege Rights]`n$SLline" |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Service Logon Privileges on $env:ComputerName"
-                                        } elseif ($SLline -notmatch $SID) {
+                                        } elseif (-not (Test-PrivilegeLineHasSid -Line $SLline -Sid $SID)) {
                                             (Get-Content $tempfile) -replace "SeServiceLogonRight = ", "SeServiceLogonRight = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
@@ -237,13 +328,18 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                     $CGOline = Get-Content $tempfile | Where-Object { $_ -match "SeCreateGlobalPrivilege" }
                                     ForEach ($acc in $SQLServiceAccounts) {
                                         $SID = Convert-UserNameToSID -Acc $acc;
+                                        if (-not $SID) {
+                                            # Without a SID the line would get an empty *, or the SID of the previous account.
+                                            Write-Warning "Cannot resolve $acc to a SID on $env:ComputerName, so it was not added"
+                                            continue
+                                        }
                                         if (-not $CGOline) {
                                             $CGOline = "SeCreateGlobalPrivilege = *$SID"
                                             (Get-Content $tempfile) -replace "\[Privilege Rights\]", "[Privilege Rights]`n$CGOline" |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
                                             Write-Verbose "Added $acc to Create Global Objects Privileges on $env:ComputerName"
-                                        } elseif ($CGOline -notmatch $SID) {
+                                        } elseif (-not (Test-PrivilegeLineHasSid -Line $CGOline -Sid $SID)) {
                                             (Get-Content $tempfile) -replace "SeCreateGlobalPrivilege = ", "SeCreateGlobalPrivilege = *$SID," |
                                                 Set-Content $tempfile
                                             <# DO NOT use Write-Message as this is inside of a script block #>
@@ -254,15 +350,48 @@ function Convert-UserNameToSID ([string] `$Acc ) {
                                         }
                                     }
                                 }
-                                $null = secedit /configure /cfg $tempfile /db secedit.sdb /areas USER_RIGHTS /overwrite /quiet
+                                $null = secedit /configure /cfg $tempfile /db $temp\secedit-$ConfigureRunToken.sdb /areas USER_RIGHTS /overwrite /quiet
                             }
+                            $splatSetPrivileges = @{
+                                Raw          = $true
+                                ComputerName = $computer
+                                Credential   = $Credential
+                                Verbose      = $true
+                                ArgumentList = $ResolveAccountToSID, $SQLServiceAccounts, $SQLPerServiceSIDs, $Type, $seceditRunToken
+                                ScriptBlock  = $setPrivilegesScriptBlock
+                            }
+                            Invoke-Command2 @splatSetPrivileges
+
                             Write-Message -Level Verbose -Message "Removing secpol file on $computer"
-                            Invoke-Command2 -Raw -ComputerName $computer -Credential $Credential -ScriptBlock { $temp = ([System.IO.Path]::GetTempPath()).TrimEnd(""); Remove-Item $temp\secpolByDbatools.cfg -Force > $NULL }
+                            $removeSecpolScriptBlock = {
+                                param ($CleanupRunToken)
+                                $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("")
+                                # secedit's /configure /db creates a database file plus a matching .jfm journal
+                                # file next to it; both live in $temp now instead of leaking into the caller's cwd.
+                                $splatRemoveSeceditFiles = @{
+                                    Path        = "$temp\secpolByDbatools-$CleanupRunToken.cfg", "$temp\secedit-$CleanupRunToken.sdb", "$temp\secedit-$CleanupRunToken.jfm"
+                                    Force       = $true
+                                    ErrorAction = "SilentlyContinue"
+                                }
+                                Remove-Item @splatRemoveSeceditFiles > $NULL
+                            }
+                            $splatRemoveSecpolFile = @{
+                                Raw          = $true
+                                ComputerName = $computer
+                                Credential   = $Credential
+                                ArgumentList = $seceditRunToken
+                                ScriptBlock  = $removeSecpolScriptBlock
+                            }
+                            Invoke-Command2 @splatRemoveSecpolFile
                         } else {
                             Write-Message -Level Warning -Message "No SQL Service Accounts found on $Computer"
                         }
                     } else {
-                        Write-Message -Level Warning -Message "Failed to connect to $Computer"
+                        if ($Credential) {
+                            Write-Message -Level Warning -Message "Failed to connect to $Computer"
+                        } else {
+                            Write-Message -Level Warning -Message "Failed to connect to $Computer. If this session itself runs in a remote session (for example via WinRM or Ansible), its network logon cannot authenticate to $Computer (double hop). Pass -Credential or connect with an authentication that supports delegation, like CredSSP."
+                        }
                     }
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue

@@ -5,24 +5,12 @@ param(
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
 
-if ($null -eq $PSDefaultParameterValues) {
-    $PSDefaultParameterValues = @{ }
-}
-
-$hasIntegrationConfig = $false
-if ($TestConfig -and $TestConfig.appveyorlabrepo -and $TestConfig.InstanceMulti1) {
-    $parquetFixturePath = Join-Path -Path $TestConfig.appveyorlabrepo -ChildPath "parquet"
-    $pathEcdc = Join-Path -Path $parquetFixturePath -ChildPath "ecdc_cases.parquet"
-    $pathBoundaries = Join-Path -Path $parquetFixturePath -ChildPath "world-administrative-boundaries.parquet"
-    $pathMixedTypes = Join-Path -Path $parquetFixturePath -ChildPath "mixed_types.parquet"
-    $hasIntegrationConfig = (Test-Path $pathEcdc) -and (Test-Path $pathBoundaries) -and (Test-Path $pathMixedTypes)
-}
-
 Describe $CommandName -Tag UnitTests {
     Context "Parameter validation" {
         It "Should have the expected parameters" {
             $hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
-            $expectedParameters = @(
+            $expectedParameters = $TestConfig.CommonParameters
+            $expectedParameters += @(
                 "Path",
                 "SqlInstance",
                 "SqlCredential",
@@ -48,7 +36,7 @@ Describe $CommandName -Tag UnitTests {
                 "StaticColumns",
                 "EnableException"
             )
-            ($expectedParameters | Where-Object { $PSItem -notin $hasParameters }) | Should -BeNullOrEmpty
+            Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
 
         It "Should not have any CSV-only parameters" {
@@ -91,7 +79,19 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests -Skip:(-not $hasIntegrationConfig) {
+# These tests need the three Parquet fixtures from the appveyor lab repo. Pester evaluates -Skip:
+# during discovery, so the check cannot move into BeforeAll and is written out here instead of being
+# computed into a variable, because only Describe blocks are allowed at the top level of a test file.
+Describe $CommandName -Tag IntegrationTests -Skip:(
+    -not (
+        $TestConfig -and
+        $TestConfig.appveyorlabrepo -and
+        $TestConfig.InstanceMulti1 -and
+        (Test-Path -Path (Join-Path -Path $TestConfig.appveyorlabrepo -ChildPath "parquet\ecdc_cases.parquet")) -and
+        (Test-Path -Path (Join-Path -Path $TestConfig.appveyorlabrepo -ChildPath "parquet\world-administrative-boundaries.parquet")) -and
+        (Test-Path -Path (Join-Path -Path $TestConfig.appveyorlabrepo -ChildPath "parquet\mixed_types.parquet"))
+    )
+) {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
@@ -424,4 +424,53 @@ ORDER BY c.column_id
         }
     }
 
+}
+
+Describe $CommandName -Tag IntegrationTests {
+    Context "When Parquet.NET is not installed" {
+        BeforeAll {
+            # Parquet.NET stays loaded once any test has used it, so the missing-assembly path is only reachable in a
+            # fresh process whose search paths point at an empty folder.
+            $emptyRoot = Join-Path -Path $TestConfig.Temp -ChildPath "dbatoolsci_noparquet_$(Get-Random)"
+            $null = New-Item -Path $emptyRoot -ItemType Directory
+            $notAParquetFile = Join-Path -Path $emptyRoot -ChildPath "dbatoolsci.parquet"
+            Set-Content -Path $notAParquetFile -Value "dbatoolsci"
+            $childScript = {
+                param($ModulePath, $EmptyRoot, $NotAParquetFile)
+                Import-Module -Name $ModulePath -Force
+                $null = Set-DbatoolsConfig -FullName Path.DbatoolsParquet -Value $EmptyRoot
+                $null = Set-DbatoolsConfig -FullName Path.DbatoolsData -Value $EmptyRoot
+                $splatImport = @{
+                    Path            = $NotAParquetFile
+                    SqlInstance     = "dbatoolsci-nohost"
+                    Database        = "tempdb"
+                    Table           = "dbatoolsci"
+                    WarningAction   = "SilentlyContinue"
+                    WarningVariable = "childWarnings"
+                }
+                $null = Import-DbaParquet @splatImport
+                foreach ($warning in $childWarnings) {
+                    "WARNING: $warning"
+                }
+            }
+            $childScriptPath = Join-Path -Path $emptyRoot -ChildPath "dbatoolsci_child.ps1"
+            Set-Content -Path $childScriptPath -Value $childScript.ToString()
+            $modulePath = Join-Path -Path (Get-Module -Name dbatools).ModuleBase -ChildPath "dbatools.psd1"
+            $hostPath = (Get-Process -Id $PID).Path
+            $childOutput = & $hostPath -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $childScriptPath -ModulePath $modulePath -EmptyRoot $emptyRoot -NotAParquetFile $notAParquetFile 2>&1
+            $childWarnings = @($childOutput | Where-Object { "$PSItem" -like "WARNING: *" })
+        }
+
+        AfterAll {
+            Remove-Item -Path $emptyRoot -Recurse -Force -ErrorAction SilentlyContinue
+        }
+
+        It "Says how to install Parquet.NET and does nothing else" {
+            # The child prints the multi-line warning line by line and only its first line carries the prefix. Before
+            # the guard the process block still ran, connected to the instance and warned once more per file
+            # that it could not be opened (#10655).
+            $childWarnings.Count | Should -Be 1
+            $childWarnings[0] | Should -BeLike "*Could not find Parquet.NET*"
+        }
+    }
 }

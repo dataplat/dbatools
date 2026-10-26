@@ -187,14 +187,18 @@ function Backup-DbaDbCertificate {
                 $Path = $server.BackupDirectory
             }
 
+            # Every stop in this helper returns from it, and the loop over the certificates in process moves on to
+            # the next one. -Continue did the same only because the continue escaped the helper into that loop.
             if (-not $Path) {
-                Stop-Function -Message "Path discovery failed. Please explicitly specify -Path" -Target $server -Continue
+                Stop-Function -Message "Path discovery failed. Please explicitly specify -Path" -Target $server
+                return
             }
 
             $actualPath = "$Path".TrimEnd('\').TrimEnd('/')
 
             if (-not (Test-DbaPath -SqlInstance $server -Path $actualPath)) {
-                Stop-Function -Message "$SqlInstance cannot access $actualPath" -Target $actualPath
+                Stop-Function -Message "$instance cannot access $actualPath" -Target $actualPath
+                return
             }
 
             $fileinstance = $instance.ToString().Replace('\', '$')
@@ -207,7 +211,8 @@ function Backup-DbaDbCertificate {
             # if the base file name exists, then default to old style of appending a timestamp
             if (Test-DbaPath -SqlInstance $server -Path "$fullCertName.cer") {
                 if ($Suffix) {
-                    Stop-Function -Message "$fullCertName.cer already exists on $($server.Name)" -Target $actualPath -Continue
+                    Stop-Function -Message "$fullCertName.cer already exists on $($server.Name)" -Target $actualPath
+                    return
                 } else {
                     $time = Get-Date -Format yyyyMMddHHmmss
                     $fullCertName = "$fullCertName-$time"
@@ -279,7 +284,8 @@ function Backup-DbaDbCertificate {
                     } else {
                         $exception = $_.Exception
                     }
-                    Stop-Function -Message "$certName from $db on $instance cannot be exported." -Continue -Target $cert -ErrorRecord $PSItem
+                    Stop-Function -Message "$certName from $db on $instance cannot be exported." -Target $cert -ErrorRecord $PSItem
+                    return
                 }
             }
         }

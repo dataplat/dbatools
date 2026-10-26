@@ -10,7 +10,7 @@ function New-DbaComputerCertificateSigningRequest {
 
         Supports both standalone SQL Server instances and cluster configurations, automatically resolving FQDNs and configuring appropriate DNS entries. The generated certificates work with SQL Server's encryption features including encrypted client connections, mirroring, and backup encryption scenarios.
 
-        By default, creates RSA certificates with 1024-bit keys, though this can be customized for stronger encryption requirements. All certificates are configured as machine certificates with the Microsoft RSA SChannel Cryptographic Provider for compatibility with SQL Server's encryption stack.
+        By default, creates RSA certificates with 2048-bit keys, the minimum the dbatools network certificate commands accept as suitable for SQL Server, though this can be raised for stronger encryption requirements. All certificates are configured as machine certificates, by default with the legacy Microsoft RSA SChannel Cryptographic Provider; -Provider switches the private key to the Microsoft Software Key Storage Provider.
 
     .PARAMETER ComputerName
         The target computer name hosting the SQL Server instance where the certificate will be installed. Accepts multiple computer names for batch processing.
@@ -32,8 +32,13 @@ function New-DbaComputerCertificateSigningRequest {
         This name helps administrators identify the certificate's purpose when managing multiple certificates on the same server.
 
     .PARAMETER KeyLength
-        Specifies the RSA key length in bits for the certificate. Defaults to 1024 for compatibility, though 2048 or 4096 is recommended for production.
+        Specifies the RSA key length in bits for the certificate. Defaults to 2048, the minimum key length Test-DbaNetworkCertificate accepts as suitable for SQL Server; 4096 is possible for stronger requirements.
         Higher key lengths provide stronger encryption but may impact SQL Server connection performance on older hardware.
+
+    .PARAMETER Provider
+        Specifies the cryptographic provider that generates and holds the private key of the request.
+        Defaults to "Microsoft RSA SChannel Cryptographic Provider", a legacy Cryptographic Service Provider (CSP) that creates the key with KeySpec AT_KEYEXCHANGE, which is what the Microsoft certificate requirements for SQL Server name.
+        Use "Microsoft Software Key Storage Provider" for a Cryptography Next Generation (CNG) key. SQL Server 2019 and later load such a key as well, and Set-DbaNetworkCertificate and Test-DbaNetworkCertificate handle both key types.
 
     .PARAMETER Dns
         Additional DNS names to include in the certificate's Subject Alternative Name (SAN) field. By default includes both short and FQDN names.
@@ -82,12 +87,12 @@ function New-DbaComputerCertificateSigningRequest {
     .EXAMPLE
         PS C:\> New-DbaComputerCertificateSigningRequest
 
-        Creates a computer certificate signing request for the local machine with the keylength of 1024.
+        Creates a computer certificate signing request for the local machine with the keylength of 2048.
 
     .EXAMPLE
         PS C:\> New-DbaComputerCertificateSigningRequest -ComputerName Server1
 
-        Creates a computer certificate signing request for server1 with the keylength of 1024.
+        Creates a computer certificate signing request for server1 with the keylength of 2048.
 
     .EXAMPLE
         PS C:\> New-DbaComputerCertificateSigningRequest -ComputerName sqla, sqlb -ClusterInstanceName sqlcluster -KeyLength 4096
@@ -108,7 +113,9 @@ function New-DbaComputerCertificateSigningRequest {
         [string]$ClusterInstanceName,
         [string]$Path = (Get-DbatoolsConfigValue -FullName 'Path.DbatoolsExport'),
         [string]$FriendlyName = "SQL Server",
-        [int]$KeyLength = 1024,
+        [int]$KeyLength = 2048,
+        [ValidateSet("Microsoft RSA SChannel Cryptographic Provider", "Microsoft Software Key Storage Provider")]
+        [string]$Provider = "Microsoft RSA SChannel Cryptographic Provider",
         [string[]]$Dns,
         [switch]$EnableException
     )
@@ -184,79 +191,92 @@ function New-DbaComputerCertificateSigningRequest {
         foreach ($computer in $ComputerName) {
             $stepCounter = 0
 
-            if (-not $secondaryNode) {
+            try {
+                if (-not $secondaryNode) {
 
-                if ($ClusterInstanceName) {
-                    if ($ClusterInstanceName -notmatch "\.") {
-                        $fqdn = "$ClusterInstanceName.$env:USERDNSDOMAIN"
+                    if ($ClusterInstanceName) {
+                        if ($ClusterInstanceName -notmatch "\.") {
+                            $fqdn = "$ClusterInstanceName.$env:USERDNSDOMAIN"
+                        } else {
+                            $fqdn = $ClusterInstanceName
+                        }
                     } else {
-                        $fqdn = $ClusterInstanceName
-                    }
-                } else {
-                    $resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -WarningAction SilentlyContinue
+                        $resolved = Resolve-DbaNetworkName -ComputerName $computer.ComputerName -WarningAction SilentlyContinue
 
-                    if (-not $resolved) {
-                        $fqdn = "$ComputerName.$env:USERDNSDOMAIN"
-                        Write-Message -Level Warning -Message "Server name cannot be resolved. Guessing it's $fqdn"
+                        if (-not $resolved) {
+                            $fqdn = "$ComputerName.$env:USERDNSDOMAIN"
+                            Write-Message -Level Warning -Message "Server name cannot be resolved. Guessing it's $fqdn"
+                        } else {
+                            $fqdn = $resolved.fqdn
+                        }
+                    }
+
+                    $certDir = "$Path\$fqdn"
+                    $certCfg = "$certDir\request.inf"
+                    $certCsr = "$certDir\$fqdn.csr"
+
+                    if (Test-Path($certDir)) {
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Deleting files from $certDir"
+                        $null = Remove-Item "$certDir\*.*"
                     } else {
-                        $fqdn = $resolved.fqdn
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating $certDir"
+                        $null = New-Item -Path $certDir -ItemType Directory -Force
                     }
+
+                    # Make sure output is compat with clusters
+                    $shortName = $fqdn.Split(".")[0]
+
+                    if (-not $dns) {
+                        $dns = $shortName, $fqdn
+                    }
+
+                    $san = Get-SanExt $dns
+                    # Write config file
+                    Set-Content $certCfg "[Version]"
+                    Add-Content $certCfg 'Signature="$Windows NT$"'
+                    Add-Content $certCfg "[NewRequest]"
+                    Add-Content $certCfg "Subject = ""CN=$fqdn"""
+                    if ($Provider -eq "Microsoft RSA SChannel Cryptographic Provider") {
+                        # A legacy CSP key. KeySpec 1 is AT_KEYEXCHANGE, the KeySpec the Microsoft certificate requirements for SQL Server name.
+                        Add-Content $certCfg "KeySpec = 1"
+                    }
+                    Add-Content $certCfg "KeyLength = $KeyLength"
+                    Add-Content $certCfg "Exportable = TRUE"
+                    Add-Content $certCfg "MachineKeySet = TRUE"
+                    Add-Content $certCfg "FriendlyName=""$FriendlyName"""
+                    Add-Content $certCfg "SMIME = False"
+                    Add-Content $certCfg "PrivateKeyArchive = FALSE"
+                    Add-Content $certCfg "UserProtected = FALSE"
+                    Add-Content $certCfg "UseExistingKeySet = FALSE"
+                    Add-Content $certCfg "ProviderName = ""$Provider"""
+                    if ($Provider -eq "Microsoft RSA SChannel Cryptographic Provider") {
+                        # ProviderType 12 is PROV_RSA_SCHANNEL.
+                        Add-Content $certCfg "ProviderType = 12"
+                    } else {
+                        # A Key Storage Provider has neither a provider type nor a KeySpec, it takes the key algorithm instead.
+                        Add-Content $certCfg "KeyAlgorithm = RSA"
+                    }
+                    if ($SelfSigned) {
+                        Add-Content $certCfg "RequestType = Cert"
+                    } else {
+                        Add-Content $certCfg "RequestType = PKCS10"
+                    }
+                    Add-Content $certCfg "KeyUsage = 0xa0"
+                    Add-Content $certCfg "[EnhancedKeyUsageExtension]"
+                    Add-Content $certCfg "OID=1.3.6.1.5.5.7.3.1"
+                    Add-Content $certCfg "[Extensions]"
+                    Add-Content $certCfg $san
+                    Add-Content $certCfg "Critical=2.5.29.17"
+
+
+                    if ($PScmdlet.ShouldProcess("local", "Creating certificate for $computer")) {
+                        Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Running: certreq -new $certCfg $certCsr"
+                        $null = certreq -new $certCfg $certCsr
+                    }
+                    Get-ChildItem $certCfg, $certCsr
                 }
-
-                $certDir = "$Path\$fqdn"
-                $certCfg = "$certDir\request.inf"
-                $certCsr = "$certDir\$fqdn.csr"
-
-                if (Test-Path($certDir)) {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Deleting files from $certDir"
-                    $null = Remove-Item "$certDir\*.*"
-                } else {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Creating $certDir"
-                    $null = New-Item -Path $certDir -ItemType Directory -Force
-                }
-
-                # Make sure output is compat with clusters
-                $shortName = $fqdn.Split(".")[0]
-
-                if (-not $dns) {
-                    $dns = $shortName, $fqdn
-                }
-
-                $san = Get-SanExt $dns
-                # Write config file
-                Set-Content $certCfg "[Version]"
-                Add-Content $certCfg 'Signature="$Windows NT$"'
-                Add-Content $certCfg "[NewRequest]"
-                Add-Content $certCfg "Subject = ""CN=$fqdn"""
-                Add-Content $certCfg "KeySpec = 1"
-                Add-Content $certCfg "KeyLength = $KeyLength"
-                Add-Content $certCfg "Exportable = TRUE"
-                Add-Content $certCfg "MachineKeySet = TRUE"
-                Add-Content $certCfg "FriendlyName=""$FriendlyName"""
-                Add-Content $certCfg "SMIME = False"
-                Add-Content $certCfg "PrivateKeyArchive = FALSE"
-                Add-Content $certCfg "UserProtected = FALSE"
-                Add-Content $certCfg "UseExistingKeySet = FALSE"
-                Add-Content $certCfg "ProviderName = ""Microsoft RSA SChannel Cryptographic Provider"""
-                Add-Content $certCfg "ProviderType = 12"
-                if ($SelfSigned) {
-                    Add-Content $certCfg "RequestType = Cert"
-                } else {
-                    Add-Content $certCfg "RequestType = PKCS10"
-                }
-                Add-Content $certCfg "KeyUsage = 0xa0"
-                Add-Content $certCfg "[EnhancedKeyUsageExtension]"
-                Add-Content $certCfg "OID=1.3.6.1.5.5.7.3.1"
-                Add-Content $certCfg "[Extensions]"
-                Add-Content $certCfg $san
-                Add-Content $certCfg "Critical=2.5.29.17"
-
-
-                if ($PScmdlet.ShouldProcess("local", "Creating certificate for $computer")) {
-                    Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Running: certreq -new $certCfg $certCsr"
-                    $null = certreq -new $certCfg $certCsr
-                }
-                Get-ChildItem $certCfg, $certCsr
+            } finally {
+                Write-ProgressHelper -Completed
             }
         }
     }

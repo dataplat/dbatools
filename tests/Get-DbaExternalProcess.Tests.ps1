@@ -47,7 +47,10 @@ Describe $CommandName -Tag IntegrationTests {
         Set-Content -Path $sqlFile -Value "xp_cmdshell 'powershell -command ""sleep 5""'"
 
         # Run sql file to start external process
-        Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.InstanceRestart) -i $sqlFile" -NoNewWindow -RedirectStandardOutput null
+        # -RedirectStandardOutput takes a file name, so "null" wrote a file called null into whatever
+        # the current directory happened to be. The output goes next to the sql file instead.
+        $sqlcmdOutputFile = "$($TestConfig.Temp)\sleep.out"
+        Start-Process -FilePath sqlcmd -ArgumentList "-S $($TestConfig.InstanceRestart) -i $sqlFile" -NoNewWindow -RedirectStandardOutput $sqlcmdOutputFile
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -69,8 +72,10 @@ Describe $CommandName -Tag IntegrationTests {
         GO"
 
         # Restart the SQL Service to ensure we can remove the temporary file.
-        $null = Restart-DbaService -ComputerName $TestConfig.InstanceRestart -Type Engine -Force
-        Remove-Item -Path $sqlFile
+        # Only the instance the process was started on: with -ComputerName alone, every engine on that
+        # host restarts, including the instances the other tests rely on to stay up.
+        $null = Restart-DbaService -SqlInstance $TestConfig.InstanceRestart -Type Engine -Force
+        Remove-Item -Path $sqlFile, $sqlcmdOutputFile
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
     }

@@ -228,7 +228,11 @@ function Get-TestsForBuildScenario {
             $AllScenarioTests = Get-TestsForScenario -scenario $env:SCENARIO -AllTests $AllTests -Silent:$Silent
         } else {
             $AllTestsToExclude = @()
-            $validScenarios = $TestsRunGroups.Keys | Where-Object { $_ -notin @('disabled', 'appveyor_disabled') }
+            # Version groups (named like the 20* they support, e.g. 2008R2SP2Express) are additive: they say what
+            # ALSO runs on an old-version lane. The autodetect path already skips them when computing tied functions
+            # (see the '20*' filter above); skip them here too, or their members are removed from the leftover lane
+            # and - when they match no autodetect scenario either - run in no lane at all.
+            $validScenarios = $TestsRunGroups.Keys | Where-Object { $_ -notin @('disabled', 'appveyor_disabled') -and $_ -notlike '20*' }
             foreach ($k in $validScenarios) {
                 $AllTestsToExclude += Get-TestsForScenario -scenario $k -AllTests $AllTests
             }
@@ -393,6 +397,35 @@ function Get-FunctionNameFromTestFile($testFilePath) {
         return $Matches[1]
     }
     return $leaf.Replace(".Tests.ps1", "")
+}
+
+function Write-TestHeartbeat {
+    <#
+        Records the test file the runner is about to run, for appveyor.watchdog.ps1 to read.
+
+        Written by hand rather than with Set-Content because the provider's writer refuses to
+        share the file with a reader that already has it open, and the watchdog reads this file
+        every few seconds by design. That collision surfaces as a TERMINATING error which
+        -ErrorAction SilentlyContinue does not suppress, so it used to fail the whole test
+        stage rather than skip one heartbeat. FileShare.ReadWrite lets the two coexist.
+    #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
+    param(
+        [string]$Path,
+        [string]$Label
+    )
+
+    $heartbeatStream = [System.IO.File]::Open($Path, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite)
+    try {
+        $heartbeatWriter = New-Object -TypeName System.IO.StreamWriter -ArgumentList $heartbeatStream
+        try {
+            $heartbeatWriter.WriteLine("$((Get-Date).Ticks)|$Label")
+        } finally {
+            $heartbeatWriter.Dispose()
+        }
+    } finally {
+        $heartbeatStream.Dispose()
+    }
 }
 
 function Show-DependencyTree {

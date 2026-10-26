@@ -108,13 +108,41 @@ Describe $CommandName -Tag IntegrationTests {
         }
         $null = Restore-DbaDatabase @splatRestore3
 
-        $fullBackup = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Type Full -Path $backupPath
-        $diffBackup = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Type Diff -Path $backupPath
-        $logBackup = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $dbname1 -Type Log -Path $backupPath
+        # Every backup gets its own file name. The default name carries a timestamp with minute
+        # resolution, so the full and the diff usually land in the same file and the restore below
+        # found the full inside the diff file by accident - and when the minute changed between the
+        # two backups, the diff had no full to anchor to, Restore-DbaDatabase warned and restored
+        # nothing, and six tests failed on a restore history that was never written.
+        $splatBackupFull = @{
+            SqlInstance = $TestConfig.InstanceSingle
+            Database    = $dbname1
+            Type        = "Full"
+            Path        = $backupPath
+            FilePath    = "restorehistory_full_$random.bak"
+        }
+        $fullBackup = Backup-DbaDatabase @splatBackupFull
+
+        $splatBackupDiff = @{
+            SqlInstance = $TestConfig.InstanceSingle
+            Database    = $dbname1
+            Type        = "Diff"
+            Path        = $backupPath
+            FilePath    = "restorehistory_diff_$random.bak"
+        }
+        $diffBackup = Backup-DbaDatabase @splatBackupDiff
+
+        $splatBackupLog = @{
+            SqlInstance = $TestConfig.InstanceSingle
+            Database    = $dbname1
+            Type        = "Log"
+            Path        = $backupPath
+            FilePath    = "restorehistory_log_$random.trn"
+        }
+        $logBackup = Backup-DbaDatabase @splatBackupLog
 
         $splatRestoreFinal = @{
             SqlInstance  = $TestConfig.InstanceSingle
-            Path         = $diffBackup.BackupPath, $logBackup.BackupPath
+            Path         = $fullBackup.BackupPath, $diffBackup.BackupPath, $logBackup.BackupPath
             DatabaseName = $dbname1
             WithReplace  = $true
         }

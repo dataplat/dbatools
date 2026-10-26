@@ -22,12 +22,14 @@ function Set-DbaDbQueryStoreOption {
         Specifies which databases to configure Query Store options for. Accepts database names, wildcards, or database objects from Get-DbaDatabase.
         Use this when you need to configure Query Store for specific databases instead of all user databases on the instance.
 
+        master and tempdb are skipped with a warning, because SQL Server does not allow Query Store there. model is skipped with a warning before SQL Server 2022, where the ALTER is accepted but nothing can be read back; from SQL Server 2022 on it is configured like any other database, which sets the Query Store defaults for every database created afterwards.
+
     .PARAMETER ExcludeDatabase
-        Excludes specific databases from Query Store configuration changes. System databases (master, tempdb, model) are automatically excluded.
+        Excludes specific databases from Query Store configuration changes. master, tempdb and model are excluded on top of whatever you list here unless model is named explicitly in -Database on SQL Server 2022 or later.
         Useful when you want to configure most databases but skip certain ones like staging or temporary databases.
 
     .PARAMETER AllDatabases
-        Configures Query Store options for all user databases on the instance. System databases are automatically excluded.
+        Configures Query Store options for all user databases on the instance. System databases are automatically excluded, model included, so a sweep never changes the defaults for databases created later.
         Use this switch when you want to apply consistent Query Store settings across all user databases without specifying individual database names.
 
     .PARAMETER State
@@ -59,7 +61,7 @@ function Set-DbaDbQueryStoreOption {
         Set to 30-90 days for most environments; longer retention helps with historical analysis but consumes more space, shorter retention frees space faster.
 
     .PARAMETER MaxPlansPerQuery
-        Limits how many execution plans Query Store retains for each individual query. Default is 200 plans per query (SQL Server 2017+).
+        Limits how many execution plans Query Store retains for each individual query. Default is 200 plans per query.
         Higher values help track plan variations in dynamic environments but consume more space; lower values reduce storage but may miss important plan changes.
 
     .PARAMETER WaitStatsCaptureMode
@@ -126,9 +128,9 @@ function Set-DbaDbQueryStoreOption {
         - QueryCaptureMode: Query capture mode (All, Auto, None, or Custom)
         - SizeBasedCleanupMode: Cleanup mode when max storage is exceeded (Off, Auto)
         - StaleQueryThresholdInDays: Number of days after which a query is considered stale for cleanup
+        - MaxPlansPerQuery: Maximum number of plans tracked per query
 
         Additional properties for SQL Server 2017 (v14) and later:
-        - MaxPlansPerQuery: Maximum number of plans tracked per query
         - WaitStatsCaptureMode: Wait statistics capture mode (Off, On)
 
         Additional properties for SQL Server 2019 (v15) and later:
@@ -188,10 +190,6 @@ function Set-DbaDbQueryStoreOption {
         [int64]$CustomCapturePolicyStaleThresholdHours,
         [switch]$EnableException
     )
-    begin {
-        $ExcludeDatabase += 'master', 'tempdb', "model"
-    }
-
     process {
         if (-not $Database -and -not $ExcludeDatabase -and -not $AllDatabases) {
             Stop-Function -Message "You must specify a database(s) to execute against using either -Database, -ExcludeDatabase or -AllDatabases"
@@ -210,16 +208,40 @@ function Set-DbaDbQueryStoreOption {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if ($CaptureMode -contains "Custom" -and $server.VersionMajor -lt 15) {
-                Stop-Function -Message "Custom capture mode can onlly be set in SQL Server 2019 and above" -Continue
+            # Which options exist depends on the engine, not only on the version, so this asks the feature rules
+            # instead of comparing VersionMajor. See #10600.
+            try {
+                $supportsWaitStats = Test-DbaFeatureSupport -Server $server -Feature QueryStoreWaitStats
+                $supportsMaxPlansPerQuery = Test-DbaFeatureSupport -Server $server -Feature QueryStoreMaxPlansPerQuery
+                $supportsCustomCapturePolicy = Test-DbaFeatureSupport -Server $server -Feature QueryStoreCustomCapturePolicy
+            } catch {
+                Stop-Function -Message "Cannot tell which Query Store options $instance supports" -ErrorRecord $_ -Target $instance -Continue
             }
 
-            if (($CustomCapturePolicyExecutionCount -or $CustomCapturePolicyTotalCompileCPUTimeMS -or $CustomCapturePolicyTotalExecutionCPUTimeMS -or $CustomCapturePolicyStaleThresholdHours) -and $server.VersionMajor -lt 15) {
+            if ($CaptureMode -contains "Custom" -and -not $supportsCustomCapturePolicy) {
+                Stop-Function -Message "Custom capture mode can only be set in SQL Server 2019 and above" -Continue
+            }
+
+            if (($CustomCapturePolicyExecutionCount -or $CustomCapturePolicyTotalCompileCPUTimeMS -or $CustomCapturePolicyTotalExecutionCPUTimeMS -or $CustomCapturePolicyStaleThresholdHours) -and -not $supportsCustomCapturePolicy) {
                 Write-Message -Level Warning -Message "Custom Capture Policies can only be set in SQL Server 2019 and above. These options will be skipped for $instance"
             }
 
-            # We have to exclude all the system databases since they cannot have the Query Store feature enabled
-            $dbs = Get-DbaDatabase -SqlInstance $server -ExcludeDatabase $ExcludeDatabase -Database $Database | Where-Object { $_.IsAccessible -and !$_.IsDatabaseSnapshot }
+            # We have to exclude the system databases that cannot have the Query Store feature enabled. Get-DbaDatabase
+            # lets -ExcludeDatabase win over -Database, so this is worked out per instance and warns about anything the
+            # caller named on purpose instead of dropping it silently.
+            $splatUnsupported = @{
+                SqlInstance  = $server
+                Database     = $Database
+                FunctionName = $PSCmdlet.MyInvocation.MyCommand.Name
+            }
+            $skipDatabase = @($ExcludeDatabase) + (Get-QueryStoreUnsupportedDatabase @splatUnsupported)
+
+            $splatGetDatabase = @{
+                SqlInstance     = $server
+                ExcludeDatabase = $skipDatabase
+                Database        = $Database
+            }
+            $dbs = Get-DbaDatabase @splatGetDatabase | Where-Object { $_.IsAccessible -and !$_.IsDatabaseSnapshot }
 
             foreach ($db in $dbs) {
                 $dbName = $db.Name
@@ -281,13 +303,15 @@ function Set-DbaDbQueryStoreOption {
 
                 $query = ""
 
-                if ($server.VersionMajor -ge 14) {
+                if ($supportsMaxPlansPerQuery) {
                     if ($MaxPlansPerQuery) {
                         if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing MaxPlansPerQuery to $($MaxPlansPerQuery)")) {
                             $query += "ALTER DATABASE [$dbName] SET QUERY_STORE = ON (MAX_PLANS_PER_QUERY = $($MaxPlansPerQuery)); "
                         }
                     }
+                }
 
+                if ($supportsWaitStats) {
                     if ($WaitStatsCaptureMode) {
                         if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing WaitStatsCaptureMode to $($WaitStatsCaptureMode)")) {
                             if ($WaitStatsCaptureMode -eq "ON" -or $WaitStatsCaptureMode -eq "OFF") {
@@ -297,7 +321,7 @@ function Set-DbaDbQueryStoreOption {
                     }
                 }
 
-                if ($server.VersionMajor -ge 15) {
+                if ($supportsCustomCapturePolicy) {
                     if ($db.QueryStoreOptions.QueryCaptureMode -eq "CUSTOM") {
                         if ($CustomCapturePolicyStaleThresholdHours) {
                             if ($Pscmdlet.ShouldProcess("$db on $instance", "Changing CustomCapturePolicyStaleThresholdHours to $($CustomCapturePolicyStaleThresholdHours)")) {
@@ -332,7 +356,13 @@ function Set-DbaDbQueryStoreOption {
                         $db.Refresh()
 
                         if ($query -ne "") {
-                            $db.Query($query, $dbName)
+                            $null = $server.Query($query)
+                            # These options are changed with T-SQL rather than through SMO, so the SMO
+                            # object knows nothing about it and still holds what it read before. Without
+                            # this the command reports the values from before its own change, and leaves
+                            # the object of the caller saying the same. It is the treatment the SMO path
+                            # above already gets after its Alter. See #10561.
+                            $db.QueryStoreOptions.Refresh()
                         }
                     } catch {
                         Stop-Function -Message "Could not modify configuration." -Category InvalidOperation -InnerErrorRecord $_ -Target $db -Continue

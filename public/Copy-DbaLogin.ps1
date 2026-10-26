@@ -566,50 +566,67 @@ function Copy-DbaLogin {
             $sourceServer = $loginObject.Parent
             $sourceVersionMajor = $sourceServer.VersionMajor
 
-            foreach ($destinstance in $Destination) {
-                try {
-                    $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -AzureUnsupported
-                } catch {
-                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
-                }
+            # Copying a login drops and creates server level objects and syncs its permissions through the
+            # database level collections of both servers, all of which moves the connection into another
+            # database and never moves it back. The database of each caller connection is put back
+            # afterwards. See #10555.
+            $sourceCallerDatabase = $sourceServer.ConnectionContext.CurrentDatabase
 
-                $destVersionMajor = $destServer.VersionMajor
-                if ($sourceVersionMajor -gt 10 -and $destVersionMajor -lt 11) {
-                    Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Target $sourceServer
-                }
-
-                if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {
-                    Stop-Function -Message "SQL Server 7 and below are not supported." -Target $sourceServer
-                }
-
-                if ($destserver.ConnectionContext.TrueLogin -notin $destserver.Logins.Name -and $Force) {
-                    if ($Login -or $ExcludeLogin -or $InputObject) {
-                        Write-Message -Level Verbose -Message "Force was used and $($destserver.ConnectionContext.TrueLogin) not found in logins list but an explicit Login or ExcludeLogin was specified, so we trust you won't drop the group that allows $($destserver.ConnectionContext.TrueLogin) access. Proceeding."
-                    } else {
-                        Stop-Function -Message "Force was used, no explicit -Login or -ExcludeLogin was specified and $($destserver.ConnectionContext.TrueLogin) cannot be found in the logins list. It may be part of a group. This will likely result in you being locked out of the server. To use Force, $($destserver.ConnectionContext.TrueLogin) must be added directly to logins before proceeding." -Target $destserver
-                        continue
+            try {
+                foreach ($destinstance in $Destination) {
+                    try {
+                        $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -AzureUnsupported
+                    } catch {
+                        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
                     }
-                }
 
-                Write-Message -Level Verbose -Message "Attempting Login Migration."
-                Copy-Login -sourceserver $sourceServer -destserver $destServer -Login $loginObject -Exclude $ExcludeLogin
+                    # See the comment above - the same for the connection of the destination.
+                    $destCallerDatabase = $destServer.ConnectionContext.CurrentDatabase
 
-                if ($SyncSaName) {
-                    $sa = $sourceServer.Logins | Where-Object id -eq 1
-                    $destSa = $destServer.Logins | Where-Object id -eq 1
-                    $saName = $sa.Name
-                    if ($saName -ne $destSa.name) {
-                        Write-Message -Level Verbose -Message "Changing sa username to match source ($saName)."
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Changing sa username to match source ($saName)")) {
-                            try {
-                                $destSa.Rename($saName)
-                                $destSa.Alter()
-                            } catch {
-                                Write-Message -Level Verbose -Message "Could not change sa username to match source ($saName) on $destinstance | $PSItem"
+                    try {
+                        $destVersionMajor = $destServer.VersionMajor
+                        if ($sourceVersionMajor -gt 10 -and $destVersionMajor -lt 11) {
+                            Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Target $sourceServer
+                        }
+
+                        if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {
+                            Stop-Function -Message "SQL Server 7 and below are not supported." -Target $sourceServer
+                        }
+
+                        if ($destserver.ConnectionContext.TrueLogin -notin $destserver.Logins.Name -and $Force) {
+                            if ($Login -or $ExcludeLogin -or $InputObject) {
+                                Write-Message -Level Verbose -Message "Force was used and $($destserver.ConnectionContext.TrueLogin) not found in logins list but an explicit Login or ExcludeLogin was specified, so we trust you won't drop the group that allows $($destserver.ConnectionContext.TrueLogin) access. Proceeding."
+                            } else {
+                                Stop-Function -Message "Force was used, no explicit -Login or -ExcludeLogin was specified and $($destserver.ConnectionContext.TrueLogin) cannot be found in the logins list. It may be part of a group. This will likely result in you being locked out of the server. To use Force, $($destserver.ConnectionContext.TrueLogin) must be added directly to logins before proceeding." -Target $destserver
+                                continue
                             }
                         }
+
+                        Write-Message -Level Verbose -Message "Attempting Login Migration."
+                        Copy-Login -sourceserver $sourceServer -destserver $destServer -Login $loginObject -Exclude $ExcludeLogin
+
+                        if ($SyncSaName) {
+                            $sa = $sourceServer.Logins | Where-Object id -eq 1
+                            $destSa = $destServer.Logins | Where-Object id -eq 1
+                            $saName = $sa.Name
+                            if ($saName -ne $destSa.name) {
+                                Write-Message -Level Verbose -Message "Changing sa username to match source ($saName)."
+                                if ($Pscmdlet.ShouldProcess($destinstance, "Changing sa username to match source ($saName)")) {
+                                    try {
+                                        $destSa.Rename($saName)
+                                        $destSa.Alter()
+                                    } catch {
+                                        Write-Message -Level Verbose -Message "Could not change sa username to match source ($saName) on $destinstance | $PSItem"
+                                    }
+                                }
+                            }
+                        }
+                    } finally {
+                        Restore-DatabaseContext -Server $destServer -Database $destCallerDatabase
                     }
                 }
+            } finally {
+                Restore-DatabaseContext -Server $sourceServer -Database $sourceCallerDatabase
             }
         }
     }

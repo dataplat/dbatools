@@ -240,7 +240,7 @@ Describe $CommandName -Tag IntegrationTests {
 
     Context "Command sets compression to None for all objects" {
         BeforeAll {
-            $null = Set-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName -CompressionType None
+            $noneOutput = Set-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName -CompressionType None
             $noneResults = Get-DbaDbCompression -SqlInstance $TestConfig.InstanceSingle -Database $dbName
         }
 
@@ -248,6 +248,12 @@ Describe $CommandName -Tag IntegrationTests {
             foreach ($row in $noneResults) {
                 $row.DataCompression | Should -Be "None"
             }
+        }
+
+        It "Should return only result rows" {
+            # None rebuilds the indexes with T-SQL, whose $null used to end up between the rows
+            $noneOutput | Should -Not -BeNullOrEmpty
+            @($noneOutput | Where-Object { $null -eq $PSItem }).Count | Should -Be 0
         }
     }
 

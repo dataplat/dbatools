@@ -8,7 +8,15 @@ function Copy-DbaCredential {
 
         This is essential for server migrations, disaster recovery setup, or environment synchronization where you need to move service accounts, proxy credentials, or linked server authentication without having to reset passwords or contact application teams for credentials.
 
-        The function requires sysadmin privileges on both servers, Windows administrator access, and DAC enabled on the source instance. It supports filtering by credential name or identity and can handle cryptographic provider credentials used for Extensible Key Management (EKM).
+        It supports filtering by credential name or identity and can handle cryptographic provider credentials used for Extensible Key Management (EKM).
+
+        Decrypting the stored passwords requires sysadmin privileges on both servers, DAC access to the source instance and Windows administrator access to the source host. On SQL Server Express, the DAC is not available unless the instance is started with trace flag 7806.
+
+        The command opens or reuses the dedicated admin connection (DAC) from the machine it runs on. When that machine is different from the source host, enable remote admin connections on the source instance (Set-DbaSpConfigure -SqlInstance <source instance> -Name RemoteDacConnectionsEnabled -Value 1) and make the DAC TCP listener reachable from that machine. SQL Server listens for the DAC on TCP port 1434 when that port is available; otherwise it assigns a port during startup. Check the SQL Server error log for the active DAC port.
+
+        The service master key is read and unprotected on the source Windows host. When the source host is remote, this uses PowerShell remoting. When the command runs directly on the source host, everything runs locally, so remote admin connections and PowerShell remoting are not required.
+
+        Use -ExcludePassword to skip password decryption entirely; no DAC is opened and the Windows host is not accessed then.
 
         Credit: Based on password decryption techniques by Antti Rantasaari (NetSPI, 2014)
         https://blog.netspi.com/decrypting-mssql-database-link-server-passwords/
@@ -16,7 +24,7 @@ function Copy-DbaCredential {
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2005 or higher.
 
-        You must be able to open a dedicated admin connection (DAC) to the source SQL Server.
+        Unless -ExcludePassword is used, you must be able to open a dedicated admin connection (DAC) to the source SQL Server from the machine you run this command on.
 
     .PARAMETER SourceSqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -61,6 +69,7 @@ function Copy-DbaCredential {
     .PARAMETER ExcludePassword
         Copies credential definitions without the actual password values.
         Use this in security-conscious environments where password decryption is restricted or when passwords should be manually reset after migration.
+        Also use it when the dedicated admin connection or PowerShell remoting described above is not available, because the copy then needs neither.
 
     .PARAMETER Force
         Overwrites existing credentials on the destination server by dropping and recreating them with the source values.
@@ -87,9 +96,8 @@ function Copy-DbaCredential {
 
         Requires:
         - PowerShell Version 3.0
-        - Administrator access on Windows
         - sysadmin access on SQL Server.
-        - DAC access enabled for local (default)
+        - unless -ExcludePassword is used: DAC access to the source instance, and Windows administrator access on the source host
 
     .OUTPUTS
         PSCustomObject (MigrationObject type)

@@ -28,3 +28,17 @@ Describe $CommandName -Tag UnitTests {
     Read https://github.com/dataplat/dbatools/blob/development/contributing.md#tests
     for more guidence.
 #>
+Describe $CommandName -Tag IntegrationTests -Skip:(-not (Get-Command -Name sqlcmd -ErrorAction Ignore)) {
+    Context "When replaying into a database context" {
+        It "Runs the batch in the requested database" {
+            # -Database was declared and documented but never handed to sqlcmd, so every replay ran in the default
+            # database of the login (#10607).
+            $batch = [PSCustomObject]@{
+                Name       = "sql_batch_completed"
+                batch_text = "SELECT DB_NAME() AS dbatoolsci_replay_db"
+            }
+            $results = $batch | Invoke-DbaXEReplay -SqlInstance $TestConfig.InstanceSingle -Database tempdb
+            ($results -join " ") | Should -BeLike "*tempdb*"
+        }
+    }
+}

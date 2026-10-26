@@ -157,4 +157,29 @@ Describe $CommandName -Tag IntegrationTests {
             $resultskey.ObjectData.col2 | Should -Be "bilbo"
         }
     }
+
+    Context "When the instance cannot be reached" {
+        BeforeAll {
+            # Lower the connection timeout so the three failing connection attempts stay fast.
+            $oldConnectionTimeout = Get-DbatoolsConfigValue -FullName sql.connection.timeout
+            $null = Set-DbatoolsConfig -FullName sql.connection.timeout -Value 2
+        }
+
+        AfterAll {
+            $null = Set-DbatoolsConfig -FullName sql.connection.timeout -Value $oldConnectionTimeout
+        }
+
+        It "Warns without eating an iteration of the caller's loop" {
+            # The connection catch used to run Stop-Function -Continue in the process block, where no loop
+            # encloses it - the continue escaped the command and consumed an iteration of this very loop, so
+            # the counter stayed at zero (#10638).
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = Get-DbaWaitResource -SqlInstance dbatoolsci-nohost -WaitResource "PAGE: 1:1:1" -WarningAction SilentlyContinue
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            ($WarnVar -join " ") | Should -BeLike "*Failure*"
+        }
+    }
 }

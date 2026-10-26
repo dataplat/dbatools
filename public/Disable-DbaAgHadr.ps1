@@ -126,12 +126,31 @@ function Disable-DbaAgHadr {
                     }
                 }
                 if (Test-Bound 'Force') {
-                    if ($PSCmdlet.ShouldProcess($instance, "Force provided, restarting Engine and Agent service for $instance on $computerFullName")) {
+                    if ($PSCmdlet.ShouldProcess($instance, "Force provided, restarting the Engine service, and the Agent service if it is running, for $instance on $computerFullName")) {
                         try {
-                            $null = Stop-DbaService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
-                            $null = Start-DbaService -ComputerName $computerFullName -InstanceName $instanceName -Type Agent, Engine
+                            # The Agent depends on the engine, so it is stopped with it, but it is only started again if
+                            # it was running before: a stopped Agent used to come back running from this restart.
+                            $splatServices = @{
+                                ComputerName    = $computerFullName
+                                InstanceName    = $instanceName
+                                EnableException = $true
+                            }
+                            $agentWasRunning = (Get-DbaService @splatServices -Type Agent).State -eq "Running"
+                            # A refused stop or start only shows as Status "Failed" on the returned objects, so they have
+                            # to be checked. Without that, an Agent that was slow to stop left the engine restart refused
+                            # and the Agent stopped, while the command still reported success.
+                            $restartResults = @(Stop-DbaService @splatServices -Type "Agent", "Engine")
+                            if ($agentWasRunning) {
+                                $restartResults += Start-DbaService @splatServices -Type "Agent", "Engine"
+                            } else {
+                                $restartResults += Start-DbaService @splatServices -Type "Engine"
+                            }
+                            $restartFailures = @($restartResults | Where-Object Status -notlike "Successful*")
+                            if ($restartFailures.Count -gt 0) {
+                                throw (($restartFailures | ForEach-Object { "$($PSItem.ServiceName): $($PSItem.Message)" }) -join " | ")
+                            }
                         } catch {
-                            Stop-Function -Message "Issue restarting $instance" -Target $instance -Continue
+                            Stop-Function -Message "Issue restarting $instance" -ErrorRecord $_ -Target $instance -Continue
                         }
                     }
                 }

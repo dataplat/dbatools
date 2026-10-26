@@ -20,9 +20,12 @@ $null = Set-DbaSpConfigure -SqlInstance $sqlinstance -Name ExtensibleKeyManageme
 Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE CRYPTOGRAPHIC PROVIDER dbatoolsci_AKV FROM FILE = 'C:\github\appveyor-lab\keytests\ekm\Microsoft.AzureKeyVaultService.EKM.dll'" -EnableException
 Invoke-DbaQuery -SqlInstance $sqlinstance -Query "CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<StrongPassword>'" -EnableException
 
-$loginName = "$env:COMPUTERNAME\$env:USERNAME"
+# WindowsIdentity rather than $env:COMPUTERNAME\$env:USERNAME: for an interactive user
+# both produce the same string, but for the LocalSystem service runner only the former
+# yields the real principal (NT AUTHORITY\SYSTEM, already sysadmin from instance setup)
+$loginName = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $login = Get-AppveyorLoginWithRetry -SqlInstance $sqlinstance -Login $loginName
 if (-not $login) {
-    Write-Host -Object "$indent Creating login $env:COMPUTERNAME\$env:USERNAME on $instance" -ForegroundColor DarkGreen
+    Write-Host -Object "$indent Creating login $loginName on $instance" -ForegroundColor DarkGreen
     $null = New-DbaLogin -SqlInstance $sqlinstance -Name $loginName -EnableException
 }

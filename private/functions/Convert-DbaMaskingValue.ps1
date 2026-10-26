@@ -70,11 +70,16 @@ function Convert-DbaMaskingValue {
 
     begin {
         if (-not $Nullable -and -not $Value) {
-            Stop-Function -Message "Please enter a value" -Target $Value -Continue
+            # No -Continue on these guards: the begin block has no enclosing loop, so the continue
+            # would escape the function and eat an iteration of whatever loop the caller runs in.
+            # Invoke-DbaDbDataMasking calls this with EnableException, so there it throws instead.
+            Stop-Function -Message "Please enter a value" -Target $Value
+            return
         }
 
         if (-not $Nullable -and -not $DataType) {
-            Stop-Function -Message "Please enter a data type" -Target $DataType -Continue
+            Stop-Function -Message "Please enter a data type" -Target $DataType
+            return
         }
 
         if ($Value.Count -eq 0 -and $Nullable) {

@@ -219,7 +219,7 @@ function Get-DbaRegServer {
                 }
             } else {
                 $servers += ($serverstore.DatabaseEngineServerGroup.GetDescendantRegisteredServers())
-                $serverstore.ServerConnection.Disconnect()
+                Disconnect-RegServer -Server $serverstore
             }
 
             # save the $serverstore for later usage

@@ -56,6 +56,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Should enable the specified trace flag" {
+            # Counts the output itself, $enableResults.TraceFlag would skip a $null written by the command
+            @($enableResults).Count | Should -Be 1
             $enableResults.TraceFlag -contains $safeTraceFlag | Should -BeTrue
         }
     }

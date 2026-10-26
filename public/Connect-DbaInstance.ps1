@@ -19,7 +19,9 @@ function Connect-DbaInstance {
         https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx
         https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.aspx
 
-        To execute SQL commands directly: $server.ConnectionContext.ExecuteReader($sql) or $server.Databases['master'].ExecuteNonQuery($sql)
+        To execute SQL commands directly: $server.ConnectionContext.ExecuteReader($sql) or $server.ConnectionContext.ExecuteNonQuery($sql)
+
+        For statements that do not depend on a particular database, use the connection context rather than a database object. A database object executes on the same connection and leaves it in that database, which changes the database of every later command that reuses the connection. A statement that does need a database still has to say so, because the connection context runs it in whatever database the session currently happens to be in.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances. This can be a collection and receive pipeline input to allow the function to be executed against multiple SQL Server instances.
@@ -34,6 +36,7 @@ function Connect-DbaInstance {
     .PARAMETER AppendConnectionString
         Adds custom connection string parameters to the generated connection string.
         Use this for advanced connection properties like custom timeout values, SSL settings, or application-specific parameters that aren't covered by other parameters.
+        When ConnectRetryCount, ConnectRetryInterval, or ConnectTimeout is also passed explicitly, the explicit parameter takes precedence.
 
     .PARAMETER ApplicationIntent
         Declares the application workload type when connecting to an Always On Availability Group.
@@ -47,9 +50,22 @@ function Connect-DbaInstance {
         Sets a custom application name in the connection string for identification in SQL Server monitoring tools.
         Use this to distinguish dbatools sessions from other applications when analyzing connections in Profiler, Extended Events, or sys.dm_exec_sessions.
 
+    .PARAMETER ConnectRetryCount
+        Sets the number of retries after SqlClient classifies a connection failure as retryable or detects a broken idle connection. Valid values are 0 to 255; 0 disables connection retries.
+        When this parameter is omitted, SqlClient uses its endpoint default. Microsoft.Data.SqlClient 5.x and later default to 1 for non-Azure endpoints, 2 for Azure SQL, and 5 for Azure SQL serverless or on-demand endpoints.
+        SQL Server 2014 and later and Azure SQL support restoring broken idle connections. Older SQL Server versions accept this client-side setting but cannot restore an idle session, so the driver disables that part of connection resiliency after login negotiation.
+        This does not retry failed queries, deadlocks, command timeouts, or other errors that occur while a query is running.
+
+    .PARAMETER ConnectRetryInterval
+        Sets the number of seconds between connection retry attempts. Valid values are 1 to 60 seconds, and the setting is ignored when ConnectRetryCount is 0.
+        SqlClient defaults to 10 seconds when this parameter is omitted.
+        Set ConnectTimeout high enough to allow the requested retry attempts and intervals to complete.
+
     .PARAMETER ConnectTimeout
         Sets the connection timeout in seconds before the connection attempt fails.
         Increase this for slow networks or busy servers, or decrease it for faster failure detection in automated scripts. Azure SQL Database connections typically need 30 seconds.
+        An explicit value of 0 is preserved and waits indefinitely.
+        This controls opening the connection, including connection retry attempts. It does not control query execution; use Invoke-DbaQuery -QueryTimeout or this command's StatementTimeout for that.
 
     .PARAMETER EncryptConnection
         Forces SSL encryption for all data transmitted between client and server.
@@ -135,6 +151,7 @@ function Connect-DbaInstance {
     .PARAMETER MinimumVersion
         Specifies the minimum SQL Server version required for the connection to succeed.
         Use this to ensure scripts only run against SQL Server versions that support the required features, preventing compatibility issues.
+        The version is read from SMO, falling back to the version reported by the connection and then to the version reported by T-SQL on instances too old for SMO to describe. If none of these is available the connection is allowed through.
 
     .PARAMETER Tenant
         Specifies the Azure Active Directory tenant ID for Azure SQL Database authentication.
@@ -156,6 +173,10 @@ function Connect-DbaInstance {
     .PARAMETER DedicatedAdminConnection
         Creates a dedicated administrator connection (DAC) for emergency access to SQL Server.
         Use this when SQL Server is unresponsive to regular connections, allowing you to diagnose and resolve critical issues. Remember to manually disconnect the connection when finished.
+
+    .PARAMETER IsNewConnectionReference
+        Reports whether a new connection was opened, by writing $true or $false into the referenced variable: pass a variable that already exists as [ref]$variable.
+        Use this when your command has to clean up after itself: only close a connection when this is $true, because a connection that was passed in belongs to the caller and closing it takes their session, their temp tables and their database context with it. When several instances are connected in one call, the value reflects the last connection that was returned.
 
     .PARAMETER DisableException
         Changes exception handling from throwing errors to displaying warnings.
@@ -243,6 +264,19 @@ function Connect-DbaInstance {
         PS C:\> $server = Connect-DbaInstance -SqlInstance sql2014 -NetworkProtocol TcpIp -MultiSubnetFailover
 
         Creates an SMO Server object that connects using Windows Authentication that uses TCP/IP and has MultiSubnetFailover enabled.
+
+    .EXAMPLE
+        PS C:\> $splatConnection = @{
+            SqlInstance          = "myserver.database.windows.net"
+            Database             = "MyDb"
+            ConnectRetryCount    = 5
+            ConnectRetryInterval = 10
+            ConnectTimeout       = 120
+        }
+        PS C:\> $server = Connect-DbaInstance @splatConnection
+        PS C:\> Invoke-DbaQuery -SqlInstance $server -Query "SELECT 1"
+
+        Connects with connection resiliency settings suitable for an Azure SQL Database that might be resuming from auto-pause, then reuses that connection for a query.
 
     .EXAMPLE
         PS C:\> $server = Connect-DbaInstance sql2016 -ApplicationIntent ReadOnly
@@ -385,6 +419,11 @@ function Connect-DbaInstance {
         [switch]$AzureUnsupported,
         [string]$BatchSeparator,
         [string]$ClientName = (Get-DbatoolsConfigValue -FullName 'sql.connection.clientname'),
+        [ValidateRange(0, 255)]
+        [int]$ConnectRetryCount,
+        [ValidateRange(1, 60)]
+        [int]$ConnectRetryInterval,
+        [ValidateRange(0, [int]::MaxValue)]
         [int]$ConnectTimeout = ([Dataplat.Dbatools.Connection.ConnectionHost]::SqlConnectionTimeout),
         [switch]$EncryptConnection = (Get-DbatoolsConfigValue -FullName 'sql.connection.encrypt'),
         [string]$FailoverPartner,
@@ -414,6 +453,7 @@ function Connect-DbaInstance {
         [ValidateSet('ActiveDirectoryIntegrated', 'ActiveDirectoryInteractive', 'ActiveDirectoryPassword', 'ActiveDirectoryServicePrincipal', 'ActiveDirectoryManagedIdentity', 'ActiveDirectoryDeviceCodeFlow')]
         [string]$AuthenticationType,
         [switch]$DedicatedAdminConnection,
+        [ref]$IsNewConnectionReference,
         [switch]$DisableException
     )
     begin {
@@ -523,6 +563,10 @@ function Connect-DbaInstance {
         foreach ($instance in $SqlInstance) {
             Write-Message -Level Verbose -Message "Starting loop for '$instance': ComputerName = '$($instance.ComputerName)', InstanceName = '$($instance.InstanceName)', IsLocalHost = '$($instance.IsLocalHost)', Type = '$($instance.Type)'"
 
+            # Reset per instance, because only the string input path sets this and a mixed
+            # array would otherwise leak the previous instance's value into this iteration
+            $usesCredentialSspiProvider = $false
+
             if ($tryconnstring) {
                 $azureserver = $instance.InputObject
                 if ($Database) {
@@ -588,6 +632,8 @@ function Connect-DbaInstance {
                 - AuthenticationType          SqlConnectionInfo.Authentication             SqlConnectionStringBuilder['Authentication']
                 - BatchSeparator                                                                                                                     ConnectionContext.BatchSeparator
                 - ClientName                  SqlConnectionInfo.ApplicationName            SqlConnectionStringBuilder['Application Name']
+                - ConnectRetryCount           SqlConnectionInfo.AdditionalParameters       SqlConnectionStringBuilder['Connect Retry Count']
+                - ConnectRetryInterval        SqlConnectionInfo.AdditionalParameters       SqlConnectionStringBuilder['Connect Retry Interval']
                 - ConnectTimeout              SqlConnectionInfo.ConnectionTimeout          SqlConnectionStringBuilder['Connect Timeout']
                 - Database                    SqlConnectionInfo.DatabaseName               SqlConnectionStringBuilder['Initial Catalog']
                 - EncryptConnection           SqlConnectionInfo.EncryptConnection          SqlConnectionStringBuilder['Encrypt']
@@ -655,7 +701,30 @@ function Connect-DbaInstance {
 
             # Check for ignored parameters
             # We do not check for SqlCredential as this parameter is widely used even if a server SMO is passed in and we don't want to output a message for that
-            $ignoredParameters = 'BatchSeparator', 'ClientName', 'ConnectTimeout', 'EncryptConnection', 'LockTimeout', 'MaxPoolSize', 'MinPoolSize', 'NetworkProtocol', 'PacketSize', 'PooledConnectionLifetime', 'SqlExecutionModes', 'TrustServerCertificate', 'AllowTrustServerCertificate', 'WorkstationId', 'FailoverPartner', 'MultipleActiveResultSets', 'MultiSubnetFailover', 'AppendConnectionString', 'AccessToken', 'AuthenticationType'
+            $ignoredParameters = @(
+                "BatchSeparator",
+                "ClientName",
+                "ConnectRetryCount",
+                "ConnectRetryInterval",
+                "ConnectTimeout",
+                "EncryptConnection",
+                "LockTimeout",
+                "MaxPoolSize",
+                "MinPoolSize",
+                "NetworkProtocol",
+                "PacketSize",
+                "PooledConnectionLifetime",
+                "SqlExecutionModes",
+                "TrustServerCertificate",
+                "AllowTrustServerCertificate",
+                "WorkstationId",
+                "FailoverPartner",
+                "MultipleActiveResultSets",
+                "MultiSubnetFailover",
+                "AppendConnectionString",
+                "AccessToken",
+                "AuthenticationType"
+            )
             if ($inputObjectType -eq 'Server') {
                 if (Test-Bound -ParameterName $ignoredParameters) {
                     Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
@@ -664,11 +733,13 @@ function Connect-DbaInstance {
                 # Parameter TrustServerCertificate changes the connection string be allow connections to instances with the default self-signed certificate
                 if (Test-Bound -ParameterName 'TrustServerCertificate') {
                     Write-Message -Level Verbose -Message "Additional parameter TrustServerCertificate is passed in and will override other settings"
-                } elseif (Test-Bound -ParameterName $ignoredParameters, 'ApplicationIntent', 'StatementTimeout') {
+                }
+                $ignoredConnectionStringParameters = $ignoredParameters | Where-Object { $PSItem -ne "TrustServerCertificate" }
+                if (Test-Bound -ParameterName ($ignoredConnectionStringParameters + "ApplicationIntent", "StatementTimeout")) {
                     Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                 }
             } elseif ($inputObjectType -in 'SqlConnection' ) {
-                if (Test-Bound -ParameterName $ignoredParameters, 'ApplicationIntent', 'StatementTimeout', 'DedicatedAdminConnection') {
+                if (Test-Bound -ParameterName ($ignoredParameters + "ApplicationIntent", "StatementTimeout", "DedicatedAdminConnection")) {
                     Write-Message -Level Warning -Message "Additional parameters are passed in, but they will be ignored"
                 }
             }
@@ -700,13 +771,29 @@ function Connect-DbaInstance {
                 $createNewConnection = $false
                 if ($Database) {
                     Write-Message -Level Debug -Message "Database [$Database] provided."
-                    if (-not $inputObject.ConnectionContext.CurrentDatabase) {
+                    $inputObjectCurrentDatabase = $inputObject.ConnectionContext.CurrentDatabase
+                    if (-not $inputObjectCurrentDatabase) {
                         Write-Message -Level Debug -Message "ConnectionContext.CurrentDatabase is empty, so connection will be opened to get the value"
+                        # Connect() checks a connection out and keeps it checked out until Disconnect(). SMO
+                        # returns a pooled connection after each batch only when it opened the connection
+                        # itself, so the connection of the object that was passed in used to stay open from
+                        # here on: one session per server object, for the life of the process, that nothing
+                        # but a Disconnect-DbaInstance on that very object could release. A loop that hands
+                        # fresh server objects to Invoke-DbaQuery -Database therefore exhausted the pool after
+                        # a hundred iterations. So the value is read and the connection is returned right away,
+                        # unless the caller had opened it before - then it is theirs to keep. SMO reconnects on
+                        # the next batch as before. The value has to be kept in a variable, because
+                        # Disconnect() clears CurrentDatabase again.
+                        $inputObjectWasOpen = $inputObject.ConnectionContext.IsOpen
                         $inputObject.ConnectionContext.Connect()
-                        Write-Message -Level Debug -Message "ConnectionContext.CurrentDatabase is now [$($inputObject.ConnectionContext.CurrentDatabase)]"
+                        $inputObjectCurrentDatabase = $inputObject.ConnectionContext.CurrentDatabase
+                        if (-not $inputObjectWasOpen) {
+                            $inputObject.ConnectionContext.Disconnect()
+                        }
+                        Write-Message -Level Debug -Message "ConnectionContext.CurrentDatabase was [$inputObjectCurrentDatabase]"
                     }
-                    if ($inputObject.ConnectionContext.CurrentDatabase -ne $Database) {
-                        Write-Message -Level Verbose -Message "Database [$Database] provided. Does not match ConnectionContext.CurrentDatabase [$($inputObject.ConnectionContext.CurrentDatabase)], copying ConnectionContext and setting the CurrentDatabase"
+                    if ($inputObjectCurrentDatabase -ne $Database) {
+                        Write-Message -Level Verbose -Message "Database [$Database] provided. Does not match ConnectionContext.CurrentDatabase [$inputObjectCurrentDatabase], copying ConnectionContext and setting the CurrentDatabase"
                         $copyContext = $true
                         if ($inputObject.ConnectionContext.ConnectAsUserName -ne '') {
                             Write-Message -Level Debug -Message "Using ConnectAsUserName [$($inputObject.ConnectionContext.ConnectAsUserName)], so changing database context is not possible without loosing this information. We will create a new connection targeting database [$Database]"
@@ -741,39 +828,198 @@ function Connect-DbaInstance {
                 } elseif ($copyContext) {
                     $isNewConnection = $true
                     $connContext = $inputObject.ConnectionContext.Copy()
-                    if ($ApplicationIntent) {
-                        $connContext.ApplicationIntent = $ApplicationIntent
-                    }
-                    if ($NonPooledConnection) {
-                        $connContext.NonPooledConnection = $true
-                    }
-                    if (Test-Bound -Parameter StatementTimeout) {
-                        $connContext.StatementTimeout = $StatementTimeout
-                    }
-                    if ($DedicatedAdminConnection -and $inputObject.ConnectionContext.ServerInstance -notmatch '^ADMIN:') {
-                        if ($instance.IsLocalHost) {
-                            # Use localhost to avoid multiple IP resolution on multi-homed servers (issue #10151)
-                            if ($instance.InstanceName -ne 'MSSQLSERVER') {
-                                $connContext.ServerInstance = "ADMIN:localhost\$($instance.InstanceName)"
-                            } else {
-                                $connContext.ServerInstance = "ADMIN:localhost"
-                            }
-                            # Trust the server certificate because 'localhost' may not match the certificate CN (e.g., FQDN), issue #10254
-                            $connContext.TrustServerCertificate = $true
-                        } else {
-                            $connContext.ServerInstance = 'ADMIN:' + $connContext.ServerInstance
+                    # From here on the copy owns a connection of its own: Copy() clones the underlying
+                    # SqlConnection and, when the source is open, hands back a copy that is open as well.
+                    # Only the server object built at the end of this block gives anyone a way to close it
+                    # again, because Disconnect-DbaInstance can reach nothing but the context of the server
+                    # it is given. Every path that leaves without building that server - a refusal below, a
+                    # failed connect, a failed database switch - therefore has to close the copy itself, or
+                    # it becomes exactly the orphaned session this whole code path exists to remove.
+                    $connContextTransferred = $false
+                    try {
+                        # A ServerConnection that was built from a SqlConnection has its connection string set
+                        # explicitly, and SMO then refuses to let some of its properties be assigned:
+                        #   Property <name> cannot be changed or read after a connection string has been set.
+                        # DatabaseName, NonPooledConnection and ServerInstance are all in that group, which is
+                        # why -Database, -NonPooledConnection and -DedicatedAdminConnection used to fail on a
+                        # server that was created from a SqlConnection. Those settings are collected here and
+                        # put into the connection string further down instead, where the same three are
+                        # Initial Catalog, Pooling and Data Source. No readable property tells the two kinds of
+                        # context apart - every one of them reads fine on both - so we find out by trying.
+                        $databaseNeedsSwitch = $false
+                        $connectionStringKeyword = @{ }
+                        if ($ApplicationIntent) {
+                            $connContext.ApplicationIntent = $ApplicationIntent
                         }
-                        $connContext.NonPooledConnection = $true
-                    }
-                    if ($Database) {
-                        # Save StatementTimeout because it might be reset on GetDatabaseConnection
-                        $savedStatementTimeout = $connContext.StatementTimeout
-                        $connContext = $connContext.GetDatabaseConnection($Database, $false)
-                        $connContext.StatementTimeout = $savedStatementTimeout
-                    }
-                    $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
-                    if ($Database -and $server.ConnectionContext.CurrentDatabase -ne $Database) {
-                        Write-Message -Level Warning -Message "Changing connection context to database $Database was not successful. Current database is $($server.ConnectionContext.CurrentDatabase). Please open an issue on https://github.com/dataplat/dbatools/issues."
+                        if ($NonPooledConnection) {
+                            try {
+                                $connContext.NonPooledConnection = $true
+                            } catch {
+                                $connectionStringKeyword["Pooling"] = $false
+                            }
+                        }
+                        if (Test-Bound -Parameter StatementTimeout) {
+                            $connContext.StatementTimeout = $StatementTimeout
+                        }
+                        if ($DedicatedAdminConnection -and $inputObject.ConnectionContext.ServerInstance -notmatch "^ADMIN:") {
+                            if ($instance.IsLocalHost) {
+                                # Use localhost to avoid multiple IP resolution on multi-homed servers (issue #10151)
+                                if ($instance.InstanceName -ne "MSSQLSERVER") {
+                                    $dedicatedAdminServerInstance = "ADMIN:localhost\$($instance.InstanceName)"
+                                } else {
+                                    $dedicatedAdminServerInstance = "ADMIN:localhost"
+                                }
+                                # Trust the server certificate because 'localhost' may not match the certificate CN (e.g., FQDN), issue #10254
+                                $connContext.TrustServerCertificate = $true
+                            } else {
+                                $dedicatedAdminServerInstance = "ADMIN:$($connContext.ServerInstance)"
+                            }
+                            try {
+                                $connContext.ServerInstance = $dedicatedAdminServerInstance
+                            } catch {
+                                $connectionStringKeyword["Data Source"] = $dedicatedAdminServerInstance
+                                if ($instance.IsLocalHost) {
+                                    # TrustServerCertificate was assigned above, and on a context with a fixed
+                                    # connection string that assignment does not reach the string - the property
+                                    # reads back as True while the string still says False. Since the string is
+                                    # what the new connection is built from, the same has to be put in there, or
+                                    # the localhost DAC fails on a certificate that does not match. See #10254.
+                                    $connectionStringKeyword["Trust Server Certificate"] = $true
+                                }
+                            }
+                            try {
+                                $connContext.NonPooledConnection = $true
+                            } catch {
+                                $connectionStringKeyword["Pooling"] = $false
+                            }
+                        }
+                        if ($Database) {
+                            # We set DatabaseName instead of calling GetDatabaseConnection on purpose.
+                            # GetDatabaseConnection opens the connection on the copy we are holding and returns
+                            # a *different* ConnectionContext, so the server we build below never owns that
+                            # connection. Disconnect-DbaInstance can only reach the context of the server it is
+                            # given, so nothing ever closed it: the session stayed open for the life of the
+                            # process, holding a shared lock on the database. On model that is enough to make a
+                            # later CREATE DATABASE on the same instance fail on the exclusive lock.
+                            # Setting DatabaseName keeps the connection with the context we hand to the server,
+                            # which is also what the connection string code paths of this command already do.
+                            # It does not reset StatementTimeout either, so the save and restore that
+                            # GetDatabaseConnection needed is gone with it.
+                            try {
+                                $connContext.DatabaseName = $Database
+                            } catch {
+                                # A fixed connection string. Falling back to GetDatabaseConnection here would
+                                # bring back the very leak this change is about, so the database is either put
+                                # into the connection string or switched on the connection further down.
+                                $databaseNeedsSwitch = $true
+                            }
+                        }
+
+                        # Everything above that could not be assigned needs a new connection built from a
+                        # changed connection string. Work out here whether that is possible at all, because
+                        # opening a new connection means logging in again, and only a connection string that
+                        # still carries the whole login can do that.
+                        $connectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $connContext.ConnectionString
+                        if ($ApplicationIntent -and $connectionStringBuilder["ApplicationIntent"] -ne $ApplicationIntent) {
+                            # The property was assigned above without complaint, but on a fixed connection
+                            # string that assignment never reaches the string, and the string is what the login
+                            # is made with. SQL Server reads the intent at login time and routes on it then, so
+                            # a context that reports ReadOnly over a connection that logged in as ReadWrite is
+                            # simply wrong. Where the assignment did reach the string - every context that
+                            # accepts property assignments - the two match here and nothing is added, which is
+                            # what keeps this from forcing a new connection where none is needed.
+                            $connectionStringKeyword["ApplicationIntent"] = $ApplicationIntent
+                        }
+                        $authenticationMethod = [string]$connectionStringBuilder["Authentication"]
+                        if ($connectionStringBuilder["Integrated Security"] -or $connContext.SqlConnectionObject.AccessToken -or $connContext.SqlConnectionObject.AccessTokenCallback) {
+                            # Windows authentication needs no secret from the string, and an access token - or
+                            # the callback that fetches one - lives on the SqlConnection, where both survive
+                            # being given a new connection string.
+                            $connectionStringCanLogIn = $true
+                        } elseif ($authenticationMethod -in "ActiveDirectoryPassword", "ActiveDirectoryServicePrincipal") {
+                            # The only two Microsoft Entra methods that use a password of their own.
+                            $connectionStringCanLogIn = [bool]$connectionStringBuilder["Password"]
+                        } elseif ($authenticationMethod -ne "NotSpecified") {
+                            # Every other Entra method - managed identity, workload identity, default,
+                            # integrated, interactive, device code - is passwordless by design. Several of them
+                            # do put a client id in User ID, so User ID alone must not be read as a SQL Server
+                            # login, or these get rejected over a password they never had.
+                            $connectionStringCanLogIn = $true
+                        } else {
+                            # A SQL Server login, and both halves have to be in the string. Once a SqlConnection
+                            # has been opened with Persist Security Info=False, SqlClient hides the password,
+                            # and a SqlCredential is hidden the same way - ServerConnection.Copy() does not even
+                            # carry one over. So neither can be recovered from an open connection, and what is
+                            # left in the string would log in as nobody.
+                            $connectionStringCanLogIn = [bool]$connectionStringBuilder["User ID"] -and [bool]$connectionStringBuilder["Password"]
+                        }
+
+                        if ($databaseNeedsSwitch) {
+                            if ($connectionStringCanLogIn) {
+                                # A new connection can be built, so the database belongs in the string. As
+                                # Initial Catalog it is part of the pool key, which is what setting DatabaseName
+                                # achieves as well, so the reason #9505 forced a non pooled connection still
+                                # holds. This is also the only way that works on Azure SQL Database.
+                                $connectionStringKeyword["Initial Catalog"] = $Database
+                                $databaseNeedsSwitch = $false
+                            } elseif ($inputObject.ConnectionContext.DatabaseEngineEdition -in "SqlDatabase", "SqlDataWarehouse", "SqlOnDemand") {
+                                # Read the edition from the server that was passed in, never from the copy:
+                                # reading it there connects the copy, and every property of a connected context
+                                # is locked from then on, including the ones assigned above.
+                                # Azure SQL Database answers a USE with error 40508 and wants a new connection
+                                # for another database, so the switch below cannot work there. Refusing is the
+                                # honest answer - the alternative is a server object in the wrong database.
+                                Stop-Function -Message "Cannot change the database of [$instance] to [$Database]: it needs a new connection, because Azure SQL Database does not support switching the database of an existing one, and the authentication of the connection that was passed in cannot be reproduced from its connection string. Connect with the instance name and -SqlCredential, or with an access token, instead." -Target $instance -Continue
+                            }
+                        }
+                        if ($connectionStringKeyword.Count -gt 0) {
+                            if (-not $connectionStringCanLogIn) {
+                                # Refusing is better than handing back a server that cannot be used. The caller
+                                # can always connect with the instance name and a credential of its own.
+                                Stop-Function -Message "Cannot apply the requested settings to [$instance]: they need a new connection, and the authentication of the connection that was passed in cannot be reproduced from its connection string. Connect with the instance name and -SqlCredential, or with an access token, instead." -Target $instance -Continue
+                            }
+
+                            $changedKeywords = $connectionStringKeyword.Keys -join ", "
+                            Write-Message -Level Debug -Message "Connection context does not accept property assignments, using the connection string for: $changedKeywords"
+                            # The copy has to be disconnected first: setting the connection string of an open
+                            # connection does not move it. The copy is a session of its own - a different SPID
+                            # than the server that was passed in - so this does not touch the caller.
+                            $connContext.Disconnect()
+                            foreach ($keyword in $connectionStringKeyword.Keys) {
+                                # PowerShell routes property assignments on a connection string builder through its
+                                # dictionary indexer, so the keyword has to be used rather than the property name:
+                                # $connectionStringBuilder.InitialCatalog fails with "Keyword not supported".
+                                $connectionStringBuilder[$keyword] = $connectionStringKeyword[$keyword]
+                            }
+                            $connContext.ConnectionString = $connectionStringBuilder.ConnectionString
+                        }
+                        if ($databaseNeedsSwitch) {
+                            # No new connection can be built, but this engine takes a USE, so the database is
+                            # switched on the connection the copy already holds. That keeps every part of the
+                            # authentication that lives on the SqlConnection rather than in its string, which
+                            # rebuilding the string would lose. The copy is a session of its own, so this is not
+                            # the leak of #10555 - the caller keeps its own database.
+                            if ($connContext.SqlConnectionObject.State -ne "Open") {
+                                $connContext.Connect()
+                            }
+                            $connContext.SqlConnectionObject.ChangeDatabase($Database)
+                        }
+                        $server = New-Object -TypeName Microsoft.SqlServer.Management.Smo.Server -ArgumentList $connContext
+                        $connContextTransferred = $true
+                        if ($Database -and $server.ConnectionContext.CurrentDatabase -ne $Database) {
+                            Write-Message -Level Warning -Message "Changing connection context to database $Database was not successful. Current database is $($server.ConnectionContext.CurrentDatabase). Please open an issue on https://github.com/dataplat/dbatools/issues."
+                        }
+                    } finally {
+                        if (-not $connContextTransferred) {
+                            # Nothing else can reach this connection any more, so it is closed here. Disconnect
+                            # must not throw on the way out of a failure, or it would replace the error that
+                            # brought us here with one about the cleanup.
+                            try {
+                                $connContext.Disconnect()
+                            } catch {
+                                Write-Message -Level Debug -Message "Disconnecting the copied connection context after a failed connect failed as well: $PSItem"
+                            }
+                        }
                     }
                 } else {
                     $server = $inputObject
@@ -899,6 +1145,27 @@ function Connect-DbaInstance {
                     Write-Message -Level Debug -Message "AdditionalParameters will be appended by 'Column Encryption Setting=enabled;'"
                     $sqlConnectionInfo.AdditionalParameters += 'Column Encryption Setting=enabled;'
                 }
+                if (Test-Bound -ParameterName "ConnectRetryCount", "ConnectRetryInterval", "ConnectTimeout") {
+                    if ($sqlConnectionInfo.AdditionalParameters) {
+                        $connectionOptionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $sqlConnectionInfo.AdditionalParameters
+                    } else {
+                        $connectionOptionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder
+                    }
+                    if (Test-Bound -ParameterName "ConnectRetryCount") {
+                        Write-Message -Level Debug -Message "Connect Retry Count will be set to '$ConnectRetryCount'"
+                        $connectionOptionStringBuilder["Connect Retry Count"] = $ConnectRetryCount
+                    }
+                    if (Test-Bound -ParameterName "ConnectRetryInterval") {
+                        Write-Message -Level Debug -Message "Connect Retry Interval will be set to '$ConnectRetryInterval'"
+                        $connectionOptionStringBuilder["Connect Retry Interval"] = $ConnectRetryInterval
+                    }
+                    if (Test-Bound -ParameterName "ConnectTimeout") {
+                        # ConnectionTimeout is set through SqlConnectionInfo below. Removing a value from
+                        # AdditionalParameters makes the explicit parameter win over AppendConnectionString.
+                        $null = $connectionOptionStringBuilder.Remove("Connect Timeout")
+                    }
+                    $sqlConnectionInfo.AdditionalParameters = $connectionOptionStringBuilder.ConnectionString
+                }
 
                 #ApplicationIntent      Property   string ApplicationIntent {get;set;}
                 if ($ApplicationIntent) {
@@ -944,7 +1211,7 @@ function Connect-DbaInstance {
                 # Only a getter, not a setter - so don't touch
 
                 #ConnectionTimeout      Property   int ConnectionTimeout {get;set;}
-                if ($ConnectTimeout) {
+                if ($ConnectTimeout -or (Test-Bound -ParameterName "ConnectTimeout")) {
                     Write-Message -Level Debug -Message "ConnectionTimeout will be set to '$ConnectTimeout'"
                     $sqlConnectionInfo.ConnectionTimeout = $ConnectTimeout
                 }
@@ -1039,6 +1306,11 @@ function Connect-DbaInstance {
                     $sqlConnectionInfo.WorkstationId = $WorkstationId
                 }
 
+                if ($authType -eq "local ad" -and -not $AuthenticationType -and ($IsLinux -or $IsMacOS)) {
+                    Stop-Function -Target $instance -Message "Cannot use Windows credentials to connect when host is Linux or OS X. Use kinit instead. See https://github.com/dataplat/dbatools/issues/7602 for more info."
+                    return
+                }
+
                 # If we have an AccessToken, we will build a SqlConnection
                 if ($AccessToken) {
                     # Check if token was created by New-DbaAzAccessToken or Get-AzAccessToken
@@ -1084,17 +1356,22 @@ function Connect-DbaInstance {
                     Write-Message -Level Debug -Message "Building ServerConnection from SqlConnection"
                     $serverConnection = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $sqlConnection
                     Write-Message -Level Debug -Message "ServerConnection was built"
+                } elseif ($authType -eq "local ad" -and -not $AuthenticationType -and ("Dataplat.Dbatools.Connection.NetworkCredentialSspiContextProvider" -as [type])) {
+                    Write-Message -Level Debug -Message "Building SqlConnection with explicit Windows credential SSPI provider"
+                    $sqlConnection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList $sqlConnectionInfo.ConnectionString
+                    $networkCredential = $SqlCredential.GetNetworkCredential()
+                    $sspiContextProvider = New-Object -TypeName Dataplat.Dbatools.Connection.NetworkCredentialSspiContextProvider -ArgumentList $networkCredential
+                    $sqlConnection.SspiContextProvider = $sspiContextProvider
+                    $serverConnection = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $sqlConnection
+                    $usesCredentialSspiProvider = $true
+                    Write-Message -Level Debug -Message "ServerConnection was built with explicit Windows credential SSPI provider"
                 } else {
                     Write-Message -Level Debug -Message "Building ServerConnection from SqlConnectionInfo"
                     $serverConnection = New-Object -TypeName Microsoft.SqlServer.Management.Common.ServerConnection -ArgumentList $sqlConnectionInfo
                     Write-Message -Level Debug -Message "ServerConnection was built"
                 }
 
-                if ($authType -eq 'local ad' -and -not $AuthenticationType) {
-                    if ($IsLinux -or $IsMacOS) {
-                        Stop-Function -Target $instance -Message "Cannot use Windows credentials to connect when host is Linux or OS X. Use kinit instead. See https://github.com/dataplat/dbatools/issues/7602 for more info."
-                        return
-                    }
+                if ($authType -eq "local ad" -and -not $AuthenticationType -and -not $usesCredentialSspiProvider) {
                     Write-Message -Level Debug -Message "ConnectAsUser will be set to '$true'"
                     $serverConnection.ConnectAsUser = $true
 
@@ -1233,8 +1510,40 @@ function Connect-DbaInstance {
                 Stop-Function -Target $instance -Message "Azure SQL Database not supported" -Continue
             }
 
-            if ($MinimumVersion -and $server.VersionMajor) {
-                if ($server.VersionMajor -lt $MinimumVersion) {
+            if ($MinimumVersion) {
+                # $server.VersionMajor is served by SMO's server information enumerator, which
+                # requires SQL Server 2008 and returns nothing at all on older instances. Testing
+                # the property for truthiness would therefore skip the check on exactly the
+                # versions it exists to refuse, so fall back to sources that do not depend on the
+                # enumerators before deciding.
+                $minimumVersionMajor = $server.VersionMajor
+                if (-not $minimumVersionMajor) {
+                    try {
+                        $minimumVersionMajor = $server.ConnectionContext.ServerVersion.Major
+                        Write-Message -Level Debug -Message "VersionMajor is not available, using ServerVersion.Major [$minimumVersionMajor] from the connection"
+                    } catch {
+                        Write-Message -Level Debug -Message "Failed to read ServerVersion from the connection: $_"
+                    }
+                }
+                if (-not $minimumVersionMajor) {
+                    # SERVERPROPERTY has been answered since SQL Server 2000 and travels the same
+                    # plain T-SQL path that already carried the connection test above, so it can be
+                    # read wherever the connection itself works. On a SQL Server 2005 instance it
+                    # returns 9.00.5000.00 while every SMO-served property comes back empty.
+                    $productVersionQuery = @"
+SELECT SERVERPROPERTY('ProductVersion')
+"@
+                    try {
+                        $productVersion = $server.ConnectionContext.ExecuteScalar($productVersionQuery)
+                        $productVersionMajor = ($productVersion -split "\.")[0]
+                        $minimumVersionMajor = [int]$productVersionMajor
+                        Write-Message -Level Debug -Message "ServerVersion is not available, using ProductVersion [$productVersion] from T-SQL"
+                    } catch {
+                        Write-Message -Level Debug -Message "Failed to read ProductVersion with T-SQL: $_"
+                    }
+                }
+                # If none of the sources knows the version, the connection is let through as before.
+                if ($minimumVersionMajor -and $minimumVersionMajor -lt $MinimumVersion) {
                     if ($isNewConnection) {
                         $server.ConnectionContext.Disconnect()
                     }
@@ -1243,8 +1552,13 @@ function Connect-DbaInstance {
             }
 
             if ($SqlConnectionOnly) {
-                $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server.ConnectionContext.SqlConnectionObject
+                if (-not $usesCredentialSspiProvider) {
+                    $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server.ConnectionContext.SqlConnectionObject
+                }
                 Write-Message -Level Debug -Message "We return only SqlConnection in server.ConnectionContext.SqlConnectionObject"
+                if ($IsNewConnectionReference) {
+                    $IsNewConnectionReference.Value = $isNewConnection
+                }
                 $server.ConnectionContext.SqlConnectionObject
                 continue
             }
@@ -1297,26 +1611,37 @@ function Connect-DbaInstance {
             }
 
             Write-Message -Level Debug -Message "We return the server object"
+            if ($IsNewConnectionReference) {
+                $IsNewConnectionReference.Value = $isNewConnection
+            }
             $server
 
             if ($isNewConnection -and -not $DedicatedAdminConnection) {
-                # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
-                [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $server.ConnectionContext.Copy(), ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
+                if (-not $usesCredentialSspiProvider) {
+                    # Register the connected instance, so that the TEPP updater knows it's been connected to and starts building the cache
+                    # Copy() clones an open connection as an open connection, and this copy is then kept for
+                    # the life of the process, where nothing can ever reach it to close it again. Whenever the
+                    # context is already open at this point - which is what switching the database on the
+                    # connection leaves behind - that parked a session per call that nothing could reuse or
+                    # close. Handing over a disconnected copy costs nothing: the updater connects when it
+                    # runs, and it is off by default.
+                    $teppConnectionContext = $server.ConnectionContext.Copy()
+                    $teppConnectionContext.Disconnect()
+                    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::SetInstance($instance.FullSmoName.ToLowerInvariant(), $teppConnectionContext, ($server.ConnectionContext.FixedServerRoles -match "SysAdmin"))
 
-                # Update cache for instance names
-                if ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] -notcontains $instance.FullSmoName.ToLowerInvariant()) {
-                    [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::Cache["sqlinstance"] += $instance.FullSmoName.ToLowerInvariant()
-                }
+                    # Update cache for instance names
+                    Add-DbaTeppInstanceName -Name $instance.FullSmoName
 
-                # Update lots of registered stuff
-                # Default for [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled is $true, so will not run by default
-                # Must be explicitly activated with [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled = $false to run
-                if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
-                    # Variable $FullSmoName is used inside the script blocks, so we have to set
-                    $FullSmoName = $instance.FullSmoName.ToLowerInvariant()
-                    Write-Message -Level Debug -Message "Will run Invoke-TEPPCacheUpdate for FullSmoName = $FullSmoName"
-                    foreach ($scriptBlock in ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
-                        Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
+                    # Update lots of registered stuff
+                    # Default for [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled is $true, so will not run by default
+                    # Must be explicitly activated with [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled = $false to run
+                    if (-not [Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppSyncDisabled) {
+                        # Variable $FullSmoName is used inside the script blocks, so we have to set
+                        $FullSmoName = $instance.FullSmoName.ToLowerInvariant()
+                        Write-Message -Level Debug -Message "Will run Invoke-TEPPCacheUpdate for FullSmoName = $FullSmoName"
+                        foreach ($scriptBlock in ([Dataplat.Dbatools.TabExpansion.TabExpansionHost]::TeppGatherScriptsFast)) {
+                            Invoke-TEPPCacheUpdate -ScriptBlock $scriptBlock
+                        }
                     }
                 }
 
@@ -1364,7 +1689,9 @@ function Connect-DbaInstance {
                 }
             }
 
-            $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server
+            if (-not $usesCredentialSspiProvider) {
+                $null = Add-ConnectionHashValue -Key $server.ConnectionContext.ConnectionString -Value $server
+            }
             Write-Message -Level Debug -Message "We are finished with this instance"
         }
     }

@@ -37,6 +37,14 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
+    BeforeDiscovery {
+        # MaxPlansPerQuery exists from SQL Server 2016 on, WaitStatsCaptureMode only from 2017 on. The value
+        # decides a Skip, which Pester needs while it discovers the tests, so it cannot be read in BeforeAll.
+        $discoveryServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+        $multi1VersionMajor = $discoveryServer.VersionMajor
+        $null = $discoveryServer | Disconnect-DbaInstance
+    }
+
     BeforeAll {
         Get-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 | Where-Object Name -Match "dbatoolsci" | Remove-DbaDatabase
         New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Name dbatoolsciqs
@@ -103,6 +111,102 @@ Describe $CommandName -Tag IntegrationTests {
                     $result.Count | Should -Be 0
                 }
             }
+        }
+    }
+
+    Context "When a system database is named explicitly" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $serverMulti1 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Warns about master and tempdb instead of doing nothing at all" {
+            $resultsSystemDb = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database master, tempdb -State ReadWrite -WarningVariable warnSystemDb -WarningAction SilentlyContinue
+            $resultsSystemDb | Should -BeNullOrEmpty
+            $warnSystemDb -join "`n" | Should -Match "Query Store cannot be enabled on system database master"
+            $warnSystemDb -join "`n" | Should -Match "Query Store cannot be enabled on system database tempdb"
+        }
+
+        It "Configures model from SQL Server 2022 on and warns about it before that" {
+            if ($serverMulti1.VersionMajor -ge 16) {
+                # Query Store on model decides the defaults of every database created afterwards, so the original
+                # value is restored here rather than in an AfterAll that a failing assertion would reach too late.
+                $originalThreshold = (Get-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database model).StaleQueryThresholdInDays
+                try {
+                    $resultsModel = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database model -StaleQueryThreshold 45 -WarningVariable warnModel
+                    $resultsModel.Database | Should -Be "model"
+                    $resultsModel.StaleQueryThresholdInDays | Should -Be 45
+                    $warnModel | Should -BeNullOrEmpty
+                } finally {
+                    $null = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database model -StaleQueryThreshold $originalThreshold
+                }
+            } else {
+                $resultsModel = Set-DbaDbQueryStoreOption -SqlInstance $TestConfig.InstanceMulti1 -Database model -StaleQueryThreshold 45 -WarningVariable warnModel -WarningAction SilentlyContinue
+                $resultsModel | Should -BeNullOrEmpty
+                $warnModel -join "`n" | Should -Match "Query Store cannot be read on model before SQL Server 2022"
+            }
+        }
+    }
+
+    Context "When an option is changed that needs T-SQL" -Skip:($multi1VersionMajor -lt 13) {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The database of the Describe rather than one of its own. A CREATE DATABASE here fails
+            # intermittently with "Could not obtain exclusive lock on database 'model'", because the tests
+            # above read Query Store on model and leave a session parked in it. That is #10584, which is
+            # not in development yet, and this Context does not need a database of its own anyway.
+            $refreshDbName = "dbatoolsciqs"
+
+            # The server object is kept, because the point of this is what the command leaves behind on it.
+            $refreshServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $null = Set-DbaDbQueryStoreOption -SqlInstance $refreshServer -Database $refreshDbName -State ReadWrite
+
+            # MaxPlansPerQuery and WaitStatsCaptureMode are changed with ALTER DATABASE rather than through
+            # SMO, so the SMO object knows nothing about it and still holds what it read before. See #10561.
+            # WaitStatsCaptureMode is only passed where the engine has it, so that SQL Server 2016 proves that
+            # MaxPlansPerQuery is applied on its own.
+            $splatRefresh = @{
+                SqlInstance      = $refreshServer
+                Database         = $refreshDbName
+                MaxPlansPerQuery = 555
+            }
+            if ($refreshServer.VersionMajor -ge 14) {
+                $splatRefresh.WaitStatsCaptureMode = "Off"
+            }
+            $resultsRefresh = Set-DbaDbQueryStoreOption @splatRefresh
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = $refreshServer | Disconnect-DbaInstance
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the value of MaxPlansPerQuery it has just set" {
+            $resultsRefresh.MaxPlansPerQuery | Should -Be 555
+        }
+
+        It "Returns the value of WaitStatsCaptureMode it has just set" -Skip:($multi1VersionMajor -lt 14) {
+            $resultsRefresh.WaitStatsCaptureMode | Should -Be "Off"
+        }
+
+        It "Leaves the SMO object of the caller with the new values" {
+            $refreshServer.Databases[$refreshDbName].QueryStoreOptions.MaxPlansPerQuery | Should -Be 555
+        }
+
+        It "Really changed them on the instance" {
+            $verifyQuery = "SELECT max_plans_per_query AS MaxPlansPerQuery FROM sys.database_query_store_options"
+            (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database $refreshDbName -Query $verifyQuery).MaxPlansPerQuery | Should -Be 555
         }
     }
 }

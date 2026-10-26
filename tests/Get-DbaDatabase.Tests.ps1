@@ -58,6 +58,21 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When ExcludeUser and ExcludeSystem are combined" {
+        It "Warns without eating an iteration of the caller's loop" {
+            # The invalid combination used to run Stop-Function -Continue in the begin block, where no
+            # loop encloses it - the continue escaped the command and consumed an iteration of this
+            # very loop, so the counter stayed at zero.
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeUser -ExcludeSystem -WarningAction SilentlyContinue
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*You cannot specify both ExcludeUser and ExcludeSystem*"
+        }
+    }
+
 }
 
 Describe $CommandName -Tag IntegrationTests {

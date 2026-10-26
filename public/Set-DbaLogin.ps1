@@ -27,6 +27,7 @@ function Set-DbaLogin {
     .PARAMETER PasswordHash
         Sets the login password using a hashed password value (0x...). This is used for transferring logins between instances without knowing the actual password.
         The hash must be in the format returned by Get-LoginPasswordHash or extracted from sys.sql_logins. Cannot be used with -SecurePassword or -PasswordMustChange.
+        SQL Server refuses a hashed password for a login with CHECK_POLICY on, so for such a login the policy is turned off and back on around it, in one transaction. Like -Unlock -Force, this also clears a lockout of the login.
 
     .PARAMETER DefaultDatabase
         Changes the default database that the login connects to after authentication. Must be an existing database name.
@@ -259,32 +260,41 @@ function Set-DbaLogin {
 
     begin {
         # Check the parameters
+        # Every failed check returns right away. These checks used Stop-Function -Continue before, but the begin
+        # block has no enclosing loop, so the continue escaped the command and ate an iteration of the caller's loop.
         if ((Test-Bound -ParameterName 'SqlInstance') -and (Test-Bound -ParameterName 'Login' -Not)) {
             Stop-Function -Message 'You must specify a Login when using SqlInstance'
+            return
         }
 
         if ((Test-Bound -ParameterName 'NewName') -and $Login -eq $NewName) {
-            Stop-Function -Message 'Login name is the same as the value in -NewName' -Target $Login -Continue
+            Stop-Function -Message 'Login name is the same as the value in -NewName' -Target $Login
+            return
         }
 
         if ((Test-Bound -ParameterName 'Disable') -and (Test-Bound -ParameterName 'Enable')) {
-            Stop-Function -Message 'You cannot use both -Enable and -Disable together' -Target $Login -Continue
+            Stop-Function -Message 'You cannot use both -Enable and -Disable together' -Target $Login
+            return
         }
 
         if ((Test-Bound -ParameterName 'GrantLogin') -and (Test-Bound -ParameterName 'DenyLogin')) {
-            Stop-Function -Message 'You cannot use both -GrantLogin and -DenyLogin together' -Target $Login -Continue
+            Stop-Function -Message 'You cannot use both -GrantLogin and -DenyLogin together' -Target $Login
+            return
         }
 
         if ((Test-Bound -ParameterName 'SecurePassword') -and (Test-Bound -ParameterName 'PasswordHash')) {
-            Stop-Function -Message 'You cannot use both -SecurePassword and -PasswordHash together' -Target $Login -Continue
+            Stop-Function -Message 'You cannot use both -SecurePassword and -PasswordHash together' -Target $Login
+            return
         }
 
         if ((Test-Bound -ParameterName 'PasswordHash') -and (Test-Bound -ParameterName 'PasswordMustChange')) {
-            Stop-Function -Message 'You cannot use -PasswordHash with -PasswordMustChange' -Target $Login -Continue
+            Stop-Function -Message 'You cannot use -PasswordHash with -PasswordMustChange' -Target $Login
+            return
         }
 
         if ((Test-Bound -ParameterName 'PasswordHash') -and $PasswordHash -notmatch '^0x[0-9A-Fa-f]+$') {
-            Stop-Function -Message 'PasswordHash must be in hexadecimal format starting with 0x' -Target $Login -Continue
+            Stop-Function -Message 'PasswordHash must be in hexadecimal format starting with 0x' -Target $Login
+            return
         }
 
         if (Test-bound -ParameterName 'SecurePassword') {
@@ -293,16 +303,19 @@ function Set-DbaLogin {
                 'SecureString' { $NewSecurePassword = $SecurePassword }
                 default {
                     Stop-Function -Message 'Password must be a PSCredential or SecureString' -Target $Login
+                    return
                 }
             }
         }
 
         if ((Test-Bound Unlock) -and (Test-Bound SecurePassword -Not) -and (Test-Bound Force -Not)) {
             Stop-Function -Message 'You must specify a password when using the -Unlock parameter or use the -Force parameter. See the help documentation for this command.'
+            return
         }
 
         if ((Test-Bound PasswordMustChange) -and (Test-Bound SecurePassword -Not)) {
             Stop-Function -Message 'You must specify a password when using the -PasswordMustChange parameter. See the command help for more details.'
+            return
         }
     }
 
@@ -317,7 +330,9 @@ function Set-DbaLogin {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $allLogins[$instance.ToString()] = Get-DbaLogin -SqlInstance $server
+            # Only the logins of -Login: Get-DbaLogin processes every login it gets, and on an instance with many logins
+            # or far away that took long for a single one (#10807).
+            $allLogins[$instance.ToString()] = Get-DbaLogin -SqlInstance $server -Login $Login
             $InputObject += $allLogins[$instance.ToString()] | Where-Object { ($_.Name -in $Login) -and ($_.Name -notlike '##*') }
         }
 
@@ -369,7 +384,9 @@ function Set-DbaLogin {
                 # Change the name
                 if (Test-Bound -ParameterName 'NewName') {
                     # Check if the new name doesn't already exist
-                    if ($allLogins[$server.Name].Name -notcontains $NewName) {
+                    # Through the server of the login, because a login that comes through the pipeline has no entry in
+                    # $allLogins, which only knows the instances of -SqlInstance.
+                    if ($null -eq $server.Logins[$NewName]) {
                         try {
                             $l.Rename($NewName)
                         } catch {
@@ -378,7 +395,7 @@ function Set-DbaLogin {
                         }
                     } else {
                         $notes += 'New login name already exists'
-                        Write-Message -Message "New login name $NewName already exists on $instance" -Level Verbose
+                        Write-Message -Message "New login name $NewName already exists on $server" -Level Verbose
                     }
                 }
 
@@ -504,9 +521,10 @@ function Set-DbaLogin {
                         $l.ChangePassword($NewSecurePassword, $Unlock, $PasswordMustChange)
                         $passwordChanged = $true
 
-                        if (Test-Bound PasswordMustChange) {
-                            $l.Refresh()  # necessary so that the read only property PasswordMustChange is updated
-                        }
+                        # necessary so that the read only properties PasswordMustChange and IsLocked are
+                        # updated. Changing the password with unlock clears the lock on the instance, but
+                        # without this the login we return still reports itself as locked.
+                        $l.Refresh()
                     } catch {
                         $notes += "Couldn't change password"
                         $passwordChanged = $false
@@ -523,9 +541,54 @@ function Set-DbaLogin {
                     }
 
                     try {
-                        $loginName = $l.Name.Replace("'", "''")
-                        $sql = "ALTER LOGIN [$loginName] WITH PASSWORD = $PasswordHash HASHED"
-                        $null = $server.Query($sql)
+                        $loginIdentifier = "[" + $l.Name.Replace("]", "]]") + "]"
+                        $statements = @()
+                        if ($l.PasswordPolicyEnforced) {
+                            # SQL Server refuses a hashed password for a login with CHECK_POLICY turned on (error 33020),
+                            # so the policy is turned off for it and set back afterwards.
+                            $checkExpiration = if ($l.PasswordExpirationEnabled) { "ON" } else { "OFF" }
+                            $statements += "ALTER LOGIN $loginIdentifier WITH CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF"
+                            $statements += "ALTER LOGIN $loginIdentifier WITH PASSWORD = $PasswordHash HASHED"
+                            $statements += "ALTER LOGIN $loginIdentifier WITH CHECK_POLICY = ON, CHECK_EXPIRATION = $checkExpiration"
+                        } else {
+                            $statements += "ALTER LOGIN $loginIdentifier WITH PASSWORD = $PasswordHash HASHED"
+                        }
+                        # One transaction, so a failing statement takes back the ones before it and the policy is
+                        # never left off.
+                        # The connection can come from the caller with a transaction of its own, a piped login
+                        # brings the connection of its server. A rollback would take back the work of the caller as
+                        # well, so inside that transaction the statements are only taken back to a savepoint.
+                        $ownsTransaction = $server.ConnectionContext.ExecuteScalar("SELECT @@TRANCOUNT") -eq 0
+                        if ($ownsTransaction) {
+                            $server.ConnectionContext.BeginTransaction()
+                        } else {
+                            $null = $server.ConnectionContext.ExecuteNonQuery("SAVE TRANSACTION dbatools_SetDbaLogin")
+                        }
+                        $applied = $false
+                        try {
+                            foreach ($statement in $statements) {
+                                $null = $server.ConnectionContext.ExecuteNonQuery($statement)
+                            }
+                            if ($ownsTransaction) {
+                                $server.ConnectionContext.CommitTransaction()
+                            }
+                            $applied = $true
+                        } finally {
+                            # A failed ALTER LOGIN leaves the transaction open, and so does a stopped pipeline.
+                            if (-not $applied) {
+                                try {
+                                    if ($ownsTransaction) {
+                                        $server.ConnectionContext.RollBackTransaction()
+                                    } elseif ($server.ConnectionContext.ExecuteScalar("SELECT XACT_STATE()") -eq 1) {
+                                        # Back to the savepoint only. A transaction of the caller that can no longer
+                                        # commit can only be rolled back as a whole, and that is up to the caller.
+                                        $null = $server.ConnectionContext.ExecuteNonQuery("ROLLBACK TRANSACTION dbatools_SetDbaLogin")
+                                    }
+                                } catch {
+                                    Write-Message -Level Verbose -Message "Could not roll back the transaction on $server | $PSItem"
+                                }
+                            }
+                        }
                         $passwordChanged = $true
                         $l.Refresh()
                     } catch {

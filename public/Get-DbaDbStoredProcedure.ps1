@@ -171,6 +171,9 @@ function Get-DbaDbStoredProcedure {
         }
     }
     process {
+        # Without this guard a name that could not be parsed still returned every procedure of the database (#10655).
+        if (Test-FunctionInterrupt) { return }
+
         if (Test-Bound SqlInstance) {
             $InputObject = Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database -ExcludeDatabase $ExcludeDatabase
         }

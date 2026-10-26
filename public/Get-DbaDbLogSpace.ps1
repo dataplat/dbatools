@@ -105,7 +105,7 @@ Function Get-DbaDbLogSpace {
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
-            $dbs = $server.Databases | Where-Object IsAccessible
+            $dbs = $server.Databases
 
             if ($Database) {
                 $dbs = $dbs | Where-Object Name -in $Database
@@ -117,6 +117,16 @@ Function Get-DbaDbLogSpace {
             if ($ExcludeSystemDatabase) {
                 $dbs = $dbs | Where-Object IsSystemObject -eq $false
             }
+
+            # Accessibility is filtered after the name filters rather than before, so that a database
+            # the caller named is reported as skipped instead of silently vanishing, and one the
+            # caller excluded is never mentioned at all. There is no fallback to offer: log space is
+            # runtime state of an open database, sys.dm_db_log_space_usage needs it as query context,
+            # and DBCC SQLPERF(LOGSPACE) leaves databases it cannot open out of its result set.
+            foreach ($skippedDb in ($dbs | Where-Object IsAccessible -eq $false)) {
+                Write-Message -Level Warning -Message "Skipping $skippedDb on $instance because it is not accessible, so its log space cannot be read" -Target $skippedDb
+            }
+            $dbs = $dbs | Where-Object IsAccessible
 
             # 2012+ use new DMV
             if ($server.versionMajor -ge 11) {

@@ -62,11 +62,17 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "verifying output when running queries" {
-        BeforeAll {
-            $columnnames = 'Item', 'RowError', 'RowState', 'Table', 'ItemArray', 'HasErrors'
+        BeforeDiscovery {
+            # -TestCases is read while Pester discovers the tests. Built in the BeforeAll below, as
+            # it was before, this list was still empty at discovery, so the column test did not exist
+            # at all - and with Pester 6 the empty list fails the whole file during discovery.
+            $columnnames = "Item", "RowError", "RowState", "Table", "ItemArray", "HasErrors"
             $TestCases = @()
             $columnnames.ForEach{ $TestCases += @{ columnname = $PSItem } }
-            $results = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.InstanceSingle -QueryName 'Memory Clerk Usage'
+        }
+
+        BeforeAll {
+            $results = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.InstanceSingle -QueryName "Memory Clerk Usage"
         }
 
         It "runs a specific query" {
@@ -138,6 +144,49 @@ Describe $CommandName -Tag IntegrationTests {
         It "runs database specific queries against set of databases when provided with multiple database names" {
             $results = Invoke-DbaDiagnosticQuery -SqlInstance $TestConfig.InstanceSingle -DatabaseSpecific -QueryName 'Database-scoped Configurations' -Database @($database, $database2)
             @($results).Count | Should -Be 2
+        }
+    }
+
+    Context "When the pipeline ends at the first result" {
+        BeforeAll {
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. Select-Object -First 1 stops the command at
+            # its first result, so its end block never runs. The runspace imports the manifest: an import of
+            # the psm1 without a command line skips the type data.
+            $splatFirstResult = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                QueryName   = "Memory Clerk Usage"
+            }
+            if ($TestConfig.SqlCred) {
+                $splatFirstResult.SqlCredential = $TestConfig.SqlCred
+            }
+            $queryRunspace = [runspacefactory]::CreateRunspace()
+            $queryRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $queryRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $queryShell = [powershell]::Create()
+            $queryShell.Runspace = $queryRunspace
+            $firstResult = $queryShell.AddCommand("Invoke-DbaDiagnosticQuery").AddParameters($splatFirstResult).AddCommand("Select-Object").AddParameter("First", 1).Invoke()
+            $queryRecords = @($queryShell.Streams.Progress)
+            $queryShell.Dispose()
+            $queryRunspace.Dispose()
+        }
+
+        It "Returns the result of the query" {
+            $firstResult.Name | Should -Be "Memory Clerk Usage"
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $queryRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $queryRecords | Where-Object Activity -like "Collecting diagnostic query data from*" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
         }
     }
 }

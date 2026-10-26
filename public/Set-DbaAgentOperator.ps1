@@ -296,7 +296,10 @@ function Set-DbaAgentOperator {
             try {
                 $InputObject += Get-DbaAgentOperator -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Operator $Operator -EnableException
             } catch {
-                Stop-Function -Message "Failed" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                # No -Continue here: this catch sits before the operator loop, so the continue would
+                # escape the command and eat an iteration of whatever loop the caller runs in.
+                Stop-Function -Message "Failed" -Category ConnectionError -ErrorRecord $_ -Target $instance
+                return
             }
         }
 

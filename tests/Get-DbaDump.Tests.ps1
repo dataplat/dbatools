@@ -21,24 +21,22 @@ Describe $CommandName -Tag UnitTests {
 }
 
 # Not sure what is up with appveyor but it does not support this at all
-if (-not $env:appveyor) {
-    Describe $CommandName -Tag IntegrationTests {
-        Context "Testing if memory dump is present" {
-            It "finds least one dump" {
-                $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+Describe $CommandName -Tag IntegrationTests -Skip:([bool]$env:appveyor) {
+    Context "Testing if memory dump is present" {
+        It "finds least one dump" {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-                $splatConnect = @{
-                    SqlInstance = $TestConfig.InstanceSingle
-                }
-                $server = Connect-DbaInstance @splatConnect
-                $server.Query("DBCC STACKDUMP")
-                $server.Query("DBCC STACKDUMP")
-
-                $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-
-                $results = Get-DbaDump -SqlInstance $TestConfig.InstanceSingle
-                $results.Count | Should -BeGreaterOrEqual 1
+            $splatConnect = @{
+                SqlInstance = $TestConfig.InstanceSingle
             }
+            $server = Connect-DbaInstance @splatConnect
+            $server.Query("DBCC STACKDUMP")
+            $server.Query("DBCC STACKDUMP")
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $results = Get-DbaDump -SqlInstance $TestConfig.InstanceSingle
+            $results.Count | Should -BeGreaterOrEqual 1
         }
     }
 }

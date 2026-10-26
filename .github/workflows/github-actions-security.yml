@@ -3,8 +3,13 @@ name: GitHub Actions Security
 on:
   pull_request:
     paths:
+      - ".github/actionlint.yaml"
       - ".github/dependabot.yml"
+      - ".github/scripts/Test-ActionlintWorkflows.ps1"
       - ".github/scripts/Test-GitHubActionsPins.ps1"
+      - ".github/scripts/Build-MinioCiImage.sh"
+      - ".github/scripts/Test-MinioCiSupplyChain.ps1"
+      - ".github/docker/minio/**"
       - ".github/workflows/**"
   push:
     branches-ignore:
@@ -12,8 +17,13 @@ on:
     tags-ignore:
       - "**"
     paths:
+      - ".github/actionlint.yaml"
       - ".github/dependabot.yml"
+      - ".github/scripts/Test-ActionlintWorkflows.ps1"
       - ".github/scripts/Test-GitHubActionsPins.ps1"
+      - ".github/scripts/Build-MinioCiImage.sh"
+      - ".github/scripts/Test-MinioCiSupplyChain.ps1"
+      - ".github/docker/minio/**"
       - ".github/workflows/**"
   workflow_dispatch:
 
@@ -36,3 +46,27 @@ jobs:
       - name: Verify action refs
         shell: pwsh
         run: ./.github/scripts/Test-GitHubActionsPins.ps1
+
+  actionlint:
+    name: Lint workflows
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Run actionlint
+        shell: pwsh
+        run: ./.github/scripts/Test-ActionlintWorkflows.ps1
+
+  minio-supply-chain:
+    name: Verify MinIO CI supply chain
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Verify MinIO CI supply chain
+        shell: pwsh
+        run: ./.github/scripts/Test-MinioCiSupplyChain.ps1

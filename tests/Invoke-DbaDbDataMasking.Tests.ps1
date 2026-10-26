@@ -446,4 +446,298 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
     }
+
+    Context "When a table of deterministic values is left over" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $leftoverPath = "$tempPath\leftover"
+            $null = New-Item -Path $leftoverPath -ItemType Directory
+            $splatLeftoverConfig = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                Path        = $leftoverPath
+            }
+            $leftoverConfigFile = New-DbaDbMaskingConfig @splatLeftoverConfig
+            # A run that ended early left its table behind. The command drops it first, and the drop used to put a $null
+            # into the output before the results.
+            $splatLeftoverTable = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "tempdb"
+                Query       = "IF OBJECT_ID(N'dbo.DeterministicValues') IS NULL CREATE TABLE dbo.DeterministicValues ([ValueKey] VARCHAR(900), [NewValue] VARCHAR(900))"
+            }
+            $null = Invoke-DbaQuery @splatLeftoverTable
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatLeftoverMasking = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                FilePath    = $leftoverConfigFile.FullName
+            }
+            $leftoverResults = @(Invoke-DbaDbDataMasking @splatLeftoverMasking)
+            $leftoverWarning = $WarnVar
+        }
+
+        It "Returns one result per table and nothing else" {
+            $leftoverWarning | Should -BeNullOrEmpty
+            $leftoverResults.Count | Should -Be 2
+            $leftoverResults.Table | Should -Be @("people", "people2")
+        }
+    }
+
+    Context "When a column of the config has a composite" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $compositePath = "$tempPath\composite"
+            $null = New-Item -Path $compositePath -ItemType Directory
+            $splatCompositeConfig = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                Table       = "people"
+                Path        = $compositePath
+            }
+            $compositeConfigFile = New-DbaDbMaskingConfig @splatCompositeConfig
+            $compositeConfig = Get-Content -Path $compositeConfigFile.FullName -Raw | ConvertFrom-Json
+            $compositeColumn = $compositeConfig.Tables[0].Columns | Where-Object Name -eq "lname"
+            $compositeColumn.Composite = @(
+                [PSCustomObject]@{ Type = "Column"; Value = "fname" },
+                [PSCustomObject]@{ Type = "Static"; Value = "-composite" }
+            )
+            $compositeConfigPath = "$compositePath\composite.json"
+            $compositeConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $compositeConfigPath
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The UPDATE statements of the composites used to be written to the pipeline before they were run.
+            $splatCompositeMasking = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                FilePath    = $compositeConfigPath
+            }
+            $compositeResults = @(Invoke-DbaDbDataMasking @splatCompositeMasking)
+            $compositeWarning = $WarnVar
+        }
+
+        It "Returns only the result of the table" {
+            $compositeWarning | Should -BeNullOrEmpty
+            $compositeResults.Count | Should -Be 1
+            $compositeResults[0].Table | Should -Be "people"
+        }
+
+        It "Fills the column from the composite" {
+            $splatCompositeData = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                Query       = "SELECT fname, lname FROM dbo.people"
+            }
+            foreach ($row in (Invoke-DbaQuery @splatCompositeData)) {
+                $row.lname | Should -Be "$($row.fname)-composite"
+            }
+        }
+    }
+
+    Context "When an action of the config fails" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $actionPath = "$tempPath\action"
+            $null = New-Item -Path $actionPath -ItemType Directory
+            $splatActionConfig = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                Table       = "people"
+                Path        = $actionPath
+            }
+            $actionConfigFile = New-DbaDbMaskingConfig @splatActionConfig
+            $actionConfig = Get-Content -Path $actionConfigFile.FullName -Raw | ConvertFrom-Json
+            # A division by zero makes the UPDATE of the action fail on the server.
+            $actionColumn = $actionConfig.Tables[0].Columns | Where-Object Name -eq "percenttest"
+            $actionColumn.Action = [PSCustomObject]@{
+                Category = "Number"
+                Type     = "Divide"
+                Value    = 0
+            }
+            $actionConfigPath = "$actionPath\action.json"
+            $actionConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $actionConfigPath
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The failed UPDATE statements used to be written to the pipeline, and the -Continue after the warning skipped
+            # the removal of the identity column and the index the command had added to the table.
+            $splatActionMasking = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Database      = $dbName
+                FilePath      = $actionConfigPath
+                WarningAction = "SilentlyContinue"
+            }
+            $actionResults = @(Invoke-DbaDbDataMasking @splatActionMasking)
+            $actionWarning = $WarnVar
+        }
+
+        It "Warns about the failed update and returns nothing" {
+            ($actionWarning -join " ") | Should -BeLike "*Error updating dbo.people*"
+            $actionResults | Should -BeNullOrEmpty
+        }
+
+        It "Removes the identity column and the index it added" {
+            $splatActionLeftover = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                Query       = "SELECT (SELECT COUNT(*) FROM sys.columns WHERE name = N'MaskingID') + (SELECT COUNT(*) FROM sys.indexes WHERE name LIKE N'NIX[_][_]%[_]Masking') AS Leftovers"
+            }
+            (Invoke-DbaQuery @splatActionLeftover).Leftovers | Should -Be 0
+        }
+    }
+
+    Context "When a table of the config has composites and actions" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $bothPath = "$tempPath\both"
+            $null = New-Item -Path $bothPath -ItemType Directory
+            $splatBothConfig = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                Table       = "people2"
+                Path        = $bothPath
+            }
+            $bothConfigFile = New-DbaDbMaskingConfig @splatBothConfig
+            $bothConfig = Get-Content -Path $bothConfigFile.FullName -Raw | ConvertFrom-Json
+            $bothCompositeColumn = $bothConfig.Tables[0].Columns | Where-Object Name -eq "lname"
+            $bothCompositeColumn.Composite = @(
+                [PSCustomObject]@{ Type = "Static"; Value = "composite" }
+            )
+            $bothActionColumn = $bothConfig.Tables[0].Columns | Where-Object Name -eq "percenttest"
+            $bothActionColumn.Action = [PSCustomObject]@{
+                Category = "Number"
+                Type     = "Add"
+                Value    = 1
+            }
+            $bothConfigPath = "$bothPath\both.json"
+            $bothConfig | ConvertTo-Json -Depth 10 | Set-Content -Path $bothConfigPath
+            $splatBothData = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                Query       = "SELECT fname, lname, dob, percenttest, bittest FROM dbo.people2 ORDER BY fname"
+                As          = "PSObject"
+            }
+            $bothDataBefore = Invoke-DbaQuery @splatBothData | ConvertTo-Json -Compress
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The command warned that it cannot use both and then masked the table anyway.
+            $splatBothMasking = @{
+                SqlInstance   = $TestConfig.InstanceSingle
+                Database      = $dbName
+                FilePath      = $bothConfigPath
+                WarningAction = "SilentlyContinue"
+            }
+            $bothResults = @(Invoke-DbaDbDataMasking @splatBothMasking)
+            $bothWarning = $WarnVar
+            $bothDataAfter = Invoke-DbaQuery @splatBothData | ConvertTo-Json -Compress
+        }
+
+        It "Warns and returns nothing" {
+            ($bothWarning -join " ") | Should -BeLike "*You cannot use both composites and actions*"
+            $bothResults | Should -BeNullOrEmpty
+        }
+
+        It "Leaves the data of the table as it was" {
+            $bothDataAfter | Should -Be $bothDataBefore
+        }
+
+        It "Removes the identity column and the index it added" {
+            $splatBothLeftover = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                Query       = "SELECT (SELECT COUNT(*) FROM sys.columns WHERE name = N'MaskingID') + (SELECT COUNT(*) FROM sys.indexes WHERE name LIKE N'NIX[_][_]%[_]Masking') AS Leftovers"
+            }
+            (Invoke-DbaQuery @splatBothLeftover).Leftovers | Should -Be 0
+        }
+    }
+
+    Context "When the pipeline is stopped" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $splatStopConfig = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                Path        = $tempPath
+            }
+            $stopConfigFile = New-DbaDbMaskingConfig @splatStopConfig
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The command runs in a runspace of its own, created by the PowerShell API without a host. There
+            # Write-Progress puts every record into Streams.Progress, so a bar that was never completed shows
+            # as an Id whose last record is not a completed one. The pipeline is stopped as soon as the first
+            # masking record arrives, which is what Ctrl+C does. The runspace imports the manifest: an import of the
+            # psm1 without a command line skips the type data, and without it SMO databases have no Query method.
+            $splatStopMasking = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                FilePath    = $stopConfigFile.FullName
+                Confirm     = $false
+            }
+            if ($TestConfig.SqlCred) {
+                $splatStopMasking.SqlCredential = $TestConfig.SqlCred
+            }
+            $stopRunspace = [runspacefactory]::CreateRunspace()
+            $stopRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $stopRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $stopShell = [powershell]::Create()
+            $stopShell.Runspace = $stopRunspace
+            $null = $stopShell.AddCommand("Invoke-DbaDbDataMasking").AddParameters($splatStopMasking)
+            $stopAsync = $stopShell.BeginInvoke()
+            $stopWatch = [System.Diagnostics.Stopwatch]::StartNew()
+            while (-not ($stopShell.Streams.Progress | Where-Object Activity -like "Masking *") -and -not $stopAsync.IsCompleted -and $stopWatch.Elapsed.TotalSeconds -lt 60) {
+                Start-Sleep -Milliseconds 10
+            }
+            $stopShell.Stop()
+            $stopState = $stopShell.InvocationStateInfo.State
+            $stopRecords = @($stopShell.Streams.Progress)
+            $stopShell.Dispose()
+            $stopRunspace.Dispose()
+        }
+
+        AfterAll {
+            # The stopped run did not get to drop its table of deterministic values.
+            # It drops it in a finally now. The drop here keeps a regression from leaving the table to the next test file.
+            $splatDropValues = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = "tempdb"
+                Query           = "IF OBJECT_ID(N'dbo.DeterministicValues') IS NOT NULL DROP TABLE dbo.DeterministicValues"
+                EnableException = $true
+            }
+            $null = Invoke-DbaQuery @splatDropValues
+        }
+
+        It "Was stopped while it was running" {
+            $stopState | Should -Be "Stopped"
+        }
+
+        It "Completes its progress bar" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so a completed record somewhere is not enough.
+            $openIds = $stopRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $stopRecords | Where-Object Activity -like "Masking *" | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+
+        It "Drops its table of deterministic values" {
+            $splatValuesTable = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = "tempdb"
+                Query       = "SELECT COUNT(*) AS ValuesTables FROM sys.tables WHERE name = N'DeterministicValues'"
+            }
+            (Invoke-DbaQuery @splatValuesTable).ValuesTables | Should -Be 0
+        }
+
+        It "Removes the identity column and the index it added" {
+            $splatStopLeftover = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $dbName
+                Query       = "SELECT (SELECT COUNT(*) FROM sys.columns WHERE name = N'MaskingID') + (SELECT COUNT(*) FROM sys.indexes WHERE name LIKE N'NIX[_][_]%[_]Masking') AS Leftovers"
+            }
+            (Invoke-DbaQuery @splatStopLeftover).Leftovers | Should -Be 0
+        }
+    }
 }

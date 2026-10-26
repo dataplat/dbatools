@@ -89,7 +89,7 @@ $scriptBlock = {
                 0
             }
 
-            $messageFiles = Get-ChildItem -Path $root.FullName -Filter "dbatools_$($pid)_message_*.xml" | Sort-Object LastWriteTime -Descending
+            $messageFiles = Get-ChildItem -Path $root.FullName -Filter "dbatools_$($pid)_message_*.log" | Sort-Object LastWriteTime -Descending
             [int]$num_Message = if ($messageFiles) {
                 (Select-String -InputObject $messageFiles[0].Name -Pattern "(\d+)" -AllMatches).Matches[1].Value
             } else {
@@ -125,7 +125,20 @@ $scriptBlock = {
                 $Entry = $null
                 $null = [Dataplat.Dbatools.Message.LogHost]::OutQueueLog.TryDequeue([ref]$Entry)
                 if ($Entry) {
-                    Add-Content -Path $CurrentFile -Value (ConvertTo-Csv -InputObject $Entry -NoTypeInformation)[1]
+                    # ConvertTo-Csv calls ToString() on every property, which returns the type name for the list of tags.
+                    # So we join the tags into one string and keep all other columns in their order.
+                    $csvProperties = foreach ($propertyName in $Entry.PSObject.Properties.Name) {
+                        if ($propertyName -eq "Tags") {
+                            @{
+                                Name       = "Tags"
+                                Expression = { $PSItem.Tags -join ", " }
+                            }
+                        } else {
+                            $propertyName
+                        }
+                    }
+                    $csvEntry = $Entry | Select-Object -Property $csvProperties
+                    Add-Content -Path $CurrentFile -Value (ConvertTo-Csv -InputObject $csvEntry -NoTypeInformation)[1]
                 }
             }
             #endregion Process Logs

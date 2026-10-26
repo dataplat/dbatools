@@ -58,19 +58,24 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Validate standard output" {
-        BeforeAll {
-            $props = @(
-                "ComputerName",
-                "InstanceName",
-                "SqlInstance",
-                "Database",
-                "Cmd",
-                "Output",
-                "Table",
-                "Constraint",
-                "Where"
+        BeforeDiscovery {
+            # -ForEach is read while Pester discovers the tests, so the list has to be built here.
+            # Built in BeforeAll and consumed by a foreach around the It block, as it was before,
+            # the list is still empty at discovery and not a single one of these tests existed.
+            $expectedProperty = @(
+                @{ PropertyName = "ComputerName" }
+                @{ PropertyName = "InstanceName" }
+                @{ PropertyName = "SqlInstance" }
+                @{ PropertyName = "Database" }
+                @{ PropertyName = "Cmd" }
+                @{ PropertyName = "Output" }
+                @{ PropertyName = "Table" }
+                @{ PropertyName = "Constraint" }
+                @{ PropertyName = "Where" }
             )
+        }
 
+        BeforeAll {
             $splatCheckConstraint = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Database    = $dbname
@@ -79,11 +84,9 @@ Describe $CommandName -Tag IntegrationTests {
             $result = Invoke-DbaDbDbccCheckConstraint @splatCheckConstraint
         }
 
-        foreach ($prop in $props) {
-            It "Should return property: $prop" {
-                $p = $result[0].PSObject.Properties[$prop]
-                $p.Name | Should -Be $prop
-            }
+        It "Should return property: <PropertyName>" -ForEach $expectedProperty {
+            $p = $result[0].PSObject.Properties[$PropertyName]
+            $p.Name | Should -Be $PropertyName
         }
 
         It "Returns correct results" {

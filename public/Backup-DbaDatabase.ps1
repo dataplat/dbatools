@@ -489,612 +489,601 @@ function Backup-DbaDatabase {
         $topProgressId = Get-Random
         $topProgressTarget = $InputObject.Count
         $topProgressNumber = 0
-        foreach ($db in $InputObject) {
-            if ($FilePath -and -not $Path) {
-                try {
-                    # cl gave a bad example in dbatools in a month of lunches, accommodate it
-                    Write-Message -Level Verbose -Message "Checking to see if FilePath is a directory"
-                    $isdir = ($db.Query("EXEC master.dbo.xp_fileexist '$FilePath'")).Item(1)
-                } catch {
-                    # ignore
+        # A throw from Stop-Function, a stopped pipeline and Select-Object -First all leave the process block early, so the bars are completed in finally
+        try {
+            foreach ($db in $InputObject) {
+                if ($FilePath -and -not $Path) {
+                    try {
+                        # cl gave a bad example in dbatools in a month of lunches, accommodate it
+                        Write-Message -Level Verbose -Message "Checking to see if FilePath is a directory"
+                        $isdir = ($db.Query("EXEC master.dbo.xp_fileexist '$FilePath'")).Item(1)
+                    } catch {
+                        # ignore
+                    }
+
+                    if ($isdir) {
+                        Write-Message -Level Verbose -Message "Ooops, FilePath is a directory, using it as the backup path"
+                        $PSBoundParameters.Path = $FilePath
+                        $Path = $FilePath
+                        $PSBoundParameters.FilePath = $null
+                        $FilePath = $null
+                    }
+                }
+                $topProgressPercent = [int]($topProgressNumber * 100 / $topProgressTarget)
+                $topProgressNumber++
+                if (-not $PSCmdlet.MyInvocation.ExpectingInput) {
+                    # Only when the databases to be processed are not piped to the command
+                    Write-Progress -Id $topProgressId -Activity "Backing up database $topProgressNumber of $topProgressTarget" -PercentComplete $topProgressPercent -Status ([System.String]::Format("Progress: {0} %", $topProgressPercent))
                 }
 
-                if ($isdir) {
-                    Write-Message -Level Verbose -Message "Ooops, FilePath is a directory, using it as the backup path"
-                    $PSBoundParameters.Path = $FilePath
-                    $Path = $FilePath
-                    $PSBoundParameters.FilePath = $null
+                $ProgressId = Get-Random
+                $failures = @()
+                $dbName = $db.Name
+                $server = $db.Parent
+                $null = $server.Refresh()
+                $isdestlinux = Test-HostOSLinux -SqlInstance $server
+
+                if (Test-Bound 'EncryptionAlgorithm') {
+                    if (!((Test-Bound 'EncryptionCertificate') -xor (Test-Bound 'EncryptionKey'))) {
+                        Stop-Function -Message 'EncryptionCertifcate and EncryptionKey are mutually exclusive, only provide on of them'
+                        return
+                    } else {
+                        $encryptionOptions = New-Object Microsoft.SqlServer.Management.Smo.BackupEncryptionOptions
+                        if (Test-Bound 'EncryptionCertificate') {
+                            $tCertCheck = Get-DbaDbCertificate -SqlInstance $server -Database master -Certificate $EncryptionCertificate
+                            if ($null -eq $tCertCheck) {
+                                Stop-Function -Message "Certificate $EncryptionCertificate does not exist on $server so cannot be used for backups"
+                                return
+                            } else {
+                                $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerCertificate
+                                $encryptionOptions.encryptorName = $EncryptionCertificate
+                                $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
+                            }
+                        }
+                        if (Test-Bound 'EncryptionKey') {
+                            # Should not end up here until Key encryption in implemented
+                            $tKeyCheck = Get-DbaDbAsymmetricKey -SqlInstance $server -Database master -Name $EncrytptionKey
+                            if ($null -eq $tKeyCheck) {
+                                Stop-Function -Message "AsymmetricKey $Encryptionkey does not exist on $server so cannot be used for backups"
+                                return
+                            } else {
+                                $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerAsymmetricKey
+                                $encryptionOptions.encryptorName = $EncryptionKey
+                                $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
+                            }
+                        }
+                    }
+                }
+
+
+                if ( (Test-Bound StorageBaseUrl -Not) -and (Test-Bound Path -Not) -and $FilePath -ne 'NUL') {
+                    Write-Message -Message 'No backup folder passed in, setting it to instance default' -Level Verbose
+                    $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
+                    if ($Path) {
+                        # it's very picky, don't cut corners
+                        $lastchar = $Path.substring($Path.length - 1, 1)
+                        if ($lastchar -eq "/" -or $lastchar -eq "\") {
+                            $Path = $Path.TrimEnd("/")
+                            $Path = $Path.TrimEnd("\")
+                        }
+                    }
+                }
+
+                # Validate MaxTransferSize for non-S3 backups (S3 validation is done later in the S3 block)
+                $isS3Url = $null -ne $StorageBaseUrl -and $StorageBaseUrl[0] -match "^s3://"
+                if ($MaxTransferSize -and -not $isS3Url) {
+                    if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -gt 4mb) {
+                        Stop-Function -Message "MaxTransferSize value must be a multiple of 64KB and no greater than 4MB"
+                        return
+                    }
+                }
+
+                if ($BlockSize) {
+                    if ($BlockSize -notin (0.5kb, 1kb, 2kb, 4kb, 8kb, 16kb, 32kb, 64kb)) {
+                        Stop-Function -Message "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
+                        return
+                    }
+                }
+
+                if ($null -ne $StorageBaseUrl) {
+                    # Detect if this is S3 or Azure storage
+                    $isS3Backup = $StorageBaseUrl[0] -match "^s3://"
+
+                    if ($isS3Backup) {
+                        # S3-compatible object storage (SQL Server 2022+)
+                        if ($server.VersionMajor -lt 16) {
+                            Stop-Function -Message "S3 backup requires SQL Server 2022 or later. Current version: $($server.Version)"
+                            return
+                        }
+
+                        # Validate MaxTransferSize for S3 (must be between 5MB and 20MB)
+                        if ($MaxTransferSize) {
+                            if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -lt 5mb -or $MaxTransferSize -gt 20mb) {
+                                Stop-Function -Message "MaxTransferSize for S3 backups must be a multiple of 64KB and between 5MB and 20MB"
+                                return
+                            }
+                        } else {
+                            # Set default MaxTransferSize for S3 if not specified (10MB is a good default)
+                            $MaxTransferSize = 10mb
+                            Write-Message -Level Verbose -Message "S3 backup detected, setting default MaxTransferSize to 10MB"
+                        }
+
+                        # Validate StorageRegion if specified with non-S3 URL
+                        if ((Test-Bound 'StorageRegion') -and -not $isS3Backup) {
+                            Stop-Function -Message "StorageRegion can only be specified with S3 URLs"
+                            return
+                        }
+
+                        # S3 URLs should not have trailing slash trimmed the same way
+                        $StorageBaseUrl = $StorageBaseUrl | ForEach-Object { $_.TrimEnd("/") }
+                    } else {
+                        # Azure Blob Storage
+                        $StorageBaseUrl = $StorageBaseUrl.Trim("/")
+
+                        # Validate StorageRegion not used with Azure
+                        if (Test-Bound 'StorageRegion') {
+                            Stop-Function -Message "StorageRegion can only be specified with S3 URLs, not Azure storage"
+                            return
+                        }
+                    }
+
+                    if ('' -ne $StorageCredential) {
+                        Write-Message -Message "Storage credential name passed in, will proceed assuming it's valid" -Level Verbose
+                        if (-not $isS3Backup) {
+                            # Azure page blob with credential = single file only
+                            $FileCount = 1
+                        }
+                    } else {
+                        foreach ($baseUrl in $StorageBaseUrl) {
+                            if ($isS3Backup) {
+                                # S3 credential name should match the S3 URL path
+                                $credentialName = $baseUrl
+                                Write-Message -Message "S3 URL detected, testing for S3 credential" -Level Verbose
+                            } else {
+                                # Azure SAS credential logic
+                                $base = $baseUrl -split "/"
+                                if ( $base.Count -gt 4) {
+                                    Write-Message "Storage URL contains a folder"
+                                    $credentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
+                                } else {
+                                    # URL is just the container, use it as-is for credential name
+                                    $credentialName = $baseUrl
+                                }
+                                Write-Message -Message "Azure URL and no credential, testing for SAS credential" -Level Verbose
+                            }
+                            if (Get-DbaCredential -SqlInstance $server -Name $credentialName) {
+                                Write-Message -Message "Found a matching backup credential" -Level Verbose
+                            } else {
+                                if ($isS3Backup) {
+                                    Stop-Function -Message "You must provide the credential name for S3 storage or create a credential matching the S3 URL"
+                                } else {
+                                    Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
+                                }
+                                return
+                            }
+                        }
+                    }
+                    if ($StorageBaseUrl.Count -gt 1 -or $FileCount -eq 0) {
+                        $FileCount = $StorageBaseUrl.count
+                    }
+                    $Path = $StorageBaseUrl
+                }
+
+                if ($OutputScriptOnly) {
+                    $IgnoreFileChecks = $true
+                }
+
+                if ($null -eq $PSBoundParameters.Path -and $PSBoundParameters.FilePath -ne 'NUL' -and $server.VersionMajor -eq 8) {
+                    Write-Message -Message 'No backup folder passed in, setting it to instance default' -Level Verbose
+                    $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
+                }
+
+                if ($dbName -eq "tempdb") {
+                    Stop-Function -Message "Backing up tempdb not supported" -Continue
+                }
+
+                if (-not $db.IsAccessible) {
+                    Stop-Function -Message "Database $dbName is not accessible. Cannot perform backup." -Continue -Target $db
+                }
+
+                if ('Normal' -notin ($db.Status -split ',')) {
+                    Stop-Function -Message "Database status not Normal. $dbName skipped." -Continue
+                }
+
+                if ($db.DatabaseSnapshotBaseName) {
+                    Stop-Function -Message "Backing up snapshots not supported. $dbName skipped." -Continue
+                }
+
+                Write-Message -Level Verbose -Message "Backup database $db"
+
+                if ($null -eq $db.RecoveryModel) {
+                    $db.RecoveryModel = $server.Databases[$db.Name].RecoveryModel
+                    Write-Message -Level Verbose -Message "$dbName is in $($db.RecoveryModel) recovery model"
+                }
+
+                # Fixes one-off cases of StackOverflowException crashes, see issue 1481
+                $dbRecovery = $db.RecoveryModel.ToString()
+                if ($dbRecovery -eq 'Simple' -and $Type -eq 'Log') {
+                    $failreason = "$db is in simple recovery mode, cannot take log backup"
+                    $failures += $failreason
+                    Stop-Function -Message "$failreason" -Continue -Target $db
+                }
+
+                $db.Refresh()
+                $lastfull = $db.LastBackupDate.Year
+
+                if ($Type -notin @("Database", "Full") -and $lastfull -eq 1) {
+                    $failreason = "$db does not have an existing full backup, cannot take log or differential backup"
+                    $failures += $failreason
+                    Stop-Function -Message "$failreason" -Continue -Target $db
+                }
+
+                if ($CopyOnly -ne $true) {
+                    $CopyOnly = $false
+                }
+
+                $server.ConnectionContext.StatementTimeout = 0
+                $backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
+                $backup.Database = $db.Name
+                if (Test-Bound -ParameterName Description) {
+                    if ($Description.Length -gt 255) {
+                        Write-Message -Level Warning -Message 'Description is too long and will be truncated to 255 characters'
+                        $Description = $Description.Substring(0, 255)
+                    }
+                    $backup.BackupSetDescription = $Description
+                }
+                $Suffix = "bak"
+
+                if ($null -ne $encryptionOptions) {
+                    $backup.EncryptionOption = $encryptionOptions
+                }
+
+                if ($PSBoundParameters.ContainsKey('CompressBackup')) {
+                    if ($CompressBackup) {
+                        if ($db.EncryptionEnabled) {
+                            # Newer versions of SQL Server automatically set the MAXTRANSFERSIZE to 128k
+                            # so let's do that for people as well
+                            $minVerForTDECompression = [version]'13.0.4446.0' #SQL Server 2016 CU 4
+                            $flagTDESQLVersion = $minVerForTDECompression -le $Server.version
+                            if (-not (Test-Bound 'MaxTransferSize')) {
+                                $MaxTransferSize = 128kb
+                            }
+                            $flagCorrectMaxTransferSize = ($MaxTransferSize -gt 64kb)
+                            if ($flagTDESQLVersion -and $flagCorrectMaxTransferSize) {
+                                Write-Message -Level Verbose -Message "$dbName is enabled for encryption but will compress"
+                                $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::On
+                            } else {
+                                Write-Message -Level Warning -Message "$dbName is enabled for encryption, will not compress"
+                                $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::Off
+                            }
+                        } elseif ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10) {
+                            Stop-Function -Message "Compression is not supported with this version/edition of Sql Server" -Continue -Target $db
+                        } else {
+                            Write-Message -Level Verbose -Message "Compression enabled"
+                            $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::On
+                        }
+                    } else {
+                        Write-Message -Level Verbose -Message "Compression disabled"
+                        $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::Off
+                    }
+                } else {
+                    Write-Message -Level Verbose -Message "Using instance default backup compression setting"
+                    $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::Default
+                }
+
+                if ($Checksum) {
+                    $backup.Checksum = $true
+                }
+
+                if ($Type -in 'Diff', 'Differential') {
+                    Write-Message -Level VeryVerbose -Message "Creating differential backup"
+                    $SMOBackuptype = "Database"
+                    $backup.Incremental = $true
+                    $outputType = 'Differential'
+                    $gbhSwitch = @{'LastDiff' = $true }
+                }
+                $Backup.NoRecovery = $false
+                if ($Type -eq "Log") {
+                    Write-Message -Level VeryVerbose -Message "Creating log backup"
+                    $Suffix = "trn"
+                    $OutputType = 'Log'
+                    $SMOBackupType = 'Log'
+                    $Backup.NoRecovery = $NoRecovery
+                    $gbhSwitch = @{'LastLog' = $true }
+                }
+
+                if ($Type -in 'Full', 'Database') {
+                    Write-Message -Level VeryVerbose -Message "Creating full backup"
+                    $SMOBackupType = "Database"
+                    $OutputType = 'Full'
+                    $gbhSwitch = @{'LastFull' = $true }
+                }
+
+                $backup.CopyOnly = $CopyOnly
+                $backup.Action = $SMOBackupType
+                if ($null -ne $StorageBaseUrl -and $null -ne $StorageCredential) {
+                    $backup.CredentialName = $StorageCredential
+                }
+
+                Write-Message -Level Verbose -Message "Building file name"
+                $BackupFinalName = ''
+                $FinalBackupPath = @()
+                $timestamp = Get-Date -Format $TimeStampFormat
+                if ('NUL' -eq $FilePath) {
+                    $FinalBackupPath += 'NUL:'
+                    $IgnoreFileChecks = $true
+                } elseif ('' -ne $FilePath) {
+                    $File = New-Object System.IO.FileInfo($FilePath)
+                    $BackupFinalName = $file.Name
+                    $suffix = $file.extension -Replace '^\.', ''
+                    if ( '' -ne (Split-Path $FilePath)) {
+                        Write-Message -Level Verbose -Message "Fully qualified path passed in"
+                        # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
+                        if ($nonwindows -or $isdestlinux) {
+                            $FinalBackupPath += $file.DirectoryName
+                        } else {
+                            $FinalBackupPath += [IO.Path]::GetFullPath($file.DirectoryName)
+                        }
+                    }
+                } else {
+                    Write-Message -Level VeryVerbose -Message "Setting filename - $timestamp"
+                    $BackupFinalName = "$($dbName)_$timestamp.$suffix"
+                }
+
+                Write-Message -Level Verbose -Message "Building backup path"
+                if ($FinalBackupPath.Count -eq 0) {
+                    $FinalBackupPath += $Path
+                }
+
+                if ($Path.Count -eq 1 -and $FileCount -gt 1) {
+                    for ($i = 0; $i -lt ($FileCount - 1); $i++) {
+                        $FinalBackupPath += $FinalBackupPath[0]
+                    }
+                }
+
+                if ($StorageBaseUrl -or $StorageCredential -or $isdestlinux) {
+                    $slash = "/"
+                } else {
+                    $slash = "\"
+                }
+
+                if ($FinalBackupPath.Count -gt 1) {
+                    $File = New-Object System.IO.FileInfo($BackupFinalName)
+                    for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
+                        $FinalBackupPath[$i] = $FinalBackupPath[$i] + $slash + ("$($i+1)-" * $IncrementPrefix.ToBool() ) + $($File.BaseName) + "-$($i+1)-of-$FileCount.$suffix"
+                    }
+                } elseif ($FinalBackupPath[0] -ne 'NUL:') {
+                    $FinalBackupPath[0] = $FinalBackupPath[0] + $slash + $BackupFinalName
+                }
+
+                # Auto-detect dbname token in the directory path to prevent duplication when using CreateFolder + ReplaceInName
+                if ($CreateFolder -and $ReplaceInName -and -not $NoAppendDbNameInPath) {
+                    $containsDbNameToken = $false
+                    foreach ($pathToCheck in $FinalBackupPath) {
+                        $directoryPathToCheck = Split-Path -Path $pathToCheck -Parent
+                        if ($directoryPathToCheck -and $directoryPathToCheck -match "(^|[\\/])dbname([\\/]|$)") {
+                            $containsDbNameToken = $true
+                            break
+                        }
+                    }
+                    if ($containsDbNameToken) {
+                        Write-Message -Level Verbose -Message "Directory path contains 'dbname' token with ReplaceInName. Automatically skipping database folder creation to prevent duplication."
+                        $NoAppendDbNameInPath = $true
+                    }
+                }
+
+                if ($CreateFolder -and $FinalBackupPath[0] -ne 'NUL:') {
+                    for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
+                        $parent = [IO.Path]::GetDirectoryName($FinalBackupPath[$i])
+                        $leaf = [IO.Path]::GetFileName($FinalBackupPath[$i])
+                        if ($NoAppendDbNameInPath) {
+                            $FinalBackupPath[$i] = [IO.Path]::Combine($parent, $leaf)
+                        } else {
+                            $FinalBackupPath[$i] = [IO.Path]::Combine($parent, $dbName, $leaf)
+                        }
+                    }
+                }
+
+                if ($True -eq $ReplaceInName) {
+                    for ($i = 0; $i -lt $FinalBackupPath.count; $i++) {
+                        $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('dbname', $dbName)
+                        $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('instancename', $server.ServiceName)
+                        $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('servername', $server.ComputerName)
+                        $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('timestamp', $timestamp)
+                        $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('backuptype', $outputType)
+                    }
+                }
+
+                # Linux can't support making new directories yet, and it's likely that databases
+                # will be in one place
+                if (-not $IgnoreFileChecks -and -not $StorageBaseUrl -and -not $isdestlinux) {
+                    $parentPaths = ($FinalBackupPath | ForEach-Object { Split-Path $_ } | Select-Object -Unique)
+                    foreach ($parentPath in $parentPaths) {
+                        if (-not (Test-DbaPath -SqlInstance $server -Path $parentPath)) {
+                            if (($BuildPath -eq $true) -or ($CreateFolder -eq $True)) {
+                                $null = New-DbaDirectory -SqlInstance $server -Path $parentPath
+                            } else {
+                                $failreason += "SQL Server cannot check if $parentPath exists. You can try disabling this check with -IgnoreFileChecks"
+                                $failures += $failreason
+                                Write-Message -Level Warning -Message "$failreason"
+                            }
+                        }
+                    }
+                }
+
+                # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
+                if ($null -eq $StorageBaseUrl -and $Path -and -not $nonwindows -and -not $isdestlinux) {
+                    $FinalBackupPath = $FinalBackupPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
+                }
+
+
+                $script = $null
+                $backupComplete = $false
+
+                if (!$failures) {
+                    $FileCount = $FinalBackupPath.Count
+
+                    foreach ($backupfile in $FinalBackupPath) {
+                        $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
+                        if ($null -ne $StorageBaseUrl) {
+                            $device.DeviceType = "URL"
+                        } else {
+                            $device.DeviceType = "File"
+                        }
+
+                        if ($WithFormat) {
+                            Write-Message -Message "WithFormat specified. Ensuring Initialize and SkipTapeHeader are set to true." -Level Verbose
+                            $Initialize = $true
+                            $SkipTapeHeader = $true
+                        }
+
+                        $backup.FormatMedia = $WithFormat
+                        $backup.Initialize = $Initialize
+                        $backup.SkipTapeHeader = $SkipTapeHeader
+                        $device.Name = $backupfile
+                        $backup.Devices.Add($device)
+                    }
+                    $humanBackupFile = $FinalBackupPath -Join ','
+                    Write-Message -Level Verbose -Message "Devices added"
+                    $percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
+                        Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $humanBackupFile" -PercentComplete $_.Percent -Status ([System.String]::Format("Progress: {0} %", $_.Percent))
+                    }
+                    $backup.add_PercentComplete($percent)
+                    $backup.PercentCompleteNotification = 1
+                    $backup.add_Complete($complete)
+
+                    if ($MaxTransferSize) {
+                        $backup.MaxTransferSize = $MaxTransferSize
+                    }
+                    if ($BufferCount) {
+                        $backup.BufferCount = $BufferCount
+                    }
+                    if ($BlockSize) {
+                        $backup.Blocksize = $BlockSize
+                    }
+
+                    Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $humanBackupFile" -PercentComplete 0 -Status ([System.String]::Format("Progress: {0} %", 0))
+
+                    try {
+                        if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbName to $humanBackupFile")) {
+                            if ($OutputScriptOnly -ne $True) {
+                                # Check if we need to use T-SQL execution for S3 with BACKUP_OPTIONS
+                                if ($isS3Backup -and $StorageRegion) {
+                                    # Generate script first, then append BACKUP_OPTIONS and execute via T-SQL
+                                    $script = $backup.Script($server)
+                                    $backupOptionsJson = "{`"s3`": {`"region`":`"$StorageRegion`"}}"
+                                    $script += ", BACKUP_OPTIONS = '$backupOptionsJson'"
+                                    Write-Message -Level Verbose -Message "Executing S3 backup with BACKUP_OPTIONS for region: $StorageRegion"
+                                    $null = $server.ConnectionContext.ExecuteNonQuery($script)
+                                } else {
+                                    $backup.SqlBackup($server)
+                                    $script = $backup.Script($server)
+                                }
+                                Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $backupfile" -Completed
+                                $BackupComplete = $true
+                                if ($server.VersionMajor -eq '8') {
+                                    $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbName
+                                } else {
+                                    $HeaderInfo = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbName @gbhSwitch -IncludeCopyOnly -RecoveryFork $db.RecoveryForkGuid | Sort-Object -Property End -Descending | Select-Object -First 1
+                                }
+                                $Filelist = @()
+                                $FileList += $Headerinfo.FileList | Where-Object { $_.FileType -eq "D" } | Select-Object FileType, LogicalName , PhysicalName, @{ Name = "Type"; Expression = { "D" } }
+                                $FileList += $Headerinfo.FileList | Where-Object { $_.FileType -eq "L" } | Select-Object FileType, LogicalName , PhysicalName, @{ Name = "Type"; Expression = { "L" } }
+
+                                $Verified = $false
+                                if ($Verify) {
+                                    $verifiedresult = [PSCustomObject]@{
+                                        ComputerName         = $server.ComputerName
+                                        InstanceName         = $server.ServiceName
+                                        SqlInstance          = $server.DomainInstanceName
+                                        DatabaseName         = $dbName
+                                        BackupComplete       = $BackupComplete
+                                        BackupFilesCount     = $FinalBackupPath.Count
+                                        BackupFile           = (Split-Path $FinalBackupPath -Leaf)
+                                        BackupFolder         = (Convert-BackupPath -object (Split-Path $FinalBackupPath | Sort-Object -Unique))
+                                        BackupPath           = ($FinalBackupPath | Sort-Object -Unique)
+                                        Script               = $script
+                                        Notes                = $failures -join (',')
+                                        FullName             = ($FinalBackupPath | Sort-Object -Unique)
+                                        FileList             = $FileList
+                                        SoftwareVersionMajor = $server.VersionMajor
+                                        Type                 = $outputType
+                                        FirstLsn             = $HeaderInfo.FirstLsn
+                                        DatabaseBackupLsn    = $HeaderInfo.DatabaseBackupLsn
+                                        CheckPointLsn        = $HeaderInfo.CheckPointLsn
+                                        LastLsn              = $HeaderInfo.LastLsn
+                                        BackupSetId          = $HeaderInfo.BackupSetId
+                                        LastRecoveryForkGUID = $HeaderInfo.LastRecoveryForkGUID
+                                        EncryptorName        = $encryptionOptions.EncryptorName
+                                        KeyAlgorithm         = $encryptionOptions.Algorithm
+                                        EncruptorType        = $encryptionOptions.encryptorType
+                                    } | Restore-DbaDatabase -SqlInstance $server -DatabaseName DbaVerifyOnly -VerifyOnly -TrustDbBackupHistory -DestinationFilePrefix DbaVerifyOnly
+                                    if ($verifiedResult[0] -eq "Verify successful") {
+                                        $failures += $verifiedResult[0]
+                                        $Verified = $true
+                                    } else {
+                                        $failures += $verifiedResult[0]
+                                        $Verified = $false
+                                    }
+                                }
+                                $HeaderInfo | Add-Member -Type NoteProperty -Name BackupComplete -Value $BackupComplete
+                                $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFile -Value (Split-Path $FinalBackupPath -Leaf)
+                                $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFilesCount -Value $FinalBackupPath.Count
+                                if ($FinalBackupPath[0] -eq 'NUL:') {
+                                    $pathresult = "NUL:"
+                                } else {
+                                    $pathresult = (Split-Path $FinalBackupPath | Sort-Object -Unique)
+                                    if ($isdestlinux -and $pathresult) {
+                                        $pathresult = $pathresult.Replace("\", "/")
+                                    } elseif ($pathresult) {
+                                        $pathresult = $pathresult.Replace("/", "\")
+                                    }
+                                }
+                                $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFolder -Value $pathresult
+                                $HeaderInfo | Add-Member -Type NoteProperty -Name BackupPath -Value ($FinalBackupPath | Sort-Object -Unique)
+                                $HeaderInfo | Add-Member -Type NoteProperty -Name DatabaseName -Value $dbName
+                                $HeaderInfo | Add-Member -Type NoteProperty -Name Notes -Value ($failures -join (','))
+                                $HeaderInfo | Add-Member -Type NoteProperty -Name Script -Value $script
+                                $HeaderInfo | Add-Member -Type NoteProperty -Name Verified -Value $Verified
+                            } else {
+                                $script = $backup.Script($server)
+                                # Append BACKUP_OPTIONS for S3 with region
+                                if ($isS3Backup -and $StorageRegion) {
+                                    $backupOptionsJson = "{`"s3`": {`"region`":`"$StorageRegion`"}}"
+                                    $script += ", BACKUP_OPTIONS = '$backupOptionsJson'"
+                                }
+                                $script
+                                Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $backupfile" -Completed
+                            }
+                        }
+                    } catch {
+                        if ($NoRecovery -and ($_.Exception.InnerException.InnerException.InnerException -like '*cannot be opened. It is in the middle of a restore.')) {
+                            Write-Message -Message "Exception thrown by db going into restoring mode due to recovery" -Level Verbose
+                        } else {
+                            Stop-Function -message "Backup of [$dbName] failed" -ErrorRecord $_ -Target $dbName -Continue
+                            $BackupComplete = $false
+                        }
+                    } finally {
+                        # Also reached with -WhatIf and after a failed backup, where no other branch completes the bar of this database
+                        Write-Progress -Id $ProgressId -Activity "Backup" -Completed
+                    }
+                }
+                Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
+
+                $OutputExclude = 'FullName', 'FileList', 'SoftwareVersionMajor'
+
+                if ($failures.Count -eq 0) {
+                    $OutputExclude += ('Notes', 'FirstLsn', 'DatabaseBackupLsn', 'CheckpointLsn', 'LastLsn', 'BackupSetId', 'LastRecoveryForkGuid')
+                }
+
+                $headerinfo | Select-DefaultView -ExcludeProperty $OutputExclude
+
+                if (-not $ReplaceInName) {
                     $FilePath = $null
                 }
             }
-            $topProgressPercent = [int]($topProgressNumber * 100 / $topProgressTarget)
-            $topProgressNumber++
-            if (-not $PSCmdlet.MyInvocation.ExpectingInput) {
-                # Only when the databases to be processed are not piped to the command
-                Write-Progress -Id $topProgressId -Activity "Backing up database $topProgressNumber of $topProgressTarget" -PercentComplete $topProgressPercent -Status ([System.String]::Format("Progress: {0} %", $topProgressPercent))
-            }
-
-            $ProgressId = Get-Random
-            $failures = @()
-            $dbName = $db.Name
-            $server = $db.Parent
-            $null = $server.Refresh()
-            $isdestlinux = Test-HostOSLinux -SqlInstance $server
-
-            if (Test-Bound 'EncryptionAlgorithm') {
-                if (!((Test-Bound 'EncryptionCertificate') -xor (Test-Bound 'EncryptionKey'))) {
-                    Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                    Stop-Function -Message 'EncryptionCertifcate and EncryptionKey are mutually exclusive, only provide on of them'
-                    return
-                } else {
-                    $encryptionOptions = New-Object Microsoft.SqlServer.Management.Smo.BackupEncryptionOptions
-                    if (Test-Bound 'EncryptionCertificate') {
-                        $tCertCheck = Get-DbaDbCertificate -SqlInstance $server -Database master -Certificate $EncryptionCertificate
-                        if ($null -eq $tCertCheck) {
-                            Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                            Stop-Function -Message "Certificate $EncryptionCertificate does not exist on $server so cannot be used for backups"
-                            return
-                        } else {
-                            $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerCertificate
-                            $encryptionOptions.encryptorName = $EncryptionCertificate
-                            $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
-                        }
-                    }
-                    if (Test-Bound 'EncryptionKey') {
-                        # Should not end up here until Key encryption in implemented
-                        $tKeyCheck = Get-DbaDbAsymmetricKey -SqlInstance $server -Database master -Name $EncrytptionKey
-                        if ($null -eq $tKeyCheck) {
-                            Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                            Stop-Function -Message "AsymmetricKey $Encryptionkey does not exist on $server so cannot be used for backups"
-                            return
-                        } else {
-                            $encryptionOptions.encryptorType = [Microsoft.SqlServer.Management.Smo.BackupEncryptorType]::ServerAsymmetricKey
-                            $encryptionOptions.encryptorName = $EncryptionKey
-                            $encryptionOptions.Algorithm = [Microsoft.SqlServer.Management.Smo.BackupEncryptionAlgorithm]::$EncryptionAlgorithm
-                        }
-                    }
-                }
-            }
-
-
-            if ( (Test-Bound StorageBaseUrl -Not) -and (Test-Bound Path -Not) -and $FilePath -ne 'NUL') {
-                Write-Message -Message 'No backup folder passed in, setting it to instance default' -Level Verbose
-                $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
-                if ($Path) {
-                    # it's very picky, don't cut corners
-                    $lastchar = $Path.substring($Path.length - 1, 1)
-                    if ($lastchar -eq "/" -or $lastchar -eq "\") {
-                        $Path = $Path.TrimEnd("/")
-                        $Path = $Path.TrimEnd("\")
-                    }
-                }
-            }
-
-            # Validate MaxTransferSize for non-S3 backups (S3 validation is done later in the S3 block)
-            $isS3Url = $null -ne $StorageBaseUrl -and $StorageBaseUrl[0] -match "^s3://"
-            if ($MaxTransferSize -and -not $isS3Url) {
-                if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -gt 4mb) {
-                    Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                    Stop-Function -Message "MaxTransferSize value must be a multiple of 64KB and no greater than 4MB"
-                    return
-                }
-            }
-
-            if ($BlockSize) {
-                if ($BlockSize -notin (0.5kb, 1kb, 2kb, 4kb, 8kb, 16kb, 32kb, 64kb)) {
-                    Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                    Stop-Function -Message "Block size must be one of 0.5kb,1kb,2kb,4kb,8kb,16kb,32kb,64kb"
-                    return
-                }
-            }
-
-            if ($null -ne $StorageBaseUrl) {
-                # Detect if this is S3 or Azure storage
-                $isS3Backup = $StorageBaseUrl[0] -match "^s3://"
-
-                if ($isS3Backup) {
-                    # S3-compatible object storage (SQL Server 2022+)
-                    if ($server.VersionMajor -lt 16) {
-                        Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                        Stop-Function -Message "S3 backup requires SQL Server 2022 or later. Current version: $($server.Version)"
-                        return
-                    }
-
-                    # Validate MaxTransferSize for S3 (must be between 5MB and 20MB)
-                    if ($MaxTransferSize) {
-                        if (($MaxTransferSize % 64kb) -ne 0 -or $MaxTransferSize -lt 5mb -or $MaxTransferSize -gt 20mb) {
-                            Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                            Stop-Function -Message "MaxTransferSize for S3 backups must be a multiple of 64KB and between 5MB and 20MB"
-                            return
-                        }
-                    } else {
-                        # Set default MaxTransferSize for S3 if not specified (10MB is a good default)
-                        $MaxTransferSize = 10mb
-                        Write-Message -Level Verbose -Message "S3 backup detected, setting default MaxTransferSize to 10MB"
-                    }
-
-                    # Validate StorageRegion if specified with non-S3 URL
-                    if ((Test-Bound 'StorageRegion') -and -not $isS3Backup) {
-                        Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                        Stop-Function -Message "StorageRegion can only be specified with S3 URLs"
-                        return
-                    }
-
-                    # S3 URLs should not have trailing slash trimmed the same way
-                    $StorageBaseUrl = $StorageBaseUrl | ForEach-Object { $_.TrimEnd("/") }
-                } else {
-                    # Azure Blob Storage
-                    $StorageBaseUrl = $StorageBaseUrl.Trim("/")
-
-                    # Validate StorageRegion not used with Azure
-                    if (Test-Bound 'StorageRegion') {
-                        Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                        Stop-Function -Message "StorageRegion can only be specified with S3 URLs, not Azure storage"
-                        return
-                    }
-                }
-
-                if ('' -ne $StorageCredential) {
-                    Write-Message -Message "Storage credential name passed in, will proceed assuming it's valid" -Level Verbose
-                    if (-not $isS3Backup) {
-                        # Azure page blob with credential = single file only
-                        $FileCount = 1
-                    }
-                } else {
-                    foreach ($baseUrl in $StorageBaseUrl) {
-                        if ($isS3Backup) {
-                            # S3 credential name should match the S3 URL path
-                            $credentialName = $baseUrl
-                            Write-Message -Message "S3 URL detected, testing for S3 credential" -Level Verbose
-                        } else {
-                            # Azure SAS credential logic
-                            $base = $baseUrl -split "/"
-                            if ( $base.Count -gt 4) {
-                                Write-Message "Storage URL contains a folder"
-                                $credentialName = $base[0] + "//" + $base[2] + "/" + $base[3]
-                            } else {
-                                # URL is just the container, use it as-is for credential name
-                                $credentialName = $baseUrl
-                            }
-                            Write-Message -Message "Azure URL and no credential, testing for SAS credential" -Level Verbose
-                        }
-                        if (Get-DbaCredential -SqlInstance $server -Name $credentialName) {
-                            Write-Message -Message "Found a matching backup credential" -Level Verbose
-                        } else {
-                            Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                            if ($isS3Backup) {
-                                Stop-Function -Message "You must provide the credential name for S3 storage or create a credential matching the S3 URL"
-                            } else {
-                                Stop-Function -Message "You must provide the credential name for the Azure Storage Account"
-                            }
-                            return
-                        }
-                    }
-                }
-                if ($StorageBaseUrl.Count -gt 1 -or $FileCount -eq 0) {
-                    $FileCount = $StorageBaseUrl.count
-                }
-                $Path = $StorageBaseUrl
-            }
-
-            if ($OutputScriptOnly) {
-                $IgnoreFileChecks = $true
-            }
-
-            if ($null -eq $PSBoundParameters.Path -and $PSBoundParameters.FilePath -ne 'NUL' -and $server.VersionMajor -eq 8) {
-                Write-Message -Message 'No backup folder passed in, setting it to instance default' -Level Verbose
-                $Path = (Get-DbaDefaultPath -SqlInstance $server).Backup
-            }
-
-            if ($dbName -eq "tempdb") {
-                Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                Stop-Function -Message "Backing up tempdb not supported" -Continue
-            }
-
-            if (-not $db.IsAccessible) {
-                Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                Stop-Function -Message "Database $dbName is not accessible. Cannot perform backup." -Continue -Target $db
-            }
-
-            if ('Normal' -notin ($db.Status -split ',')) {
-                Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                Stop-Function -Message "Database status not Normal. $dbName skipped." -Continue
-            }
-
-            if ($db.DatabaseSnapshotBaseName) {
-                Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                Stop-Function -Message "Backing up snapshots not supported. $dbName skipped." -Continue
-            }
-
-            Write-Message -Level Verbose -Message "Backup database $db"
-
-            if ($null -eq $db.RecoveryModel) {
-                $db.RecoveryModel = $server.Databases[$db.Name].RecoveryModel
-                Write-Message -Level Verbose -Message "$dbName is in $($db.RecoveryModel) recovery model"
-            }
-
-            # Fixes one-off cases of StackOverflowException crashes, see issue 1481
-            $dbRecovery = $db.RecoveryModel.ToString()
-            if ($dbRecovery -eq 'Simple' -and $Type -eq 'Log') {
-                $failreason = "$db is in simple recovery mode, cannot take log backup"
-                $failures += $failreason
-                Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                Stop-Function -Message "$failreason" -Continue -Target $db
-            }
-
-            $db.Refresh()
-            $lastfull = $db.LastBackupDate.Year
-
-            if ($Type -notin @("Database", "Full") -and $lastfull -eq 1) {
-                $failreason = "$db does not have an existing full backup, cannot take log or differential backup"
-                $failures += $failreason
-                Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                Stop-Function -Message "$failreason" -Continue -Target $db
-            }
-
-            if ($CopyOnly -ne $true) {
-                $CopyOnly = $false
-            }
-
-            $server.ConnectionContext.StatementTimeout = 0
-            $backup = New-Object Microsoft.SqlServer.Management.Smo.Backup
-            $backup.Database = $db.Name
-            if (Test-Bound -ParameterName Description) {
-                if ($Description.Length -gt 255) {
-                    Write-Message -Level Warning -Message 'Description is too long and will be truncated to 255 characters'
-                    $Description = $Description.Substring(0, 255)
-                }
-                $backup.BackupSetDescription = $Description
-            }
-            $Suffix = "bak"
-
-            if ($null -ne $encryptionOptions) {
-                $backup.EncryptionOption = $encryptionOptions
-            }
-
-            if ($PSBoundParameters.ContainsKey('CompressBackup')) {
-                if ($CompressBackup) {
-                    if ($db.EncryptionEnabled) {
-                        # Newer versions of SQL Server automatically set the MAXTRANSFERSIZE to 128k
-                        # so let's do that for people as well
-                        $minVerForTDECompression = [version]'13.0.4446.0' #SQL Server 2016 CU 4
-                        $flagTDESQLVersion = $minVerForTDECompression -le $Server.version
-                        if (-not (Test-Bound 'MaxTransferSize')) {
-                            $MaxTransferSize = 128kb
-                        }
-                        $flagCorrectMaxTransferSize = ($MaxTransferSize -gt 64kb)
-                        if ($flagTDESQLVersion -and $flagCorrectMaxTransferSize) {
-                            Write-Message -Level Verbose -Message "$dbName is enabled for encryption but will compress"
-                            $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::On
-                        } else {
-                            Write-Message -Level Warning -Message "$dbName is enabled for encryption, will not compress"
-                            $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::Off
-                        }
-                    } elseif ($server.Edition -like 'Express*' -or ($server.VersionMajor -eq 10 -and $server.VersionMinor -eq 0 -and $server.Edition -notlike '*enterprise*') -or $server.VersionMajor -lt 10) {
-                        Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-                        Stop-Function -Message "Compression is not supported with this version/edition of Sql Server" -Continue -Target $db
-                    } else {
-                        Write-Message -Level Verbose -Message "Compression enabled"
-                        $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::On
-                    }
-                } else {
-                    Write-Message -Level Verbose -Message "Compression disabled"
-                    $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::Off
-                }
-            } else {
-                Write-Message -Level Verbose -Message "Using instance default backup compression setting"
-                $backup.CompressionOption = [Microsoft.SqlServer.Management.Smo.BackupCompressionOptions]::Default
-            }
-
-            if ($Checksum) {
-                $backup.Checksum = $true
-            }
-
-            if ($Type -in 'Diff', 'Differential') {
-                Write-Message -Level VeryVerbose -Message "Creating differential backup"
-                $SMOBackuptype = "Database"
-                $backup.Incremental = $true
-                $outputType = 'Differential'
-                $gbhSwitch = @{'LastDiff' = $true }
-            }
-            $Backup.NoRecovery = $false
-            if ($Type -eq "Log") {
-                Write-Message -Level VeryVerbose -Message "Creating log backup"
-                $Suffix = "trn"
-                $OutputType = 'Log'
-                $SMOBackupType = 'Log'
-                $Backup.NoRecovery = $NoRecovery
-                $gbhSwitch = @{'LastLog' = $true }
-            }
-
-            if ($Type -in 'Full', 'Database') {
-                Write-Message -Level VeryVerbose -Message "Creating full backup"
-                $SMOBackupType = "Database"
-                $OutputType = 'Full'
-                $gbhSwitch = @{'LastFull' = $true }
-            }
-
-            $backup.CopyOnly = $CopyOnly
-            $backup.Action = $SMOBackupType
-            if ($null -ne $StorageBaseUrl -and $null -ne $StorageCredential) {
-                $backup.CredentialName = $StorageCredential
-            }
-
-            Write-Message -Level Verbose -Message "Building file name"
-            $BackupFinalName = ''
-            $FinalBackupPath = @()
-            $timestamp = Get-Date -Format $TimeStampFormat
-            if ('NUL' -eq $FilePath) {
-                $FinalBackupPath += 'NUL:'
-                $IgnoreFileChecks = $true
-            } elseif ('' -ne $FilePath) {
-                $File = New-Object System.IO.FileInfo($FilePath)
-                $BackupFinalName = $file.Name
-                $suffix = $file.extension -Replace '^\.', ''
-                if ( '' -ne (Split-Path $FilePath)) {
-                    Write-Message -Level Verbose -Message "Fully qualified path passed in"
-                    # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
-                    if ($nonwindows -or $isdestlinux) {
-                        $FinalBackupPath += $file.DirectoryName
-                    } else {
-                        $FinalBackupPath += [IO.Path]::GetFullPath($file.DirectoryName)
-                    }
-                }
-            } else {
-                Write-Message -Level VeryVerbose -Message "Setting filename - $timestamp"
-                $BackupFinalName = "$($dbName)_$timestamp.$suffix"
-            }
-
-            Write-Message -Level Verbose -Message "Building backup path"
-            if ($FinalBackupPath.Count -eq 0) {
-                $FinalBackupPath += $Path
-            }
-
-            if ($Path.Count -eq 1 -and $FileCount -gt 1) {
-                for ($i = 0; $i -lt ($FileCount - 1); $i++) {
-                    $FinalBackupPath += $FinalBackupPath[0]
-                }
-            }
-
-            if ($StorageBaseUrl -or $StorageCredential -or $isdestlinux) {
-                $slash = "/"
-            } else {
-                $slash = "\"
-            }
-
-            if ($FinalBackupPath.Count -gt 1) {
-                $File = New-Object System.IO.FileInfo($BackupFinalName)
-                for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] + $slash + ("$($i+1)-" * $IncrementPrefix.ToBool() ) + $($File.BaseName) + "-$($i+1)-of-$FileCount.$suffix"
-                }
-            } elseif ($FinalBackupPath[0] -ne 'NUL:') {
-                $FinalBackupPath[0] = $FinalBackupPath[0] + $slash + $BackupFinalName
-            }
-
-            # Auto-detect dbname token in the directory path to prevent duplication when using CreateFolder + ReplaceInName
-            if ($CreateFolder -and $ReplaceInName -and -not $NoAppendDbNameInPath) {
-                $containsDbNameToken = $false
-                foreach ($pathToCheck in $FinalBackupPath) {
-                    $directoryPathToCheck = Split-Path -Path $pathToCheck -Parent
-                    if ($directoryPathToCheck -and $directoryPathToCheck -match "(^|[\\/])dbname([\\/]|$)") {
-                        $containsDbNameToken = $true
-                        break
-                    }
-                }
-                if ($containsDbNameToken) {
-                    Write-Message -Level Verbose -Message "Directory path contains 'dbname' token with ReplaceInName. Automatically skipping database folder creation to prevent duplication."
-                    $NoAppendDbNameInPath = $true
-                }
-            }
-
-            if ($CreateFolder -and $FinalBackupPath[0] -ne 'NUL:') {
-                for ($i = 0; $i -lt $FinalBackupPath.Count; $i++) {
-                    $parent = [IO.Path]::GetDirectoryName($FinalBackupPath[$i])
-                    $leaf = [IO.Path]::GetFileName($FinalBackupPath[$i])
-                    if ($NoAppendDbNameInPath) {
-                        $FinalBackupPath[$i] = [IO.Path]::Combine($parent, $leaf)
-                    } else {
-                        $FinalBackupPath[$i] = [IO.Path]::Combine($parent, $dbName, $leaf)
-                    }
-                }
-            }
-
-            if ($True -eq $ReplaceInName) {
-                for ($i = 0; $i -lt $FinalBackupPath.count; $i++) {
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('dbname', $dbName)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('instancename', $server.ServiceName)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('servername', $server.ComputerName)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('timestamp', $timestamp)
-                    $FinalBackupPath[$i] = $FinalBackupPath[$i] -replace ('backuptype', $outputType)
-                }
-            }
-
-            # Linux can't support making new directories yet, and it's likely that databases
-            # will be in one place
-            if (-not $IgnoreFileChecks -and -not $StorageBaseUrl -and -not $isdestlinux) {
-                $parentPaths = ($FinalBackupPath | ForEach-Object { Split-Path $_ } | Select-Object -Unique)
-                foreach ($parentPath in $parentPaths) {
-                    if (-not (Test-DbaPath -SqlInstance $server -Path $parentPath)) {
-                        if (($BuildPath -eq $true) -or ($CreateFolder -eq $True)) {
-                            $null = New-DbaDirectory -SqlInstance $server -Path $parentPath
-                        } else {
-                            $failreason += "SQL Server cannot check if $parentPath exists. You can try disabling this check with -IgnoreFileChecks"
-                            $failures += $failreason
-                            Write-Message -Level Warning -Message "$failreason"
-                        }
-                    }
-                }
-            }
-
-            # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
-            if ($null -eq $StorageBaseUrl -and $Path -and -not $nonwindows -and -not $isdestlinux) {
-                $FinalBackupPath = $FinalBackupPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
-            }
-
-
-            $script = $null
-            $backupComplete = $false
-
-            if (!$failures) {
-                $FileCount = $FinalBackupPath.Count
-
-                foreach ($backupfile in $FinalBackupPath) {
-                    $device = New-Object Microsoft.SqlServer.Management.Smo.BackupDeviceItem
-                    if ($null -ne $StorageBaseUrl) {
-                        $device.DeviceType = "URL"
-                    } else {
-                        $device.DeviceType = "File"
-                    }
-
-                    if ($WithFormat) {
-                        Write-Message -Message "WithFormat specified. Ensuring Initialize and SkipTapeHeader are set to true." -Level Verbose
-                        $Initialize = $true
-                        $SkipTapeHeader = $true
-                    }
-
-                    $backup.FormatMedia = $WithFormat
-                    $backup.Initialize = $Initialize
-                    $backup.SkipTapeHeader = $SkipTapeHeader
-                    $device.Name = $backupfile
-                    $backup.Devices.Add($device)
-                }
-                $humanBackupFile = $FinalBackupPath -Join ','
-                Write-Message -Level Verbose -Message "Devices added"
-                $percent = [Microsoft.SqlServer.Management.Smo.PercentCompleteEventHandler] {
-                    Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $humanBackupFile" -PercentComplete $_.Percent -Status ([System.String]::Format("Progress: {0} %", $_.Percent))
-                }
-                $backup.add_PercentComplete($percent)
-                $backup.PercentCompleteNotification = 1
-                $backup.add_Complete($complete)
-
-                if ($MaxTransferSize) {
-                    $backup.MaxTransferSize = $MaxTransferSize
-                }
-                if ($BufferCount) {
-                    $backup.BufferCount = $BufferCount
-                }
-                if ($BlockSize) {
-                    $backup.Blocksize = $BlockSize
-                }
-
-                Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $humanBackupFile" -PercentComplete 0 -Status ([System.String]::Format("Progress: {0} %", 0))
-
-                try {
-                    if ($Pscmdlet.ShouldProcess($server.Name, "Backing up $dbName to $humanBackupFile")) {
-                        if ($OutputScriptOnly -ne $True) {
-                            # Check if we need to use T-SQL execution for S3 with BACKUP_OPTIONS
-                            if ($isS3Backup -and $StorageRegion) {
-                                # Generate script first, then append BACKUP_OPTIONS and execute via T-SQL
-                                $script = $backup.Script($server)
-                                $backupOptionsJson = "{`"s3`": {`"region`":`"$StorageRegion`"}}"
-                                $script += ", BACKUP_OPTIONS = '$backupOptionsJson'"
-                                Write-Message -Level Verbose -Message "Executing S3 backup with BACKUP_OPTIONS for region: $StorageRegion"
-                                $null = $server.ConnectionContext.ExecuteNonQuery($script)
-                            } else {
-                                $backup.SqlBackup($server)
-                                $script = $backup.Script($server)
-                            }
-                            Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $backupfile" -Completed
-                            $BackupComplete = $true
-                            if ($server.VersionMajor -eq '8') {
-                                $HeaderInfo = Get-BackupAncientHistory -SqlInstance $server -Database $dbName
-                            } else {
-                                $HeaderInfo = Get-DbaDbBackupHistory -SqlInstance $server -Database $dbName @gbhSwitch -IncludeCopyOnly -RecoveryFork $db.RecoveryForkGuid | Sort-Object -Property End -Descending | Select-Object -First 1
-                            }
-                            $Filelist = @()
-                            $FileList += $Headerinfo.FileList | Where-Object { $_.FileType -eq "D" } | Select-Object FileType, LogicalName , PhysicalName, @{ Name = "Type"; Expression = { "D" } }
-                            $FileList += $Headerinfo.FileList | Where-Object { $_.FileType -eq "L" } | Select-Object FileType, LogicalName , PhysicalName, @{ Name = "Type"; Expression = { "L" } }
-
-                            $Verified = $false
-                            if ($Verify) {
-                                $verifiedresult = [PSCustomObject]@{
-                                    ComputerName         = $server.ComputerName
-                                    InstanceName         = $server.ServiceName
-                                    SqlInstance          = $server.DomainInstanceName
-                                    DatabaseName         = $dbName
-                                    BackupComplete       = $BackupComplete
-                                    BackupFilesCount     = $FinalBackupPath.Count
-                                    BackupFile           = (Split-Path $FinalBackupPath -Leaf)
-                                    BackupFolder         = (Convert-BackupPath -object (Split-Path $FinalBackupPath | Sort-Object -Unique))
-                                    BackupPath           = ($FinalBackupPath | Sort-Object -Unique)
-                                    Script               = $script
-                                    Notes                = $failures -join (',')
-                                    FullName             = ($FinalBackupPath | Sort-Object -Unique)
-                                    FileList             = $FileList
-                                    SoftwareVersionMajor = $server.VersionMajor
-                                    Type                 = $outputType
-                                    FirstLsn             = $HeaderInfo.FirstLsn
-                                    DatabaseBackupLsn    = $HeaderInfo.DatabaseBackupLsn
-                                    CheckPointLsn        = $HeaderInfo.CheckPointLsn
-                                    LastLsn              = $HeaderInfo.LastLsn
-                                    BackupSetId          = $HeaderInfo.BackupSetId
-                                    LastRecoveryForkGUID = $HeaderInfo.LastRecoveryForkGUID
-                                    EncryptorName        = $encryptionOptions.EncryptorName
-                                    KeyAlgorithm         = $encryptionOptions.Algorithm
-                                    EncruptorType        = $encryptionOptions.encryptorType
-                                } | Restore-DbaDatabase -SqlInstance $server -DatabaseName DbaVerifyOnly -VerifyOnly -TrustDbBackupHistory -DestinationFilePrefix DbaVerifyOnly
-                                if ($verifiedResult[0] -eq "Verify successful") {
-                                    $failures += $verifiedResult[0]
-                                    $Verified = $true
-                                } else {
-                                    $failures += $verifiedResult[0]
-                                    $Verified = $false
-                                }
-                            }
-                            $HeaderInfo | Add-Member -Type NoteProperty -Name BackupComplete -Value $BackupComplete
-                            $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFile -Value (Split-Path $FinalBackupPath -Leaf)
-                            $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFilesCount -Value $FinalBackupPath.Count
-                            if ($FinalBackupPath[0] -eq 'NUL:') {
-                                $pathresult = "NUL:"
-                            } else {
-                                $pathresult = (Split-Path $FinalBackupPath | Sort-Object -Unique)
-                                if ($isdestlinux -and $pathresult) {
-                                    $pathresult = $pathresult.Replace("\", "/")
-                                } elseif ($pathresult) {
-                                    $pathresult = $pathresult.Replace("/", "\")
-                                }
-                            }
-                            $HeaderInfo | Add-Member -Type NoteProperty -Name BackupFolder -Value $pathresult
-                            $HeaderInfo | Add-Member -Type NoteProperty -Name BackupPath -Value ($FinalBackupPath | Sort-Object -Unique)
-                            $HeaderInfo | Add-Member -Type NoteProperty -Name DatabaseName -Value $dbName
-                            $HeaderInfo | Add-Member -Type NoteProperty -Name Notes -Value ($failures -join (','))
-                            $HeaderInfo | Add-Member -Type NoteProperty -Name Script -Value $script
-                            $HeaderInfo | Add-Member -Type NoteProperty -Name Verified -Value $Verified
-                        } else {
-                            $script = $backup.Script($server)
-                            # Append BACKUP_OPTIONS for S3 with region
-                            if ($isS3Backup -and $StorageRegion) {
-                                $backupOptionsJson = "{`"s3`": {`"region`":`"$StorageRegion`"}}"
-                                $script += ", BACKUP_OPTIONS = '$backupOptionsJson'"
-                            }
-                            $script
-                            Write-Progress -Id $ProgressId -Activity "Backing up database $dbName to $backupfile" -Completed
-                        }
-                    }
-                } catch {
-                    if ($NoRecovery -and ($_.Exception.InnerException.InnerException.InnerException -like '*cannot be opened. It is in the middle of a restore.')) {
-                        Write-Message -Message "Exception thrown by db going into restoring mode due to recovery" -Level Verbose
-                    } else {
-                        Write-Progress -Id $ProgressId -Activity "Backup" -Completed
-                        Write-Progress -Id $topProgressId -Activity "Backup" -Completed
-                        Stop-Function -message "Backup of [$dbName] failed" -ErrorRecord $_ -Target $dbName -Continue
-                        $BackupComplete = $false
-                    }
-                }
-            }
-            Write-Progress -Id $topProgressId -Activity 'Backup' -Completed
-
-            $OutputExclude = 'FullName', 'FileList', 'SoftwareVersionMajor'
-
-            if ($failures.Count -eq 0) {
-                $OutputExclude += ('Notes', 'FirstLsn', 'DatabaseBackupLsn', 'CheckpointLsn', 'LastLsn', 'BackupSetId', 'LastRecoveryForkGuid')
-            }
-
-            $headerinfo | Select-DefaultView -ExcludeProperty $OutputExclude
-
-            if (-not $ReplaceInName) {
-                $FilePath = $null
-            }
+        } finally {
+            Write-Progress -Id $topProgressId -Activity "Backup" -Completed
         }
     }
 }

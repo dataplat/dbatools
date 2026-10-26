@@ -257,8 +257,13 @@ function Import-DbaParquet {
         }
 
         # Load Parquet.NET assembly
+        # The process block only runs when this is true. Get-DbaParquetPath warns (or throws) in its own scope
+        # when Parquet.NET is missing, so the interrupt flag that Test-FunctionInterrupt reads is never set here.
+        $parquetLoaded = $false
         $parquetAssembly = [System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.GetName().Name -eq "Parquet" }
-        if (-not $parquetAssembly) {
+        if ($parquetAssembly) {
+            $parquetLoaded = $true
+        } else {
             $parquetDllPath = Get-DbaParquetPath -EnableException:$EnableException
             if (-not $parquetDllPath) {
                 return
@@ -266,34 +271,60 @@ function Import-DbaParquet {
 
             $parquetDirectory = Split-Path -Path $parquetDllPath -Parent
             $script:dbatools_ParquetAssemblyPath = $parquetDirectory
-            if (-not $script:dbatools_ParquetAssemblyResolveRegistered) {
-                $script:dbatools_ParquetAssemblyResolve = [System.ResolveEventHandler] {
-                    param($sender, $resolveArgs)
+            # This handler is a PowerShell scriptblock, and a scriptblock cannot run on a thread that has no
+            # runspace. While it stayed registered for the life of the process, anything that resolved an
+            # assembly on another thread later on invoked it from a thread it cannot run on: New-DbaDacPackage
+            # validating a model on DacFx worker threads killed the whole process with an access violation
+            # inside clr.dll. So it is registered only while the assemblies are being loaded and removed again
+            # in the finally below, which is the only window it is needed in.
+            $parquetAssemblyResolve = [System.ResolveEventHandler] {
+                param($sender, $resolveArgs)
 
-                    $assemblyName = (New-Object -TypeName System.Reflection.AssemblyName -ArgumentList $resolveArgs.Name).Name
-                    $candidate = Join-Path -Path $script:dbatools_ParquetAssemblyPath -ChildPath "$assemblyName.dll"
-                    if (Test-Path -Path $candidate) {
-                        return [System.Reflection.Assembly]::LoadFrom($candidate)
-                    }
-                    return $null
+                $assemblyName = (New-Object -TypeName System.Reflection.AssemblyName -ArgumentList $resolveArgs.Name).Name
+                $candidate = Join-Path -Path $script:dbatools_ParquetAssemblyPath -ChildPath "$assemblyName.dll"
+                if (Test-Path -Path $candidate) {
+                    return [System.Reflection.Assembly]::LoadFrom($candidate)
                 }
-                [System.AppDomain]::CurrentDomain.add_AssemblyResolve($script:dbatools_ParquetAssemblyResolve)
-                $script:dbatools_ParquetAssemblyResolveRegistered = $true
+                return $null
             }
-
-            Get-ChildItem -Path $parquetDirectory -Filter "*.dll" | Where-Object Name -notin "Parquet.dll", "Parquet.Net.dll" | Sort-Object Name | ForEach-Object {
-                try {
-                    Add-Type -Path $PSItem.FullName -ErrorAction Stop
-                } catch {
-                    Write-Message -Level Verbose -Message "Could not preload Parquet.NET dependency $($PSItem.Name): $($_.Exception.Message)"
-                }
-            }
+            [System.AppDomain]::CurrentDomain.add_AssemblyResolve($parquetAssemblyResolve)
 
             try {
+                Get-ChildItem -Path $parquetDirectory -Filter "*.dll" | Where-Object Name -notin "Parquet.dll", "Parquet.Net.dll" | Sort-Object Name | ForEach-Object {
+                    try {
+                        Add-Type -Path $PSItem.FullName -ErrorAction Stop
+                    } catch {
+                        Write-Message -Level Verbose -Message "Could not preload Parquet.NET dependency $($PSItem.Name): $($_.Exception.Message)"
+                    }
+                }
+
                 Add-Type -Path $parquetDllPath -ErrorAction Stop
+                $parquetLoaded = $true
             } catch {
-                Stop-Function -Message "Could not load Parquet.NET from $parquetDllPath. Run Install-DbaParquet to install the required assemblies." -ErrorRecord $_ -EnableException $EnableException
+                # A type load failure only says "Unable to find type" or "Unable to load one or more of
+                # the requested types" and keeps the reason in LoaderExceptions. Without those the
+                # message sends people to Install-DbaParquet even when the assemblies are installed and
+                # the real problem is a dependency that something else already loaded in another version.
+                $loadException = $_.Exception
+                while ($loadException -and -not $loadException.LoaderExceptions) {
+                    $loadException = $loadException.InnerException
+                }
+                $loaderDetail = ($loadException.LoaderExceptions | ForEach-Object { $PSItem.Message } | Sort-Object -Unique) -join " | "
+
+                if ($loaderDetail) {
+                    # Assemblies that are present but unloadable are almost always the ones the other
+                    # PowerShell edition installed, back when both editions shared one folder.
+                    $currentEdition = $PSVersionTable.PSEdition
+                    if (-not $currentEdition) {
+                        $currentEdition = "Desktop"
+                    }
+                    Stop-Function -Message "Could not load Parquet.NET from $parquetDllPath. The assemblies are present but could not be loaded: $loaderDetail. If they were installed from another PowerShell edition, run Install-DbaParquet again on this one ($currentEdition) to get the matching assemblies." -ErrorRecord $_ -EnableException $EnableException
+                } else {
+                    Stop-Function -Message "Could not load Parquet.NET from $parquetDllPath. Run Install-DbaParquet to install the required assemblies." -ErrorRecord $_ -EnableException $EnableException
+                }
                 return
+            } finally {
+                [System.AppDomain]::CurrentDomain.remove_AssemblyResolve($parquetAssemblyResolve)
             }
         }
 
@@ -301,7 +332,12 @@ function Import-DbaParquet {
             param([string]$Path)
             $stream = [System.IO.File]::OpenRead($Path)
             try {
-                $reader = [Parquet.ParquetReader]::CreateAsync($stream).GetAwaiter().GetResult()
+                # leaveStreamOpen has to be passed as false. It defaults to true, which means disposing the
+                # reader leaves the file stream open and the file stays locked until the garbage collector
+                # finalizes it - so the imported file could not be deleted or overwritten for an arbitrary
+                # time after the import finished. All four arguments are passed because the overload that
+                # takes a stream can only be selected by its full signature.
+                $reader = [Parquet.ParquetReader]::CreateAsync($stream, $null, $false, [System.Threading.CancellationToken]::None).GetAwaiter().GetResult()
                 return $reader
             } catch {
                 $stream.Dispose()
@@ -670,6 +706,11 @@ WHERE c.object_id = OBJECT_ID(@tableName)
         Write-Message -Level Verbose -Message "Started at $(Get-Date)"
     }
     process {
+        # Without these guards a missing or unloadable Parquet.NET was followed by one "Failed to open Parquet file"
+        # warning per file, after a connection to the instance had already been made (#10655).
+        if (Test-FunctionInterrupt) { return }
+        if (-not $parquetLoaded) { return }
+
         foreach ($filename in $Path) {
             if (-not $PSBoundParameters.ColumnMap) {
                 $ColumnMap = $null
@@ -1001,13 +1042,20 @@ WHERE c.object_id = OBJECT_ID(@tableName)
 
                         $finalRowCountReported = Get-BulkRowsCopiedCount $bulkCopy
 
-                        $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+                        # -1 signals that the reflection lookup failed, not a wrapped counter, so it must not
+                        # reach Get-AdjustedTotalRowsCopied: fed in as a row count it inflates the total by
+                        # billions of rows (see #10675). The running total from the notifications is then the
+                        # best number available.
+                        if ($finalRowCountReported -ge 0) {
+                            $script:totalRowsCopied += (Get-AdjustedTotalRowsCopied -ReportedRowsCopied $finalRowCountReported -PreviousRowsCopied $script:prevRowsCopied).NewRowCountAdded
+                        }
 
                         if ($completed) {
                             Write-Progress -Id 1 -Activity "Inserting $($script:totalRowsCopied) rows" -Status "Complete" -Completed
                         } else {
                             Write-Progress -Id 1 -Activity "Inserting $($script:totalRowsCopied) rows" -Status "Failed" -Completed
                         }
+                        Write-Progress -Activity "Importing from $file" -Completed
                     }
                 }
                 # Clean up Parquet reader if ShouldProcess was skipped (WhatIf mode)

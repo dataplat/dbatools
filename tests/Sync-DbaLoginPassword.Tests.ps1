@@ -222,4 +222,71 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Login | Should -Be $loginName1
         }
     }
+
+    Context "Reports a login whose password could not be synced" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $failLoginName = "dbatoolsci_syncpwdfail_$(Get-Random)"
+            $failTriggerName = "dbatoolsci_syncpwdfail_trigger_$(Get-Random)"
+            $dropTriggerQuery = "IF EXISTS (SELECT * FROM sys.server_triggers WHERE name = N'$failTriggerName') DROP TRIGGER [$failTriggerName] ON ALL SERVER"
+
+            foreach ($instance in $primaryInstance, $secondaryInstance) {
+                $splatFailLogin = @{
+                    SqlInstance    = $instance
+                    Login          = $failLoginName
+                    SecurePassword = $password1
+                    Force          = $true
+                }
+                $null = New-DbaLogin @splatFailLogin
+            }
+
+            # Refuses every ALTER LOGIN of this login on the destination, so setting the password fails there.
+            $createTriggerQuery = @"
+CREATE TRIGGER [$failTriggerName] ON ALL SERVER FOR ALTER_LOGIN AS
+IF EVENTDATA().value('(/EVENT_INSTANCE/ObjectName)[1]', 'sysname') = N'$failLoginName'
+    THROW 50000, N'dbatoolsci: refused by the test trigger', 1;
+"@
+            $null = Invoke-DbaQuery -SqlInstance $secondaryInstance -Query $createTriggerQuery
+
+            $splatFailSync = @{
+                Source      = $primaryInstance
+                Destination = $secondaryInstance
+                Login       = $failLoginName
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Invoke-DbaQuery -SqlInstance $secondaryInstance -Query $dropTriggerQuery
+            $splatRemoveFailLogin = @{
+                SqlInstance = $primaryInstance, $secondaryInstance
+                Login       = $failLoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveFailLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "outputs a row with status Failed and the error" {
+            $result = Sync-DbaLoginPassword @splatFailSync -WarningAction SilentlyContinue
+
+            $result.Login | Should -Be $failLoginName
+            $result.Status | Should -Be "Failed"
+            $result.Notes | Should -BeLike "*refused by the test trigger*"
+            # Set-DbaLogin runs with -EnableException and adds its own warning, so the warnings are joined.
+            ($WarnVar -join " ") | Should -BeLike "*Failed to sync password for login $failLoginName*"
+        }
+
+        It "throws with -EnableException" {
+            { Sync-DbaLoginPassword @splatFailSync -EnableException } | Should -Throw
+        }
+    }
 }

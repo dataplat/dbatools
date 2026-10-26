@@ -99,8 +99,14 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     Context "Validate standard output" {
-        BeforeAll {
+        BeforeDiscovery {
+            # -ForEach is read while Pester discovers the tests. Built in the BeforeAll below, as it
+            # was before, this list was still empty at discovery and not one of the property tests
+            # existed at all.
             $props = "ComputerName", "InstanceName", "SqlInstance", "Database", "Table", "Cmd", "IdentityValue", "ColumnValue", "Output"
+        }
+
+        BeforeAll {
             $result = Set-DbaDbIdentity -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Table $tableName1, $tableName2
         }
 

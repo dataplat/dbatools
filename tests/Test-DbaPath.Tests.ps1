@@ -49,13 +49,16 @@ Describe $CommandName -Tag UnitTests {
             }
 
             It "Returns false for a single path by default" {
-                $result = Test-DbaPath -SqlInstance "sql1" -Path "C:\temp\file1.bak"
+                # The mocked server throws on purpose, so the command warns. That warning is the
+                # subject of its own test below and is silenced here, because a test run must not
+                # print warnings - an unexpected one is the only sign that something went wrong.
+                $result = Test-DbaPath -SqlInstance "sql1" -Path "C:\temp\file1.bak" -WarningAction SilentlyContinue
 
                 $result | Should -Be $false
             }
 
             It "Returns false objects for array input by default" {
-                $results = Test-DbaPath -SqlInstance "sql1" -Path @("C:\temp\file1.bak", "C:\temp\file2.bak")
+                $results = Test-DbaPath -SqlInstance "sql1" -Path @("C:\temp\file1.bak", "C:\temp\file2.bak") -WarningAction SilentlyContinue
 
                 ($results | Measure-Object).Count | Should -Be 2
                 ($results | Where-Object FilePath -eq "C:\temp\file1.bak").FileExists | Should -Be $false
@@ -64,6 +67,14 @@ Describe $CommandName -Tag UnitTests {
 
             It "Honors EnableException when xp_fileexist execution fails" {
                 { Test-DbaPath -SqlInstance "sql1" -Path "C:\temp\file1.bak" -EnableException } | Should -Throw -ExpectedMessage "*xp_fileexist*"
+            }
+
+            It "Warns that existence could not be determined instead of silently reporting not found" {
+                # The execution failure used to be demoted to Verbose, making a batch-level
+                # failure indistinguishable from files that genuinely do not exist (#10512)
+                $null = Test-DbaPath -SqlInstance "sql1" -Path "C:\temp\file1.bak" -WarningVariable warnvar 3> $null
+
+                $warnvar | Should -BeLike "*could not be determined*"
             }
         }
     }

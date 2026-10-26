@@ -24,6 +24,12 @@ function Remove-DbaInstanceList {
         Determines where the persistent configuration is stored when using -Register.
         UserDefault stores the setting for the current user only.
 
+    .PARAMETER WhatIf
+        Shows what would happen if the command were to run. No actions are actually performed.
+
+    .PARAMETER Confirm
+        Prompts you for confirmation before executing any changing operations within the command.
+
     .OUTPUTS
         None
 

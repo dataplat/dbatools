@@ -1,6 +1,6 @@
-# dbatools PowerShell Style Guide for Claude Code
+# dbatools PowerShell Style Guide
 
-This style guide provides coding standards for dbatools PowerShell development to ensure consistency, readability, and maintainability across the project.
+This is the single source for repository-wide PowerShell style and workflow conventions. It applies to every PowerShell file under `public/`, `private/`, `tests/`, and the repository scripts, regardless of which agent or contributor makes the change.
 
 ## CRITICAL COMMAND SYNTAX RULES
 
@@ -59,7 +59,7 @@ $database = Get-DbaDatabase -SqlInstance $instance -Name "master"
 # CORRECT - 5 parameters, must use splat
 $splatConnection = @{
     SqlInstance     = $instance
-    SqlCredential   = $TestConfig.SqlCredential
+    SqlCredential   = $credential
     Database        = $dbName
     EnableException = $true
     Confirm         = $false
@@ -105,6 +105,19 @@ $results = New-Object System.Collections.ArrayList
 $results
 ```
 
+## COMMAND INVARIANTS
+
+Structural rules for every function in `public/` and `private/functions/`. Rules 1 and 3 are enforced by the "command structure" Describe in `tests/dbatools.Tests.ps1`, which reports file, function and line; the rest is guidance a reviewer checks.
+
+**Stop-Function flow control, in short:** without EnableException, `-Continue` executes `continue` and every other call sets the caller's interrupt flag and returns. With EnableException, `-SilentlyContinue` executes `continue` and every other call sets the flag and throws. The flag is set in the scope that called Stop-Function.
+
+1. **(enforced) A Stop-Function that can continue needs a local target.** A call with `-Continue` or `-SilentlyContinue` must sit inside a loop or `switch` of the same function or scriptblock, and `-ContinueLabel` must name a label of one of them. Without a local target the `continue` leaves the command and silently skips an item of the caller's loop; with a label that matches nothing it ends the caller's whole script. A loop around a helper definition or a `ForEach-Object` callback is no target. Helpers that deliberately continue their caller's loop are listed as exceptions in the test, with the reason and the exact number of sites.
+2. **Stop, then stop working.** When a Stop-Function call abandons the current operation, prevent further work against the invalid state explicitly, usually with `return` (or `continue` in a loop). Falling through is fine when it is the design and keeps the error and output contract: a failure row emitted after the warning, cleanup followed by flow control, a `$failed` flag that gates the rest.
+3. **(enforced) A begin block that can stop guards process.** When `begin` can set the command's interrupt flag, the first statement of `process` is `if (Test-FunctionInterrupt) { return }`. A call counts when it runs in the command's own scope: directly in `begin`, or in a scriptblock that is dot-sourced or handed to `ForEach-Object`, `Where-Object`, `.ForEach()` or `.Where()`. `-SilentlyContinue` alone counts, because it sets the flag without EnableException. `-Continue` counts inside a `try` with a `catch` (or under a `trap`) in `begin`, because under EnableException it sets the flag and throws, and the catch lets `begin` go on. Calls in helper functions do not count - their flag lands in the helper.
+4. **Guard the work in `end`, never the cleanup.** An `end` block that does the command's main work starts with the guard; one that disconnects or disposes runs unguarded so it also runs after a stop.
+5. **Release the temporary connections you own, preserve the ones the caller owns or shares.** Cleanup must be reachable on error and early-exit paths, preferably in `finally` where the resource lifetime allows it. An unguarded `end` block alone is no cleanup guarantee.
+6. **No `continue` semantics in handed-off scriptblocks.** A `-Continue` inside a scriptblock passed to `ForEach-Object` or `Invoke-Command` binds to whatever loop is running when it executes. Intentional dynamic binding needs a comment at the site, an entry in the rule 1 exceptions and a behavioral test; everything else gets restructured.
+
 ## COMMENT PRESERVATION REQUIREMENT
 
 **ABSOLUTE MANDATE**: ALL COMMENTS MUST BE PRESERVED EXACTLY as they appear in the original code including:
@@ -126,6 +139,31 @@ $message = "Database `"$dbName`" created successfully"
 $database = 'master'
 ```
 
+### ARRAY FORMATTING
+
+Format multi-line arrays with one value per line:
+
+```powershell
+$expectedParameters = @(
+    "SqlInstance",
+    "SqlCredential",
+    "Database",
+    "EnableException"
+)
+```
+
+### MULTI-LINE STRINGS
+
+Use here-strings for multi-line strings instead of concatenation:
+
+```powershell
+$query = @"
+SELECT name, database_id
+FROM sys.databases
+WHERE name = 'master'
+"@
+```
+
 ## HASHTABLE ALIGNMENT (MANDATORY)
 
 **CRITICAL FORMATTING REQUIREMENT**: ALL hashtable assignments must be perfectly aligned:
@@ -133,8 +171,8 @@ $database = 'master'
 ```powershell
 # REQUIRED FORMAT - Aligned = signs
 $splatConnection = @{
-    SqlInstance     = $TestConfig.instance2
-    SqlCredential   = $TestConfig.SqlCredential
+    SqlInstance     = $instance
+    SqlCredential   = $credential
     Database        = $dbName
     EnableException = $true
 }
@@ -150,6 +188,16 @@ $splat = @{
 
 - Use `$splat<Purpose>` for 3+ parameters (never plain `$splat`)
 - Create unique variable names across all scopes to prevent collisions
+
+## WHERE-OBJECT USAGE
+
+Prefer direct property comparison for simple filters. Use a script block only for complex boolean logic, unsupported operators, or nested property and method access.
+
+```powershell
+$master = $databases | Where-Object Name -eq "master"
+$systemDbs = $databases | Where-Object Name -in "master", "model", "msdb", "tempdb"
+$hasParameters = (Get-Command $CommandName).Parameters.Values.Name | Where-Object { $PSItem -notin ("WhatIf", "Confirm") }
+```
 
 ## FORMATTING RULES
 
@@ -205,15 +253,30 @@ All commands should have proper `.OUTPUTS` documentation. **Use the prompt at `.
 
 When adding a `-Pattern` parameter, it MUST use regular expressions (regex), not SQL LIKE or PowerShell wildcards.
 
+## DBATOOLS.LIBRARY VERSION
+
+The dbatools.library version used by CI and local development is pinned in **`.github/dbatools-library-version.json`** - a single JSON file with `version` and `notes` fields. Never hardcode a library version or release URL in a workflow; change this file instead.
+
+```json
+{
+  "version": "2026.8.2-preview-main-20260802114210",
+  "notes": "Version of dbatools.library to use for CI/CD and development"
+}
+```
+
+`.github/scripts/install-dbatools-library.ps1` reads it and installs from PowerShell Gallery, falling back to GitHub releases at `https://github.com/dataplat/dbatools.library/releases/download/v{version}/dbatools.library.zip`. Preview versions (anything with a prerelease suffix) skip the Gallery and go straight to GitHub releases.
+
+**This pin is repo-wide**, so verify the release exists before committing a change to it. It is consumed through `install-dbatools-library.ps1` by `gallery.yml`, `integration-tests.yml`, `integration-tests-external-table.yml`, `integration-tests-s3.yml`, `xplat-import.yml`, and `tests/appveyor.prep.ps1` (which the self-hosted Azure matrix runs). Pinning a preview build points all of these at that build; if the preview asset is later deleted, they all fail until the pin moves.
+
+`tests/ps3-smoke.ps1` is a deliberate exception: it reads the same file for a version, but skips installing entirely if any dbatools.library is already present, and otherwise downloads from the PowerShell Gallery rather than the GitHub release. A preview pin therefore does **not** reach it, since previews are not published to the Gallery.
+
+`xplat-import.yml` also compares the SMO enumeration floors of the pinned build with `.github/smo-resource-floors.json` and fails when one changed. After reviewing such a change, refresh the baseline with `./.github/scripts/Test-SmoResourceFloor.ps1 -UpdateBaseline` (dbatools imported) and commit it with the pin.
+
+**For full details**, read `.github/DBATOOLS_LIBRARY_VERSION_MANAGEMENT.md`.
+
 ## TEST GUIDELINES
 
-**For test style requirements**, read `.github/prompts/style.md`.
-**For Pester v5 migration**, read `.github/prompts/migration.md`.
-
-Key points:
-- ALWAYS update parameter validation tests when parameters change
-- Add 1-3 focused tests for new functionality
-- Use EnableException in BeforeAll/AfterAll blocks
+`tests/CLAUDE.md` is the single source for ongoing test policy, including Pester structure, real-boundary behavioral and integration coverage, regression tests, instance selection, fixtures, cleanup, and assertions. Read it before changing command behavior or any test file.
 
 ## VERIFICATION CHECKLIST
 
@@ -229,6 +292,7 @@ Key points:
 **dbatools Patterns:**
 - [ ] SMO used first, T-SQL only when appropriate
 - [ ] Pipeline output emitted immediately
+- [ ] Command invariants kept (Stop-Function flow control, process guard, connection cleanup)
 - [ ] No `-Detailed`/`-Simple` output mode switches
 - [ ] Command names use singular nouns
 

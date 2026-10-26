@@ -38,21 +38,59 @@ Describe $CommandName -Tag UnitTests {
 }
 
 Describe $CommandName -Tag IntegrationTests {
-    # TODO: Fix later
-    Context -Skip "???" {
-        BeforeAll {
+    Context "Parameter validation" {
+        BeforeDiscovery {
+            # -TestCases is read while Pester discovers the tests. Built in the BeforeAll below, as it
+            # was before, this list was still empty at discovery, so neither of the role tests existed
+            # at all - and with Pester 6 the empty list fails the whole file during discovery.
             $systemRoles = @(
-                @{role = 'bulkadmin' },
-                @{role = 'dbcreator' },
-                @{role = 'diskadmin' },
-                @{role = 'processadmin' },
-                @{role = 'public' },
-                @{role = 'securityadmin' },
-                @{role = 'serveradmin' },
-                @{role = 'setupadmin' },
-                @{role = 'sysadmin' }
+                @{role = "bulkadmin" },
+                @{role = "dbcreator" },
+                @{role = "diskadmin" },
+                @{role = "processadmin" },
+                @{role = "public" },
+                @{role = "securityadmin" },
+                @{role = "serveradmin" },
+                @{role = "setupadmin" },
+                @{role = "sysadmin" }
             )
 
+            # The parameter checks that used Stop-Function -Continue in the begin block, one case each.
+            $invalidCombinations = @(
+                @{
+                    Check      = "-NewName equals -Login"
+                    Parameters = @{ Login = "testlogin"; NewName = "testlogin" }
+                    Message    = "Login name is the same as the value in -NewName"
+                },
+                @{
+                    Check      = "-Enable with -Disable"
+                    Parameters = @{ Login = "testlogin"; Enable = $true; Disable = $true }
+                    Message    = "You cannot use both -Enable and -Disable together"
+                },
+                @{
+                    Check      = "-GrantLogin with -DenyLogin"
+                    Parameters = @{ Login = "testlogin"; GrantLogin = $true; DenyLogin = $true }
+                    Message    = "You cannot use both -GrantLogin and -DenyLogin together"
+                },
+                @{
+                    Check      = "-SecurePassword with -PasswordHash"
+                    Parameters = @{ Login = "testlogin"; SecurePassword = (ConvertTo-SecureString -String "dbatools.IO" -AsPlainText -Force); PasswordHash = "0x0200" }
+                    Message    = "You cannot use both -SecurePassword and -PasswordHash together"
+                },
+                @{
+                    Check      = "-PasswordHash with -PasswordMustChange"
+                    Parameters = @{ Login = "testlogin"; PasswordHash = "0x0200"; PasswordMustChange = $true }
+                    Message    = "You cannot use -PasswordHash with -PasswordMustChange"
+                },
+                @{
+                    Check      = "-PasswordHash not hexadecimal"
+                    Parameters = @{ Login = "testlogin"; PasswordHash = "nothex" }
+                    Message    = "PasswordHash must be in hexadecimal format starting with 0x"
+                }
+            )
+        }
+
+        BeforeAll {
             $command = Get-Command $CommandName
         }
 
@@ -84,6 +122,18 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Validates -Password is a SecureString or PSCredential" {
             { Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login 'testLogin' -Password 'password' -EnableException } | Should -Throw 'Password must be a PSCredential or SecureString'
+        }
+
+        It "Warns about <Check> without eating an iteration of the caller loop" -ForEach $invalidCombinations {
+            # These checks used Stop-Function -Continue in the begin block, where no loop encloses it - the
+            # continue escaped the command and consumed an iteration of this very loop, so the counter stayed at zero.
+            $loopCount = 0
+            foreach ($i in 1..3) {
+                $null = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle @Parameters -WarningAction SilentlyContinue
+                $loopCount++
+            }
+            $loopCount | Should -Be 3
+            $WarnVar | Should -BeLike "*$Message*"
         }
     }
 }
@@ -130,6 +180,16 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $result = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -Password $cred
 
             $result.PasswordChanged | Should -Be $true
+        }
+
+        It "Verifies -NewName doesn't already exist when renaming a piped login" {
+            # A piped login has no entry in the list of the logins of -SqlInstance, which the check used before.
+            $login = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random"
+            $result = $login | Set-DbaLogin -NewName "testlogin2_$random"
+
+            $WarnVar | Should -BeNullOrEmpty
+            $result.Name | Should -Be "testlogin1_$random"
+            $result.Notes | Should -Be "New login name already exists"
         }
 
         It "Change the password from piped Login" {
@@ -252,8 +312,9 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $result.PasswordPolicyEnforced | Should -Be $false
         }
 
-        # TODO: The 'locked' test makes assumptions the password policy configuration is enabled for the Windows OS.
-        It -Skip "Unlock" {
+        # A login can only be locked out when the host running the instance has an account lockout
+        # threshold, so this test needs one that is not higher than the number of failed logons below.
+        It "unlocks a login that was locked out" {
             $results = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -PasswordPolicyEnforced -EnableException
             $results.PasswordPolicyEnforced | Should -Be $true
 
@@ -264,10 +325,14 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             # exceed the lockout count
             for (($i = 0); $i -le 4; $i++) {
                 try {
-                    Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -SqlCredential $invalidSqlCredential
+                    # NonPooledConnection, because after a failed logon SqlClient blocks the pool for a
+                    # growing number of seconds and answers the following attempts itself. Those never
+                    # reach the instance, so the bad password count stops climbing before it reaches the
+                    # lockout threshold and the login is never locked.
+                    $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -SqlCredential $invalidSqlCredential -NonPooledConnection
                 } catch {
-                    Write-Message -Level Warning -Message "invalid login credentials used on purpose to lock out account"
-                    Start-Sleep -s 5
+                    # Verbose, not a warning: the failed logon is on purpose and a test run must not print warnings.
+                    Write-Verbose -Message "invalid login credentials used on purpose to lock out account"
                 }
             }
 
@@ -275,8 +340,9 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $results.IsLocked | Should -Be $true
 
             # this will generate a warning since neither the password or the -force param is specified
-            $results = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -Unlock
+            $results = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -Unlock -WarningAction SilentlyContinue
             $results | Should -BeNullOrEmpty
+            ($WarnVar -join " ") | Should -Match "Force"
 
             # this will use the workaround solution to turn off/on the check_policy
             $results = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login "testlogin1_$random" -Unlock -Force
@@ -285,10 +351,14 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             # exceed the lockout count again
             for (($i = 0); $i -le 4; $i++) {
                 try {
-                    Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -SqlCredential $invalidSqlCredential
+                    # NonPooledConnection, because after a failed logon SqlClient blocks the pool for a
+                    # growing number of seconds and answers the following attempts itself. Those never
+                    # reach the instance, so the bad password count stops climbing before it reaches the
+                    # lockout threshold and the login is never locked.
+                    $null = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -SqlCredential $invalidSqlCredential -NonPooledConnection
                 } catch {
-                    Write-Message -Level Warning -Message "invalid login credentials used on purpose to lock out account"
-                    Start-Sleep -s 5
+                    # Verbose, not a warning: the failed logon is on purpose and a test run must not print warnings.
+                    Write-Verbose -Message "invalid login credentials used on purpose to lock out account"
                 }
             }
 
@@ -334,6 +404,285 @@ Describe "$CommandName Integration Tests" -Tag 'IntegrationTests' {
             $result = Get-DbaLogin -SqlInstance $TestConfig.InstanceSingle -MustChangePassword
             $result.Name | Should -Contain "testlogin1_$random"
             $result.Name | Should -Contain "testlogin2_$random"
+        }
+    }
+
+    Context "Only the logins of -Login are read (#10807)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $readRandom = Get-Random
+            $readLoginName = "dbatoolsci_readlogin_$readRandom"
+            $readOtherName = "dbatoolsci_readother_$readRandom"
+            $splatReadLogins = @{
+                SqlInstance    = $TestConfig.InstanceSingle
+                Login          = $readLoginName, $readOtherName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Read7" -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatReadLogins
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # Get-DbaLogin writes a verbose message for every login it processes, the messages the issue shows. The
+            # command read every login of the instance for the one of -Login.
+            $splatReadDisable = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Login       = $readLoginName
+                Disable     = $true
+                Verbose     = $true
+            }
+            $readRecords = @(Set-DbaLogin @splatReadDisable 4>&1)
+            $readResult = $readRecords | Where-Object { $PSItem -isnot [System.Management.Automation.VerboseRecord] }
+            $readProcessed = @(
+                foreach ($record in $readRecords) {
+                    if ($record -is [System.Management.Automation.VerboseRecord] -and $record.Message -match "\[Get-DbaLogin\] Processing \[(?<name>.+?)\] on") {
+                        $Matches.name
+                    }
+                }
+            )
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemoveReadLogins = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Login       = $readLoginName, $readOtherName
+                Force       = $true
+            }
+            $null = Remove-DbaLogin @splatRemoveReadLogins
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "changes the login of -Login" {
+            $WarnVar | Should -BeNullOrEmpty
+            $readResult.Name | Should -Be $readLoginName
+            $readResult.IsDisabled | Should -BeTrue
+        }
+
+        It "reads no other login of the instance" {
+            $readProcessed | Should -Not -Contain $readOtherName
+            $readProcessed | Should -Be $readLoginName
+        }
+    }
+
+    Context "Sets the password from a hash" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $hashRandom = Get-Random
+            $hashSourceName = "dbatoolsci_hashsource_$hashRandom"
+            $hashPolicyName = "dbatoolsci_hashpolicy_$hashRandom"
+            # A quote and a closing bracket, which the name has to survive in the ALTER LOGIN statement.
+            $hashQuoteName = "dbatoolsci_hash'quote]_$hashRandom"
+            $hashPassword = "dbatools.IO.Hash1"
+
+            # The source of the hash, with a password the tests can log in with.
+            $splatSourceLogin = @{
+                SqlInstance    = $TestConfig.InstanceSingle
+                Login          = $hashSourceName
+                SecurePassword = (ConvertTo-SecureString -String $hashPassword -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatSourceLogin
+
+            # Password policy and expiration on, as a login can have them. SQL Server refuses a hashed password for
+            # such a login with error 33020.
+            $splatPolicyLogin = @{
+                SqlInstance               = $TestConfig.InstanceSingle
+                Login                     = $hashPolicyName
+                SecurePassword            = (ConvertTo-SecureString -String "dbatools.IO.Other1" -AsPlainText -Force)
+                PasswordPolicyEnforced    = $true
+                PasswordExpirationEnabled = $true
+            }
+            $null = New-DbaLogin @splatPolicyLogin
+
+            # New-DbaLogin takes the brackets out of a name, so this one is created with T-SQL.
+            $quoteLoginQuery = "CREATE LOGIN [$($hashQuoteName.Replace("]", "]]"))] WITH PASSWORD = N'dbatools.IO.Other1', CHECK_POLICY = OFF"
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query $quoteLoginQuery
+
+            # Read from sys.sql_logins, so the assertions don't depend on cached SMO objects.
+            $loginStateQuery = "SELECT CONVERT(VARCHAR(514), password_hash, 1) AS password_hash, is_policy_checked, is_expiration_checked FROM sys.sql_logins WHERE name = @name"
+            $splatSourceState = @{
+                SqlInstance  = $TestConfig.InstanceSingle
+                Query        = $loginStateQuery
+                SqlParameter = @{ name = $hashSourceName }
+            }
+            $splatPolicyState = @{
+                SqlInstance  = $TestConfig.InstanceSingle
+                Query        = $loginStateQuery
+                SqlParameter = @{ name = $hashPolicyName }
+            }
+            $splatQuoteState = @{
+                SqlInstance  = $TestConfig.InstanceSingle
+                Query        = $loginStateQuery
+                SqlParameter = @{ name = $hashQuoteName }
+            }
+            $sourceHash = (Invoke-DbaQuery @splatSourceState).password_hash
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemoveLogin = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Login       = $hashSourceName, $hashPolicyName, $hashQuoteName
+                Force       = $true
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "sets the hash on a login with password policy and expiration on, and keeps both on" {
+            $result = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $hashPolicyName -PasswordHash $sourceHash
+
+            $WarnVar | Should -BeNullOrEmpty
+            $result.PasswordChanged | Should -BeTrue
+            $state = Invoke-DbaQuery @splatPolicyState
+            $state.password_hash | Should -Be $sourceHash
+            $state.is_policy_checked | Should -BeTrue
+            $state.is_expiration_checked | Should -BeTrue
+        }
+
+        It "lets the login connect with the password the hash came from" {
+            $splatConnect = @{
+                SqlInstance         = $TestConfig.InstanceSingle
+                SqlCredential       = New-Object System.Management.Automation.PSCredential ($hashPolicyName, (ConvertTo-SecureString -String $hashPassword -AsPlainText -Force))
+                NonPooledConnection = $true
+            }
+            $loginServer = Connect-DbaInstance @splatConnect
+            try {
+                $loginServer.ConnectionContext.ExecuteScalar("SELECT SUSER_SNAME()") | Should -Be $hashPolicyName
+            } finally {
+                # An open session would keep AfterAll from removing the login.
+                $null = $loginServer | Disconnect-DbaInstance
+            }
+        }
+
+        It "sets the hash on a login whose name contains a quote and a closing bracket" {
+            $result = Set-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $hashQuoteName -PasswordHash $sourceHash
+
+            $WarnVar | Should -BeNullOrEmpty
+            $result.PasswordChanged | Should -BeTrue
+            (Invoke-DbaQuery @splatQuoteState).password_hash | Should -Be $sourceHash
+        }
+    }
+
+    Context "Sets the password from a hash inside a transaction of the caller" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $tranRandom = Get-Random
+            $tranSourceName = "dbatoolsci_transource_$tranRandom"
+            $tranPolicyName = "dbatoolsci_tranpolicy_$tranRandom"
+
+            $splatTranSource = @{
+                SqlInstance    = $TestConfig.InstanceSingle
+                Login          = $tranSourceName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Hash2" -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatTranSource
+            # Password policy on, so the command turns it off before it sets the hash and has to turn it back on.
+            $splatTranPolicy = @{
+                SqlInstance            = $TestConfig.InstanceSingle
+                Login                  = $tranPolicyName
+                SecurePassword         = (ConvertTo-SecureString -String "dbatools.IO.Other2" -AsPlainText -Force)
+                PasswordPolicyEnforced = $true
+            }
+            $null = New-DbaLogin @splatTranPolicy
+            $splatTranSourceHash = @{
+                SqlInstance  = $TestConfig.InstanceSingle
+                Query        = "SELECT CONVERT(VARCHAR(514), password_hash, 1) AS password_hash FROM sys.sql_logins WHERE name = @name"
+                SqlParameter = @{ name = $tranSourceName }
+            }
+            $tranSourceHash = (Invoke-DbaQuery @splatTranSourceHash).password_hash
+
+            # The caller opens a transaction and does work of its own in it, which a rollback of the whole transaction
+            # would take back. The connection is not pooled, so the transaction stays on its session between the
+            # commands. A piped login brings the connection of its server, so the command works in that transaction.
+            $callerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -NonPooledConnection
+            $callerServer.ConnectionContext.BeginTransaction()
+            $null = $callerServer.ConnectionContext.ExecuteNonQuery("CREATE TABLE #dbatoolsci_callerwork (id INT)")
+            $tranLogin = Get-DbaLogin -SqlInstance $callerServer -Login $tranPolicyName
+
+            # Read on the connection of the caller, which sees the uncommitted changes of its own transaction and is not
+            # blocked by them.
+            $callerStateQuery = @"
+SELECT @@TRANCOUNT AS tran_count,
+       CASE WHEN OBJECT_ID(N'tempdb..#dbatoolsci_callerwork') IS NULL THEN 0 ELSE 1 END AS caller_work,
+       CONVERT(VARCHAR(514), password_hash, 1) AS password_hash,
+       is_policy_checked
+FROM sys.sql_logins
+WHERE name = N'$tranPolicyName'
+"@
+            $stateBefore = $callerServer.Query($callerStateQuery)
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # A valid binary value, but no password hash. SQL Server refuses it after the policy was turned off.
+            $failedResult = $tranLogin | Set-DbaLogin -PasswordHash 0x1234 -WarningAction SilentlyContinue
+            $failedWarn = $WarnVar
+            $stateAfterFailure = $callerServer.Query($callerStateQuery)
+
+            $successResult = $tranLogin | Set-DbaLogin -PasswordHash $tranSourceHash
+            $successWarn = $WarnVar
+            $stateAfterSuccess = $callerServer.Query($callerStateQuery)
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The caller takes its transaction back, with the hash that was set in it.
+            if ($callerServer.ConnectionContext.ExecuteScalar("SELECT @@TRANCOUNT") -gt 0) {
+                $callerServer.ConnectionContext.RollBackTransaction()
+            }
+            $null = $callerServer | Disconnect-DbaInstance
+            $splatRemoveTranLogin = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Login       = $tranSourceName, $tranPolicyName
+                Force       = $true
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveTranLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "warns about the refused hash" {
+            $failedResult | Should -BeNullOrEmpty
+            ($failedWarn -join " ") | Should -BeLike "*Something went wrong setting the password hash for*$tranPolicyName*"
+        }
+
+        It "keeps the transaction of the caller and the work done in it when the hash is refused" {
+            $stateAfterFailure.tran_count | Should -Be 1
+            $stateAfterFailure.caller_work | Should -Be 1
+        }
+
+        It "takes back its own statements when the hash is refused, so the policy is on again" {
+            $stateAfterFailure.password_hash | Should -Be $stateBefore.password_hash
+            $stateAfterFailure.is_policy_checked | Should -BeTrue
+        }
+
+        It "sets the hash inside the transaction of the caller and leaves the transaction open" {
+            $successWarn | Should -BeNullOrEmpty
+            $successResult.PasswordChanged | Should -BeTrue
+            $stateAfterSuccess.tran_count | Should -Be 1
+            $stateAfterSuccess.caller_work | Should -Be 1
+            $stateAfterSuccess.password_hash | Should -Be $tranSourceHash
+            $stateAfterSuccess.is_policy_checked | Should -BeTrue
         }
     }
 }

@@ -41,7 +41,7 @@ Describe $CommandName -Tag IntegrationTests {
         It "Returns a file that includes specific phrases" {
             $results = New-DbaDiagnosticAdsNotebook -TargetVersion 2017 -Path $testNotebookFile -IncludeDatabaseSpecific
             $results | Should -Not -BeNullOrEmpty
-            ($results | Get-Content) -contains "information for current instance"
+            ($results | Get-Content -Raw) | Should -Match "information for current instance"
         }
     }
 }

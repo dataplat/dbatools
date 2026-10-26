@@ -25,9 +25,13 @@ Describe $CommandName -Tag UnitTests {
     }
 
     Context "Validate input" {
+        # The mock needs -ModuleName dbatools, otherwise it never applies to the code under test and
+        # the test only asserts that DNS really fails for DoesNotExist142 on the machine running it.
+        # Unlike the other Get-Dba* commands, Get-DbaService calls Resolve-DbaNetworkName with
+        # EnableException and catches the exception, so the mock has to throw and not return $null.
         It "Cannot resolve hostname of computer" {
-            Mock Resolve-DbaNetworkName { $null }
-            { Get-DbaService -ComputerName "DoesNotExist142" -WarningAction Stop 3> $null } | Should -Throw -ExpectedMessage "*DNS name DoesNotExist142 not found*"
+            Mock Resolve-DbaNetworkName -ModuleName dbatools { throw "dbatoolsci mocked resolution failure" }
+            { Get-DbaService -ComputerName "DoesNotExist142" -WarningAction Stop 3> $null } | Should -Throw -ExpectedMessage "*Failed to resolve or to connect to DoesNotExist142*dbatoolsci mocked resolution failure*"
         }
     }
 }
