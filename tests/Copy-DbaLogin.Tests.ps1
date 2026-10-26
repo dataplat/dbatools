@@ -1089,4 +1089,133 @@ WHERE name = N'$callerLoginName'
             $destRoleMembersAfter | Should -Contain $destRoleOtherName
         }
     }
+
+    Context "A direct server permission is revoked from the login updated in place when the source login has none (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $directPermRandom = Get-Random
+            $directPermLoginName = "dbatoolsci_directperm_$directPermRandom"
+            $directPermRoleName = "dbatoolsci_connectrole_$directPermRandom"
+            $directPermPassword = "dbatools.IO.Source6"
+
+            # On the source, the login connects through a user-defined server role and has no direct server permission:
+            # the role has CONNECT SQL, and the CONNECT SQL that CREATE LOGIN granted to the login is revoked.
+            $splatSourceLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $directPermLoginName
+                SecurePassword = (ConvertTo-SecureString -String $directPermPassword -AsPlainText -Force)
+            }
+            $sourceLogin = New-DbaLogin @splatSourceLogin
+            $null = New-DbaServerRole -SqlInstance $TestConfig.InstanceCopy1 -ServerRole $directPermRoleName
+            $splatSourceRoleMember = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                ServerRole  = $directPermRoleName
+                Login       = $directPermLoginName
+                Confirm     = $false
+            }
+            $null = Add-DbaServerRoleMember @splatSourceRoleMember
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query "GRANT CONNECT SQL TO [$directPermRoleName]; REVOKE CONNECT SQL FROM [$directPermLoginName]"
+
+            # On the destination, the login has the same SID and CONNECT SQL and CONTROL SERVER granted directly. The
+            # role exists there as well, with CONNECT SQL, but without the login.
+            $splatDestLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $directPermLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Dest6" -AsPlainText -Force)
+                Sid            = $sourceLogin.Sid
+            }
+            $null = New-DbaLogin @splatDestLogin
+            $null = New-DbaServerRole -SqlInstance $TestConfig.InstanceCopy2 -ServerRole $directPermRoleName
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "GRANT CONNECT SQL TO [$directPermRoleName]; GRANT CONTROL SERVER TO [$directPermLoginName]"
+
+            $splatSourcePermState = @{
+                SqlInstance  = $TestConfig.InstanceCopy1
+                Query        = "SELECT p.permission_name FROM sys.server_permissions AS p INNER JOIN sys.server_principals AS sp ON sp.principal_id = p.grantee_principal_id WHERE sp.name = @loginName AND p.class = 100"
+                SqlParameter = @{
+                    loginName = $directPermLoginName
+                }
+            }
+            $sourcePerms = @((Invoke-DbaQuery @splatSourcePermState).permission_name)
+            $splatDestPermState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = $splatSourcePermState.Query
+                SqlParameter = $splatSourcePermState.SqlParameter
+            }
+            $splatDestRoleState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = "SELECT m.name FROM sys.server_role_members AS rm INNER JOIN sys.server_principals AS r ON r.principal_id = rm.role_principal_id INNER JOIN sys.server_principals AS m ON m.principal_id = rm.member_principal_id WHERE r.name = @roleName"
+                SqlParameter = @{
+                    roleName = $directPermRoleName
+                }
+            }
+            $splatDirectPermUpdate = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $TestConfig.InstanceCopy2
+                Login          = $directPermLoginName
+                UpdateExisting = $true
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $directPermResult = Copy-DbaLogin @splatDirectPermUpdate
+            $directPermWarn = $WarnVar
+            $destPermsAfter = @((Invoke-DbaQuery @splatDestPermState -EnableException).permission_name)
+            $directPermMembersAfter = @((Invoke-DbaQuery @splatDestRoleState -EnableException).name)
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The logins first: SQL Server drops no server role that still has members.
+            $splatRemoveLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Login       = $directPermLoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveLogin
+            $splatRemoveRole = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                ServerRole  = $directPermRoleName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaServerRole @splatRemoveRole
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "updates the login in place" {
+            $directPermWarn | Should -BeNullOrEmpty
+            $directPermResult.Status | Should -Be "Successful"
+            $directPermResult.Name | Should -Be $directPermLoginName
+        }
+
+        It "revokes the direct server permissions the source login does not have" {
+            $sourcePerms | Should -BeNullOrEmpty
+            $destPermsAfter | Should -Not -Contain "CONTROL SERVER"
+            $destPermsAfter | Should -Not -Contain "CONNECT SQL"
+        }
+
+        It "adds the login to the server role it connects through" {
+            $directPermMembersAfter | Should -Contain $directPermLoginName
+        }
+
+        It "lets the login connect to the destination through the server role" {
+            $splatConnect = @{
+                SqlInstance         = $TestConfig.InstanceCopy2
+                SqlCredential       = New-Object System.Management.Automation.PSCredential ($directPermLoginName, (ConvertTo-SecureString -String $directPermPassword -AsPlainText -Force))
+                NonPooledConnection = $true
+            }
+            $loginServer = Connect-DbaInstance @splatConnect
+            try {
+                $loginServer.ConnectionContext.ExecuteScalar("SELECT SUSER_SNAME()") | Should -Be $directPermLoginName
+            } finally {
+                # An open session would keep AfterAll from removing the login.
+                $null = $loginServer | Disconnect-DbaInstance
+            }
+        }
+    }
 }
