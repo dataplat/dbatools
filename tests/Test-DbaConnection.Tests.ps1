@@ -26,7 +26,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "Testing if command works" {
         It "returns the correct results" {
             $port = (Get-DbaTcpPort -SqlInstance $TestConfig.InstanceSingle).Port
-            $whoami = whoami
+            # Not whoami.exe: with Git for Windows first on the PATH, its whoami prints the user name without the domain
+            $whoami = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 
             $results = Test-DbaConnection -SqlInstance $TestConfig.InstanceSingle
 

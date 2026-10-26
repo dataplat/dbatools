@@ -335,7 +335,8 @@ Do not reach for `-ForEach` when there are two or three cases and the assertions
 
 ### Array Operations
 
-- Use `$results.Status.Count` for accurate counting in dbatools context
+- Count the output of a command itself with `@($results).Count`. A property of the results, such as `$results.Status.Count`, skips a `$null` in the output, `Select-Object -First` does too, and a check like `-gt 0` cannot tell. That is how the `$null` that bare `Query()` calls wrote into the output of many commands went unnoticed (#10794).
+- When the number of results is not known, assert that the output holds no `$null`: `$results | Where-Object { $null -eq $PSItem }` sees it.
 - Initialize arrays explicitly: `$array = @()`
 - Wrap result collection in array subexpression operator when needed
 
@@ -344,8 +345,12 @@ Do not reach for `-ForEach` when there are two or three cases and the assertions
 $databases = @()
 $databases = @(Get-DbaDatabase -SqlInstance $instance)
 
-# CORRECT - Use .Status.Count for dbatools commands
-$count = $results.Status.Count
+# CORRECT - Count the output itself
+@($results).Count | Should -Be 1
+@($results | Where-Object { $null -eq $PSItem }).Count | Should -Be 0
+
+# WRONG - A $null in the output is not counted
+$results.Status.Count | Should -Be 1
 ```
 
 ### Parameter Quoting
@@ -499,6 +504,7 @@ Invoke-Pester -Path .\tests\dbatools.Tests.ps1 -TagFilter Compliance
 
 - The analyzer lives in `dbatools.CommandStructure.ps1`. A change to it needs a positive or negative fixture in the "command structure analyzer" Describe.
 - A new rule 1 exception (a helper that deliberately continues its caller's loop) needs the reason in the exception list, a comment at the site and a behavioral test of the calling command. Prefer restructuring the helper.
+- The same Describe reports every `Query()` call whose value goes to the output of its function: `Query()` returns `$null` for a batch without a result set (#10794). Put `$null = ` in front of the call. Only a call that returns the rows of a SELECT as the output belongs in the exception list next to the rule 1 exceptions, with the exact number of sites and the reason.
 - The structural checks do not replace behavioral coverage. A fix for a flow-control defect still gets a command-level regression test that fails on the old code, such as a caller loop that counts its iterations.
 
 ## TEST MANAGEMENT GUIDELINES
@@ -570,7 +576,7 @@ When making changes:
 **Syntax Standards:**
 - [ ] `$PSItem` used instead of `$_` (except where compatibility requires `$_`)
 - [ ] Boolean values used for skip conditions, not strings
-- [ ] Array operations use `.Status.Count` for dbatools commands
+- [ ] Output counted with `@($results).Count`, not through a property such as `.Status.Count`
 - [ ] Explicit array initialization used where needed
 - [ ] Unnecessary quotes removed from parameter values
 - [ ] Where-Object uses direct property comparison where possible

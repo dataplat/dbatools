@@ -107,9 +107,9 @@ function Remove-DbaTrace {
 
             if ($Pscmdlet.ShouldProcess($traceid, "Removing the trace")) {
                 try {
-                    $server.Query($stopsql)
+                    $null = $server.Query($stopsql)
                     if (Get-DbaTrace -SqlInstance $server -Id $traceid) {
-                        $server.Query($removesql)
+                        $null = $server.Query($removesql)
                     }
                     [PSCustomObject]@{
                         ComputerName = $server.ComputerName

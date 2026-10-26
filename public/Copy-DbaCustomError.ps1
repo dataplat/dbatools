@@ -189,7 +189,7 @@ function Copy-DbaCustomError {
                         Write-Message -Level Verbose -Message "Copying custom error $customErrorId $language"
                         $sql = $currentCustomError.Script() | Out-String
                         Write-Message -Level Debug -Message $sql
-                        $destServer.Query($sql)
+                        $null = $destServer.Query($sql)
                         $copyCustomErrorStatus.Status = "Successful"
                         $copyCustomErrorStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     } catch {

@@ -129,7 +129,7 @@ function Start-DbaTrace {
             $sql = "EXEC sp_trace_setstatus $traceid, 1"
             if ($Pscmdlet.ShouldProcess($traceid, "Starting the TraceID on $server")) {
                 try {
-                    $server.Query($sql)
+                    $null = $server.Query($sql)
                     Get-DbaTrace -SqlInstance $server -Id $traceid
                 } catch {
                     Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue

@@ -679,6 +679,8 @@ Describe $CommandName -Tag IntegrationTests {
 
             ($results.RestoreComplete -contains $false) | Should -Be $false
             (($results | Measure-Object).count -gt 0) | Should -Be $true
+            # One result per recovered database, a $null written by the command would be counted here
+            @($results).Count | Should -Be 1
 
             $check = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $databaseName
             $check.count | Should -Be 1

@@ -59,6 +59,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When disabling trace flags" {
         It "Should disable trace flag $safeTraceFlag" {
             $disableResults = Disable-DbaTraceFlag -SqlInstance $server -TraceFlag $safeTraceFlag
+            # Counts the output itself, $disableResults.TraceFlag would skip a $null written by the command
+            @($disableResults).Count | Should -Be 1
             $disableResults.TraceFlag | Should -Contain $safeTraceFlag
         }
     }

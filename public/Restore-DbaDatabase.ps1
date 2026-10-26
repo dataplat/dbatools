@@ -796,7 +796,7 @@ function Restore-DbaDatabase {
                 $RecoverSql = "RESTORE DATABASE [$Database] WITH RECOVERY"
                 Write-Message -Message "Recovery Sql Query - $RecoverSql" -level verbose
                 try {
-                    $RestoreInstance.query($RecoverSql)
+                    $null = $RestoreInstance.query($RecoverSql)
                 } catch {
                     $RestoreComplete = $False
                     $ExitError = $_.Exception.InnerException

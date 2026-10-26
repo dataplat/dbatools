@@ -56,9 +56,12 @@ Describe $CommandName -Tag IntegrationTests {
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn1" -BaseObject "obj1"
             $null = New-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn2" -BaseObject "obj2"
             $result1 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
-            Remove-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn1"
+            $removeResults = Remove-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Synonym "syn1"
             $result2 = Get-DbaDbSynonym -SqlInstance $TestConfig.InstanceSingle
 
+            # Counts the output itself, $removeResults.Status would skip a $null written by the command
+            @($removeResults).Count | Should -Be 1
+            $removeResults.Status | Should -Be "Removed"
             $result1.Count | Should -BeGreaterThan $result2.Count
             $result2.Name | Should -Not -Contain "syn1"
             $result2.Name | Should -Contain "syn2"

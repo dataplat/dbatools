@@ -67,6 +67,8 @@ Describe $CommandName -Tag IntegrationTests {
                 ServerRole  = $testRoleName
             }
             $copyResults = Copy-DbaServerRole @splatCopyRole
+            # Counts the output itself, $copyResults.Status.Count would skip a $null written by the command
+            @($copyResults).Count | Should -Be 1
             $copyResults.Name | Should -Be $testRoleName
             $copyResults.Status | Should -Be "Successful"
         }

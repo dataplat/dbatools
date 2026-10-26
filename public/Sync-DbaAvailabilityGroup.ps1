@@ -298,6 +298,8 @@ function Sync-DbaAvailabilityGroup {
             $primaryserver = $server.Name
             $secondaryservers = $secondaries.Name -join ", "
 
+            # Set before the try, so the finally knows whether a dedicated admin connection of ours is still open.
+            $dacOpened = $false
             try {
                 if ($Exclude -notcontains "SpConfigure") {
                     Write-ProgressHelper -Activity $activity -StepNumber ($stepCounter++) -Message "Syncing SQL Server Configuration"
@@ -328,7 +330,6 @@ function Sync-DbaAvailabilityGroup {
                 $dacNeeded = -not $ExcludePassword -and ($Exclude -notcontains "Credentials" -or $Exclude -notcontains "DatabaseMail" -or $Exclude -notcontains "LinkedServers")
 
                 # We open the DAC as late as possible and close it as early as possible, because SQL Server only allows one DAC per instance.
-                $dacOpened = $false
                 if ($dacNeeded -and -not $serverDac) {
                     Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
                     $serverDac = Connect-DbaInstance -SqlInstance $server -SqlCredential $PrimarySqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
@@ -364,6 +365,7 @@ function Sync-DbaAvailabilityGroup {
                 # Disconnect is important because it is a DAC, but only if we opened it ourselves.
                 if ($dacOpened) {
                     $null = $serverDac | Disconnect-DbaInstance -WhatIf:$false
+                    $dacOpened = $false
                 }
 
                 if ($Exclude -notcontains "SystemTriggers") {
@@ -450,6 +452,11 @@ function Sync-DbaAvailabilityGroup {
                 }
             } finally {
                 Write-ProgressHelper -Activity $activity -Completed
+                # A throw or a stopped pipeline in one of the commands that copy passwords skips the disconnect above.
+                # SQL Server allows only one dedicated admin connection per instance, so it must not stay open.
+                if ($dacOpened) {
+                    $null = $serverDac | Disconnect-DbaInstance -WhatIf:$false
+                }
             }
         }
     }

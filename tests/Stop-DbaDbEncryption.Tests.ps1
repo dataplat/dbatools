@@ -173,6 +173,7 @@ Describe $CommandName -Tag IntegrationTests {
             # The bar of -Parallel cannot be checked this way: the command runs its threads in a runspace pool
             # on $Host, and once a thread has run there, the progress records of the calling pipeline no longer
             # reach Streams.Progress.
+            # Since the pool has no host any more, the last context checks the bar of -Parallel the same way.
             $splatFirstDatabase = @{
                 SqlInstance = $TestConfig.InstanceSingle
                 Confirm     = $false
@@ -206,6 +207,72 @@ Describe $CommandName -Tag IntegrationTests {
             $openIds = $stopRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
             $stopRecords | Where-Object Activity -eq "Executing Stop-DbaDbEncryption" | Should -Not -BeNullOrEmpty
             $openIds | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "When -Parallel runs in a host created by the PowerShell API and the pipeline ends early" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $apiDatabases = @()
+            1..2 | ForEach-Object {
+                $apiDatabases += New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
+            }
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The threads of -Parallel used to run in a runspace pool on $Host. Once a thread had run there, the
+            # warnings and progress records of the calling pipeline no longer reached the streams of a host created
+            # through the PowerShell API, as automation and SDK hosts do. And the pool was closed only after the
+            # loop that receives the threads, so Select-Object -First 1 left its runspaces open. No database of the
+            # instance is encrypted any more, so every thread returns its database as not encrypted.
+            $apiRunspace = [runspacefactory]::CreateRunspace()
+            $apiRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $apiRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $splatApiParallel = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Parallel    = $true
+                Confirm     = $false
+            }
+            if ($TestConfig.SqlCred) {
+                $splatApiParallel.SqlCredential = $TestConfig.SqlCred
+            }
+            $openBefore = @(Get-Runspace | Where-Object { $PSItem.RunspaceStateInfo.State -eq "Opened" }).Count
+            $apiShell = [powershell]::Create()
+            $apiShell.Runspace = $apiRunspace
+            $apiResult = $apiShell.AddCommand("Stop-DbaDbEncryption").AddParameters($splatApiParallel).AddCommand("Select-Object").AddParameter("First", 1).Invoke()
+            $openAfter = @(Get-Runspace | Where-Object { $PSItem.RunspaceStateInfo.State -eq "Opened" }).Count
+            $apiWarnings = @($apiShell.Streams.Warning)
+            $apiRecords = @($apiShell.Streams.Progress)
+            $apiShell.Dispose()
+            $apiRunspace.Dispose()
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $apiDatabases.Name
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns a database that is not encrypted" {
+            $apiResult.Count | Should -Be 1
+            $apiResult.EncryptionEnabled | Should -BeFalse
+            $apiWarnings | Should -BeNullOrEmpty
+        }
+
+        It "Writes the completion of its progress bar to the streams of the host" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so the completed record of Id 1 is asserted by itself.
+            $openIds = $apiRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $apiRecords | Where-Object { $PSItem.ActivityId -eq 1 -and $PSItem.RecordType -eq "Completed" } | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+
+        It "Closes its runspace pool" {
+            $openAfter | Should -Be $openBefore
         }
     }
 }

@@ -117,6 +117,8 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should have Results" {
             $dataResults | Should -Not -BeNullOrEmpty
+            # One result per data file, a $null written by the command would be counted here
+            @($dataResults).Count | Should -Be @($dbDataFiles).Count
         }
         It "Should have a Success results" {
             $dataResults.Result | Should -Be "Success"
@@ -254,6 +256,40 @@ Describe $CommandName -Tag IntegrationTests {
         }
         It "Should have database Online" {
             (Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_MoveDbFile_2DataFiles").Status | Should -Be "ONLINE"
+        }
+    }
+
+    Context "Should skip files that are already in the destination" {
+        BeforeAll {
+            # The contexts above moved all files of this database to the new folder
+            $dbSkipFiles = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_MoveDbFile"
+
+            $splatMoveSkip = @{
+                SqlInstance     = $TestConfig.InstanceSingle
+                Database        = "dbatoolsci_MoveDbFile"
+                FileType        = "Both"
+                FileDestination = $physicalPathNewFolder
+                WarningVariable = "skipWarnings"
+            }
+
+            $skipResults = Move-DbaDbFile @splatMoveSkip
+        }
+
+        It "Should return one result per file" {
+            $skipWarnings | Should -BeNullOrEmpty
+            @($skipResults).Count | Should -Be @($dbSkipFiles).Count
+            Compare-Object -ReferenceObject $dbSkipFiles.LogicalName -DifferenceObject $skipResults.LogicalName | Should -BeNullOrEmpty
+        }
+        It "Should have a skipped result" {
+            $skipResults.Result | ForEach-Object {
+                $PSItem | Should -Be "Already exists. Skipping"
+            }
+            $skipResults.DatabaseFileMetadata | ForEach-Object {
+                $PSItem | Should -Be "N/A"
+            }
+        }
+        It "Should have database Online" {
+            (Get-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_MoveDbFile").Status | Should -Be "ONLINE"
         }
     }
 }

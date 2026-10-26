@@ -326,6 +326,114 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When -VerifyOnly verifies more than one backup file" {
+        BeforeAll {
+            # The result of the first backup file was returned with a return, which left the whole end block, so the
+            # log backup was never verified.
+            $verifyResult = $backupHistory | Invoke-DbaAdvancedRestore -SqlInstance $TestConfig.InstanceSingle -VerifyOnly
+            $verifyWarning = $WarnVar
+        }
+
+        It "Verifies every backup file" {
+            $verifyWarning | Should -BeNullOrEmpty
+            @($verifyResult | Where-Object { $PSItem -is [string] }) | Should -Be @("Verify successful", "Verify successful")
+        }
+    }
+
+    Context "When -VerifyOnly with -KeepCDC verifies two full backups" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Two full backups of the same database in a folder of their own. The instance creates the folder, so it sees it
+            # right away.
+            $twoFullPath = "$($TestConfig.Temp)\$CommandName-twofull-$(Get-Random)"
+            $null = New-DbaDirectory -SqlInstance $TestConfig.InstanceSingle -Path $twoFullPath
+            foreach ($twoFullFile in "first.bak", "second.bak") {
+                $splatTwoFull = @{
+                    SqlInstance     = $TestConfig.InstanceSingle
+                    Database        = $restoreDbName
+                    BackupDirectory = $twoFullPath
+                    FilePath        = $twoFullFile
+                    Type            = "Full"
+                }
+                $null = Backup-DbaDatabase @splatTwoFull
+            }
+
+            # The history Restore-DbaDatabase hands over for -VerifyOnly, which skips the selection of a restore: both full
+            # backups are verified, and the second is the last backup file, the one that recovers. The database and its
+            # files get a new name, so a restore shows as a database that was created.
+            $verifyDbName = "dbatoolsci_advrestoreverify_$(Get-Random)"
+            $twoFullHistory = Get-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -Path $twoFullPath |
+                Format-DbaBackupInformation -ReplaceDatabaseName $verifyDbName -ReplaceDbNameInFile
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The branch for -KeepCDC came before the one for -VerifyOnly and restored the backup file that recovers.
+            $keepCdcResult = $twoFullHistory | Invoke-DbaAdvancedRestore -SqlInstance $TestConfig.InstanceSingle -VerifyOnly -KeepCDC
+            $keepCdcWarning = $WarnVar
+            $verifyDb = Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $verifyDbName
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $verifyDbName -ErrorAction SilentlyContinue
+            Remove-Item -Path $twoFullPath -Recurse -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Verifies both backup files" {
+            $keepCdcWarning | Should -BeNullOrEmpty
+            @($keepCdcResult | Where-Object { $PSItem -is [string] }) | Should -Be @("Verify successful", "Verify successful")
+        }
+
+        It "Restores no database" {
+            $verifyDb | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "When the restore of a backup file fails" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            # A directory below a file cannot exist, so the restore of the full backup fails. The data file of master
+            # is a file on every instance.
+            $masterFile = Get-DbaDbFile -SqlInstance $TestConfig.InstanceSingle -Database master | Where-Object TypeDescription -eq "ROWS" | Select-Object -First 1
+            $noDirectory = "$($masterFile.PhysicalName)\dbatoolsci_nodirectory"
+            $failDbName = "dbatoolsci_advrestorefail_$(Get-Random)"
+            $splatFailFormat = @{
+                ReplaceDatabaseName = $failDbName
+                DataFileDirectory   = $noDirectory
+                LogFileDirectory    = $noDirectory
+            }
+            $failHistory = Get-DbaBackupInformation -SqlInstance $TestConfig.InstanceSingle -Path $backupPath | Select-DbaBackupInformation | Format-DbaBackupInformation @splatFailFormat
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The Stop-Function -Continue after the failure continued with the log backup of the database, so the break
+            # that was meant to stop the database was never reached.
+            $failResult = $failHistory | Invoke-DbaAdvancedRestore -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
+            $failWarning = $WarnVar
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $failDbName -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Warns once about the failed restore" {
+            @($failWarning | Where-Object { $PSItem -like "*Failed to restore db $failDbName, stopping*" }).Count | Should -Be 1
+        }
+
+        It "Stops with the backup file that failed" {
+            @($failResult).Count | Should -Be 1
+            $failResult.RestoreComplete | Should -BeFalse
+        }
+    }
+
     Context "When the pipeline ends at the first backup file" {
         BeforeAll {
             # The command runs in a runspace of its own, created by the PowerShell API without a host. There

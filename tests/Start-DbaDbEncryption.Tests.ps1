@@ -185,6 +185,7 @@ Describe $CommandName -Tag IntegrationTests {
             # The bar of -Parallel cannot be checked this way: the command runs its threads in a runspace pool
             # on $Host, and once a thread has run there, the progress records of the calling pipeline no longer
             # reach Streams.Progress.
+            # Since the pool has no host any more, the last context checks the bar of -Parallel the same way.
             $earlyPassword = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
             $earlyRunspace = [runspacefactory]::CreateRunspace()
             $earlyRunspace.Open()
@@ -236,4 +237,73 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When -Parallel runs in a host created by the PowerShell API and the pipeline ends early" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $apiDatabases = @()
+            1..2 | ForEach-Object {
+                $apiDatabases += New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle
+            }
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The threads of -Parallel used to run in a runspace pool on $Host. Once a thread had run there, the
+            # warnings and progress records of the calling pipeline no longer reached the streams of a host created
+            # through the PowerShell API, as automation and SDK hosts do. And the pool was closed only after the
+            # loop that receives the threads, so Select-Object -First 1 left its runspaces open.
+            $apiPassword = ConvertTo-SecureString "dbatools.IO" -AsPlainText -Force
+            $apiRunspace = [runspacefactory]::CreateRunspace()
+            $apiRunspace.Open()
+            $importShell = [powershell]::Create()
+            $importShell.Runspace = $apiRunspace
+            $manifestPath = Join-Path -Path (Get-Module -Name $ModuleName | Select-Object -First 1).ModuleBase -ChildPath "$ModuleName.psd1"
+            $null = $importShell.AddCommand("Import-Module").AddParameter("Name", $manifestPath).Invoke()
+            $importShell.Dispose()
+
+            $splatApiParallel = @{
+                SqlInstance             = $TestConfig.InstanceSingle
+                Database                = $apiDatabases.Name
+                MasterKeySecurePassword = $apiPassword
+                BackupSecurePassword    = $apiPassword
+                BackupPath              = $backupPath
+                Parallel                = $true
+                Confirm                 = $false
+            }
+            if ($TestConfig.SqlCred) {
+                $splatApiParallel.SqlCredential = $TestConfig.SqlCred
+            }
+            $openBefore = @(Get-Runspace | Where-Object { $PSItem.RunspaceStateInfo.State -eq "Opened" }).Count
+            $apiShell = [powershell]::Create()
+            $apiShell.Runspace = $apiRunspace
+            $apiResult = $apiShell.AddCommand("Start-DbaDbEncryption").AddParameters($splatApiParallel).AddCommand("Select-Object").AddParameter("First", 1).Invoke()
+            $openAfter = @(Get-Runspace | Where-Object { $PSItem.RunspaceStateInfo.State -eq "Opened" }).Count
+            $apiWarnings = @($apiShell.Streams.Warning)
+            $apiRecords = @($apiShell.Streams.Progress)
+            $apiShell.Dispose()
+            $apiRunspace.Dispose()
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $apiDatabases.Name
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns the first encrypted database" {
+            $apiResult.Count | Should -Be 1
+            $apiResult.EncryptionEnabled | Should -BeTrue
+            $apiWarnings | Should -BeNullOrEmpty
+        }
+
+        It "Writes the completion of its progress bar to the streams of the host" {
+            # An Id stays on screen when its last record is not a completed one. Windows PowerShell completes its
+            # own bar for loading modules with Id 0 as well, so the completed record of Id 1 is asserted by itself.
+            $openIds = $apiRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
+            $apiRecords | Where-Object { $PSItem.ActivityId -eq 1 -and $PSItem.RecordType -eq "Completed" } | Should -Not -BeNullOrEmpty
+            $openIds | Should -BeNullOrEmpty
+        }
+
+        It "Closes its runspace pool" {
+            $openAfter | Should -Be $openBefore
+        }
+    }
 }

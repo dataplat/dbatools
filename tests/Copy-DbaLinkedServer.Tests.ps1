@@ -94,6 +94,53 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When copying a SQL Server linked server whose network name differs from its name" {
+        BeforeAll {
+            # The copy runs sp_setnetname on the destination only for such a linked server
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $netNameSql = @"
+EXEC master.dbo.sp_addlinkedserver @server = N'dbatoolsci_netname', @srvproduct = N'SQL Server';
+EXEC master.dbo.sp_setnetname @server = N'dbatoolsci_netname', @netname = N'localhost';
+"@
+            $null = $server1.Query($netNameSql)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $splatCopyNetName = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                LinkedServer  = "dbatoolsci_netname"
+                WarningAction = "SilentlyContinue"
+            }
+            $netNameResults = Copy-DbaLinkedServer @splatCopyNetName
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $dropNetNameSql = @"
+IF EXISTS (SELECT 1 FROM sys.servers WHERE name = N'dbatoolsci_netname')
+    EXEC master.dbo.sp_dropserver @server = N'dbatoolsci_netname', @droplogins = 'droplogins';
+"@
+            $null = $server1.Query($dropNetNameSql)
+            $null = $server2.Query($dropNetNameSql)
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Returns one successful result" {
+            # Counts the output itself, $netNameResults.Status.Count would skip a $null written by the command
+            @($netNameResults).Count | Should -Be 1
+            $netNameResults.Status | Should -BeExactly "Successful"
+        }
+
+        It "Keeps the network name on the destination" {
+            $server2.LinkedServers.Refresh()
+            $server2.LinkedServers["dbatoolsci_netname"].DataSource | Should -BeExactly "localhost"
+        }
+    }
+
     Context "When the pipeline ends at the first linked server" {
         It "Closes the dedicated admin connection" {
             # The command opens a dedicated admin connection to the source for the passwords. It was closed in the end

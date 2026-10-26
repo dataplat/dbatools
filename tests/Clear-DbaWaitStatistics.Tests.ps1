@@ -38,6 +38,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         It "Returns success" {
+            # Counts the output itself, $clearResults.Status would skip a $null written by the command
+            @($clearResults).Count | Should -Be 1
             $clearResults.Status | Should -Be "Success"
         }
     }

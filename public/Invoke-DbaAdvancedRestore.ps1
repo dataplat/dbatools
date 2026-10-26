@@ -506,7 +506,10 @@ function Invoke-DbaAdvancedRestore {
                             if ($ExecuteAs -ne "" -and $BackupCnt -eq 1) {
                                 $executeAsLogin = $ExecuteAs.Replace("'", "''")
                             }
-                            if (($KeepCDC -or $ErrorBrokerConversations) -and $restore.NoRecovery -eq $false) {
+                            # -VerifyOnly never takes the two branches that execute a restore statement of their own. Since
+                            # the verification goes on to the last backup file, it reaches the one that recovers, which the
+                            # first branch would restore.
+                            if (-not $VerifyOnly -and ($KeepCDC -or $ErrorBrokerConversations) -and $restore.NoRecovery -eq $false) {
                                 $script = $restore.Script($server)
                                 $withOptions = @()
                                 if ($KeepCDC) { $withOptions += "KEEP_CDC" }
@@ -524,7 +527,7 @@ function Invoke-DbaAdvancedRestore {
                                     $null = $server.ConnectionContext.ExecuteNonQuery($script)
                                     Write-Progress -id 1 -activity "Restoring $database to $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
                                 }
-                            } elseif ($null -ne $Pages -and $action -eq 'Database') {
+                            } elseif (-not $VerifyOnly -and $null -ne $Pages -and $action -eq "Database") {
                                 $script = $restore.Script($server)
                                 $script = $script -replace "] FROM", "] PAGE='$pages' FROM"
                                 if ($true -ne $OutputScriptOnly) {
@@ -542,14 +545,15 @@ function Invoke-DbaAdvancedRestore {
                                 Write-Progress -id 1 -activity "Verifying $database backup file on $SqlInstance - Backup $BackupCnt of $($Backups.count)" -percentcomplete 0 -status ([System.String]::Format("Progress: {0} %", 0))
                                 $verify = $restore.SqlVerify($server)
                                 Write-Progress -id 1 -activity "Verifying $database backup file on $SqlInstance - Backup $BackupCnt of $($Backups.count)" -status "Complete" -Completed
+                                # No return here: it left the whole end block, so only the first backup file was verified.
                                 if ($verify) {
                                     Write-Message -Message "VerifyOnly restore Succeeded" -Level Verbose
                                     $restoreComplete = $true
-                                    return "Verify successful"
+                                    "Verify successful"
                                 } else {
                                     Write-Message -Message "VerifyOnly restore Failed" -Level Warning
                                     $restoreComplete = $False
-                                    return "Verify failed"
+                                    "Verify failed"
                                 }
                             } else {
                                 $outerProgress = $BackupCnt / $Backups.Count * 100
@@ -616,7 +620,9 @@ function Invoke-DbaAdvancedRestore {
                             Write-Message -Level Verbose -Message "Failed to restore $database"
                             $restoreComplete = $False
                             $ExitError = $_.Exception.InnerException
-                            Stop-Function -Message "Failed to restore db $database, stopping" -ErrorRecord $_ -Continue
+                            # No -Continue: it continued with the next backup file of this database, so the break that
+                            # stops the database and goes on with the next one was never reached.
+                            Stop-Function -Message "Failed to restore db $database, stopping" -ErrorRecord $_
                             break
                         } finally {
                             # The bar of this backup file ends with the file, also when its restore failed or was stopped.

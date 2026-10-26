@@ -213,7 +213,7 @@ function Copy-DbaAgentJobStep {
                             # Replace @job_id with @job_name since the destination job has a different GUID
                             $sql = $sql -replace "@job_id=N'[0-9a-fA-F-]+'", "@job_name=N'$($jobName -replace "'", "''")'"
                             Write-Message -Message $sql -Level Debug
-                            $destServer.Query($sql)
+                            $null = $destServer.Query($sql)
                         }
 
                         $destJob.JobSteps.Refresh()

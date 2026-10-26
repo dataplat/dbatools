@@ -136,14 +136,15 @@ Describe $CommandName -Tag IntegrationTests {
             # command would go on to its next line anyway; with -ErrorAction Stop of the caller the failure
             # throws out of the command, which is when the bar was left on screen. The runspace imports the
             # manifest: an import of the psm1 without a command line skips the type data.
+            # The command reports the failed download with Stop-Function now, so it throws under EnableException.
             $failingUpdate = [PSCustomObject]@{
                 Link = "https://progressleak$(Get-Random).invalid/sqlserver2022-kb0000000-x64_0000000000000000.exe"
             }
             $splatFailingDownload = @{
-                InputObject   = $failingUpdate
-                Path          = $tempPath
-                UseWebRequest = $true
-                ErrorAction   = "Stop"
+                InputObject     = $failingUpdate
+                Path            = $tempPath
+                UseWebRequest   = $true
+                EnableException = $true
             }
             $downloadRunspace = [runspacefactory]::CreateRunspace()
             $downloadRunspace.Open()
@@ -176,6 +177,34 @@ Describe $CommandName -Tag IntegrationTests {
             $openIds = $downloadRecords | Group-Object -Property ActivityId | Where-Object { @($PSItem.Group)[-1].RecordType -ne "Completed" } | Select-Object -ExpandProperty Name
             $downloadRecords | Where-Object Activity -like "Downloading *" | Should -Not -BeNullOrEmpty
             $openIds | Should -BeNullOrEmpty
+        }
+    }
+
+    Context "When the download fails without EnableException" {
+        BeforeAll {
+            # The failed download ended only the statement of Invoke-WebRequest: the caller got a plain error record and
+            # neither a warning nor a result. The link points to the top level domain invalid, which never resolves.
+            $quietUpdate = [PSCustomObject]@{
+                Link = "https://quietfail$(Get-Random).invalid/sqlserver2022-kb0000000-x64_0000000000000000.exe"
+            }
+            $splatQuietDownload = @{
+                InputObject   = $quietUpdate
+                Path          = $tempPath
+                UseWebRequest = $true
+                WarningAction = "SilentlyContinue"
+                ErrorVariable = "quietErrors"
+                ErrorAction   = "SilentlyContinue"
+            }
+            $quietResult = Save-DbaKbUpdate @splatQuietDownload
+            $quietWarning = $WarnVar
+        }
+
+        It "Warns about the failed download" {
+            ($quietWarning -join " ") | Should -BeLike "*Failed to download $($quietUpdate.Link)*"
+        }
+
+        It "Returns nothing" {
+            $quietResult | Should -BeNullOrEmpty
         }
     }
 }

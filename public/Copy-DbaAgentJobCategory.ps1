@@ -189,7 +189,7 @@ function Copy-DbaAgentJobCategory {
                             Write-Message -Level Verbose -Message "Copying Job category $categoryName"
                             $sql = $jobCategory.Script() | Out-String
                             Write-Message -Level Debug -Message "SQL Statement: $sql"
-                            $destServer.Query($sql)
+                            $null = $destServer.Query($sql)
                             $copyJobCategoryStatus.Status = "Successful"
                             $copyJobCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         } catch {
@@ -255,7 +255,7 @@ function Copy-DbaAgentJobCategory {
                                     Write-Message -Level Verbose -Message "Copying Operator category $categoryName"
                                     $sql = $operatorCategory.Script() | Out-String
                                     Write-Message -Level Debug -Message $sql
-                                    $destServer.Query($sql)
+                                    $null = $destServer.Query($sql)
                                 } catch {
                                     $copyOperatorCategoryStatus.Status = "Failed"
                                     $copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -270,7 +270,7 @@ function Copy-DbaAgentJobCategory {
                                 Write-Message -Level Verbose -Message "Copying Operator category $categoryName"
                                 $sql = $operatorCategory.Script() | Out-String
                                 Write-Message -Level Debug -Message $sql
-                                $destServer.Query($sql)
+                                $null = $destServer.Query($sql)
 
                                 $copyOperatorCategoryStatus.Status = "Successful"
                                 $copyOperatorCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -343,7 +343,7 @@ function Copy-DbaAgentJobCategory {
                                     Write-Message -Level Verbose -Message "Copying Alert category $categoryName"
                                     $sql = $alertcategory.Script() | Out-String
                                     Write-Message -Level Debug -Message "SQL Statement: $sql"
-                                    $destServer.Query($sql)
+                                    $null = $destServer.Query($sql)
                                 } catch {
                                     $copyAlertCategoryStatus.Status = "Failed"
                                     $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -358,7 +358,7 @@ function Copy-DbaAgentJobCategory {
                                 Write-Message -Level Verbose -Message "Copying Alert category $categoryName"
                                 $sql = $alertCategory.Script() | Out-String
                                 Write-Message -Level Debug -Message $sql
-                                $destServer.Query($sql)
+                                $null = $destServer.Query($sql)
 
                                 $copyAlertCategoryStatus.Status = "Successful"
                                 $copyAlertCategoryStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject

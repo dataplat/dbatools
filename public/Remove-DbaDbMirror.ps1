@@ -107,7 +107,7 @@ function Remove-DbaDbMirror {
                         $db.Refresh()
                         if ($db.IsMirroringEnabled) {
                             try {
-                                $db.Parent.Query("ALTER DATABASE $db SET PARTNER OFF")
+                                $null = $db.Parent.Query("ALTER DATABASE $db SET PARTNER OFF")
                             } catch {
                                 Stop-Function -Message "Failure on $($db.Parent) for $db" -ErrorRecord $_ -Continue
                             }
