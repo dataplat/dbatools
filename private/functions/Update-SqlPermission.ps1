@@ -177,30 +177,33 @@ function Update-SqlPermission {
                     Stop-Function -Message "Failed to $permState $($perm.PermissionType) to $newLoginName on $destination." -Target $perm -ErrorRecord $_
                 }
             }
+        }
 
-            # for Syncs
-            $destPerms = $DestServer.EnumServerPermissions($newLoginName)
-            foreach ($perm in $destPerms) {
-                $permState = $perm.PermissionState
-                $sourcePerm = $perms | Where-Object { $_.PermissionType -eq $perm.PermissionType -and $_.PermissionState -eq $permState }
+        # for Syncs
+        # After the loop over the permissions of the source, not inside it: for a source login without any direct server
+        # permission, one that gets CONNECT SQL through a server role for example, that loop never ran, so the login on
+        # the destination kept every direct permission it had, CONTROL SERVER included.
+        $destPerms = $DestServer.EnumServerPermissions($newLoginName)
+        foreach ($perm in $destPerms) {
+            $permState = $perm.PermissionState
+            $sourcePerm = $perms | Where-Object { $_.PermissionType -eq $perm.PermissionType -and $_.PermissionState -eq $permState }
 
-                if ($null -eq $sourcePerm) {
-                    if ($Pscmdlet.ShouldProcess($destination, "Revoking $($perm.PermissionType) for $newLoginName.")) {
-                        try {
-                            $permSet = New-Object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.PermissionType)
+            if ($null -eq $sourcePerm) {
+                if ($Pscmdlet.ShouldProcess($destination, "Revoking $($perm.PermissionType) for $newLoginName.")) {
+                    try {
+                        $permSet = New-Object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.PermissionType)
 
-                            if ($permState -eq "GrantWithGrant") {
-                                $grantWithGrant = $true;
-                                $permState = "grant"
-                            } else {
-                                $grantWithGrant = $false
-                            }
-
-                            $DestServer.PSObject.Methods["Revoke"].Invoke($permSet, $newLoginName, $false, $grantWithGrant)
-                            Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) for $newLoginName on $destination successfully performed."
-                        } catch {
-                            Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $newLoginName on $destination." -Target $perm -ErrorRecord $_
+                        if ($permState -eq "GrantWithGrant") {
+                            $grantWithGrant = $true;
+                            $permState = "grant"
+                        } else {
+                            $grantWithGrant = $false
                         }
+
+                        $DestServer.PSObject.Methods["Revoke"].Invoke($permSet, $newLoginName, $false, $grantWithGrant)
+                        Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) for $newLoginName on $destination successfully performed."
+                    } catch {
+                        Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $newLoginName on $destination." -Target $perm -ErrorRecord $_
                     }
                 }
             }
