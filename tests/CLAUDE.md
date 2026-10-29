@@ -494,6 +494,12 @@ Two things keep that skip honest, and both are worth copying:
 - **Assert the engine first.** The Azure tests begin with an `It` that fails unless `DatabaseEngineEdition` is `SqlDatabase`. Pointed at anything else the rest would pass while proving nothing, because every other engine simply takes the `USE`.
 - **Assert the message, not just the failure.** Where the command has to refuse, the test also asserts that the error is *not* the raw "USE statement is not supported" - that is what fails if the code ever reaches `ChangeDatabase` again.
 
+### The last boundary CI does not have: SQL Server 2005
+
+`Connect-DbaInstance` refuses every instance older than SQL Server 2008, because SMO 181 no longer supports them (#10812). SQL Server 2005 runs neither in a container nor on any CI runner, so the refusal can only be covered against a real one. `Get-TestConfig` leaves `InstanceSql2005` empty, the tests carry `-Skip:(-not $script:hasSql2005)`, and a local configuration whose lab has a SQL Server 2005 instance that accepts `SqlCred` sets it. The same two rules keep the skip honest: the context first asserts, over a plain `SqlConnection` that does not go through `Connect-DbaInstance`, that the server version starts with `09.`, and the refusal tests assert that the error is the version message, not the raw SMO error it replaces.
+
+This exception was approved by the maintainer for this boundary only. Do not copy it to anything a CI runner can provide.
+
 ## STRUCTURAL CHECKS OF THE COMMANDS
 
 The "command structure" Describe in `dbatools.Tests.ps1` enforces rules 1 and 3 of the command invariants in the repository `CLAUDE.md` (COMMAND INVARIANTS), which explains why they exist. It parses `public/` and `private/functions/` without SQL Server, so it runs with the Compliance tag:
