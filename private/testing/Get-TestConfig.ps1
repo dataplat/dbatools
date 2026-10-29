@@ -41,6 +41,11 @@ function Get-TestConfig {
         CaServer         = $null
         CaName           = $null
         ApprovalTemplate = $null
+        # The SQL Server 2005 instance that the tests of the refusal of instances older than SQL Server 2008
+        # need. SQL Server 2005 runs neither in a container nor on any CI runner, so this stays empty there and
+        # those tests skip themselves. A local configuration whose lab has one sets it to an instance that
+        # accepts SqlCred.
+        InstanceSql2005  = $null
     }
 
     if (Test-Path $LocalConfigPath) {

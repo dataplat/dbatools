@@ -19,6 +19,11 @@ BeforeDiscovery {
     # supplies through AzureSqlDbServer. Everywhere else these tests skip themselves. The value decides a
     # Skip, so it has to exist at discovery time.
     $script:hasAzureSqlDb = -not [string]::IsNullOrWhiteSpace($TestConfig.AzureSqlDbServer)
+    # SQL Server 2005 cannot run in a container or on any CI runner, so the refusal of instances older
+    # than SQL Server 2008 can only be covered against a real one, which a lab configuration supplies
+    # through InstanceSql2005. Everywhere else these tests skip themselves. The value decides a Skip, so
+    # it has to exist at discovery time.
+    $script:hasSql2005 = -not [string]::IsNullOrWhiteSpace($TestConfig.InstanceSql2005)
 }
 
 Describe $CommandName -Tag UnitTests {
@@ -1347,6 +1352,78 @@ SELECT SERVERPROPERTY('ProductVersion')
             # properties above come back empty. Guarded here for the same reason: the versions it
             # exists to refuse are not in the matrix, but its source is readable everywhere.
             $tsqlVersionMajor | Should -Be $smoVersionMajor
+        }
+    }
+
+    Context "instances from SQL Server 2008 on are not refused" {
+        It "returns the connection without MinimumVersion" {
+            $result = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $result.VersionMajor | Should -BeGreaterOrEqual 10
+        }
+    }
+
+    Context "instances older than SQL Server 2008 are refused" -Skip:(-not $script:hasSql2005) {
+        BeforeAll {
+            # Connect-DbaInstance is the thing under test and refuses this instance, so the version is
+            # read over a plain SqlConnection that does not go through it. SQL Server 2005 negotiates
+            # TLS 1.0 at most, so the login packet is the only thing encrypted.
+            $sql2005Password = $TestConfig.SqlCred.GetNetworkCredential().Password
+            $sql2005Builder = New-Object Microsoft.Data.SqlClient.SqlConnectionStringBuilder
+            $sql2005Builder["Data Source"] = $TestConfig.InstanceSql2005
+            $sql2005Builder["User ID"] = $TestConfig.SqlCred.UserName
+            $sql2005Builder["Password"] = $sql2005Password
+            $sql2005Builder["Encrypt"] = $false
+            $sql2005Builder["Trust Server Certificate"] = $true
+            $sql2005Connection = New-Object Microsoft.Data.SqlClient.SqlConnection($sql2005Builder.ConnectionString)
+            try {
+                $sql2005Connection.Open()
+                $sql2005ServerVersion = $sql2005Connection.ServerVersion
+            } finally {
+                $sql2005Connection.Dispose()
+            }
+        }
+
+        It "points at a real SQL Server 2005 instance" {
+            # Pointed at anything newer the tests below would fail, but pointed at an older instance they
+            # would pass while saying nothing about SQL Server 2005.
+            $sql2005ServerVersion | Should -Match "^09\."
+        }
+
+        It "refuses the connection and names the last release that supports it" {
+            { Connect-DbaInstance -SqlInstance $TestConfig.InstanceSql2005 -SqlCredential $TestConfig.SqlCred } | Should -Throw "*runs SQL Server 2005*dbatools 2.8.2 with dbatools.library 2025.12.28*"
+        }
+
+        It "warns instead of throwing when exceptions are disabled" {
+            $splatSql2005 = @{
+                SqlInstance      = $TestConfig.InstanceSql2005
+                SqlCredential    = $TestConfig.SqlCred
+                DisableException = $true
+                WarningVariable  = "sql2005Warning"
+                WarningAction    = "SilentlyContinue"
+            }
+            $result = Connect-DbaInstance @splatSql2005
+            $result | Should -BeNullOrEmpty
+            $sql2005Warning | Should -Match "runs SQL Server 2005"
+        }
+
+        It "stops a command before it reaches SMO's own queries" {
+            # Without the refusal, Get-DbaDatabase failed on "Invalid column name 'is_cdc_enabled'" and
+            # the SMO collections on "'CONNECTIONPROPERTY' is not a recognized built-in function name",
+            # neither of which says that the instance is too old. See #10583 and #10812.
+            $splatGetDatabase = @{
+                SqlInstance     = $TestConfig.InstanceSql2005
+                SqlCredential   = $TestConfig.SqlCred
+                EnableException = $true
+            }
+            $sql2005Error = $null
+            try {
+                $null = Get-DbaDatabase @splatGetDatabase
+            } catch {
+                $sql2005Error = $PSItem
+            }
+            $sql2005Error | Should -Not -BeNullOrEmpty
+            $sql2005Error.Exception.Message | Should -Match "runs SQL Server 2005"
+            $sql2005Error.Exception.Message | Should -Not -Match "is_cdc_enabled|CONNECTIONPROPERTY"
         }
     }
 

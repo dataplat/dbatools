@@ -69,14 +69,14 @@ $result = New-DbaDatabase @splatConnection
 
 ## SQL SERVER VERSION SUPPORT
 
-Support SQL Server 2000 when feasible. Skip gracefully when feature requires SQL 2005+. Never be dismissive about users running old versions.
+SQL Server 2008 is the oldest supported version. `Connect-DbaInstance` refuses SQL Server 2000 and 2005, because SMO 181 no longer supports them, and names dbatools 2.8.2 with dbatools.library 2025.12.28 as the last release that does. Skip gracefully when a feature requires a newer version. Never be dismissive about users running old versions.
 
 **For detailed version patterns and examples**, read `.github/prompts/sql-version-support.md`.
 
 Quick reference:
-- SQL 2000 = Version 8, SQL 2005 = Version 9, SQL 2012 = Version 11, etc.
-- Use `Connect-DbaInstance -MinimumVersion 9` for SQL 2005+ requirements
-- Use conditional logic when SQL 2000 support is straightforward
+- SQL 2008 = Version 10, SQL 2012 = Version 11, SQL 2022 = Version 16, etc.
+- Use `Connect-DbaInstance -MinimumVersion 11` (or higher) for requirements newer than SQL 2008
+- Do not add SQL 2000 (8) or SQL 2005 (9) code paths; the existing ones are unreachable
 
 ## SMO vs T-SQL USAGE
 
