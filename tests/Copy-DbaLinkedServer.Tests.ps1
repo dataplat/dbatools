@@ -140,4 +140,30 @@ IF EXISTS (SELECT 1 FROM sys.servers WHERE name = N'dbatoolsci_netname')
             $server2.LinkedServers["dbatoolsci_netname"].DataSource | Should -BeExactly "localhost"
         }
     }
+
+    Context "When the pipeline ends at the first linked server" {
+        It "Closes the dedicated admin connection" {
+            # The command opens a dedicated admin connection to the source for the passwords. It was closed in the end
+            # block only, which Select-Object -First 1 skips, and SQL Server allows only one per instance.
+            $splatFirstLinkedServer = @{
+                Source        = $TestConfig.InstanceCopy1
+                Destination   = $TestConfig.InstanceCopy2
+                LinkedServer  = "dbatoolsci_localhost"
+                WarningAction = "SilentlyContinue"
+            }
+            $firstLinkedServer = Copy-DbaLinkedServer @splatFirstLinkedServer | Select-Object -First 1
+            $firstLinkedServer.Name | Should -BeExactly "dbatoolsci_localhost"
+
+            $dacSessionQuery = "SELECT COUNT(*) AS DacSessions FROM sys.dm_exec_sessions AS s INNER JOIN sys.endpoints AS e ON e.endpoint_id = s.endpoint_id WHERE e.is_admin_endpoint = 1"
+            # The session can take a moment to end on the server after the client closed the connection.
+            $dacWatch = [System.Diagnostics.Stopwatch]::StartNew()
+            do {
+                $dacSessions = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query $dacSessionQuery).DacSessions
+                if ($dacSessions -gt 0) {
+                    Start-Sleep -Milliseconds 200
+                }
+            } while ($dacSessions -gt 0 -and $dacWatch.Elapsed.TotalSeconds -lt 5)
+            $dacSessions | Should -Be 0
+        }
+    }
 }

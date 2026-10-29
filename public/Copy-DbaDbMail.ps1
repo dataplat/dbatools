@@ -393,148 +393,155 @@ function Copy-DbaDbMail {
             }
         }
 
-        try {
-            # Do we need a dedicated admin connection to the source for password retrieval?
-            # If passwords are excluded, we don't need a DAC
-            if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
-
-            # Do we have a dedicated admin connection already?
-            $dacConnected = Test-DacConnection -InputObject $Source
-
-            $dacOpened = $false
-            if ($dacNeeded) {
-                if ($dacConnected) {
-                    Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
-                    $sourceServer = $Source.InputObject
-                } else {
-                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
-                    $dacOpened = $true
-                }
-            } else {
-                Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
-                $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
-            }
-            $sourceServerName = $sourceServer.DomainInstanceName
-        } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
-            return
-        }
-        $mail = $sourceServer.mail
-        $sourceRegEx = [RegEx]::Escape($source)
     }
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($destinstance in $Destination) {
+        # The dedicated admin connection is opened here and closed in the finally, not in begin and end: a throw under
+        # EnableException, Ctrl+C and Select-Object -First skip the end block, also before process has started, and SQL
+        # Server allows only one dedicated admin connection per instance. The command takes no pipeline input, so process
+        # runs once.
+        $dacOpened = $false
+        try {
             try {
-                $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+                # Do we need a dedicated admin connection to the source for password retrieval?
+                # If passwords are excluded, we don't need a DAC
+                if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+
+                # Do we have a dedicated admin connection already?
+                $dacConnected = Test-DacConnection -InputObject $Source
+
+                if ($dacNeeded) {
+                    if ($dacConnected) {
+                        Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                        $sourceServer = $Source.InputObject
+                    } else {
+                        Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                        $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                        $dacOpened = $true
+                    }
+                } else {
+                    Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
+                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 9
+                }
+                $sourceServerName = $sourceServer.DomainInstanceName
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+                return
             }
+            $mail = $sourceServer.mail
+            $sourceRegEx = [RegEx]::Escape($source)
 
-            if ($type.Count -gt 0) {
+            foreach ($destinstance in $Destination) {
+                try {
+                    $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 9
+                } catch {
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                }
 
-                switch ($type) {
-                    "ConfigurationValues" {
-                        Copy-DbaDbMailConfig
-                        $destServer.Mail.ConfigurationValues.Refresh()
+                if ($type.Count -gt 0) {
+
+                    switch ($type) {
+                        "ConfigurationValues" {
+                            Copy-DbaDbMailConfig
+                            $destServer.Mail.ConfigurationValues.Refresh()
+                        }
+
+                        "Profiles" {
+                            Copy-DbaDbMailProfile
+                            $destServer.Mail.Profiles.Refresh()
+                        }
+
+                        "Accounts" {
+                            Copy-DbaDatabaseAccount
+                            $destServer.Mail.Accounts.Refresh()
+                        }
+
+                        "mailServers" {
+                            Copy-DbaDbMailServer
+                        }
                     }
 
-                    "Profiles" {
-                        Copy-DbaDbMailProfile
+                    continue
+                }
+
+                if (($profiles.count + $accounts.count + $mailServers.count) -gt 0) {
+
+                    if ($profiles.count -gt 0) {
+                        Copy-DbaDbMailProfile -Profiles $profiles
                         $destServer.Mail.Profiles.Refresh()
                     }
 
-                    "Accounts" {
-                        Copy-DbaDatabaseAccount
+                    if ($accounts.count -gt 0) {
+                        Copy-DbaDatabaseAccount -Accounts $accounts
                         $destServer.Mail.Accounts.Refresh()
                     }
 
-                    "mailServers" {
-                        Copy-DbaDbMailServer
+                    if ($mailServers.count -gt 0) {
+                        Copy-DbaDbMailServer -mailServers $mailServers
                     }
+
+                    continue
                 }
 
-                continue
-            }
+                Copy-DbaDbMailConfig
+                $destServer.Mail.ConfigurationValues.Refresh()
+                Copy-DbaDatabaseAccount
+                $destServer.Mail.Accounts.Refresh()
+                Copy-DbaDbMailProfile
+                $destServer.Mail.Profiles.Refresh()
+                Copy-DbaDbMailServer
 
-            if (($profiles.count + $accounts.count + $mailServers.count) -gt 0) {
+                # Check Database Mail configuration on source and destination
+                $sourceDbMailConfig = Get-DbaSpConfigure -SqlInstance $sourceServer -Name "Database Mail XPs"
+                $destDbMailConfig = Get-DbaSpConfigure -SqlInstance $destServer -Name "Database Mail XPs"
 
-                if ($profiles.count -gt 0) {
-                    Copy-DbaDbMailProfile -Profiles $profiles
-                    $destServer.Mail.Profiles.Refresh()
+                $sourceDbMailEnabled = $sourceDbMailConfig.ConfiguredValue
+                $destDbMailEnabled = $destDbMailConfig.ConfiguredValue
+
+                Write-Message -Message "Source Database Mail XPs: $sourceDbMailEnabled" -Level Verbose
+                Write-Message -Message "Destination Database Mail XPs: $destDbMailEnabled" -Level Verbose
+
+                $enableDBMailStatus = [PSCustomObject]@{
+                    SourceServer      = $sourceServerName
+                    DestinationServer = $destServer.Name
+                    Name              = "Database Mail XPs"
+                    Type              = "Mail Configuration"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
-                if ($accounts.count -gt 0) {
-                    Copy-DbaDatabaseAccount -Accounts $accounts
-                    $destServer.Mail.Accounts.Refresh()
-                }
-
-                if ($mailServers.count -gt 0) {
-                    Copy-DbaDbMailServer -mailServers $mailServers
-                }
-
-                continue
-            }
-
-            Copy-DbaDbMailConfig
-            $destServer.Mail.ConfigurationValues.Refresh()
-            Copy-DbaDatabaseAccount
-            $destServer.Mail.Accounts.Refresh()
-            Copy-DbaDbMailProfile
-            $destServer.Mail.Profiles.Refresh()
-            Copy-DbaDbMailServer
-
-            # Check Database Mail configuration on source and destination
-            $sourceDbMailConfig = Get-DbaSpConfigure -SqlInstance $sourceServer -Name "Database Mail XPs"
-            $destDbMailConfig = Get-DbaSpConfigure -SqlInstance $destServer -Name "Database Mail XPs"
-
-            $sourceDbMailEnabled = $sourceDbMailConfig.ConfiguredValue
-            $destDbMailEnabled = $destDbMailConfig.ConfiguredValue
-
-            Write-Message -Message "Source Database Mail XPs: $sourceDbMailEnabled" -Level Verbose
-            Write-Message -Message "Destination Database Mail XPs: $destDbMailEnabled" -Level Verbose
-
-            $enableDBMailStatus = [PSCustomObject]@{
-                SourceServer      = $sourceServerName
-                DestinationServer = $destServer.Name
-                Name              = "Database Mail XPs"
-                Type              = "Mail Configuration"
-                Status            = $null
-                Notes             = $null
-                DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
-            }
-
-            if ($sourceDbMailEnabled -eq 1 -and $destDbMailEnabled -eq 0) {
-                if ($pscmdlet.ShouldProcess($destinstance, "Enabling Database Mail XPs")) {
-                    try {
-                        Write-Message -Message "Enabling Database Mail XPs on $destServer." -Level Verbose
-                        $null = Set-DbaSpConfigure -SqlInstance $destServer -Name "Database Mail XPs" -Value 1
-                        $enableDBMailStatus.Status = "Successful"
-                        $enableDBMailStatus.Notes = "Database Mail XPs enabled on destination"
-                    } catch {
-                        $enableDBMailStatus.Status = "Failed"
-                        $enableDBMailStatus.Notes = (Get-ErrorMessage -Record $_)
-                        Write-Message -Level Warning -Message "Cannot enable Database Mail XPs on $destinstance | $PSItem"
+                if ($sourceDbMailEnabled -eq 1 -and $destDbMailEnabled -eq 0) {
+                    if ($pscmdlet.ShouldProcess($destinstance, "Enabling Database Mail XPs")) {
+                        try {
+                            Write-Message -Message "Enabling Database Mail XPs on $destServer." -Level Verbose
+                            $null = Set-DbaSpConfigure -SqlInstance $destServer -Name "Database Mail XPs" -Value 1
+                            $enableDBMailStatus.Status = "Successful"
+                            $enableDBMailStatus.Notes = "Database Mail XPs enabled on destination"
+                        } catch {
+                            $enableDBMailStatus.Status = "Failed"
+                            $enableDBMailStatus.Notes = (Get-ErrorMessage -Record $_)
+                            Write-Message -Level Warning -Message "Cannot enable Database Mail XPs on $destinstance | $PSItem"
+                        }
+                        $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
+                } elseif ($sourceDbMailEnabled -eq 0) {
+                    $enableDBMailStatus.Status = "Skipped"
+                    $enableDBMailStatus.Notes = "Database Mail XPs not enabled on source"
+                    Write-Message -Level Warning -Message "Database Mail XPs is not enabled on source instance $sourceServer. It will not be enabled on destination."
+                    $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                } elseif ($destDbMailEnabled -eq 1) {
+                    $enableDBMailStatus.Status = "Skipped"
+                    $enableDBMailStatus.Notes = "Database Mail XPs already enabled on destination"
+                    Write-Message -Message "Database Mail XPs is already enabled on destination $destServer." -Level Verbose
                     $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
-            } elseif ($sourceDbMailEnabled -eq 0) {
-                $enableDBMailStatus.Status = "Skipped"
-                $enableDBMailStatus.Notes = "Database Mail XPs not enabled on source"
-                Write-Message -Level Warning -Message "Database Mail XPs is not enabled on source instance $sourceServer. It will not be enabled on destination."
-                $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-            } elseif ($destDbMailEnabled -eq 1) {
-                $enableDBMailStatus.Status = "Skipped"
-                $enableDBMailStatus.Notes = "Database Mail XPs already enabled on destination"
-                Write-Message -Message "Database Mail XPs is already enabled on destination $destServer." -Level Verbose
-                $enableDBMailStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
-        }
-    }
-    end {
-        if ($dacOpened) {
-            $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+        } finally {
+            if ($dacOpened) {
+                $null = $sourceServer | Disconnect-DbaInstance -WhatIf:$false
+                $dacOpened = $false
+            }
         }
     }
 }

@@ -120,90 +120,96 @@ function Export-DbaCredential {
         }
 
         foreach ($instance in $SqlInstance) {
+            # The dedicated admin connection is closed in the finally: the continue for nothing to export, the -Continue for a
+            # failed write, a throw under EnableException and a stopped pipeline skipped the disconnect at the end, and SQL Server
+            # allows only one dedicated admin connection per instance. The finally starts before the connection opens, as in
+            # Export-DbaLinkedServer, so that no statement runs between the opened connection and its finally.
+            $dacOpened = $false
             try {
-                # Do we need a dedicated admin connection to the source for password retrieval?
-                # If passwords are excluded, we don't need a DAC
-                if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
+                try {
+                    # Do we need a dedicated admin connection to the source for password retrieval?
+                    # If passwords are excluded, we don't need a DAC
+                    if ($ExcludePassword) { $dacNeeded = $false } else { $dacNeeded = $true }
 
-                # Do we have a dedicated admin connection already?
-                $dacConnected = Test-DacConnection -InputObject $instance
+                    # Do we have a dedicated admin connection already?
+                    $dacConnected = Test-DacConnection -InputObject $instance
 
-                $dacOpened = $false
-                if ($dacNeeded) {
-                    if ($dacConnected) {
-                        Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
-                        $server = $instance.InputObject
+                    if ($dacNeeded) {
+                        if ($dacConnected) {
+                            Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                            $server = $instance.InputObject
+                        } else {
+                            Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                            $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
+                            $dacOpened = $true
+                        }
                     } else {
-                        Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9 -DedicatedAdminConnection -WarningAction SilentlyContinue
-                        $dacOpened = $true
+                        Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
+                        $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                    }
+                } catch {
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+                }
+
+                if ($ExcludePassword) {
+                    $credentials = foreach ($cred in $server.Credentials) {
+                        [PSCustomObject]@{
+                            Name            = $cred.Name
+                            Quotename       = $server.Query("SELECT QUOTENAME('$($cred.Name.Replace("'", "''"))') AS Quotename").Quotename
+                            Identity        = $cred.Identity.ToString()
+                            Password        = '<EnterStrongPasswordHere>'
+                            MappedClassType = $cred.MappedClassType
+                            ProviderName    = $cred.ProviderName
+                        }
                     }
                 } else {
-                    Write-Message -Level Verbose -Message "Opening or reusing normal connection because passwords are excluded."
-                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
+                    $credentials = Get-DecryptedObject -SqlInstance $server -Credential $Credential -Type Credential -EnableException:$EnableException
                 }
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
 
-            if ($ExcludePassword) {
-                $credentials = foreach ($cred in $server.Credentials) {
-                    [PSCustomObject]@{
-                        Name            = $cred.Name
-                        Quotename       = $server.Query("SELECT QUOTENAME('$($cred.Name.Replace("'", "''"))') AS Quotename").Quotename
-                        Identity        = $cred.Identity.ToString()
-                        Password        = '<EnterStrongPasswordHere>'
-                        MappedClassType = $cred.MappedClassType
-                        ProviderName    = $cred.ProviderName
+                if ($Identity) {
+                    $credentials = $credentials | Where-Object Identity -in $Identity
+                }
+
+                if (-not $credentials) {
+                    Write-Message -Level Verbose -Message "Nothing to export"
+                    continue
+                }
+
+                $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
+
+                $sql = @()
+
+                foreach ($cred in $credentials) {
+                    $quotename = $cred.Quotename
+                    $credName = $cred.Name.Replace("'", "''")
+                    $identity = $cred.Identity.Replace("'", "''")
+                    $password = $cred.Password.Replace("'", "''")
+                    $cryptoSql = ""
+                    if ($cred.MappedClassType -like 'Cryptographic*') {
+                        $providerName = $cred.ProviderName
+                        $cryptoSql = " FOR CRYPTOGRAPHIC PROVIDER $providerName"
+                    }
+                    $sql += "IF NOT EXISTS (SELECT 1 FROM sys.credentials WHERE name = N'$credName') CREATE CREDENTIAL $quotename WITH IDENTITY = N'$identity', SECRET = N'$password'" + $cryptoSql
+                }
+
+                if ($Passthru) {
+                    $sql
+                } else {
+                    try {
+                        if ($Append) {
+                            Add-Content -Path $FilePath -Value $sql
+                        } else {
+                            Set-Content -Path $FilePath -Value $sql
+                        }
+                        Get-ChildItem -Path $FilePath
+                    } catch {
+                        Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
                     }
                 }
-            } else {
-                $credentials = Get-DecryptedObject -SqlInstance $server -Credential $Credential -Type Credential -EnableException:$EnableException
-            }
-
-            if ($Identity) {
-                $credentials = $credentials | Where-Object Identity -in $Identity
-            }
-
-            if (-not $credentials) {
-                Write-Message -Level Verbose -Message "Nothing to export"
-                continue
-            }
-
-            $FilePath = Get-ExportFilePath -Path $PSBoundParameters.Path -FilePath $PSBoundParameters.FilePath -Type sql -ServerName $instance
-
-            $sql = @()
-
-            foreach ($cred in $credentials) {
-                $quotename = $cred.Quotename
-                $credName = $cred.Name.Replace("'", "''")
-                $identity = $cred.Identity.Replace("'", "''")
-                $password = $cred.Password.Replace("'", "''")
-                $cryptoSql = ""
-                if ($cred.MappedClassType -like 'Cryptographic*') {
-                    $providerName = $cred.ProviderName
-                    $cryptoSql = " FOR CRYPTOGRAPHIC PROVIDER $providerName"
+            } finally {
+                if ($dacOpened) {
+                    $null = $server | Disconnect-DbaInstance -WhatIf:$false
                 }
-                $sql += "IF NOT EXISTS (SELECT 1 FROM sys.credentials WHERE name = N'$credName') CREATE CREDENTIAL $quotename WITH IDENTITY = N'$identity', SECRET = N'$password'" + $cryptoSql
-            }
-
-            if ($Passthru) {
-                $sql
-            } else {
-                try {
-                    if ($Append) {
-                        Add-Content -Path $FilePath -Value $sql
-                    } else {
-                        Set-Content -Path $FilePath -Value $sql
-                    }
-                    Get-ChildItem -Path $FilePath
-                } catch {
-                    Stop-Function -Message "Can't write to $FilePath" -ErrorRecord $_ -Continue
-                }
-            }
-
-            if ($dacOpened) {
-                $null = $server | Disconnect-DbaInstance -WhatIf:$false
             }
         }
     }

@@ -364,55 +364,58 @@ function Start-DbaMigration {
             $BackupRestore = $true
         }
 
+        # One try for the whole lifetime of a dedicated admin connection the command opens, from the connections to the
+        # end of the migration: a stop while the normal connection is opened skips the catch of the connections, and
+        # SQL Server allows only one dedicated admin connection per instance.
+        $dacOpened = $false
         try {
-            # Do we need a dedicated admin connection to the source for password retrieval?
-            # If not all of the three are excluded, we do
-            $dacNeeded = $Exclude -notcontains 'Credentials' -or $Exclude -notcontains 'DatabaseMail' -or $Exclude -notcontains 'LinkedServers'
-            # If passwords are excluded, we don't need a DAC
-            if ($ExcludePassword) { $dacNeeded = $false }
+            try {
+                # Do we need a dedicated admin connection to the source for password retrieval?
+                # If not all of the three are excluded, we do
+                $dacNeeded = $Exclude -notcontains "Credentials" -or $Exclude -notcontains "DatabaseMail" -or $Exclude -notcontains "LinkedServers"
+                # If passwords are excluded, we don't need a DAC
+                if ($ExcludePassword) { $dacNeeded = $false }
 
-            # Do we have a dedicated admin connection already?
-            $dacConnected = Test-DacConnection -InputObject $Source
+                # Do we have a dedicated admin connection already?
+                $dacConnected = Test-DacConnection -InputObject $Source
 
-            $dacOpened = $false
-            if ($dacNeeded) {
-                if ($dacConnected) {
-                    Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
-                    $sourceServerDac = $Source.InputObject
-                    # Reconnect without DAC for Copy-DbaDatabase
-                    Write-Message -Level Verbose -Message "Opening additional normal connection for all commands that don't require DAC."
-                    $sourceServer = Connect-DbaInstance -SqlInstance $Source.FullName -SqlCredential $SourceSqlCredential
-                } else {
-                    Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
-                    $sourceServerDac = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
-                    if (-not $sourceServerDac) {
-                        Stop-Function -Message "Could not establish dedicated admin connection to $Source. Use -ExcludePassword to skip password migration." -Category ConnectionError -Target $Source
-                        return
+                if ($dacNeeded) {
+                    if ($dacConnected) {
+                        Write-Message -Level Verbose -Message "Reusing dedicated admin connection for password retrieval."
+                        $sourceServerDac = $Source.InputObject
+                        # Reconnect without DAC for Copy-DbaDatabase
+                        Write-Message -Level Verbose -Message "Opening additional normal connection for all commands that don't require DAC."
+                        $sourceServer = Connect-DbaInstance -SqlInstance $Source.FullName -SqlCredential $SourceSqlCredential
+                    } else {
+                        Write-Message -Level Verbose -Message "Opening dedicated admin connection for password retrieval."
+                        $sourceServerDac = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -DedicatedAdminConnection -WarningAction SilentlyContinue
+                        if (-not $sourceServerDac) {
+                            Stop-Function -Message "Could not establish dedicated admin connection to $Source. Use -ExcludePassword to skip password migration." -Category ConnectionError -Target $Source
+                            return
+                        }
+                        $dacOpened = $true
+                        Write-Message -Level Verbose -Message "Opening or reusing additional normal connection for all commands that don't require DAC."
+                        $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
                     }
-                    $dacOpened = $true
-                    Write-Message -Level Verbose -Message "Opening or reusing additional normal connection for all commands that don't require DAC."
-                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
-                }
-            } else {
-                if ($dacConnected) {
-                    # Reconnect without DAC for Copy-DbaDatabase
-                    Write-Message -Level Verbose -Message "Opening additional normal connection for all commands that don't require DAC."
-                    $sourceServer = Connect-DbaInstance -SqlInstance $Source.FullName -SqlCredential $SourceSqlCredential
                 } else {
-                    Write-Message -Level Verbose -Message "Opening or reusing normal connection for all commands that don't require DAC."
-                    $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+                    if ($dacConnected) {
+                        # Reconnect without DAC for Copy-DbaDatabase
+                        Write-Message -Level Verbose -Message "Opening additional normal connection for all commands that don't require DAC."
+                        $sourceServer = Connect-DbaInstance -SqlInstance $Source.FullName -SqlCredential $SourceSqlCredential
+                    } else {
+                        Write-Message -Level Verbose -Message "Opening or reusing normal connection for all commands that don't require DAC."
+                        $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential
+                    }
                 }
-            }
-            if (-not $sourceServer) {
-                Stop-Function -Message "Could not connect to source instance $Source." -Category ConnectionError -Target $Source
+                if (-not $sourceServer) {
+                    Stop-Function -Message "Could not connect to source instance $Source." -Category ConnectionError -Target $Source
+                    return
+                }
+            } catch {
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
                 return
             }
-        } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
-            return
-        }
 
-        try {
             if ($Exclude -notcontains 'SpConfigure') {
                 Write-ProgressHelper -StepNumber ($stepCounter++) -Message "Migrating SQL Server Configuration"
                 Write-Message -Level Verbose -Message "Migrating SQL Server Configuration"
@@ -633,6 +636,12 @@ function Start-DbaMigration {
             }
         } finally {
             Write-ProgressHelper -Completed
+            # A throw under EnableException, Ctrl+C and Select-Object -First skip the end block, and SQL Server allows only
+            # one dedicated admin connection per instance.
+            if ($dacOpened) {
+                $null = $sourceServerDac | Disconnect-DbaInstance -WhatIf:$false
+                $dacOpened = $false
+            }
         }
     }
     end {
