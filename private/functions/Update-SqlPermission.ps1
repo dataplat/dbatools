@@ -95,13 +95,42 @@ function Update-SqlPermission {
         }
 
         # Remove for Syncs
+        # The member to drop is the login on the destination: with a rename, the name of the source login can belong
+        # to a different login there.
         if ($roleMembers -notcontains $loginName -and $destRoleMembers -contains $newLoginName -and $null -ne $destRole) {
-            if ($Pscmdlet.ShouldProcess($destination, "Adding $loginName to $roleName server role.")) {
+            if ($Pscmdlet.ShouldProcess($destination, "Removing $newLoginName from $roleName server role.")) {
                 try {
-                    $destRole.DropMember($loginName)
-                    Write-Message -Level Verbose -Message "Removing $newLoginName from $destRoleName server role on $destination successfully performed."
+                    $destRole.DropMember($newLoginName)
+                    Write-Message -Level Verbose -Message "Removing $newLoginName from $roleName server role on $destination successfully performed."
                 } catch {
-                    Stop-Function -Message "Failed to remove $newLoginName from $destRoleName server role on $destination." -Target $role -ErrorRecord $_
+                    Stop-Function -Message "Failed to remove $newLoginName from $roleName server role on $destination." -Target $role -ErrorRecord $_
+                }
+            }
+        }
+    }
+
+    # Server roles that exist on the destination only. The loop above never sees them, so a login updated in place kept
+    # their membership, and with it permissions like CONTROL SERVER of a user-defined role, while a login that -Force
+    # drops and recreates loses it.
+    foreach ($destOnlyRole in $DestServer.Roles) {
+        if ($null -ne $SourceServer.Roles[$destOnlyRole.Name]) {
+            continue
+        }
+        $destOnlyRoleName = $destOnlyRole.Name
+
+        try {
+            $destOnlyRoleMembers = $destOnlyRole.EnumMemberNames()
+        } catch {
+            $destOnlyRoleMembers = $destOnlyRole.EnumServerRoleMembers()
+        }
+
+        if ($destOnlyRoleMembers -contains $newLoginName) {
+            if ($Pscmdlet.ShouldProcess($destination, "Removing $newLoginName from $destOnlyRoleName server role.")) {
+                try {
+                    $destOnlyRole.DropMember($newLoginName)
+                    Write-Message -Level Verbose -Message "Removing $newLoginName from $destOnlyRoleName server role on $destination successfully performed."
+                } catch {
+                    Stop-Function -Message "Failed to remove $newLoginName from $destOnlyRoleName server role on $destination." -Target $destOnlyRole -ErrorRecord $_
                 }
             }
         }
@@ -148,30 +177,33 @@ function Update-SqlPermission {
                     Stop-Function -Message "Failed to $permState $($perm.PermissionType) to $newLoginName on $destination." -Target $perm -ErrorRecord $_
                 }
             }
+        }
 
-            # for Syncs
-            $destPerms = $DestServer.EnumServerPermissions($newLoginName)
-            foreach ($perm in $destPerms) {
-                $permState = $perm.PermissionState
-                $sourcePerm = $perms | Where-Object { $_.PermissionType -eq $perm.PermissionType -and $_.PermissionState -eq $permState }
+        # for Syncs
+        # After the loop over the permissions of the source, not inside it: for a source login without any direct server
+        # permission, one that gets CONNECT SQL through a server role for example, that loop never ran, so the login on
+        # the destination kept every direct permission it had, CONTROL SERVER included.
+        $destPerms = $DestServer.EnumServerPermissions($newLoginName)
+        foreach ($perm in $destPerms) {
+            $permState = $perm.PermissionState
+            $sourcePerm = $perms | Where-Object { $_.PermissionType -eq $perm.PermissionType -and $_.PermissionState -eq $permState }
 
-                if ($null -eq $sourcePerm) {
-                    if ($Pscmdlet.ShouldProcess($destination, "Revoking $($perm.PermissionType) for $newLoginName.")) {
-                        try {
-                            $permSet = New-Object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.PermissionType)
+            if ($null -eq $sourcePerm) {
+                if ($Pscmdlet.ShouldProcess($destination, "Revoking $($perm.PermissionType) for $newLoginName.")) {
+                    try {
+                        $permSet = New-Object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.PermissionType)
 
-                            if ($permState -eq "GrantWithGrant") {
-                                $grantWithGrant = $true;
-                                $permState = "grant"
-                            } else {
-                                $grantWithGrant = $false
-                            }
-
-                            $DestServer.PSObject.Methods["Revoke"].Invoke($permSet, $newLoginName, $false, $grantWithGrant)
-                            Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) for $newLoginName on $destination successfully performed."
-                        } catch {
-                            Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $newLoginName on $destination." -Target $perm -ErrorRecord $_
+                        if ($permState -eq "GrantWithGrant") {
+                            $grantWithGrant = $true;
+                            $permState = "grant"
+                        } else {
+                            $grantWithGrant = $false
                         }
+
+                        $DestServer.PSObject.Methods["Revoke"].Invoke($permSet, $newLoginName, $false, $grantWithGrant)
+                        Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) for $newLoginName on $destination successfully performed."
+                    } catch {
+                        Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $newLoginName on $destination." -Target $perm -ErrorRecord $_
                     }
                 }
             }
@@ -201,7 +233,9 @@ function Update-SqlPermission {
 
     if ($DestServer.VersionMajor -lt 9) {
         Write-Message -Level Warning -Message "SQL Server 2005 or greater required for database mappings.";
-        continue
+        # Return, not continue: this function has no loop here, so a continue went on with the next iteration of the
+        # loop of the caller and skipped the rest of it, the result row of Sync-DbaLoginPermission for example.
+        return
     }
 
     # For Sync, if info doesn't exist in EnumDatabaseMappings, then no big deal.
