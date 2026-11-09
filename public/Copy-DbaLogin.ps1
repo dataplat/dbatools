@@ -497,16 +497,6 @@ function Copy-DbaLogin {
                     $Login.Refresh()
                     $destLogin.Refresh()
 
-                    if ($destServer.VersionMajor -lt 9) {
-                        if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $newUserName because ALTER LOGIN requires SQL Server 2005 or later")) {
-                            Write-Message -Level Verbose -Message "Updating $newUserName in place requires SQL Server 2005 or later on $destinstance. Skipping."
-                            $copyLoginStatus.Status = "Skipped"
-                            $copyLoginStatus.Notes = "Update in place requires SQL Server 2005 or later"
-                            $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-                        }
-                        continue
-                    }
-
                     # With -NewSid the destination login got a SID of its own, so only then a different SID is expected.
                     $sidDiffers = -not $NewSid -and (Convert-ByteToHexString $Login.Sid) -ne (Convert-ByteToHexString $destLogin.Sid)
                     if ($sidDiffers -and -not $force) {
