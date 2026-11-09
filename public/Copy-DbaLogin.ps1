@@ -88,6 +88,7 @@ function Copy-DbaLogin {
         Drops and recreates existing logins on the destination server, transferring ownership of databases and SQL Agent jobs to 'sa' first.
         Use this when you need to update login passwords or properties that can't be modified in place, but ensure job ownership changes are acceptable.
         When -UpdateExisting is also specified, it takes precedence: only logins with a different SID on the destination are dropped and recreated.
+        A SQL login whose password hash cannot be read on the source, which requires CONTROL SERVER there, is not dropped but gets a Failed result, because it could not be created again.
 
     .PARAMETER UpdateExisting
         Updates logins that already exist on the destination in place instead of skipping them, so a password changed on the source reaches the destination without a drop.
@@ -357,12 +358,26 @@ function Copy-DbaLogin {
             # Server 2019 refuses with error 15021, while SQL Server 2022 accepted it on build 16.0.4255 (older builds
             # of 2022 were not tested). This is checked per login, so other logins are still copied, and before
             # anything is dropped, because -Force would otherwise drop the destination login and then fail to create it.
-            if ($Login.LoginType -eq "SqlLogin" -and $sourceServer.VersionMajor -ge 11 -and $destServer.VersionMajor -lt 16) {
+            # The same holds for a hash that cannot be read at all, on any version: LOGINPROPERTY returns no hash to a
+            # source connection without CONTROL SERVER, even when that connection can see the logins.
+            if ($Login.LoginType -eq "SqlLogin") {
                 try {
                     $sourceHash = Get-LoginPasswordHash -Login $Login
                 } catch {
                     $sourceHash = $null
                 }
+                # A hash that could not be read comes back empty or as 0x00.
+                if ($sourceHash -notmatch "^0x0[1-9]00[0-9A-F]+$") {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $newUserName because its password hash could not be read")) {
+                        Write-Message -Level Warning -Message "Could not read the password hash of $($Login.Name) on $($sourceServer.Name), which requires CONTROL SERVER there. Skipping $newUserName."
+                        $copyLoginStatus.Status = "Failed"
+                        $copyLoginStatus.Notes = "Could not read the password hash"
+                        $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
+                    continue
+                }
+            }
+            if ($Login.LoginType -eq "SqlLogin" -and $sourceServer.VersionMajor -ge 11 -and $destServer.VersionMajor -lt 16) {
                 if ($sourceHash -like "0x0300*") {
                     $hashFormat = "SQL Server 2025"
                 } elseif ($sourceHash -like "0x0200*" -and $destServer.VersionMajor -lt 11) {

@@ -1218,4 +1218,125 @@ WHERE name = N'$callerLoginName'
             }
         }
     }
+
+    Context "An existing login is not dropped when the password hash of the source login cannot be read (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $hashRandom = Get-Random
+            $hashLoginName = "dbatoolsci_hashcopy_$hashRandom"
+            $hashReaderName = "dbatoolsci_hashreader_$hashRandom"
+            $hashReaderPassword = ConvertTo-SecureString -String "dbatools.IO.Reader7" -AsPlainText -Force
+
+            # The source connection belongs to a login that can see every login but has no CONTROL SERVER, which
+            # LOGINPROPERTY requires for the password hash.
+            $splatReaderLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $hashReaderName
+                SecurePassword = $hashReaderPassword
+            }
+            $null = New-DbaLogin @splatReaderLogin
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query "GRANT VIEW ANY DEFINITION TO [$hashReaderName]"
+            $splatSourceLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $hashLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Source7" -AsPlainText -Force)
+            }
+            $hashSourceLogin = New-DbaLogin @splatSourceLogin
+            $hashSourceSid = [System.BitConverter]::ToString($hashSourceLogin.Sid)
+
+            # The destination login has a SID of its own, so -UpdateExisting -Force drops and recreates it as well.
+            $splatDestLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $hashLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Dest7" -AsPlainText -Force)
+            }
+            $hashDestLogin = New-DbaLogin @splatDestLogin
+            $hashDestSidBefore = [System.BitConverter]::ToString($hashDestLogin.Sid)
+
+            $splatReaderConnection = @{
+                SqlInstance         = $TestConfig.InstanceCopy1
+                SqlCredential       = New-Object System.Management.Automation.PSCredential ($hashReaderName, $hashReaderPassword)
+                NonPooledConnection = $true
+            }
+            $hashReaderServer = Connect-DbaInstance @splatReaderConnection
+            $readerHash = $hashReaderServer.ConnectionContext.ExecuteScalar("SELECT LOGINPROPERTY(N'$hashLoginName', 'PasswordHash')")
+
+            $splatForceCopy = @{
+                Source        = $hashReaderServer
+                Destination   = $TestConfig.InstanceCopy2
+                Login         = $hashLoginName
+                Force         = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $splatUpdateForceCopy = @{
+                Source         = $hashReaderServer
+                Destination    = $TestConfig.InstanceCopy2
+                Login          = $hashLoginName
+                UpdateExisting = $true
+                Force          = $true
+                WarningAction  = "SilentlyContinue"
+            }
+            $splatDestLoginState = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Login       = $hashLoginName
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $forceResult = Copy-DbaLogin @splatForceCopy
+            $forceWarn = $WarnVar
+            $destLoginAfterForce = Get-DbaLogin @splatDestLoginState -EnableException
+            $updateForceResult = Copy-DbaLogin @splatUpdateForceCopy
+            $updateForceWarn = $WarnVar
+            $destLoginAfterUpdateForce = Get-DbaLogin @splatDestLoginState -EnableException
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # An open session would keep the reader login from being removed.
+            if ($hashReaderServer) {
+                $null = $hashReaderServer | Disconnect-DbaInstance
+            }
+            $splatRemoveSourceLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Login       = $hashLoginName, $hashReaderName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveSourceLogin
+            $splatRemoveDestLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Login       = $hashLoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveDestLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "reads no password hash through the source connection" {
+            $readerHash | Should -BeOfType System.DBNull
+        }
+
+        It "fails the login with -Force and leaves the destination login as it was" {
+            $forceResult.Status | Should -Be "Failed"
+            $forceResult.Notes | Should -Be "Could not read the password hash"
+            ($forceWarn -join " ") | Should -Match "Could not read the password hash"
+            $destLoginAfterForce | Should -Not -BeNullOrEmpty
+            [System.BitConverter]::ToString($destLoginAfterForce.Sid) | Should -Be $hashDestSidBefore
+        }
+
+        It "fails the login with -UpdateExisting -Force and a different SID and leaves the destination login as it was" {
+            $hashDestSidBefore | Should -Not -Be $hashSourceSid
+            $updateForceResult.Status | Should -Be "Failed"
+            $updateForceResult.Notes | Should -Be "Could not read the password hash"
+            ($updateForceWarn -join " ") | Should -Match "Could not read the password hash"
+            $destLoginAfterUpdateForce | Should -Not -BeNullOrEmpty
+            [System.BitConverter]::ToString($destLoginAfterUpdateForce.Sid) | Should -Be $hashDestSidBefore
+        }
+    }
 }
