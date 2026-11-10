@@ -88,6 +88,38 @@ Describe $CommandName -Tag IntegrationTests {
         }
     }
 
+    Context "When the clock of this computer is behind the instance" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $clockDbName = "dbatoolsci_clockbehind_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $clockDbName
+            $null = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $clockDbName -Type Full -FilePath nul
+            # sp_delete_backuphistory removes what finished before the cutoff, and SMO passes the cutoff in whole seconds
+            Start-Sleep -Seconds 2
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The computer of issue #10818 ran five hours behind its instance, a container in UTC. A test computer shares
+            # the clock of its instance, so only the clock of this computer is moved back, the instance stays real.
+            Mock -ModuleName dbatools -CommandName Get-Date -ParameterFilter { $PesterBoundParameters.Count -eq 0 } -MockWith { [datetime]::Now.AddHours(-5) }
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $clockDbName -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Counts the days back from the clock of the instance" {
+            Remove-DbaDbBackupRestoreHistory -SqlInstance $TestConfig.InstanceSingle -KeepDays 0
+            $WarnVar | Should -BeNullOrEmpty
+            Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database $clockDbName | Should -BeNullOrEmpty
+        }
+    }
+
     Context "When KeepDays is used with Database" {
         It "Refuses the combination also for KeepDays 0" {
             Remove-DbaDbBackupRestoreHistory -SqlInstance $TestConfig.InstanceSingle -KeepDays 0 -Database "dbatoolsci_nosuchdb_$(Get-Random)" -WarningAction SilentlyContinue
