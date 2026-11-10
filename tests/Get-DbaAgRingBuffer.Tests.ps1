@@ -118,4 +118,44 @@ Describe $CommandName -Tag IntegrationTests {
             }
         }
     }
+
+    Context "When a record is older than 24.8 days" {
+        BeforeAll {
+            # A record that old needs an instance that has run that long, and the HADR ring buffers stay empty without
+            # availability group activity. So the command reads the scheduler monitor ring buffer of the real instance,
+            # which gets a record every minute, with the current timestamp moved 30 days ahead, see issue #10819.
+            $ringBufferServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+            $shiftedQuery = {
+                param($Sql)
+                if ($Sql -like "*sys.dm_os_sys_info*") {
+                    [PSCustomObject]@{
+                        TimeStamp = [long]$this.ConnectionContext.ExecuteScalar("SELECT ms_ticks FROM sys.dm_os_sys_info") + 30L * 86400000
+                    }
+                } else {
+                    $this.ConnectionContext.ExecuteWithResults(($Sql -replace "RING_BUFFER_HADR[A-Z_]*", "RING_BUFFER_SCHEDULER_MONITOR")).Tables[0].Rows
+                }
+            }
+            # Add-Member -Force refuses to hide the Query method of the dbatools type data, adding it prevalidated does not
+            $shiftedQueryMethod = New-Object System.Management.Automation.PSScriptMethod -ArgumentList "Query", $shiftedQuery
+            $ringBufferServer.PSObject.Members.Add($shiftedQueryMethod, $true)
+        }
+
+        AfterAll {
+            $ringBufferServer.ConnectionContext.Disconnect()
+        }
+
+        It "Returns the records with their time 30 days back" {
+            $results = @(Get-DbaAgRingBuffer -SqlInstance $ringBufferServer -CollectionMinutes (31 * 24 * 60))
+            $WarnVar | Should -BeNullOrEmpty
+            $results.Count | Should -BeGreaterThan 0
+            $results[0].EventTime | Should -BeLessThan (Get-Date).AddDays(-29)
+            $results[0].EventTime | Should -BeGreaterThan (Get-Date).AddDays(-31)
+        }
+
+        It "Leaves the records out that are older than CollectionMinutes" {
+            $results = @(Get-DbaAgRingBuffer -SqlInstance $ringBufferServer)
+            $WarnVar | Should -BeNullOrEmpty
+            $results.Count | Should -Be 0
+        }
+    }
 }
