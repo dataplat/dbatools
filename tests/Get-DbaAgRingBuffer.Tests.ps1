@@ -122,8 +122,10 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When a record is older than 24.8 days" {
         BeforeAll {
             # A record that old needs an instance that has run that long, and the HADR ring buffers stay empty without
-            # availability group activity. So the command reads the scheduler monitor ring buffer of the real instance,
-            # which gets a record every minute, with the current timestamp moved 30 days ahead, see issue #10819.
+            # availability group activity. So the command reads the scheduler ring buffer of the real instance, with the
+            # current timestamp moved 30 days ahead, see issue #10819. That buffer gets its first records within seconds
+            # of the start, while the scheduler monitor writes its first record only after a minute, and CI starts the
+            # instance shortly before the first test file.
             $ringBufferServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $shiftedQuery = {
                 param($Sql)
@@ -132,7 +134,7 @@ Describe $CommandName -Tag IntegrationTests {
                         TimeStamp = [long]$this.ConnectionContext.ExecuteScalar("SELECT ms_ticks FROM sys.dm_os_sys_info") + 30L * 86400000
                     }
                 } else {
-                    $this.ConnectionContext.ExecuteWithResults(($Sql -replace "RING_BUFFER_HADR[A-Z_]*", "RING_BUFFER_SCHEDULER_MONITOR")).Tables[0].Rows
+                    $this.ConnectionContext.ExecuteWithResults(($Sql -replace "RING_BUFFER_HADR[A-Z_]*", "RING_BUFFER_SCHEDULER")).Tables[0].Rows
                 }
             }
             # Add-Member -Force refuses to hide the Query method of the dbatools type data, adding it prevalidated does not
