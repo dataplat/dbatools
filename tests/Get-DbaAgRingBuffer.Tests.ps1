@@ -65,7 +65,9 @@ Describe $CommandName -Tag UnitTests {
 
                 $null = Get-DbaAgRingBuffer -SqlInstance "sql1"
 
-                $script:lastQuery | Should -Match "DATEADD\(ms, -1 \* \(123456 - \[timestamp\]\), GETDATE\(\)\)"
+                $script:lastQuery | Should -Match "CONVERT\(BIGINT, 123456 - \[timestamp\]\) AS age_ms"
+                # 123456 minus the default of 60 minutes in milliseconds
+                $script:lastQuery | Should -Match "\[timestamp\] > -3476544"
                 $script:lastQuery | Should -Not -Match "System\.Data\.DataRow"
             }
 
@@ -95,6 +97,8 @@ Describe $CommandName -Tag IntegrationTests {
     Context "When retrieving HADR ring buffer data" {
         It "Returns results with expected properties" {
             $results = @(Get-DbaAgRingBuffer -SqlInstance $TestConfig.InstanceSingle)
+            # A failing query only warns, see issue #10819
+            $WarnVar | Should -BeNullOrEmpty
             if ($results.Count -gt 0) {
                 $results[0].PSObject.Properties.Name | Should -Contain "ComputerName"
                 $results[0].PSObject.Properties.Name | Should -Contain "InstanceName"
@@ -108,6 +112,7 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Filters by RingBufferType when specified" {
             $results = @(Get-DbaAgRingBuffer -SqlInstance $TestConfig.InstanceSingle -RingBufferType RING_BUFFER_HADRDBMGR_API)
+            $WarnVar | Should -BeNullOrEmpty
             foreach ($result in $results) {
                 $result.RingBufferType | Should -Be "RING_BUFFER_HADRDBMGR_API"
             }
