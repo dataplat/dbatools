@@ -222,6 +222,49 @@ function Update-SqlPermission {
             }
         }
 
+        # Permissions on logins and server roles, like IMPERSONATE ON LOGIN::sa or CONTROL ON SERVER ROLE. The
+        # enumeration above returns the permissions on the server only, so a login that already exists on the destination
+        # kept them, while a login that -Force drops and recreates loses them. A created login gets none of them from the
+        # source, so here only the ones the source login does not have are revoked, matched by securable and permission.
+        # Permissions on endpoints and availability groups stay: they belong to the replica. A secondary grants CONNECT on
+        # its endpoint to the service account of the primary, and that login has no such permission on the primary.
+        $securableClasses = "Login", "ServerRole"
+        $sourceObjectPerms = $SourceServer.EnumObjectPermissions($loginName) | Where-Object { "$($_.ObjectClass)" -in $securableClasses }
+        $destObjectPerms = $DestServer.EnumObjectPermissions($newLoginName) | Where-Object { "$($_.ObjectClass)" -in $securableClasses }
+        foreach ($perm in $destObjectPerms) {
+            $objectClass = "$($perm.ObjectClass)"
+            $objectPermState = "$($perm.PermissionState)"
+            $sourceStates = @($sourceObjectPerms | Where-Object { "$($_.ObjectClass)" -eq $objectClass -and $_.ObjectName -eq $perm.ObjectName -and "$($_.PermissionType)" -eq "$($perm.PermissionType)" } | ForEach-Object { "$($_.PermissionState)" })
+            # A grant stays when the source login has the permission with or without the grant option.
+            if ($sourceStates -contains $objectPermState -or ($objectPermState -eq "Grant" -and $sourceStates -contains "GrantWithGrant")) {
+                continue
+            }
+            # As for the server permissions above: only the grant option goes when the source login has the permission without it.
+            $revokeGrantOnly = $objectPermState -eq "GrantWithGrant" -and $sourceStates -contains "Grant"
+            if ($revokeGrantOnly) {
+                $revokeAction = "Revoking the grant option of $($perm.PermissionType) on $objectClass $($perm.ObjectName)"
+            } else {
+                $revokeAction = "Revoking $($perm.PermissionType) on $objectClass $($perm.ObjectName)"
+            }
+            if ($Pscmdlet.ShouldProcess($destination, "$revokeAction for $newLoginName.")) {
+                try {
+                    if ($objectClass -eq "Login") {
+                        $securables = $DestServer.Logins
+                    } else {
+                        $securables = $DestServer.Roles
+                    }
+                    # The server object can come from the caller with a collection loaded before the securable was created.
+                    if ($null -eq $securables[$perm.ObjectName]) {
+                        $securables.Refresh()
+                    }
+                    $securables[$perm.ObjectName].Revoke($perm.PermissionType, $newLoginName, $revokeGrantOnly, $objectPermState -eq "GrantWithGrant")
+                    Write-Message -Level Verbose -Message "$revokeAction for $newLoginName on $destination successfully performed."
+                } catch {
+                    Stop-Function -Message "Failed to revoke $($perm.PermissionType) on $objectClass $($perm.ObjectName) from $newLoginName on $destination." -Target $perm -ErrorRecord $_
+                }
+            }
+        }
+
         # Credential mapping. Credential removal not currently supported for Syncs.
         $loginCredentials = $SourceServer.Credentials | Where-Object { $_.Identity -eq $SourceLogin.Name }
         foreach ($credential in $loginCredentials) {

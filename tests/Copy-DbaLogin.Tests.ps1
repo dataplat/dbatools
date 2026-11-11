@@ -1438,4 +1438,157 @@ WHERE name = N'$callerLoginName'
             }
         }
     }
+
+    Context "Permissions on logins and server roles that the source login does not have are revoked from the login updated in place (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $securableRandom = Get-Random
+            $securableLoginName = "dbatoolsci_securable_$securableRandom"
+            $securableTargetName = "dbatoolsci_securabletarget_$securableRandom"
+            $securableOtherName = "dbatoolsci_securableother_$securableRandom"
+            $securableRoleName = "dbatoolsci_securablerole_$securableRandom"
+
+            # On the source, the login has VIEW DEFINITION on the target login and CONTROL on the server role.
+            $splatSourceLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $securableLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Source9" -AsPlainText -Force)
+            }
+            $securableSourceLogin = New-DbaLogin @splatSourceLogin
+            $splatSourceTarget = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $securableTargetName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Target9" -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatSourceTarget
+            $null = New-DbaServerRole -SqlInstance $TestConfig.InstanceCopy1 -ServerRole $securableRoleName
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query "GRANT VIEW DEFINITION ON LOGIN::[$securableTargetName] TO [$securableLoginName]; GRANT CONTROL ON SERVER ROLE::[$securableRoleName] TO [$securableLoginName]"
+
+            # On the destination, the login has the same SID, IMPERSONATE on the target login in addition, CONTROL on the
+            # server role with grant option, and CONNECT on an endpoint. Another login has IMPERSONATE on the target login.
+            $splatDestLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $securableLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Dest9" -AsPlainText -Force)
+                Sid            = $securableSourceLogin.Sid
+            }
+            $null = New-DbaLogin @splatDestLogin
+            $splatDestTarget = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $securableTargetName, $securableOtherName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Target9" -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatDestTarget
+            $null = New-DbaServerRole -SqlInstance $TestConfig.InstanceCopy2 -ServerRole $securableRoleName
+            $destGrants = @(
+                "GRANT IMPERSONATE ON LOGIN::[$securableTargetName] TO [$securableLoginName]",
+                "GRANT VIEW DEFINITION ON LOGIN::[$securableTargetName] TO [$securableLoginName]",
+                "GRANT CONTROL ON SERVER ROLE::[$securableRoleName] TO [$securableLoginName] WITH GRANT OPTION",
+                "GRANT CONNECT ON ENDPOINT::[TSQL Default TCP] TO [$securableLoginName]",
+                "GRANT IMPERSONATE ON LOGIN::[$securableTargetName] TO [$securableOtherName]"
+            )
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query ($destGrants -join "; ")
+
+            # The columns are put together in PowerShell: the names and the descriptions have different collations.
+            $securablePermQuery = @"
+SELECT p.class_desc, ISNULL(sp.name, e.name) AS securable, p.permission_name, p.state_desc
+FROM sys.server_permissions AS p
+INNER JOIN sys.server_principals AS g ON g.principal_id = p.grantee_principal_id
+LEFT JOIN sys.server_principals AS sp ON p.class = 101 AND sp.principal_id = p.major_id
+LEFT JOIN sys.endpoints AS e ON p.class = 105 AND e.endpoint_id = p.major_id
+WHERE g.name = @loginName AND p.class IN (101, 105)
+"@
+            $splatDestPermState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = $securablePermQuery
+                SqlParameter = @{
+                    loginName = $securableLoginName
+                }
+            }
+            $splatOtherPermState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = $securablePermQuery
+                SqlParameter = @{
+                    loginName = $securableOtherName
+                }
+            }
+            $splatSecurableUpdate = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $TestConfig.InstanceCopy2
+                Login          = $securableLoginName
+                UpdateExisting = $true
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $securableResult = Copy-DbaLogin @splatSecurableUpdate
+            $securableWarn = $WarnVar
+            $securablePermsAfter = @(Invoke-DbaQuery @splatDestPermState -EnableException | ForEach-Object { "$($PSItem.class_desc) $($PSItem.securable) $($PSItem.permission_name) $($PSItem.state_desc)" })
+            $otherPermsAfter = @(Invoke-DbaQuery @splatOtherPermState -EnableException | ForEach-Object { "$($PSItem.class_desc) $($PSItem.securable) $($PSItem.permission_name) $($PSItem.state_desc)" })
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The grantees first: the grantor of IMPERSONATE on a login is that login, and SQL Server drops no login that
+            # granted a permission, and no server role that still has permissions on it.
+            $splatRemoveSourceGrantee = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Login       = $securableLoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveSourceGrantee
+            $splatRemoveDestGrantee = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Login       = $securableLoginName, $securableOtherName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveDestGrantee
+            $splatRemoveTarget = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Login       = $securableTargetName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveTarget
+            $splatRemoveRole = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                ServerRole  = $securableRoleName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaServerRole @splatRemoveRole
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "updates the login in place" {
+            $securableWarn | Should -BeNullOrEmpty
+            $securableResult.Status | Should -Be "Successful"
+            $securableResult.Name | Should -Be $securableLoginName
+        }
+
+        It "revokes the permission on a login that the source login does not have" {
+            $securablePermsAfter | Should -Not -Contain "SERVER_PRINCIPAL $securableTargetName IMPERSONATE GRANT"
+        }
+
+        It "keeps the permission on a login that the source login has" {
+            $securablePermsAfter | Should -Contain "SERVER_PRINCIPAL $securableTargetName VIEW DEFINITION GRANT"
+        }
+
+        It "takes only the grant option of the permission on a server role away" {
+            $securablePermsAfter | Should -Contain "SERVER_PRINCIPAL $securableRoleName CONTROL GRANT"
+            $securablePermsAfter | Should -Not -Contain "SERVER_PRINCIPAL $securableRoleName CONTROL GRANT_WITH_GRANT_OPTION"
+        }
+
+        It "keeps the permission on an endpoint, which belongs to the replica" {
+            $securablePermsAfter | Should -Contain "ENDPOINT TSQL Default TCP CONNECT GRANT"
+        }
+
+        It "leaves the permissions of another login on the same login" {
+            $otherPermsAfter | Should -Contain "SERVER_PRINCIPAL $securableTargetName IMPERSONATE GRANT"
+        }
+    }
 }
