@@ -1350,16 +1350,16 @@ WHERE name = N'$callerLoginName'
             $grantOptionPassword = "dbatools.IO.Source8"
 
             # On the source, the login has CONNECT SQL from CREATE LOGIN and VIEW SERVER STATE, both without the grant
-            # option.
+            # option, and ALTER TRACE is denied to it.
             $splatSourceLogin = @{
                 SqlInstance    = $TestConfig.InstanceCopy1
                 Login          = $grantOptionLoginName
                 SecurePassword = (ConvertTo-SecureString -String $grantOptionPassword -AsPlainText -Force)
             }
             $grantOptionSourceLogin = New-DbaLogin @splatSourceLogin
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query "GRANT VIEW SERVER STATE TO [$grantOptionLoginName]"
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query "GRANT VIEW SERVER STATE TO [$grantOptionLoginName]; DENY ALTER TRACE TO [$grantOptionLoginName]"
 
-            # On the destination, the login has the same SID and both permissions with the grant option.
+            # On the destination, the login has the same SID and all three permissions with the grant option.
             $splatDestLogin = @{
                 SqlInstance    = $TestConfig.InstanceCopy2
                 Login          = $grantOptionLoginName
@@ -1367,7 +1367,7 @@ WHERE name = N'$callerLoginName'
                 Sid            = $grantOptionSourceLogin.Sid
             }
             $null = New-DbaLogin @splatDestLogin
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "GRANT CONNECT SQL TO [$grantOptionLoginName] WITH GRANT OPTION; GRANT VIEW SERVER STATE TO [$grantOptionLoginName] WITH GRANT OPTION"
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "GRANT CONNECT SQL TO [$grantOptionLoginName] WITH GRANT OPTION; GRANT VIEW SERVER STATE TO [$grantOptionLoginName] WITH GRANT OPTION; GRANT ALTER TRACE TO [$grantOptionLoginName] WITH GRANT OPTION"
 
             $splatDestPermState = @{
                 SqlInstance  = $TestConfig.InstanceCopy2
@@ -1416,6 +1416,11 @@ WHERE name = N'$callerLoginName'
             $grantOptionPermsAfter | Should -Contain "VIEW SERVER STATE GRANT"
             $grantOptionPermsAfter | Should -Not -Contain "CONNECT SQL GRANT_WITH_GRANT_OPTION"
             $grantOptionPermsAfter | Should -Not -Contain "VIEW SERVER STATE GRANT_WITH_GRANT_OPTION"
+        }
+
+        It "denies the permission that the source login is denied, although the login had it with grant option" {
+            $grantOptionPermsAfter | Should -Contain "ALTER TRACE DENY"
+            $grantOptionPermsAfter | Should -Not -Contain "ALTER TRACE GRANT_WITH_GRANT_OPTION"
         }
 
         It "lets the login connect to the destination" {

@@ -164,6 +164,10 @@ function Update-SqlPermission {
             if ($permState -eq "GrantWithGrant") {
                 $grantWithGrant = $true;
                 $permState = "grant"
+            } elseif ($permState -eq "Deny") {
+                # Deny takes cascade where Grant takes the grant option. SQL Server refuses a DENY without CASCADE when the
+                # login has the permission WITH GRANT OPTION, as a login that already exists on the destination can have it.
+                $grantWithGrant = $true
             } else {
                 $grantWithGrant = $false
             }
