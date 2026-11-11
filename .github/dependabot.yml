@@ -11,4 +11,9 @@ updates:
       github-actions:
         patterns:
           - "*"
+    ignore:
+      # claude-code-action ships a patch release almost daily; only take minor and major bumps
+      - dependency-name: "anthropics/claude-code-action"
+        update-types:
+          - "version-update:semver-patch"
     open-pull-requests-limit: 5
