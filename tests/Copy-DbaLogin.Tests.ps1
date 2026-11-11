@@ -1339,4 +1339,98 @@ WHERE name = N'$callerLoginName'
             [System.BitConverter]::ToString($destLoginAfterUpdateForce.Sid) | Should -Be $hashDestSidBefore
         }
     }
+
+    Context "A server permission the login updated in place has with grant option is synced to the state of the source (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $grantOptionRandom = Get-Random
+            $grantOptionLoginName = "dbatoolsci_grantoption_$grantOptionRandom"
+            $grantOptionPassword = "dbatools.IO.Source8"
+
+            # On the source, the login has CONNECT SQL from CREATE LOGIN and VIEW SERVER STATE, both without the grant
+            # option.
+            $splatSourceLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $grantOptionLoginName
+                SecurePassword = (ConvertTo-SecureString -String $grantOptionPassword -AsPlainText -Force)
+            }
+            $grantOptionSourceLogin = New-DbaLogin @splatSourceLogin
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query "GRANT VIEW SERVER STATE TO [$grantOptionLoginName]"
+
+            # On the destination, the login has the same SID and both permissions with the grant option.
+            $splatDestLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $grantOptionLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Dest8" -AsPlainText -Force)
+                Sid            = $grantOptionSourceLogin.Sid
+            }
+            $null = New-DbaLogin @splatDestLogin
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "GRANT CONNECT SQL TO [$grantOptionLoginName] WITH GRANT OPTION; GRANT VIEW SERVER STATE TO [$grantOptionLoginName] WITH GRANT OPTION"
+
+            $splatDestPermState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = "SELECT p.permission_name + ' ' + p.state_desc AS permission FROM sys.server_permissions AS p INNER JOIN sys.server_principals AS sp ON sp.principal_id = p.grantee_principal_id WHERE sp.name = @loginName AND p.class = 100"
+                SqlParameter = @{
+                    loginName = $grantOptionLoginName
+                }
+            }
+            $splatGrantOptionUpdate = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $TestConfig.InstanceCopy2
+                Login          = $grantOptionLoginName
+                UpdateExisting = $true
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $grantOptionResult = Copy-DbaLogin @splatGrantOptionUpdate
+            $grantOptionWarn = $WarnVar
+            $grantOptionPermsAfter = @((Invoke-DbaQuery @splatDestPermState -EnableException).permission)
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemoveLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Login       = $grantOptionLoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "updates the login in place" {
+            $grantOptionWarn | Should -BeNullOrEmpty
+            $grantOptionResult.Status | Should -Be "Successful"
+            $grantOptionResult.Name | Should -Be $grantOptionLoginName
+        }
+
+        It "takes only the grant option away when the source login has the permission without it" {
+            $grantOptionPermsAfter | Should -Contain "CONNECT SQL GRANT"
+            $grantOptionPermsAfter | Should -Contain "VIEW SERVER STATE GRANT"
+            $grantOptionPermsAfter | Should -Not -Contain "CONNECT SQL GRANT_WITH_GRANT_OPTION"
+            $grantOptionPermsAfter | Should -Not -Contain "VIEW SERVER STATE GRANT_WITH_GRANT_OPTION"
+        }
+
+        It "lets the login connect to the destination" {
+            $splatConnect = @{
+                SqlInstance         = $TestConfig.InstanceCopy2
+                SqlCredential       = New-Object System.Management.Automation.PSCredential ($grantOptionLoginName, (ConvertTo-SecureString -String $grantOptionPassword -AsPlainText -Force))
+                NonPooledConnection = $true
+            }
+            $loginServer = Connect-DbaInstance @splatConnect
+            try {
+                $loginServer.ConnectionContext.ExecuteScalar("SELECT SUSER_SNAME()") | Should -Be $grantOptionLoginName
+            } finally {
+                # An open session would keep AfterAll from removing the login.
+                $null = $loginServer | Disconnect-DbaInstance
+            }
+        }
+    }
 }
