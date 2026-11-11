@@ -60,7 +60,7 @@ function Start-DbaService {
     .OUTPUTS
         System.ServiceProcess.ServiceController
 
-        Returns one ServiceController object per service that was successfully started. Each object represents a SQL Server related service on the target computer(s).
+        Returns one object per service: a service that was started or was already running has the Status Successful, a service that could not be started, for example because it is disabled, has the Status Failed and a warning. With -EnableException the command also throws after all services were handled. Each object represents a SQL Server related service on the target computer(s).
 
         Default display properties (from ServiceController):
         - Name: The service name (e.g., MSSQLSERVER, SQLSERVERAGENT, MSSQLServerOlapService)
@@ -150,7 +150,17 @@ function Start-DbaService {
                     EnableException = $EnableException
                 }
                 if ($Credential) { $splatServiceStatus.Credential = $Credential }
-                Update-ServiceStatus @splatServiceStatus
+                # A service that cannot be started is a row with Status "Failed" and a warning. With EnableException
+                # the command throws as well, after every service was handled, so callers that rely on it notice.
+                # The rows are read through OutVariable: a ForEach-Object behind the call would hide the warnings of
+                # Update-ServiceStatus from the WarningVariable of the caller.
+                Update-ServiceStatus @splatServiceStatus -OutVariable startServiceResults
+                $failedServices = @($startServiceResults | Where-Object Status -eq "Failed")
+                if ($EnableException -and $failedServices) {
+                    $failedServiceText = ($failedServices | ForEach-Object { "$($PSItem.ServiceName) on $($PSItem.ComputerName): $($PSItem.Message)" }) -join " | "
+                    Stop-Function -EnableException $EnableException -Message "Failed to start $($failedServices.Count) service(s): $failedServiceText" -Category InvalidResult
+                    return
+                }
             } else {
                 Stop-Function -EnableException $EnableException -Message "No SQL Server services found with current parameters." -Category ObjectNotFound
             }

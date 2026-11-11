@@ -134,14 +134,15 @@ function Enable-DbaAgHadr {
                         # The Agent depends on the engine, so it is stopped with it, but it is only started again if it
                         # was running before: a stopped Agent used to come back running from this restart.
                         $splatServices = @{
-                            ComputerName    = $computerFullName
-                            InstanceName    = $instanceName
-                            EnableException = $true
+                            ComputerName = $computerFullName
+                            InstanceName = $instanceName
                         }
-                        $agentWasRunning = (Get-DbaService @splatServices -Type Agent).State -eq "Running"
+                        $agentWasRunning = (Get-DbaService @splatServices -Type Agent -EnableException).State -eq "Running"
                         # A refused stop or start only shows as Status "Failed" on the returned objects, so they have to
                         # be checked. Without that, an Agent that was slow to stop left the engine restart refused and
                         # the Agent stopped, while the command still reported success.
+                        # Stop-DbaService and Start-DbaService run without EnableException: with it, they throw when a
+                        # service failed, and a refused stop would skip the start that brings back what did stop.
                         $restartResults = @(Stop-DbaService @splatServices -Type "Agent", "Engine")
                         if ($agentWasRunning) {
                             $restartResults += Start-DbaService @splatServices -Type "Agent", "Engine"
@@ -151,6 +152,11 @@ function Enable-DbaAgHadr {
                         $restartFailures = @($restartResults | Where-Object Status -notlike "Successful*")
                         if ($restartFailures.Count -gt 0) {
                             throw (($restartFailures | ForEach-Object { "$($PSItem.ServiceName): $($PSItem.Message)" }) -join " | ")
+                        }
+                        # Without EnableException, a failure that leaves no row at all, such as a service that was not
+                        # found or a CIM error, is only a warning, so the engine must have a row from both steps.
+                        if (@($restartResults | Where-Object ServiceType -eq "Engine").Count -lt 2) {
+                            throw "The engine service was not both stopped and started, see the warnings for the reason"
                         }
                     } catch {
                         Stop-Function -Message "Issue restarting $instance" -ErrorRecord $_ -Target $instance -Continue
