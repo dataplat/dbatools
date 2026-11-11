@@ -189,7 +189,16 @@ function Update-SqlPermission {
             $sourcePerm = $perms | Where-Object { $_.PermissionType -eq $perm.PermissionType -and $_.PermissionState -eq $permState }
 
             if ($null -eq $sourcePerm) {
-                if ($Pscmdlet.ShouldProcess($destination, "Revoking $($perm.PermissionType) for $newLoginName.")) {
+                # The source login has the permission without the grant option, so only the grant option is revoked. The
+                # GRANT of the loop above leaves an existing grant option in place, and a REVOKE of the permission itself
+                # took it from the login completely, CONNECT SQL included.
+                $revokeGrantOnly = $permState -eq "GrantWithGrant" -and [bool]($perms | Where-Object { $_.PermissionType -eq $perm.PermissionType -and $_.PermissionState -eq "Grant" })
+                if ($revokeGrantOnly) {
+                    $revokeAction = "Revoking the grant option of $($perm.PermissionType)"
+                } else {
+                    $revokeAction = "Revoking $($perm.PermissionType)"
+                }
+                if ($Pscmdlet.ShouldProcess($destination, "$revokeAction for $newLoginName.")) {
                     try {
                         $permSet = New-Object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.PermissionType)
 
@@ -200,8 +209,8 @@ function Update-SqlPermission {
                             $grantWithGrant = $false
                         }
 
-                        $DestServer.PSObject.Methods["Revoke"].Invoke($permSet, $newLoginName, $false, $grantWithGrant)
-                        Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) for $newLoginName on $destination successfully performed."
+                        $DestServer.PSObject.Methods["Revoke"].Invoke($permSet, $newLoginName, $revokeGrantOnly, $grantWithGrant)
+                        Write-Message -Level Verbose -Message "$revokeAction for $newLoginName on $destination successfully performed."
                     } catch {
                         Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $newLoginName on $destination." -Target $perm -ErrorRecord $_
                     }
