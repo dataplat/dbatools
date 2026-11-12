@@ -8,7 +8,7 @@ function Copy-DbaLogin {
 
         Handles both SQL Server and Windows Authentication logins, copying passwords (with original SIDs to prevent orphaned users), server roles, database permissions, and login properties like password policy enforcement. Includes smart conflict resolution - can drop and recreate existing logins, rename logins during copy, or generate new SIDs when copying to the same server.
 
-        Version compatibility: SQL Server 2000-2008 R2 logins copy to any version, but SQL Server 2012+ logins (due to hash algorithm changes) only copy to SQL Server 2012 and newer. Automatically handles version-specific features and validates compatibility before attempting migration.
+        Version compatibility: SQL Server 2000-2008 R2 logins copy to any version, but SQL Server 2012+ logins (due to hash algorithm changes) only copy to SQL Server 2012 and newer. SQL logins with a password hash in the format of SQL Server 2025 only copy to SQL Server 2022 CU12 and newer. A SQL login whose password hash the destination does not know is skipped with a warning, before anything is dropped. Automatically handles version-specific features and validates compatibility before attempting migration.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
@@ -355,9 +355,10 @@ function Copy-DbaLogin {
 
             # A SQL login can only be created from a password hash in a format the destination knows. SQL Server 2012
             # introduced the format 0x0200, which older versions refuse. SQL Server 2025 introduced 0x0300, which SQL
-            # Server 2019 refuses with error 15021, while SQL Server 2022 accepted it on build 16.0.4255 (older builds
-            # of 2022 were not tested). This is checked per login, so other logins are still copied, and before
-            # anything is dropped, because -Force would otherwise drop the destination login and then fail to create it.
+            # Server 2022 knows from CU12 (16.0.4115) on. SQL Server 2019 and 2022 RTM (16.0.1000) refuse it with error
+            # 15021 in CREATE LOGIN and ALTER LOGIN. This is checked per login, so other logins are still copied, and
+            # before anything is dropped, because -Force would otherwise drop the destination login and then fail to
+            # create it.
             # The same holds for a hash that cannot be read at all, on any version: LOGINPROPERTY returns no hash to a
             # source connection without CONTROL SERVER, even when that connection can see the logins.
             if ($Login.LoginType -eq "SqlLogin") {
@@ -377,7 +378,10 @@ function Copy-DbaLogin {
                     continue
                 }
             }
-            if ($Login.LoginType -eq "SqlLogin" -and $sourceServer.VersionMajor -ge 11 -and $destServer.VersionMajor -lt 16) {
+            # For SQL Server 2022 the build decides. It comes from Version, which says 12.0 on Azure SQL Database and
+            # Managed Instance, so they are not affected.
+            $destBeforeHash0300 = $destServer.VersionMajor -lt 16 -or ($destServer.Version.Major -eq 16 -and $destServer.Version -lt [version]"16.0.4115")
+            if ($Login.LoginType -eq "SqlLogin" -and $sourceServer.VersionMajor -ge 11 -and $destBeforeHash0300) {
                 if ($sourceHash -like "0x0300*") {
                     $hashFormat = "SQL Server 2025"
                 } elseif ($sourceHash -like "0x0200*" -and $destServer.VersionMajor -lt 11) {

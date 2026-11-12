@@ -1592,3 +1592,141 @@ WHERE g.name = @loginName AND p.class IN (101, 105)
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeDiscovery {
+        # SQL Server 2022 knows the password hash format of SQL Server 2025 (0x0300) only from CU12 on. No CI
+        # environment has an older build of SQL Server 2022, so the check that skips such a login before -Force drops
+        # anything can only be covered against a real one, which a lab configuration supplies through
+        # InstanceSql2022BeforeCU12. Everywhere else these tests skip themselves. The value decides a Skip, so it has
+        # to exist at discovery time.
+        $hasSql2022BeforeCU12 = -not [string]::IsNullOrWhiteSpace($TestConfig.InstanceSql2022BeforeCU12)
+    }
+
+    Context "An existing login is not dropped when SQL Server 2022 before CU12 cannot take the password hash of the source login (#10772)" -Skip:(-not $hasSql2022BeforeCU12) {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $cu12Random = Get-Random
+            $cu12LoginName = "dbatoolsci_cu12hash_$cu12Random"
+            $cu12Destination = $TestConfig.InstanceSql2022BeforeCU12
+            $cu12HashQuery = @"
+SELECT CONVERT(VARCHAR(514), CAST(LOGINPROPERTY(N'$cu12LoginName', 'PasswordHash') AS VARBINARY(256)), 1)
+"@
+
+            $cu12DestVersion = (Connect-DbaInstance -SqlInstance $cu12Destination).Version
+
+            # The password hash of "dbatools.IO.Source9" in the format of SQL Server 2025, made by SQL Server 2025. The
+            # source login is created from it, so the source can be any instance that knows the format: SQL Server
+            # 2022 from CU12 on, or SQL Server 2025. InstanceCopy2 is one of them wherever this context runs.
+            $cu12SourceHash = "0x03001C3F1BAA67E7F8C500997103B0E68A42875FD3797BCA099FF16DC9746C9265CF1413389A57972AFBE2419E6B8B13340A43B21B078A28EAC386EB08E4D52042E5E0DACBF6"
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "CREATE LOGIN [$cu12LoginName] WITH PASSWORD = $cu12SourceHash HASHED, CHECK_POLICY = OFF"
+            $splatSourceHash = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Query       = $cu12HashQuery
+                As          = "SingleValue"
+            }
+            $cu12StoredSourceHash = Invoke-DbaQuery @splatSourceHash
+            $cu12SourceLogin = Get-DbaLogin -SqlInstance $TestConfig.InstanceCopy2 -Login $cu12LoginName
+            $cu12SourceSid = [System.BitConverter]::ToString($cu12SourceLogin.Sid)
+
+            # The destination login has a SID of its own, so -Force and -UpdateExisting -Force drop and recreate it.
+            $splatDestLogin = @{
+                SqlInstance    = $cu12Destination
+                Login          = $cu12LoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Dest9" -AsPlainText -Force)
+            }
+            $cu12DestLogin = New-DbaLogin @splatDestLogin
+            $cu12DestSidBefore = [System.BitConverter]::ToString($cu12DestLogin.Sid)
+            $splatDestHash = @{
+                SqlInstance = $cu12Destination
+                Query       = $cu12HashQuery
+                As          = "SingleValue"
+            }
+            $cu12DestHashBefore = Invoke-DbaQuery @splatDestHash
+
+            $splatForceCopy = @{
+                Source        = $TestConfig.InstanceCopy2
+                Destination   = $cu12Destination
+                Login         = $cu12LoginName
+                Force         = $true
+                WarningAction = "SilentlyContinue"
+            }
+            $splatUpdateForceCopy = @{
+                Source         = $TestConfig.InstanceCopy2
+                Destination    = $cu12Destination
+                Login          = $cu12LoginName
+                UpdateExisting = $true
+                Force          = $true
+                WarningAction  = "SilentlyContinue"
+            }
+            $splatDestLoginState = @{
+                SqlInstance = $cu12Destination
+                Login       = $cu12LoginName
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $cu12ForceResult = Copy-DbaLogin @splatForceCopy
+            $cu12ForceWarn = $WarnVar
+            $cu12DestLoginAfterForce = Get-DbaLogin @splatDestLoginState -EnableException
+            $cu12DestHashAfterForce = Invoke-DbaQuery @splatDestHash -EnableException
+            $cu12UpdateForceResult = Copy-DbaLogin @splatUpdateForceCopy
+            $cu12UpdateForceWarn = $WarnVar
+            $cu12DestLoginAfterUpdateForce = Get-DbaLogin @splatDestLoginState -EnableException
+            $cu12DestHashAfterUpdateForce = Invoke-DbaQuery @splatDestHash -EnableException
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemoveSourceLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Login       = $cu12LoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveSourceLogin
+            $splatRemoveDestLogin = @{
+                SqlInstance = $cu12Destination
+                Login       = $cu12LoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveDestLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "points at SQL Server 2022 before CU12" {
+            # Pointed at a newer build the tests below would fail, because the login is copied, but pointed at an
+            # older version they would pass while saying nothing about SQL Server 2022.
+            $cu12DestVersion.Major | Should -Be 16
+            $cu12DestVersion | Should -BeLessThan ([version]"16.0.4115")
+        }
+
+        It "has a source login with a password hash in the format of SQL Server 2025 and another SID" {
+            $cu12StoredSourceHash | Should -Be $cu12SourceHash
+            $cu12DestSidBefore | Should -Not -Be $cu12SourceSid
+        }
+
+        It "skips the login with -Force and leaves the destination login as it was" {
+            $cu12ForceResult.Status | Should -Be "Skipped"
+            $cu12ForceResult.Notes | Should -Be "Password hash format of SQL Server 2025 not supported by destination"
+            ($cu12ForceWarn -join " ") | Should -Match "has the format of SQL Server 2025, which .* does not support"
+            $cu12DestLoginAfterForce | Should -Not -BeNullOrEmpty
+            [System.BitConverter]::ToString($cu12DestLoginAfterForce.Sid) | Should -Be $cu12DestSidBefore
+            $cu12DestHashAfterForce | Should -Be $cu12DestHashBefore
+        }
+
+        It "skips the login with -UpdateExisting -Force and a different SID and leaves the destination login as it was" {
+            $cu12UpdateForceResult.Status | Should -Be "Skipped"
+            $cu12UpdateForceResult.Notes | Should -Be "Password hash format of SQL Server 2025 not supported by destination"
+            ($cu12UpdateForceWarn -join " ") | Should -Match "has the format of SQL Server 2025, which .* does not support"
+            $cu12DestLoginAfterUpdateForce | Should -Not -BeNullOrEmpty
+            [System.BitConverter]::ToString($cu12DestLoginAfterUpdateForce.Sid) | Should -Be $cu12DestSidBefore
+            $cu12DestHashAfterUpdateForce | Should -Be $cu12DestHashBefore
+        }
+    }
+}
