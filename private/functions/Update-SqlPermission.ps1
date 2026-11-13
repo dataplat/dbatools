@@ -95,13 +95,42 @@ function Update-SqlPermission {
         }
 
         # Remove for Syncs
+        # The member to drop is the login on the destination: with a rename, the name of the source login can belong
+        # to a different login there.
         if ($roleMembers -notcontains $loginName -and $destRoleMembers -contains $newLoginName -and $null -ne $destRole) {
-            if ($Pscmdlet.ShouldProcess($destination, "Adding $loginName to $roleName server role.")) {
+            if ($Pscmdlet.ShouldProcess($destination, "Removing $newLoginName from $roleName server role.")) {
                 try {
-                    $destRole.DropMember($loginName)
-                    Write-Message -Level Verbose -Message "Removing $newLoginName from $destRoleName server role on $destination successfully performed."
+                    $destRole.DropMember($newLoginName)
+                    Write-Message -Level Verbose -Message "Removing $newLoginName from $roleName server role on $destination successfully performed."
                 } catch {
-                    Stop-Function -Message "Failed to remove $newLoginName from $destRoleName server role on $destination." -Target $role -ErrorRecord $_
+                    Stop-Function -Message "Failed to remove $newLoginName from $roleName server role on $destination." -Target $role -ErrorRecord $_
+                }
+            }
+        }
+    }
+
+    # Server roles that exist on the destination only. The loop above never sees them, so a login updated in place kept
+    # their membership, and with it permissions like CONTROL SERVER of a user-defined role, while a login that -Force
+    # drops and recreates loses it.
+    foreach ($destOnlyRole in $DestServer.Roles) {
+        if ($null -ne $SourceServer.Roles[$destOnlyRole.Name]) {
+            continue
+        }
+        $destOnlyRoleName = $destOnlyRole.Name
+
+        try {
+            $destOnlyRoleMembers = $destOnlyRole.EnumMemberNames()
+        } catch {
+            $destOnlyRoleMembers = $destOnlyRole.EnumServerRoleMembers()
+        }
+
+        if ($destOnlyRoleMembers -contains $newLoginName) {
+            if ($Pscmdlet.ShouldProcess($destination, "Removing $newLoginName from $destOnlyRoleName server role.")) {
+                try {
+                    $destOnlyRole.DropMember($newLoginName)
+                    Write-Message -Level Verbose -Message "Removing $newLoginName from $destOnlyRoleName server role on $destination successfully performed."
+                } catch {
+                    Stop-Function -Message "Failed to remove $newLoginName from $destOnlyRoleName server role on $destination." -Target $destOnlyRole -ErrorRecord $_
                 }
             }
         }
@@ -135,6 +164,10 @@ function Update-SqlPermission {
             if ($permState -eq "GrantWithGrant") {
                 $grantWithGrant = $true;
                 $permState = "grant"
+            } elseif ($permState -eq "Deny") {
+                # Deny takes cascade where Grant takes the grant option. SQL Server refuses a DENY without CASCADE when the
+                # login has the permission WITH GRANT OPTION, as a login that already exists on the destination can have it.
+                $grantWithGrant = $true
             } else {
                 $grantWithGrant = $false
             }
@@ -148,31 +181,86 @@ function Update-SqlPermission {
                     Stop-Function -Message "Failed to $permState $($perm.PermissionType) to $newLoginName on $destination." -Target $perm -ErrorRecord $_
                 }
             }
+        }
 
-            # for Syncs
-            $destPerms = $DestServer.EnumServerPermissions($newLoginName)
-            foreach ($perm in $destPerms) {
-                $permState = $perm.PermissionState
-                $sourcePerm = $perms | Where-Object { $_.PermissionType -eq $perm.PermissionType -and $_.PermissionState -eq $permState }
+        # for Syncs
+        # After the loop over the permissions of the source, not inside it: for a source login without any direct server
+        # permission, one that gets CONNECT SQL through a server role for example, that loop never ran, so the login on
+        # the destination kept every direct permission it had, CONTROL SERVER included.
+        $destPerms = $DestServer.EnumServerPermissions($newLoginName)
+        foreach ($perm in $destPerms) {
+            $permState = $perm.PermissionState
+            $sourcePerm = $perms | Where-Object { $_.PermissionType -eq $perm.PermissionType -and $_.PermissionState -eq $permState }
 
-                if ($null -eq $sourcePerm) {
-                    if ($Pscmdlet.ShouldProcess($destination, "Revoking $($perm.PermissionType) for $newLoginName.")) {
-                        try {
-                            $permSet = New-Object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.PermissionType)
+            if ($null -eq $sourcePerm) {
+                # The source login has the permission without the grant option, so only the grant option is revoked. The
+                # GRANT of the loop above leaves an existing grant option in place, and a REVOKE of the permission itself
+                # took it from the login completely, CONNECT SQL included.
+                $revokeGrantOnly = $permState -eq "GrantWithGrant" -and [bool]($perms | Where-Object { $_.PermissionType -eq $perm.PermissionType -and $_.PermissionState -eq "Grant" })
+                if ($revokeGrantOnly) {
+                    $revokeAction = "Revoking the grant option of $($perm.PermissionType)"
+                } else {
+                    $revokeAction = "Revoking $($perm.PermissionType)"
+                }
+                if ($Pscmdlet.ShouldProcess($destination, "$revokeAction for $newLoginName.")) {
+                    try {
+                        $permSet = New-Object Microsoft.SqlServer.Management.Smo.ServerPermissionSet($perm.PermissionType)
 
-                            if ($permState -eq "GrantWithGrant") {
-                                $grantWithGrant = $true;
-                                $permState = "grant"
-                            } else {
-                                $grantWithGrant = $false
-                            }
-
-                            $DestServer.PSObject.Methods["Revoke"].Invoke($permSet, $newLoginName, $false, $grantWithGrant)
-                            Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) for $newLoginName on $destination successfully performed."
-                        } catch {
-                            Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $newLoginName on $destination." -Target $perm -ErrorRecord $_
+                        if ($permState -eq "GrantWithGrant") {
+                            $grantWithGrant = $true;
+                            $permState = "grant"
+                        } else {
+                            $grantWithGrant = $false
                         }
+
+                        $DestServer.PSObject.Methods["Revoke"].Invoke($permSet, $newLoginName, $revokeGrantOnly, $grantWithGrant)
+                        Write-Message -Level Verbose -Message "$revokeAction for $newLoginName on $destination successfully performed."
+                    } catch {
+                        Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $newLoginName on $destination." -Target $perm -ErrorRecord $_
                     }
+                }
+            }
+        }
+
+        # Permissions on logins and server roles, like IMPERSONATE ON LOGIN::sa or CONTROL ON SERVER ROLE. The
+        # enumeration above returns the permissions on the server only, so a login that already exists on the destination
+        # kept them, while a login that -Force drops and recreates loses them. A created login gets none of them from the
+        # source, so here only the ones the source login does not have are revoked, matched by securable and permission.
+        # Permissions on endpoints and availability groups stay: they belong to the replica. A secondary grants CONNECT on
+        # its endpoint to the service account of the primary, and that login has no such permission on the primary.
+        $securableClasses = "Login", "ServerRole"
+        $sourceObjectPerms = $SourceServer.EnumObjectPermissions($loginName) | Where-Object { "$($_.ObjectClass)" -in $securableClasses }
+        $destObjectPerms = $DestServer.EnumObjectPermissions($newLoginName) | Where-Object { "$($_.ObjectClass)" -in $securableClasses }
+        foreach ($perm in $destObjectPerms) {
+            $objectClass = "$($perm.ObjectClass)"
+            $objectPermState = "$($perm.PermissionState)"
+            $sourceStates = @($sourceObjectPerms | Where-Object { "$($_.ObjectClass)" -eq $objectClass -and $_.ObjectName -eq $perm.ObjectName -and "$($_.PermissionType)" -eq "$($perm.PermissionType)" } | ForEach-Object { "$($_.PermissionState)" })
+            # A grant stays when the source login has the permission with or without the grant option.
+            if ($sourceStates -contains $objectPermState -or ($objectPermState -eq "Grant" -and $sourceStates -contains "GrantWithGrant")) {
+                continue
+            }
+            # As for the server permissions above: only the grant option goes when the source login has the permission without it.
+            $revokeGrantOnly = $objectPermState -eq "GrantWithGrant" -and $sourceStates -contains "Grant"
+            if ($revokeGrantOnly) {
+                $revokeAction = "Revoking the grant option of $($perm.PermissionType) on $objectClass $($perm.ObjectName)"
+            } else {
+                $revokeAction = "Revoking $($perm.PermissionType) on $objectClass $($perm.ObjectName)"
+            }
+            if ($Pscmdlet.ShouldProcess($destination, "$revokeAction for $newLoginName.")) {
+                try {
+                    if ($objectClass -eq "Login") {
+                        $securables = $DestServer.Logins
+                    } else {
+                        $securables = $DestServer.Roles
+                    }
+                    # The server object can come from the caller with a collection loaded before the securable was created.
+                    if ($null -eq $securables[$perm.ObjectName]) {
+                        $securables.Refresh()
+                    }
+                    $securables[$perm.ObjectName].Revoke($perm.PermissionType, $newLoginName, $revokeGrantOnly, $objectPermState -eq "GrantWithGrant")
+                    Write-Message -Level Verbose -Message "$revokeAction for $newLoginName on $destination successfully performed."
+                } catch {
+                    Stop-Function -Message "Failed to revoke $($perm.PermissionType) on $objectClass $($perm.ObjectName) from $newLoginName on $destination." -Target $perm -ErrorRecord $_
                 }
             }
         }
@@ -201,7 +289,9 @@ function Update-SqlPermission {
 
     if ($DestServer.VersionMajor -lt 9) {
         Write-Message -Level Warning -Message "SQL Server 2005 or greater required for database mappings.";
-        continue
+        # Return, not continue: this function has no loop here, so a continue went on with the next iteration of the
+        # loop of the caller and skipped the rest of it, the result row of Sync-DbaLoginPermission for example.
+        return
     }
 
     # For Sync, if info doesn't exist in EnumDatabaseMappings, then no big deal.
