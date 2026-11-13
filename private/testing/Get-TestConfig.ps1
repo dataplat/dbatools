@@ -51,6 +51,11 @@ function Get-TestConfig {
         # such a build, so this stays empty there and those tests skip themselves. A local configuration whose lab has
         # one sets it.
         InstanceSql2022BeforeCU12 = $null
+        # The case sensitive and accent insensitive instance, for example with the collation Latin1_General_100_CS_AI,
+        # that the Copy-DbaLogin tests of logins and server roles whose names differ only in case or in accents need, as
+        # the destination of a copy from InstanceCopy1. No CI environment has such an instance, so this stays empty
+        # there and those tests skip themselves. A local configuration whose lab has one sets it.
+        InstanceCaseSensitive     = $null
     }
 
     if (Test-Path $LocalConfigPath) {

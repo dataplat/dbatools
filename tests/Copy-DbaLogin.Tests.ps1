@@ -1090,6 +1090,130 @@ WHERE name = N'$callerLoginName'
         }
     }
 
+    Context "The server roles are synced from the server, also when the server objects of the caller loaded their roles before (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $staleRandom = Get-Random
+            $staleLoginName = "dbatoolsci_staleroles_$staleRandom"
+            $staleSharedRoleName = "dbatoolsci_staleshared_$staleRandom"
+            $staleDestOnlyRoleName = "dbatoolsci_staledestonly_$staleRandom"
+
+            $splatSourceLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $staleLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Source10" -AsPlainText -Force)
+            }
+            $staleSourceLogin = New-DbaLogin @splatSourceLogin
+            $splatDestLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $staleLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Dest10" -AsPlainText -Force)
+                Sid            = $staleSourceLogin.Sid
+            }
+            $null = New-DbaLogin @splatDestLogin
+
+            # On the destination, the login is a member of a role that the source gets only after the caller loaded its
+            # roles.
+            $null = New-DbaServerRole -SqlInstance $TestConfig.InstanceCopy2 -ServerRole $staleSharedRoleName
+            $splatDestSharedMember = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                ServerRole  = $staleSharedRoleName
+                Login       = $staleLoginName
+                Confirm     = $false
+            }
+            $null = Add-DbaServerRoleMember @splatDestSharedMember
+
+            # The caller loads the roles of both instances.
+            $staleSourceServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1 -NonPooledConnection
+            $staleDestServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2 -NonPooledConnection
+            $null = $staleSourceServer.Roles.Count
+            $null = $staleDestServer.Roles.Count
+
+            # Then, through other connections, the source gets the shared role with the login, and the destination gets
+            # a role of its own with the login, which has CONTROL SERVER.
+            $null = New-DbaServerRole -SqlInstance $TestConfig.InstanceCopy1 -ServerRole $staleSharedRoleName
+            $splatSourceSharedMember = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                ServerRole  = $staleSharedRoleName
+                Login       = $staleLoginName
+                Confirm     = $false
+            }
+            $null = Add-DbaServerRoleMember @splatSourceSharedMember
+            $null = New-DbaServerRole -SqlInstance $TestConfig.InstanceCopy2 -ServerRole $staleDestOnlyRoleName
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "GRANT CONTROL SERVER TO [$staleDestOnlyRoleName]"
+            $splatDestOnlyMember = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                ServerRole  = $staleDestOnlyRoleName
+                Login       = $staleLoginName
+                Confirm     = $false
+            }
+            $null = Add-DbaServerRoleMember @splatDestOnlyMember
+
+            $splatStaleRoleState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = "SELECT r.name FROM sys.server_role_members AS rm INNER JOIN sys.server_principals AS r ON r.principal_id = rm.role_principal_id WHERE rm.member_principal_id = SUSER_ID(@loginName)"
+                SqlParameter = @{
+                    loginName = $staleLoginName
+                }
+            }
+            $splatStaleUpdate = @{
+                Source         = $staleSourceServer
+                Destination    = $staleDestServer
+                Login          = $staleLoginName
+                UpdateExisting = $true
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $staleResult = Copy-DbaLogin @splatStaleUpdate
+            $staleWarn = $WarnVar
+            $staleRolesAfter = @((Invoke-DbaQuery @splatStaleRoleState -EnableException).name)
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            foreach ($staleServer in $staleSourceServer, $staleDestServer) {
+                if ($staleServer) {
+                    $null = $staleServer | Disconnect-DbaInstance
+                }
+            }
+            # The logins first: SQL Server drops no server role that still has members.
+            $splatRemoveLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Login       = $staleLoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveLogin
+            $splatRemoveRole = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                ServerRole  = $staleSharedRoleName, $staleDestOnlyRoleName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaServerRole @splatRemoveRole
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "updates the login in place" {
+            $staleWarn | Should -BeNullOrEmpty
+            $staleResult.Status | Should -Be "Successful"
+            $staleResult.Name | Should -Be $staleLoginName
+        }
+
+        It "keeps the login in the role that the source login is in, which the roles of the source server object do not know" {
+            $staleRolesAfter | Should -Contain $staleSharedRoleName
+        }
+
+        It "takes the login out of the role of the destination, which the roles of the destination server object do not know" {
+            $staleRolesAfter | Should -Not -Contain $staleDestOnlyRoleName
+        }
+    }
+
     Context "A direct server permission is revoked from the login updated in place when the source login has none (#10772)" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
@@ -1601,6 +1725,221 @@ Describe $CommandName -Tag IntegrationTests {
         # InstanceSql2022BeforeCU12. Everywhere else these tests skip themselves. The value decides a Skip, so it has
         # to exist at discovery time.
         $hasSql2022BeforeCU12 = -not [string]::IsNullOrWhiteSpace($TestConfig.InstanceSql2022BeforeCU12)
+        # Logins and server roles whose names differ only in case exist on a case sensitive instance only, and a name
+        # that matches another one but for accents only on an accent insensitive instance. No CI environment has such
+        # an instance, so InstanceCaseSensitive comes from a lab configuration as well.
+        $hasCaseSensitive = -not [string]::IsNullOrWhiteSpace($TestConfig.InstanceCaseSensitive)
+    }
+
+    Context "Logins and server roles are matched by the collation of the destination (#10772)" -Skip:(-not $hasCaseSensitive) {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $csRandom = Get-Random
+            $csDestination = $TestConfig.InstanceCaseSensitive
+            $csGranteeName = "dbatoolsci_csgrantee_$csRandom"
+            # Two logins and two server roles on the destination that differ only in case. The source, which is case
+            # insensitive, has the first of each.
+            $csTargetName = "dbatoolsci_CsTarget_$csRandom"
+            $csTargetLowerName = $csTargetName.ToLowerInvariant()
+            $csRoleName = "dbatoolsci_CsRole_$csRandom"
+            $csRoleLowerName = $csRoleName.ToLowerInvariant()
+            # A login whose name on the source has accents, and on the destination has none. The test file stays ASCII,
+            # because Windows PowerShell reads a file without BOM in the code page of the system.
+            $csAccentSourceName = "dbatoolsci_csr" + [char]0x00E9 + "sum" + [char]0x00E9 + "_$csRandom"
+            $csAccentDestName = "dbatoolsci_csresume_$csRandom"
+            $csPassword = ConvertTo-SecureString -String "dbatools.IO.Target11" -AsPlainText -Force
+
+            $csBehaviourQuery = "SELECT CASE WHEN N'A' = N'a' THEN 0 ELSE 1 END AS IsCaseSensitive, CASE WHEN N'R' + NCHAR(233) + N'sum' + NCHAR(233) = N'Resume' THEN 1 ELSE 0 END AS IsAccentInsensitive"
+            $csBehaviour = Invoke-DbaQuery -SqlInstance $csDestination -Query $csBehaviourQuery
+
+            $splatSourceGrantee = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $csGranteeName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Source11" -AsPlainText -Force)
+            }
+            $csSourceGrantee = New-DbaLogin @splatSourceGrantee
+            $splatSourceTargets = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $csTargetName, $csAccentSourceName
+                SecurePassword = $csPassword
+            }
+            $null = New-DbaLogin @splatSourceTargets
+            $null = New-DbaServerRole -SqlInstance $TestConfig.InstanceCopy1 -ServerRole $csRoleName
+            $splatSourceRoleMember = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                ServerRole  = $csRoleName
+                Login       = $csGranteeName
+                Confirm     = $false
+            }
+            $null = Add-DbaServerRoleMember @splatSourceRoleMember
+            $sourceGrants = @(
+                "GRANT IMPERSONATE ON LOGIN::[$csTargetName] TO [$csGranteeName]",
+                "GRANT VIEW DEFINITION ON LOGIN::[$csAccentSourceName] TO [$csGranteeName]",
+                "GRANT VIEW DEFINITION ON SERVER ROLE::[$csRoleName] TO [$csGranteeName]"
+            )
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query ($sourceGrants -join "; ")
+
+            # On the destination, the grantee has the same SID and everything the source login has, on the login and the
+            # role with the name of the source, and on the login without accents. In addition it has the same
+            # permissions on the login and the role whose names differ only in case, and it is a member of that role,
+            # which has CONTROL SERVER.
+            $splatDestGrantee = @{
+                SqlInstance    = $csDestination
+                Login          = $csGranteeName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Dest11" -AsPlainText -Force)
+                Sid            = $csSourceGrantee.Sid
+            }
+            $null = New-DbaLogin @splatDestGrantee
+            $splatDestTargets = @{
+                SqlInstance    = $csDestination
+                Login          = $csTargetName, $csTargetLowerName, $csAccentDestName
+                SecurePassword = $csPassword
+            }
+            $null = New-DbaLogin @splatDestTargets
+            # Through T-SQL: New-DbaServerRole and Add-DbaServerRoleMember compare role names in PowerShell, which ignores
+            # case, so they take the second role for the first.
+            $csDestSetup = @(
+                "CREATE SERVER ROLE [$csRoleName]",
+                "CREATE SERVER ROLE [$csRoleLowerName]",
+                "GRANT CONTROL SERVER TO [$csRoleLowerName]",
+                "ALTER SERVER ROLE [$csRoleName] ADD MEMBER [$csGranteeName]",
+                "ALTER SERVER ROLE [$csRoleLowerName] ADD MEMBER [$csGranteeName]",
+                "GRANT IMPERSONATE ON LOGIN::[$csTargetName] TO [$csGranteeName]",
+                "GRANT IMPERSONATE ON LOGIN::[$csTargetLowerName] TO [$csGranteeName]",
+                "GRANT VIEW DEFINITION ON LOGIN::[$csAccentDestName] TO [$csGranteeName]",
+                "GRANT VIEW DEFINITION ON SERVER ROLE::[$csRoleName] TO [$csGranteeName]",
+                "GRANT VIEW DEFINITION ON SERVER ROLE::[$csRoleLowerName] TO [$csGranteeName]"
+            )
+            $null = Invoke-DbaQuery -SqlInstance $csDestination -Query ($csDestSetup -join "; ")
+
+            # The assertions compare the principal_id on the destination, so they depend neither on the case insensitive
+            # comparison of Pester nor on a name.
+            $splatPrincipalIds = @{
+                SqlInstance  = $csDestination
+                Query        = "SELECT name, principal_id FROM sys.server_principals WHERE name IN (@target, @targetLower, @accent, @role, @roleLower)"
+                SqlParameter = @{
+                    target      = $csTargetName
+                    targetLower = $csTargetLowerName
+                    accent      = $csAccentDestName
+                    role        = $csRoleName
+                    roleLower   = $csRoleLowerName
+                }
+            }
+            # Keys compared by ordinal, as the names on the destination are. A hashtable of PowerShell ignores case.
+            $csIdOf = New-Object System.Collections.Hashtable ([System.StringComparer]::Ordinal)
+            foreach ($row in (Invoke-DbaQuery @splatPrincipalIds)) {
+                $csIdOf[$row.name] = "$($row.principal_id)"
+            }
+            $splatDestPermState = @{
+                SqlInstance  = $csDestination
+                Query        = "SELECT p.major_id, p.permission_name FROM sys.server_permissions AS p WHERE p.grantee_principal_id = SUSER_ID(@grantee) AND p.class = 101"
+                SqlParameter = @{
+                    grantee = $csGranteeName
+                }
+            }
+            $splatDestRoleState = @{
+                SqlInstance  = $csDestination
+                Query        = "SELECT rm.role_principal_id FROM sys.server_role_members AS rm WHERE rm.member_principal_id = SUSER_ID(@grantee)"
+                SqlParameter = @{
+                    grantee = $csGranteeName
+                }
+            }
+            $splatCsUpdate = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $csDestination
+                Login          = $csGranteeName
+                UpdateExisting = $true
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $csResult = Copy-DbaLogin @splatCsUpdate
+            $csWarn = $WarnVar
+            $csPermsAfter = @(Invoke-DbaQuery @splatDestPermState -EnableException | ForEach-Object { "$($PSItem.permission_name) $($PSItem.major_id)" })
+            $csRolesAfter = @(Invoke-DbaQuery @splatDestRoleState -EnableException | ForEach-Object { "$($PSItem.role_principal_id)" })
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The grantee first: the grantor of a permission on a login is that login, and SQL Server drops no login that
+            # granted a permission, and no server role that still has members or permissions on it.
+            $splatRemoveSourceGrantee = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Login       = $csGranteeName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveSourceGrantee
+            $splatRemoveDestGrantee = @{
+                SqlInstance = $csDestination
+                Login       = $csGranteeName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveDestGrantee
+            $splatRemoveSourceTargets = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Login       = $csTargetName, $csAccentSourceName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveSourceTargets
+            $splatRemoveDestTargets = @{
+                SqlInstance = $csDestination
+                Login       = $csTargetName, $csTargetLowerName, $csAccentDestName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveDestTargets
+            $splatRemoveSourceRole = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                ServerRole  = $csRoleName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaServerRole @splatRemoveSourceRole
+            $splatRemoveDestRole = @{
+                SqlInstance = $csDestination
+                ServerRole  = $csRoleName, $csRoleLowerName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaServerRole @splatRemoveDestRole
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "points at a case sensitive and accent insensitive instance" {
+            # Pointed at another collation, the logins and roles that differ only in case could not be created, or the
+            # login without accents would be another login than the one of the source.
+            $csBehaviour.IsCaseSensitive | Should -Be 1
+            $csBehaviour.IsAccentInsensitive | Should -Be 1
+            $csIdOf.Count | Should -Be 5
+        }
+
+        It "updates the login in place" {
+            $csWarn | Should -BeNullOrEmpty
+            $csResult.Status | Should -Be "Successful"
+            $csResult.Name | Should -Be $csGranteeName
+        }
+
+        It "revokes the permission on the login whose name differs only in case and keeps the one on the login of the source" {
+            $csPermsAfter | Should -Contain "IMPERSONATE $($csIdOf[$csTargetName])"
+            $csPermsAfter | Should -Not -Contain "IMPERSONATE $($csIdOf[$csTargetLowerName])"
+        }
+
+        It "revokes the permission on the role whose name differs only in case and keeps the one on the role of the source" {
+            $csPermsAfter | Should -Contain "VIEW DEFINITION $($csIdOf[$csRoleName])"
+            $csPermsAfter | Should -Not -Contain "VIEW DEFINITION $($csIdOf[$csRoleLowerName])"
+        }
+
+        It "keeps the permission on the login that the destination takes for the login of the source, accents aside" {
+            $csPermsAfter | Should -Contain "VIEW DEFINITION $($csIdOf[$csAccentDestName])"
+        }
+
+        It "takes the login out of the role whose name differs only in case and leaves it in the role of the source" {
+            $csRolesAfter | Should -Contain $csIdOf[$csRoleName]
+            $csRolesAfter | Should -Not -Contain $csIdOf[$csRoleLowerName]
+        }
     }
 
     Context "An existing login is not dropped when SQL Server 2022 before CU12 cannot take the password hash of the source login (#10772)" -Skip:(-not $hasSql2022BeforeCU12) {
