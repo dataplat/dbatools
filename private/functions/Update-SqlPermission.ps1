@@ -61,77 +61,64 @@ function Update-SqlPermission {
     }
 
     # Server Roles: sysadmin, bulklogin, etc
-    foreach ($role in $SourceServer.Roles) {
-        $roleName = $role.Name
-        $destRole = $DestServer.Roles[$roleName]
-
+    # The memberships come from the logins themselves, so the server answers them by the login and not by a comparison of
+    # names in PowerShell, which ignored case: on a case sensitive instance a member whose name differed only in case
+    # counted as the login. Every role of the source login is resolved on the destination by its name, with the collation
+    # of the destination, and the memberships of the destination login are then compared by the role they resolve to.
+    # Comparing role names in PowerShell instead, or in the collection of the source, matched a destination role
+    # [adminrole] to a source role [AdminRole] and kept the login in both.
+    # The role collection of the destination is loaded fresh: the server object can come from the caller with roles
+    # loaded before a role was created, and a role missing there was never visited, so its membership stayed.
+    $DestServer.Roles.Refresh()
+    $sourceMemberOf = @($SourceLogin.ListMembers())
+    $destMemberOf = @($DestLogin.ListMembers())
+    $destMemberOfIds = @()
+    foreach ($destRoleName in $destMemberOf) {
+        $destRole = $DestServer.Roles[$destRoleName]
         if ($null -ne $destRole) {
-            try {
-                $destRoleMembers = $destRole.EnumMemberNames()
-            } catch {
-                $destRoleMembers = $destRole.EnumServerRoleMembers()
-            }
+            $destMemberOfIds += $destRole.ID
         }
+    }
 
-        try {
-            $roleMembers = $role.EnumMemberNames()
-        } catch {
-            $roleMembers = $role.EnumServerRoleMembers()
+    $keepRoleIds = @()
+    foreach ($roleName in $sourceMemberOf) {
+        $destRole = $DestServer.Roles[$roleName]
+        if ($null -eq $destRole) {
+            continue
         }
-
-        if ($roleMembers -contains $loginName) {
-            if ($null -ne $destRole) {
-                if ($Pscmdlet.ShouldProcess($destination, "Adding $newLoginName to $roleName server role.")) {
-                    if ($loginName -ne $saname) {
-                        try {
-                            $destRole.AddMember($newLoginName)
-                            Write-Message -Level Verbose -Message "Adding $newLoginName to $roleName server role on $destination successfully performed."
-                        } catch {
-                            Stop-Function -Message "Failed to add $newLoginName to $roleName server role on $destination." -Target $role -ErrorRecord $_
-                        }
-                    }
-                }
-            }
+        $keepRoleIds += $destRole.ID
+        if ($destMemberOfIds -contains $destRole.ID) {
+            continue
         }
-
-        # Remove for Syncs
-        # The member to drop is the login on the destination: with a rename, the name of the source login can belong
-        # to a different login there.
-        if ($roleMembers -notcontains $loginName -and $destRoleMembers -contains $newLoginName -and $null -ne $destRole) {
-            if ($Pscmdlet.ShouldProcess($destination, "Removing $newLoginName from $roleName server role.")) {
+        if ($Pscmdlet.ShouldProcess($destination, "Adding $newLoginName to $($destRole.Name) server role.")) {
+            if ($loginName -ne $saname) {
                 try {
-                    $destRole.DropMember($newLoginName)
-                    Write-Message -Level Verbose -Message "Removing $newLoginName from $roleName server role on $destination successfully performed."
+                    $destRole.AddMember($newLoginName)
+                    Write-Message -Level Verbose -Message "Adding $newLoginName to $($destRole.Name) server role on $destination successfully performed."
                 } catch {
-                    Stop-Function -Message "Failed to remove $newLoginName from $roleName server role on $destination." -Target $role -ErrorRecord $_
+                    Stop-Function -Message "Failed to add $newLoginName to $($destRole.Name) server role on $destination." -Target $destRole -ErrorRecord $_
                 }
             }
         }
     }
 
-    # Server roles that exist on the destination only. The loop above never sees them, so a login updated in place kept
-    # their membership, and with it permissions like CONTROL SERVER of a user-defined role, while a login that -Force
-    # drops and recreates loses it.
-    foreach ($destOnlyRole in $DestServer.Roles) {
-        if ($null -ne $SourceServer.Roles[$destOnlyRole.Name]) {
+    # Remove for Syncs
+    # Every role of the destination login that no role of the source login resolves to, also a role that exists on the
+    # destination only, because a login updated in place kept such a membership, and with it permissions like CONTROL
+    # SERVER of a user-defined role, while a login that -Force drops and recreates loses it.
+    # The member to drop is the login on the destination: with a rename, the name of the source login can belong to a
+    # different login there.
+    foreach ($destRoleName in $destMemberOf) {
+        $destRole = $DestServer.Roles[$destRoleName]
+        if ($null -eq $destRole -or $keepRoleIds -contains $destRole.ID) {
             continue
         }
-        $destOnlyRoleName = $destOnlyRole.Name
-
-        try {
-            $destOnlyRoleMembers = $destOnlyRole.EnumMemberNames()
-        } catch {
-            $destOnlyRoleMembers = $destOnlyRole.EnumServerRoleMembers()
-        }
-
-        if ($destOnlyRoleMembers -contains $newLoginName) {
-            if ($Pscmdlet.ShouldProcess($destination, "Removing $newLoginName from $destOnlyRoleName server role.")) {
-                try {
-                    $destOnlyRole.DropMember($newLoginName)
-                    Write-Message -Level Verbose -Message "Removing $newLoginName from $destOnlyRoleName server role on $destination successfully performed."
-                } catch {
-                    Stop-Function -Message "Failed to remove $newLoginName from $destOnlyRoleName server role on $destination." -Target $destOnlyRole -ErrorRecord $_
-                }
+        if ($Pscmdlet.ShouldProcess($destination, "Removing $newLoginName from $($destRole.Name) server role.")) {
+            try {
+                $destRole.DropMember($newLoginName)
+                Write-Message -Level Verbose -Message "Removing $newLoginName from $($destRole.Name) server role on $destination successfully performed."
+            } catch {
+                Stop-Function -Message "Failed to remove $newLoginName from $($destRole.Name) server role on $destination." -Target $destRole -ErrorRecord $_
             }
         }
     }
@@ -228,13 +215,44 @@ function Update-SqlPermission {
         # source, so here only the ones the source login does not have are revoked, matched by securable and permission.
         # Permissions on endpoints and availability groups stay: they belong to the replica. A secondary grants CONNECT on
         # its endpoint to the service account of the primary, and that login has no such permission on the primary.
+        # The securable of a source permission is resolved on the destination by its name, with the collation of the
+        # destination, and compared by its principal_id there. Comparing names in PowerShell ignored case, so on a case
+        # sensitive destination IMPERSONATE on [scopedlogin] was kept because the source login has it on [ScopedLogin],
+        # and it took accents into account, so on an accent insensitive destination the permission on the login that the
+        # source writes with accents and the destination without was revoked. Numbers are never compared across instances.
         $securableClasses = "Login", "ServerRole"
         $sourceObjectPerms = $SourceServer.EnumObjectPermissions($loginName) | Where-Object { "$($_.ObjectClass)" -in $securableClasses }
         $destObjectPerms = $DestServer.EnumObjectPermissions($newLoginName) | Where-Object { "$($_.ObjectClass)" -in $securableClasses }
+        $sourceStatesBySecurable = @{ }
+        foreach ($perm in $sourceObjectPerms) {
+            if ("$($perm.ObjectClass)" -eq "Login") {
+                $securables = $DestServer.Logins
+            } else {
+                $securables = $DestServer.Roles
+            }
+            # The server object can come from the caller with a collection loaded before the securable was created.
+            if ($null -eq $securables[$perm.ObjectName]) {
+                $securables.Refresh()
+            }
+            $destSecurable = $securables[$perm.ObjectName]
+            if ($null -eq $destSecurable) {
+                continue
+            }
+            $securableKey = "$($perm.ObjectClass) $($destSecurable.ID) $($perm.PermissionType)"
+            if ($sourceStatesBySecurable.ContainsKey($securableKey)) {
+                $sourceStatesBySecurable[$securableKey] += "$($perm.PermissionState)"
+            } else {
+                $sourceStatesBySecurable[$securableKey] = @("$($perm.PermissionState)")
+            }
+        }
         foreach ($perm in $destObjectPerms) {
             $objectClass = "$($perm.ObjectClass)"
             $objectPermState = "$($perm.PermissionState)"
-            $sourceStates = @($sourceObjectPerms | Where-Object { "$($_.ObjectClass)" -eq $objectClass -and $_.ObjectName -eq $perm.ObjectName -and "$($_.PermissionType)" -eq "$($perm.PermissionType)" } | ForEach-Object { "$($_.PermissionState)" })
+            $sourceStates = @()
+            $securableKey = "$objectClass $($perm.ObjectID) $($perm.PermissionType)"
+            if ($sourceStatesBySecurable.ContainsKey($securableKey)) {
+                $sourceStates = $sourceStatesBySecurable[$securableKey]
+            }
             # A grant stays when the source login has the permission with or without the grant option.
             if ($sourceStates -contains $objectPermState -or ($objectPermState -eq "Grant" -and $sourceStates -contains "GrantWithGrant")) {
                 continue
