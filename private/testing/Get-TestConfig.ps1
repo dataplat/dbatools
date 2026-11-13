@@ -4,8 +4,8 @@ function Get-TestConfig {
     )
 
     $config = [ordered]@{
-        CommonParameters = [System.Management.Automation.PSCmdlet]::CommonParameters
-        Defaults         = [System.Management.Automation.DefaultParameterDictionary]@{
+        CommonParameters          = [System.Management.Automation.PSCmdlet]::CommonParameters
+        Defaults                  = [System.Management.Automation.DefaultParameterDictionary]@{
             # We want the tests as readable as possible so we want to set Confirm globally to $false.
             '*-Dba*:Confirm'         = $false
             # We use a global warning variable so that we can always test
@@ -16,36 +16,46 @@ function Get-TestConfig {
         # We want all the tests to only write to this location.
         # When testing a remote SQL Server instance this must be a network share
         # where both the SQL Server instance and the test script can write to.
-        Temp             = 'C:\Temp'
+        Temp                      = 'C:\Temp'
         # The Windows failover clusters that the Get-DbaWsfc* tests need. No CI environment has a
         # cluster, so these stay empty there and the cluster tests skip themselves. A local
         # configuration whose lab has clusters sets them to the cluster names.
         # ClusterStorage needs shared storage: one cluster shared volume, and one disk that every
         # node can see but that is deliberately not part of the cluster.
-        ClusterStorage   = $null
+        ClusterStorage            = $null
         # ClusterWitness needs a file share witness.
-        ClusterWitness   = $null
+        ClusterWitness            = $null
         # The Azure SQL Database that the tests of the Azure code paths need. Azure SQL Database is the
         # only engine that refuses to switch the database of an existing connection - it answers a USE
         # with error 40508 - so a real one is the only place that branch can be covered. No CI
         # environment has one, so these stay empty there and those tests skip themselves. A local
         # configuration that has one sets all three: the server, a database on it, and a credential of a
         # SQL Server login that can reach that database.
-        AzureSqlDbServer = $null
-        AzureSqlDbName   = $null
-        AzureSqlDbCred   = $null
+        AzureSqlDbServer          = $null
+        AzureSqlDbName            = $null
+        AzureSqlDbCred            = $null
         # The Active Directory CA that the tests of a pending certificate request need, and a certificate template on it
         # that holds every request as pending until a CA manager approves it. The account that runs the tests must be
         # allowed to enroll with that template and to approve requests on that CA. No CI environment has a CA, so these
         # stay empty there and those tests skip themselves. A local configuration whose lab has such a CA sets all three.
-        CaServer         = $null
-        CaName           = $null
-        ApprovalTemplate = $null
+        CaServer                  = $null
+        CaName                    = $null
+        ApprovalTemplate          = $null
         # The SQL Server 2005 instance that the tests of the refusal of instances older than SQL Server 2008
         # need. SQL Server 2005 runs neither in a container nor on any CI runner, so this stays empty there and
         # those tests skip themselves. A local configuration whose lab has one sets it to an instance that
         # accepts SqlCred.
-        InstanceSql2005  = $null
+        InstanceSql2005           = $null
+        # The SQL Server 2022 instance before CU12 (16.0.4115) that the Copy-DbaLogin tests of a password hash in the
+        # format of SQL Server 2025 (0x0300) need, which SQL Server 2022 knows only from CU12 on. No CI environment has
+        # such a build, so this stays empty there and those tests skip themselves. A local configuration whose lab has
+        # one sets it.
+        InstanceSql2022BeforeCU12 = $null
+        # The case sensitive and accent insensitive instance, for example with the collation Latin1_General_100_CS_AI,
+        # that the Copy-DbaLogin tests of logins and server roles whose names differ only in case or in accents need, as
+        # the destination of a copy from InstanceCopy1. No CI environment has such an instance, so this stays empty
+        # there and those tests skip themselves. A local configuration whose lab has one sets it.
+        InstanceCaseSensitive     = $null
     }
 
     if (Test-Path $LocalConfigPath) {
