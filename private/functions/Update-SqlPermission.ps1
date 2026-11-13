@@ -200,7 +200,12 @@ function Update-SqlPermission {
                             $grantWithGrant = $false
                         }
 
-                        $DestServer.PSObject.Methods["Revoke"].Invoke($permSet, $newLoginName, $revokeGrantOnly, $grantWithGrant)
+                        # As the grantor of the permission. A login can have the same permission from several grantors,
+                        # one row each, and a REVOKE without AS takes back only the grant of the current login, or of
+                        # sa for a sysadmin, so the grant of another login stayed. With CASCADE, which the grant option
+                        # needs, the grants that the login passed on with that grant option go as well, as when the
+                        # source login never had it to pass on.
+                        $DestServer.PSObject.Methods["Revoke"].Invoke($permSet, $newLoginName, $revokeGrantOnly, $grantWithGrant, $perm.Grantor)
                         Write-Message -Level Verbose -Message "$revokeAction for $newLoginName on $destination successfully performed."
                     } catch {
                         Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $newLoginName on $destination." -Target $perm -ErrorRecord $_
@@ -275,7 +280,8 @@ function Update-SqlPermission {
                     if ($null -eq $securables[$perm.ObjectName]) {
                         $securables.Refresh()
                     }
-                    $securables[$perm.ObjectName].Revoke($perm.PermissionType, $newLoginName, $revokeGrantOnly, $objectPermState -eq "GrantWithGrant")
+                    # As the grantor of the permission, see the server permissions above.
+                    $securables[$perm.ObjectName].Revoke($perm.PermissionType, $newLoginName, $revokeGrantOnly, $objectPermState -eq "GrantWithGrant", $perm.Grantor)
                     Write-Message -Level Verbose -Message "$revokeAction for $newLoginName on $destination successfully performed."
                 } catch {
                     Stop-Function -Message "Failed to revoke $($perm.PermissionType) on $objectClass $($perm.ObjectName) from $newLoginName on $destination." -Target $perm -ErrorRecord $_
