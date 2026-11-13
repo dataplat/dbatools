@@ -1466,6 +1466,122 @@ END
         }
     }
 
+    Context "A login of another type on the destination is not updated in place (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $typeRandom = Get-Random
+            $typeLoginName = "dbatoolsci_typelogin_$typeRandom"
+            $typeCertName = "dbatoolsci_typecert_$typeRandom"
+
+            # On the source, a certificate login with CONTROL SERVER.
+            $splatSourceCertLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Database    = "master"
+                Query       = "CREATE CERTIFICATE [$typeCertName] ENCRYPTION BY PASSWORD = N'dbatools.IO.Cert14' WITH SUBJECT = N'dbatoolsci login type'; CREATE LOGIN [$typeLoginName] FROM CERTIFICATE [$typeCertName]; GRANT CONTROL SERVER TO [$typeLoginName]"
+            }
+            $null = Invoke-DbaQuery @splatSourceCertLogin
+
+            # On the destination, a SQL login of the same name, which has a password, a SID of its own and no CONTROL SERVER.
+            $splatDestLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $typeLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Dest14" -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatDestLogin
+
+            $splatTypeState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = "SELECT sp.principal_id, sp.type_desc, CONVERT(VARCHAR(514), sp.sid, 1) AS sid, (SELECT COUNT(*) FROM sys.server_permissions AS p WHERE p.grantee_principal_id = sp.principal_id AND p.class = 100 AND p.permission_name = N'CONTROL SERVER') AS control_server FROM sys.server_principals AS sp WHERE sp.name = @loginName"
+                SqlParameter = @{
+                    loginName = $typeLoginName
+                }
+            }
+            $splatSourceType = @{
+                SqlInstance  = $TestConfig.InstanceCopy1
+                Query        = $splatTypeState.Query
+                SqlParameter = $splatTypeState.SqlParameter
+            }
+            $typeSourceState = Invoke-DbaQuery @splatSourceType
+            $typeStateBefore = Invoke-DbaQuery @splatTypeState
+            $splatNewSidUpdate = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $TestConfig.InstanceCopy2
+                Login          = $typeLoginName
+                UpdateExisting = $true
+                NewSid         = $true
+                WarningAction  = "SilentlyContinue"
+            }
+            $splatNewSidForceUpdate = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $TestConfig.InstanceCopy2
+                Login          = $typeLoginName
+                UpdateExisting = $true
+                NewSid         = $true
+                Force          = $true
+                WarningAction  = "SilentlyContinue"
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $typeNewSidResult = Copy-DbaLogin @splatNewSidUpdate
+            $typeNewSidWarn = $WarnVar
+            $typeStateAfterNewSid = Invoke-DbaQuery @splatTypeState -EnableException
+            $typeForceResult = Copy-DbaLogin @splatNewSidForceUpdate
+            $typeForceWarn = $WarnVar
+            $typeStateAfterForce = Invoke-DbaQuery @splatTypeState -EnableException
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemoveLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Login       = $typeLoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveLogin
+            # The certificate after its login, which depends on it.
+            $splatDropCert = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Database    = "master"
+                Query       = "IF EXISTS (SELECT * FROM sys.certificates WHERE name = N'$typeCertName') DROP CERTIFICATE [$typeCertName]"
+            }
+            $null = Invoke-DbaQuery @splatDropCert
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "has a certificate login with CONTROL SERVER on the source and a SQL login without it on the destination" {
+            $typeSourceState.type_desc | Should -Be "CERTIFICATE_MAPPED_LOGIN"
+            $typeSourceState.control_server | Should -Be 1
+            $typeStateBefore.type_desc | Should -Be "SQL_LOGIN"
+            $typeStateBefore.control_server | Should -Be 0
+        }
+
+        It "skips the login with -UpdateExisting -NewSid and leaves the SQL login without the permissions of the certificate login" {
+            $typeNewSidResult.Status | Should -Be "Skipped"
+            $typeNewSidResult.Notes | Should -Be "Different login type on destination"
+            ($typeNewSidWarn -join " ") | Should -Match "Login $typeLoginName is a SqlLogin login on .* and a Certificate login on"
+            $typeStateAfterNewSid.principal_id | Should -Be $typeStateBefore.principal_id
+            $typeStateAfterNewSid.type_desc | Should -Be "SQL_LOGIN"
+            $typeStateAfterNewSid.control_server | Should -Be 0
+        }
+
+        It "skips the login with -UpdateExisting -NewSid -Force as well and does not drop the SQL login" {
+            $typeForceResult.Status | Should -Be "Skipped"
+            $typeForceResult.Notes | Should -Be "Different login type on destination"
+            ($typeForceWarn -join " ") | Should -Match "Login $typeLoginName is a SqlLogin login on"
+            $typeStateAfterForce.principal_id | Should -Be $typeStateBefore.principal_id
+            $typeStateAfterForce.sid | Should -Be $typeStateBefore.sid
+            $typeStateAfterForce.type_desc | Should -Be "SQL_LOGIN"
+            $typeStateAfterForce.control_server | Should -Be 0
+        }
+    }
+
     Context "A direct server permission is revoked from the login updated in place when the source login has none (#10772)" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.

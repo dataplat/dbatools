@@ -94,7 +94,7 @@ function Copy-DbaLogin {
         Updates logins that already exist on the destination in place instead of skipping them, so a password changed on the source reaches the destination without a drop.
         For SQL logins the password hash, CHECK_POLICY and CHECK_EXPIRATION are compared, for all logins the default database, the default language and the disabled state. A login that differs is altered with ALTER LOGIN in one transaction, so its SID, the databases and jobs it owns and its open sessions stay as they are.
         Permissions are then synced for every existing login, whether it differed or not, as after a copy, unless -ExcludePermissionSync is used. Permissions of the login on other logins and server roles, such as IMPERSONATE, that the source login does not have are revoked as well; permissions on endpoints and availability groups stay, because they belong to the replica. A permission is revoked from every login that granted it, and a grant option the source login does not have is revoked with CASCADE, so the grants the login passed on with it are revoked as well. When the default database of the source login does not exist on the destination, the default database of the destination login is left as it is.
-        An in-place update cannot change the SID, so a login with a different SID on the destination is skipped with a warning: database users that come from the source, such as those of an availability group database, are not mapped to it. Add -Force to drop and recreate only those logins.
+        An in-place update cannot change the SID, so a login with a different SID on the destination is skipped with a warning: database users that come from the source, such as those of an availability group database, are not mapped to it. Add -Force to drop and recreate only those logins. A login of another type on the destination, such as a SQL login where the source has a certificate login, is skipped with a warning, also with -NewSid and with -Force, because an update in place cannot change the type.
         The login performing the migration is skipped, as with -Force, and so is a Windows group that the current login may depend on for its access.
         SQL Server 2025 converts an older password hash to its own format at the first successful login. When a login connected to the destination while the source still has the older format, the hashes differ although the password is the same, and the same password is set again.
 
@@ -500,6 +500,22 @@ function Copy-DbaLogin {
                     # login objects may be outdated.
                     $Login.Refresh()
                     $destLogin.Refresh()
+
+                    # An update in place keeps the destination login, so it has to be the same kind of login as the
+                    # source. With -NewSid the SIDs are not compared, so a certificate login of the source handed its
+                    # permissions, like CONTROL SERVER, to a SQL login of the same name on the destination, which has a
+                    # password and can connect. A login of another type is not replaced here, also not with -Force: a
+                    # certificate or asymmetric key login can only be created when that key exists in master of the
+                    # destination, so after the drop there could be no login at all.
+                    if ($Login.LoginType -ne $destLogin.LoginType) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $newUserName because it is a login of another type on the destination")) {
+                            Write-Message -Level Warning -Message "Login $newUserName is a $($destLogin.LoginType) login on $destinstance and a $($Login.LoginType) login on $($sourceServer.Name). An update in place cannot change the type of a login, so it is skipped. Drop the login on the destination, or use -Force without -UpdateExisting, to replace it."
+                            $copyLoginStatus.Status = "Skipped"
+                            $copyLoginStatus.Notes = "Different login type on destination"
+                            $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
+                        continue
+                    }
 
                     # With -NewSid the destination login got a SID of its own, so only then a different SID is expected.
                     $sidDiffers = -not $NewSid -and (Convert-ByteToHexString $Login.Sid) -ne (Convert-ByteToHexString $destLogin.Sid)
