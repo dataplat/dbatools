@@ -127,8 +127,8 @@ function Copy-DbaLogin {
         - DestinationServer: Name of the destination SQL Server instance
         - Name: Login name that was copied (or renamed login name if -LoginRenameHashtable was used)
         - Type: Login type (e.g., "Login - SqlLogin", "Login - WindowsUser", "Login - WindowsGroup")
-        - Status: Result of the migration attempt (Successful, Skipped, or Failed)
-        - Notes: Additional details about the operation or reason for skipping/failure. With -UpdateExisting, a login updated in place lists the properties that were updated
+        - Status: Result of the migration attempt (Successful, Skipped, or Failed). The object is returned after the permissions of the login are synced, and Failed also means that syncing a permission failed
+        - Notes: Additional details about the operation or reason for skipping/failure. With -UpdateExisting, a login updated in place lists the properties that were updated. When syncing a permission failed, it ends with "Syncing the permissions failed:" and the first warning
 
         All properties available on the returned object:
         - SourceServer: Name of the source SQL Server instance
@@ -594,6 +594,7 @@ function Copy-DbaLogin {
                             $statements += "ALTER LOGIN $loginIdentifier $loginState"
                         }
 
+                        $resultPending = $false
                         if ($changes) {
                             $changeList = $changes -join ", "
                             if ($Pscmdlet.ShouldProcess($destinstance, "Updating $changeList of login $newUserName in place")) {
@@ -645,14 +646,14 @@ function Copy-DbaLogin {
                                     Write-Message -Level Verbose -Message "Could not update $newUserName on $destinstance | $PSItem"
                                     continue
                                 }
-                                $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                $resultPending = $true
                             }
                         } else {
                             if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $newUserName because it is identical on source and destination")) {
                                 Write-Message -Level Verbose -Message "$newUserName is identical on source and destination."
                                 $copyLoginStatus.Status = "Skipped"
                                 $copyLoginStatus.Notes = "Login is identical on source and destination"
-                                $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                $resultPending = $true
                             }
                         }
 
@@ -667,9 +668,22 @@ function Copy-DbaLogin {
                                     DestLogin              = $destLogin
                                     ObjectLevel            = $ObjectLevel
                                     ExcludeDatabaseMapping = $ExcludeDatabaseMapping
+                                    WarningVariable        = "permissionWarnings"
                                 }
                                 Update-SqlPermission @splatPermission
+                                # Update-SqlPermission warns about every permission it could not sync and goes on
+                                # with the next one, so a warning means the permissions are not those of the source.
+                                if ($permissionWarnings) {
+                                    $copyLoginStatus.Status = "Failed"
+                                    $copyLoginStatus.Notes = (@($copyLoginStatus.Notes, "Syncing the permissions failed: $($permissionWarnings[0].Message)") | Where-Object { $PSItem }) -join ". "
+                                }
                             }
+                        }
+                        # The result comes after the permissions. A pipeline that stops at the result, like one with
+                        # Select-Object -First 1, stops this command there, so the permissions were never synced and a
+                        # permission that the source login does not have stayed, although the result said Successful.
+                        if ($resultPending) {
+                            $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
                         # Return, not continue: like a created login, the destination goes on with -SyncSaName.
                         return
@@ -755,8 +769,6 @@ function Copy-DbaLogin {
                     continue
                 }
 
-                $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
                 if (-not $ExcludePermissionSync) {
                     if ($Pscmdlet.ShouldProcess($destinstance, "Updating SQL login $newUserName permissions")) {
                         # In rare cases, when the instance has a case sensitive collation and there are two logins that differ only in case, New-DbaLogin will return them both into $destLogin
@@ -769,11 +781,20 @@ function Copy-DbaLogin {
                                 DestLogin              = $dl
                                 ObjectLevel            = $ObjectLevel
                                 ExcludeDatabaseMapping = $ExcludeDatabaseMapping
+                                WarningVariable        = "permissionWarnings"
                             }
                             Update-SqlPermission @splatPermission
+                            # See the update in place above.
+                            if ($permissionWarnings) {
+                                $copyLoginStatus.Status = "Failed"
+                                $copyLoginStatus.Notes = (@($copyLoginStatus.Notes, "Syncing the permissions failed: $($permissionWarnings[0].Message)") | Where-Object { $PSItem }) -join ". "
+                            }
                         }
                     }
                 }
+
+                # The result comes after the permissions, as for the update in place above.
+                $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
         }
     }

@@ -1359,6 +1359,113 @@ WHERE name = N'$callerLoginName'
         }
     }
 
+    Context "The result of a login updated in place comes after its permissions are synced (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $resultRandom = Get-Random
+            $resultChangedName = "dbatoolsci_resultchanged_$resultRandom"
+            $resultIdenticalName = "dbatoolsci_resultidentical_$resultRandom"
+            $resultFailedName = "dbatoolsci_resultfailed_$resultRandom"
+            $resultTriggerName = "dbatoolsci_result_trigger_$resultRandom"
+            $dropResultTriggerQuery = "IF EXISTS (SELECT * FROM sys.server_triggers WHERE name = N'$resultTriggerName') DROP TRIGGER [$resultTriggerName] ON ALL SERVER"
+
+            # The logins are copied first, so they are identical on the destination, with the same SID. Then the first
+            # gets another password on the source, and all three get CONTROL SERVER on the destination.
+            $splatSourceLogins = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $resultChangedName, $resultIdenticalName, $resultFailedName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Source13" -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatSourceLogins
+            $splatFirstCopy = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Login       = $resultChangedName, $resultIdenticalName, $resultFailedName
+            }
+            $null = Copy-DbaLogin @splatFirstCopy
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query "ALTER LOGIN [$resultChangedName] WITH PASSWORD = N'dbatools.IO.Changed13'"
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "GRANT CONTROL SERVER TO [$resultChangedName]; GRANT CONTROL SERVER TO [$resultIdenticalName]; GRANT CONTROL SERVER TO [$resultFailedName]"
+
+            # Refuses the revoke of CONTROL SERVER from the third login only.
+            $createResultTriggerQuery = @"
+CREATE TRIGGER [$resultTriggerName] ON ALL SERVER FOR REVOKE_SERVER AS
+IF EVENTDATA().value('(/EVENT_INSTANCE/TSQLCommand/CommandText)[1]', 'nvarchar(max)') LIKE N'%CONTROL SERVER%$resultFailedName%'
+BEGIN
+    THROW 50000, N'dbatoolsci: refused by the test trigger', 1;
+END
+"@
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $createResultTriggerQuery
+
+            $splatControlState = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Query       = "SELECT SUSER_NAME(p.grantee_principal_id) AS grantee FROM sys.server_permissions AS p WHERE p.class = 100 AND p.permission_name = N'CONTROL SERVER' AND p.grantee_principal_id IN (SUSER_ID(@changed), SUSER_ID(@identical), SUSER_ID(@failed))"
+                SqlParameter = @{
+                    changed   = $resultChangedName
+                    identical = $resultIdenticalName
+                    failed    = $resultFailedName
+                }
+            }
+            $controlBefore = @((Invoke-DbaQuery @splatControlState).grantee)
+            $splatResultUpdate = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $TestConfig.InstanceCopy2
+                UpdateExisting = $true
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The pipeline stops at the first object, so the command runs only as far as its first result.
+            $changedResult = Copy-DbaLogin @splatResultUpdate -Login $resultChangedName | Select-Object -First 1
+            $identicalResult = Copy-DbaLogin @splatResultUpdate -Login $resultIdenticalName | Select-Object -First 1
+            $failedResult = Copy-DbaLogin @splatResultUpdate -Login $resultFailedName -WarningAction SilentlyContinue
+            $failedWarn = $WarnVar
+            $controlAfter = @((Invoke-DbaQuery @splatControlState -EnableException).grantee)
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $dropResultTriggerQuery
+            $splatRemoveLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Login       = $resultChangedName, $resultIdenticalName, $resultFailedName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "has CONTROL SERVER for all three logins on the destination before the update" {
+            $controlBefore | Should -Contain $resultChangedName
+            $controlBefore | Should -Contain $resultIdenticalName
+            $controlBefore | Should -Contain $resultFailedName
+        }
+
+        It "revokes CONTROL SERVER from an updated login before its result, so a pipeline that stops at the result does not stop the sync" {
+            $changedResult.Status | Should -Be "Successful"
+            $changedResult.Notes | Should -Be "Updated in place: password"
+            $controlAfter | Should -Not -Contain $resultChangedName
+        }
+
+        It "revokes CONTROL SERVER from an identical login before its result, so a pipeline that stops at the result does not stop the sync" {
+            $identicalResult.Status | Should -Be "Skipped"
+            $identicalResult.Notes | Should -Be "Login is identical on source and destination"
+            $controlAfter | Should -Not -Contain $resultIdenticalName
+        }
+
+        It "fails the login whose permission could not be revoked and says so" {
+            $failedResult.Status | Should -Be "Failed"
+            $failedResult.Notes | Should -BeLike "Login is identical on source and destination. Syncing the permissions failed: *CONTROL SERVER*"
+            ($failedWarn -join " ") | Should -Match "Failed to revoke CONTROL SERVER from $resultFailedName"
+            $controlAfter | Should -Contain $resultFailedName
+        }
+    }
+
     Context "A direct server permission is revoked from the login updated in place when the source login has none (#10772)" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
