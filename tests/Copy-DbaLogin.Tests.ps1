@@ -1237,7 +1237,8 @@ WHERE name = N'$callerLoginName'
 
             # On the destination, the login has the same SID. It has VIEW SERVER STATE and IMPERSONATE on a login from the
             # sysadmin and from another login that holds them with grant option, and VIEW ANY DEFINITION with grant option,
-            # which it passed on to a third login. That third login has VIEW ANY DEFINITION from the sysadmin as well.
+            # which it passed on to a third login. That third login has VIEW ANY DEFINITION from the sysadmin as well. And
+            # the login has ALTER TRACE with grant option, which the source login does not have at all.
             $splatDestLogin = @{
                 SqlInstance    = $TestConfig.InstanceCopy2
                 Login          = $grantorLoginName
@@ -1264,14 +1265,15 @@ WHERE name = N'$callerLoginName'
                 "EXECUTE AS LOGIN = N'$grantorLoginName'",
                 "GRANT VIEW ANY DEFINITION TO [$grantorPassedName]",
                 "REVERT",
-                "GRANT VIEW ANY DEFINITION TO [$grantorPassedName]"
+                "GRANT VIEW ANY DEFINITION TO [$grantorPassedName]",
+                "GRANT ALTER TRACE TO [$grantorLoginName] WITH GRANT OPTION"
             )
             $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query ($grantorSetup -join "; ")
 
             # The columns are put together in PowerShell: the names and the descriptions have different collations.
             $splatGrantorPermState = @{
                 SqlInstance  = $TestConfig.InstanceCopy2
-                Query        = "SELECT SUSER_NAME(p.grantee_principal_id) AS grantee, p.permission_name, p.state_desc, SUSER_NAME(p.grantor_principal_id) AS grantor FROM sys.server_permissions AS p WHERE p.grantee_principal_id IN (SUSER_ID(@login), SUSER_ID(@other), SUSER_ID(@passed)) AND p.permission_name IN (N'VIEW SERVER STATE', N'IMPERSONATE', N'VIEW ANY DEFINITION')"
+                Query        = "SELECT SUSER_NAME(p.grantee_principal_id) AS grantee, p.permission_name, p.state_desc, SUSER_NAME(p.grantor_principal_id) AS grantor FROM sys.server_permissions AS p WHERE p.grantee_principal_id IN (SUSER_ID(@login), SUSER_ID(@other), SUSER_ID(@passed)) AND p.permission_name IN (N'VIEW SERVER STATE', N'IMPERSONATE', N'VIEW ANY DEFINITION', N'ALTER TRACE')"
                 SqlParameter = @{
                     login  = $grantorLoginName
                     other  = $grantorOtherName
@@ -1353,6 +1355,11 @@ WHERE name = N'$callerLoginName'
             $grantorPermsAfter | Should -Contain "$grantorPassedName VIEW ANY DEFINITION GRANT $grantorSaName"
         }
 
+        It "revokes a permission with grant option that the source login does not have at all" {
+            $grantorPermsBefore | Should -Contain "$grantorLoginName ALTER TRACE GRANT_WITH_GRANT_OPTION $grantorSaName"
+            $grantorPermsAfter | Where-Object { $PSItem -like "$grantorLoginName ALTER TRACE *" } | Should -BeNullOrEmpty
+        }
+
         It "leaves the permissions of the other grantor" {
             $grantorPermsAfter | Should -Contain "$grantorOtherName VIEW SERVER STATE GRANT_WITH_GRANT_OPTION $grantorSaName"
             $grantorPermsAfter | Should -Contain "$grantorOtherName IMPERSONATE GRANT_WITH_GRANT_OPTION $grantorTargetName"
@@ -1368,25 +1375,26 @@ WHERE name = N'$callerLoginName'
             $resultChangedName = "dbatoolsci_resultchanged_$resultRandom"
             $resultIdenticalName = "dbatoolsci_resultidentical_$resultRandom"
             $resultFailedName = "dbatoolsci_resultfailed_$resultRandom"
+            $resultOtherName = "dbatoolsci_resultother_$resultRandom"
             $resultTriggerName = "dbatoolsci_result_trigger_$resultRandom"
             $dropResultTriggerQuery = "IF EXISTS (SELECT * FROM sys.server_triggers WHERE name = N'$resultTriggerName') DROP TRIGGER [$resultTriggerName] ON ALL SERVER"
 
             # The logins are copied first, so they are identical on the destination, with the same SID. Then the first
-            # gets another password on the source, and all three get CONTROL SERVER on the destination.
+            # gets another password on the source, and all four get CONTROL SERVER on the destination.
             $splatSourceLogins = @{
                 SqlInstance    = $TestConfig.InstanceCopy1
-                Login          = $resultChangedName, $resultIdenticalName, $resultFailedName
+                Login          = $resultChangedName, $resultIdenticalName, $resultFailedName, $resultOtherName
                 SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Source13" -AsPlainText -Force)
             }
             $null = New-DbaLogin @splatSourceLogins
             $splatFirstCopy = @{
                 Source      = $TestConfig.InstanceCopy1
                 Destination = $TestConfig.InstanceCopy2
-                Login       = $resultChangedName, $resultIdenticalName, $resultFailedName
+                Login       = $resultChangedName, $resultIdenticalName, $resultFailedName, $resultOtherName
             }
             $null = Copy-DbaLogin @splatFirstCopy
             $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query "ALTER LOGIN [$resultChangedName] WITH PASSWORD = N'dbatools.IO.Changed13'"
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "GRANT CONTROL SERVER TO [$resultChangedName]; GRANT CONTROL SERVER TO [$resultIdenticalName]; GRANT CONTROL SERVER TO [$resultFailedName]"
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "GRANT CONTROL SERVER TO [$resultChangedName]; GRANT CONTROL SERVER TO [$resultIdenticalName]; GRANT CONTROL SERVER TO [$resultFailedName]; GRANT CONTROL SERVER TO [$resultOtherName]"
 
             # Refuses the revoke of CONTROL SERVER from the third login only.
             $createResultTriggerQuery = @"
@@ -1399,12 +1407,13 @@ END
             $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $createResultTriggerQuery
 
             $splatControlState = @{
-                SqlInstance = $TestConfig.InstanceCopy2
-                Query       = "SELECT SUSER_NAME(p.grantee_principal_id) AS grantee FROM sys.server_permissions AS p WHERE p.class = 100 AND p.permission_name = N'CONTROL SERVER' AND p.grantee_principal_id IN (SUSER_ID(@changed), SUSER_ID(@identical), SUSER_ID(@failed))"
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = "SELECT SUSER_NAME(p.grantee_principal_id) AS grantee FROM sys.server_permissions AS p WHERE p.class = 100 AND p.permission_name = N'CONTROL SERVER' AND p.grantee_principal_id IN (SUSER_ID(@changed), SUSER_ID(@identical), SUSER_ID(@failed), SUSER_ID(@other))"
                 SqlParameter = @{
                     changed   = $resultChangedName
                     identical = $resultIdenticalName
                     failed    = $resultFailedName
+                    other     = $resultOtherName
                 }
             }
             $controlBefore = @((Invoke-DbaQuery @splatControlState).grantee)
@@ -1420,9 +1429,17 @@ END
             # The pipeline stops at the first object, so the command runs only as far as its first result.
             $changedResult = Copy-DbaLogin @splatResultUpdate -Login $resultChangedName | Select-Object -First 1
             $identicalResult = Copy-DbaLogin @splatResultUpdate -Login $resultIdenticalName | Select-Object -First 1
-            $failedResult = Copy-DbaLogin @splatResultUpdate -Login $resultFailedName -WarningAction SilentlyContinue
+            # Two logins in one call, and the revoke fails for the first one only.
+            $failedResults = @(Copy-DbaLogin @splatResultUpdate -Login $resultFailedName, $resultOtherName -WarningAction SilentlyContinue)
             $failedWarn = $WarnVar
             $controlAfter = @((Invoke-DbaQuery @splatControlState -EnableException).grantee)
+            # The same with EnableException, which returns the failed result as well.
+            $failedExceptionError = $null
+            try {
+                $failedExceptionResult = Copy-DbaLogin @splatResultUpdate -Login $resultFailedName -WarningAction SilentlyContinue -EnableException
+            } catch {
+                $failedExceptionError = $PSItem
+            }
         }
 
         AfterAll {
@@ -1432,7 +1449,7 @@ END
             $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $dropResultTriggerQuery
             $splatRemoveLogin = @{
                 SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
-                Login       = $resultChangedName, $resultIdenticalName, $resultFailedName
+                Login       = $resultChangedName, $resultIdenticalName, $resultFailedName, $resultOtherName
                 ErrorAction = "SilentlyContinue"
             }
             $null = Remove-DbaLogin @splatRemoveLogin
@@ -1444,6 +1461,7 @@ END
             $controlBefore | Should -Contain $resultChangedName
             $controlBefore | Should -Contain $resultIdenticalName
             $controlBefore | Should -Contain $resultFailedName
+            $controlBefore | Should -Contain $resultOtherName
         }
 
         It "revokes CONTROL SERVER from an updated login before its result, so a pipeline that stops at the result does not stop the sync" {
@@ -1459,10 +1477,161 @@ END
         }
 
         It "fails the login whose permission could not be revoked and says so" {
+            $failedResult = $failedResults | Where-Object Name -eq $resultFailedName
             $failedResult.Status | Should -Be "Failed"
             $failedResult.Notes | Should -BeLike "Login is identical on source and destination. Syncing the permissions failed: *CONTROL SERVER*"
             ($failedWarn -join " ") | Should -Match "Failed to revoke CONTROL SERVER from $resultFailedName"
             $controlAfter | Should -Contain $resultFailedName
+        }
+
+        It "syncs the other login of the same call" {
+            $failedResults.Count | Should -Be 2
+            $otherResult = $failedResults | Where-Object Name -eq $resultOtherName
+            $otherResult.Status | Should -Be "Skipped"
+            $otherResult.Notes | Should -Be "Login is identical on source and destination"
+            $controlAfter | Should -Not -Contain $resultOtherName
+        }
+
+        It "returns the failed result with EnableException as well" {
+            $failedExceptionError | Should -BeNullOrEmpty
+            $failedExceptionResult.Status | Should -Be "Failed"
+            $failedExceptionResult.Notes | Should -BeLike "*Syncing the permissions failed: *CONTROL SERVER*"
+        }
+    }
+
+    Context "A login updated in place keeps the database and the job it owns and its open session, and -WhatIf changes nothing (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $keepRandom = Get-Random
+            $keepLoginName = "dbatoolsci_keeplogin_$keepRandom"
+            $keepDbName = "dbatoolsci_keepdb_$keepRandom"
+            $keepJobName = "dbatoolsci_keepjob_$keepRandom"
+            $keepDestPassword = ConvertTo-SecureString -String "dbatools.IO.Dest15" -AsPlainText -Force
+
+            $splatSourceLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $keepLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Source15" -AsPlainText -Force)
+            }
+            $keepSourceLogin = New-DbaLogin @splatSourceLogin
+
+            # On the destination, the login has the same SID and another password, owns a database and a job, and has an
+            # open session.
+            $splatDestLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $keepLoginName
+                SecurePassword = $keepDestPassword
+                Sid            = $keepSourceLogin.Sid
+            }
+            $null = New-DbaLogin @splatDestLogin
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy2 -Name $keepDbName -Owner $keepLoginName
+            $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceCopy2 -Job $keepJobName -OwnerLogin $keepLoginName
+            $splatKeepSession = @{
+                SqlInstance         = $TestConfig.InstanceCopy2
+                SqlCredential       = New-Object System.Management.Automation.PSCredential ($keepLoginName, $keepDestPassword)
+                NonPooledConnection = $true
+            }
+            $keepSession = Connect-DbaInstance @splatKeepSession
+            $keepSpidBefore = $keepSession.ConnectionContext.ExecuteScalar("SELECT @@SPID")
+
+            $keepStateQuery = @"
+SELECT sp.principal_id,
+       CONVERT(VARCHAR(514), sl.password_hash, 1) AS password_hash,
+       (SELECT SUSER_SNAME(d.owner_sid) FROM sys.databases AS d WHERE d.name = @dbName) AS database_owner,
+       (SELECT SUSER_SNAME(j.owner_sid) FROM msdb.dbo.sysjobs AS j WHERE j.name = @jobName) AS job_owner
+FROM sys.server_principals AS sp
+INNER JOIN sys.sql_logins AS sl ON sl.principal_id = sp.principal_id
+WHERE sp.name = @loginName
+"@
+            $splatKeepState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = $keepStateQuery
+                SqlParameter = @{
+                    loginName = $keepLoginName
+                    dbName    = $keepDbName
+                    jobName   = $keepJobName
+                }
+            }
+            $splatKeepSourceHash = @{
+                SqlInstance  = $TestConfig.InstanceCopy1
+                Query        = "SELECT CONVERT(VARCHAR(514), password_hash, 1) AS password_hash FROM sys.sql_logins WHERE name = @loginName"
+                SqlParameter = @{
+                    loginName = $keepLoginName
+                }
+            }
+            $keepSourceHash = (Invoke-DbaQuery @splatKeepSourceHash).password_hash
+            $keepStateBefore = Invoke-DbaQuery @splatKeepState
+            $splatKeepUpdate = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $TestConfig.InstanceCopy2
+                Login          = $keepLoginName
+                UpdateExisting = $true
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $keepWhatIfResult = Copy-DbaLogin @splatKeepUpdate -WhatIf
+            $keepStateAfterWhatIf = Invoke-DbaQuery @splatKeepState -EnableException
+            $keepResult = Copy-DbaLogin @splatKeepUpdate
+            $keepWarn = $WarnVar
+            $keepStateAfter = Invoke-DbaQuery @splatKeepState -EnableException
+            $keepSpidAfter = $keepSession.ConnectionContext.ExecuteScalar("SELECT @@SPID")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The session, the job and the database first: SQL Server drops no login that is logged in or owns a database.
+            if ($keepSession) {
+                $null = $keepSession | Disconnect-DbaInstance
+            }
+            $splatRemoveJob = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Job         = $keepJobName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaAgentJob @splatRemoveJob
+            $splatRemoveDb = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Database    = $keepDbName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaDatabase @splatRemoveDb
+            $splatRemoveLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Login       = $keepLoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "returns nothing and changes nothing with -WhatIf" {
+            $keepWhatIfResult | Should -BeNullOrEmpty
+            $keepStateBefore.password_hash | Should -Not -Be $keepSourceHash
+            $keepStateAfterWhatIf.password_hash | Should -Be $keepStateBefore.password_hash
+        }
+
+        It "updates the password in place" {
+            $keepWarn | Should -BeNullOrEmpty
+            $keepResult.Status | Should -Be "Successful"
+            $keepResult.Notes | Should -Be "Updated in place: password"
+            $keepStateAfter.principal_id | Should -Be $keepStateBefore.principal_id
+            $keepStateAfter.password_hash | Should -Be $keepSourceHash
+        }
+
+        It "keeps the database and the job the login owns" {
+            $keepStateAfter.database_owner | Should -Be $keepLoginName
+            $keepStateAfter.job_owner | Should -Be $keepLoginName
+        }
+
+        It "keeps the open session of the login" {
+            $keepSpidAfter | Should -Be $keepSpidBefore
         }
     }
 
@@ -1943,6 +2112,18 @@ END
             $securableRoleName = "dbatoolsci_securablerole_$securableRandom"
 
             # On the source, the login has VIEW DEFINITION on the target login and CONTROL on the server role.
+            # A case insensitive destination, as the copy instances usually are, takes a name in another case for the
+            # same login, so there the source writes the target login in upper case and the permission has to stay.
+            $splatDestCase = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Query       = "SELECT CASE WHEN N'A' = N'a' THEN 0 ELSE 1 END AS IsCaseSensitive"
+            }
+            $securableDestIsCaseSensitive = (Invoke-DbaQuery @splatDestCase).IsCaseSensitive -eq 1
+            if ($securableDestIsCaseSensitive) {
+                $securableTargetSourceName = $securableTargetName
+            } else {
+                $securableTargetSourceName = $securableTargetName.ToUpperInvariant()
+            }
             $splatSourceLogin = @{
                 SqlInstance    = $TestConfig.InstanceCopy1
                 Login          = $securableLoginName
@@ -1951,12 +2132,12 @@ END
             $securableSourceLogin = New-DbaLogin @splatSourceLogin
             $splatSourceTarget = @{
                 SqlInstance    = $TestConfig.InstanceCopy1
-                Login          = $securableTargetName
+                Login          = $securableTargetSourceName
                 SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Target9" -AsPlainText -Force)
             }
             $null = New-DbaLogin @splatSourceTarget
             $null = New-DbaServerRole -SqlInstance $TestConfig.InstanceCopy1 -ServerRole $securableRoleName
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query "GRANT VIEW DEFINITION ON LOGIN::[$securableTargetName] TO [$securableLoginName]; GRANT CONTROL ON SERVER ROLE::[$securableRoleName] TO [$securableLoginName]"
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query "GRANT VIEW DEFINITION ON LOGIN::[$securableTargetSourceName] TO [$securableLoginName]; GRANT CONTROL ON SERVER ROLE::[$securableRoleName] TO [$securableLoginName]"
 
             # On the destination, the login has the same SID, IMPERSONATE on the target login in addition, CONTROL on the
             # server role with grant option, and CONNECT on an endpoint. Another login has IMPERSONATE on the target login.
