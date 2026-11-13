@@ -1214,6 +1214,151 @@ WHERE name = N'$callerLoginName'
         }
     }
 
+    Context "Permissions that several logins granted, and the grants passed on with a grant option, are revoked from the login updated in place (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $grantorRandom = Get-Random
+            $grantorLoginName = "dbatoolsci_grantorlogin_$grantorRandom"
+            $grantorOtherName = "dbatoolsci_grantorother_$grantorRandom"
+            $grantorPassedName = "dbatoolsci_grantorpassed_$grantorRandom"
+            $grantorTargetName = "dbatoolsci_grantortarget_$grantorRandom"
+            $grantorPassword = ConvertTo-SecureString -String "dbatools.IO.Grantor12" -AsPlainText -Force
+
+            # On the source, the login has VIEW ANY DEFINITION without the grant option.
+            $splatSourceLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $grantorLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Source12" -AsPlainText -Force)
+            }
+            $grantorSourceLogin = New-DbaLogin @splatSourceLogin
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query "GRANT VIEW ANY DEFINITION TO [$grantorLoginName]"
+
+            # On the destination, the login has the same SID. It has VIEW SERVER STATE and IMPERSONATE on a login from the
+            # sysadmin and from another login that holds them with grant option, and VIEW ANY DEFINITION with grant option,
+            # which it passed on to a third login. That third login has VIEW ANY DEFINITION from the sysadmin as well.
+            $splatDestLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $grantorLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Dest12" -AsPlainText -Force)
+                Sid            = $grantorSourceLogin.Sid
+            }
+            $null = New-DbaLogin @splatDestLogin
+            $splatDestOthers = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $grantorOtherName, $grantorPassedName, $grantorTargetName
+                SecurePassword = $grantorPassword
+            }
+            $null = New-DbaLogin @splatDestOthers
+            $grantorSetup = @(
+                "GRANT VIEW SERVER STATE TO [$grantorOtherName] WITH GRANT OPTION",
+                "GRANT IMPERSONATE ON LOGIN::[$grantorTargetName] TO [$grantorOtherName] WITH GRANT OPTION",
+                "EXECUTE AS LOGIN = N'$grantorOtherName'",
+                "GRANT VIEW SERVER STATE TO [$grantorLoginName]",
+                "GRANT IMPERSONATE ON LOGIN::[$grantorTargetName] TO [$grantorLoginName]",
+                "REVERT",
+                "GRANT VIEW SERVER STATE TO [$grantorLoginName]",
+                "GRANT IMPERSONATE ON LOGIN::[$grantorTargetName] TO [$grantorLoginName]",
+                "GRANT VIEW ANY DEFINITION TO [$grantorLoginName] WITH GRANT OPTION",
+                "EXECUTE AS LOGIN = N'$grantorLoginName'",
+                "GRANT VIEW ANY DEFINITION TO [$grantorPassedName]",
+                "REVERT",
+                "GRANT VIEW ANY DEFINITION TO [$grantorPassedName]"
+            )
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query ($grantorSetup -join "; ")
+
+            # The columns are put together in PowerShell: the names and the descriptions have different collations.
+            $splatGrantorPermState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = "SELECT SUSER_NAME(p.grantee_principal_id) AS grantee, p.permission_name, p.state_desc, SUSER_NAME(p.grantor_principal_id) AS grantor FROM sys.server_permissions AS p WHERE p.grantee_principal_id IN (SUSER_ID(@login), SUSER_ID(@other), SUSER_ID(@passed)) AND p.permission_name IN (N'VIEW SERVER STATE', N'IMPERSONATE', N'VIEW ANY DEFINITION')"
+                SqlParameter = @{
+                    login  = $grantorLoginName
+                    other  = $grantorOtherName
+                    passed = $grantorPassedName
+                }
+            }
+            $grantorPermsBefore = @(Invoke-DbaQuery @splatGrantorPermState | ForEach-Object { "$($PSItem.grantee) $($PSItem.permission_name) $($PSItem.state_desc) $($PSItem.grantor)" })
+            # SQL Server records sa, principal 1, as the grantor of a server permission that a sysadmin grants.
+            $grantorSaName = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "SELECT SUSER_NAME(1) AS name").name
+            $splatGrantorUpdate = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $TestConfig.InstanceCopy2
+                Login          = $grantorLoginName
+                UpdateExisting = $true
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $grantorResult = Copy-DbaLogin @splatGrantorUpdate
+            $grantorWarn = $WarnVar
+            $grantorPermsAfter = @(Invoke-DbaQuery @splatGrantorPermState -EnableException | ForEach-Object { "$($PSItem.grantee) $($PSItem.permission_name) $($PSItem.state_desc) $($PSItem.grantor)" })
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # SQL Server drops no login that granted a permission, and the grantor of IMPERSONATE on a login is that login,
+            # or the login that holds it with grant option. So the grantees go first, in the order of the chain.
+            $splatRemoveSourceLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Login       = $grantorLoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveSourceLogin
+            foreach ($grantorCleanupName in $grantorPassedName, $grantorLoginName, $grantorOtherName, $grantorTargetName) {
+                $splatRemoveDestLogin = @{
+                    SqlInstance = $TestConfig.InstanceCopy2
+                    Login       = $grantorCleanupName
+                    ErrorAction = "SilentlyContinue"
+                }
+                $null = Remove-DbaLogin @splatRemoveDestLogin
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "has the permissions from two grantors and the passed on grant before the update" {
+            $grantorPermsBefore | Should -Contain "$grantorLoginName VIEW SERVER STATE GRANT $grantorSaName"
+            $grantorPermsBefore | Should -Contain "$grantorLoginName VIEW SERVER STATE GRANT $grantorOtherName"
+            $grantorPermsBefore | Should -Contain "$grantorLoginName IMPERSONATE GRANT $grantorTargetName"
+            $grantorPermsBefore | Should -Contain "$grantorLoginName IMPERSONATE GRANT $grantorOtherName"
+            $grantorPermsBefore | Should -Contain "$grantorPassedName VIEW ANY DEFINITION GRANT $grantorLoginName"
+        }
+
+        It "updates the login in place" {
+            $grantorWarn | Should -BeNullOrEmpty
+            $grantorResult.Status | Should -Be "Successful"
+            $grantorResult.Name | Should -Be $grantorLoginName
+        }
+
+        It "revokes the server permission that the source login does not have from both grantors" {
+            $grantorPermsAfter | Should -Not -Contain "$grantorLoginName VIEW SERVER STATE GRANT $grantorSaName"
+            $grantorPermsAfter | Should -Not -Contain "$grantorLoginName VIEW SERVER STATE GRANT $grantorOtherName"
+        }
+
+        It "revokes the permission on a login that the source login does not have from both grantors" {
+            $grantorPermsAfter | Should -Not -Contain "$grantorLoginName IMPERSONATE GRANT $grantorTargetName"
+            $grantorPermsAfter | Should -Not -Contain "$grantorLoginName IMPERSONATE GRANT $grantorOtherName"
+        }
+
+        It "takes the grant option away and with it the grant the login passed on, but keeps the permission itself" {
+            $grantorPermsAfter | Should -Contain "$grantorLoginName VIEW ANY DEFINITION GRANT $grantorSaName"
+            $grantorPermsAfter | Should -Not -Contain "$grantorPassedName VIEW ANY DEFINITION GRANT $grantorLoginName"
+        }
+
+        It "leaves the grant that the third login has from the sysadmin" {
+            $grantorPermsAfter | Should -Contain "$grantorPassedName VIEW ANY DEFINITION GRANT $grantorSaName"
+        }
+
+        It "leaves the permissions of the other grantor" {
+            $grantorPermsAfter | Should -Contain "$grantorOtherName VIEW SERVER STATE GRANT_WITH_GRANT_OPTION $grantorSaName"
+            $grantorPermsAfter | Should -Contain "$grantorOtherName IMPERSONATE GRANT_WITH_GRANT_OPTION $grantorTargetName"
+        }
+    }
+
     Context "A direct server permission is revoked from the login updated in place when the source login has none (#10772)" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
