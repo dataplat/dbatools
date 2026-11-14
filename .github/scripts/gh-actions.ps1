@@ -281,9 +281,13 @@ END
         $null = New-DbaLogin -Login $loginName -SecurePassword $loginPassword -EnableException
         try {
             $loginCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $loginName, $loginPassword
-            $publicFiles = Get-DbaFile -Path $masterPath -FileType mdf -SqlCredential $loginCredential
+            # A connection of its own that is closed again, so that no pooled session blocks dropping the login.
+            # Get-DbaFile ignores the default SqlCredential for a server object.
+            $loginServer = Connect-DbaInstance -SqlCredential $loginCredential -NonPooledConnection
+            $publicFiles = Get-DbaFile -SqlInstance $loginServer -Path $masterPath -FileType mdf
+            $null = $loginServer | Disconnect-DbaInstance
         } finally {
-            # Force, because Get-DbaFile leaves the session of the login in the connection pool
+            # Force, in case the connection of the login is still open
             $null = Remove-DbaLogin -Login $loginName -Force
         }
         $sysadminFiles.Filename | Should -Contain "$($masterPath.TrimEnd("/"))/master.mdf"

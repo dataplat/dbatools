@@ -106,7 +106,7 @@ Describe $CommandName -Tag IntegrationTests {
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            # Force, because Get-DbaFile leaves the session of the login in the connection pool
+            # Force, in case the test failed before it closed the connection of the login
             $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $loginName -Force -ErrorAction SilentlyContinue
             Remove-Item -LiteralPath $treePath -Recurse -ErrorAction SilentlyContinue
 
@@ -117,10 +117,15 @@ Describe $CommandName -Tag IntegrationTests {
             if (-not $supportsFileSystemDmf) {
                 Set-ItResult -Skipped -Because "xp_dirtree lists nothing for a login that is not sysadmin before SQL Server 2017"
             }
-            # xp_dirtree returned no row for such a login, so nothing was found and nothing was said
-            $results = Get-DbaFile -SqlInstance $TestConfig.InstanceSingle -SqlCredential $loginCredential -Path $treePath -FileType cer
+            # xp_dirtree returned no row for such a login, so nothing was found and nothing was said.
+            # The test opens the connection of the login itself and closes it, so that no pooled session blocks dropping the login.
+            $loginServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -SqlCredential $loginCredential -NonPooledConnection
+            $results = Get-DbaFile -SqlInstance $loginServer -Path $treePath -FileType cer
+            # Disconnect-DbaInstance sets the warning variable as well
+            $getWarnings = $WarnVar
+            $null = $loginServer | Disconnect-DbaInstance
             $results.Filename | Should -Be "$treePath\a.cer"
-            $WarnVar | Should -BeNullOrEmpty
+            $getWarnings | Should -BeNullOrEmpty
         }
 
         It "Lists the levels that -Depth asks for and every level for a depth of 0" {
