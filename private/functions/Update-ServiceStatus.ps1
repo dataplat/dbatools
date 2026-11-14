@@ -108,12 +108,26 @@ function Update-ServiceStatus {
                     foreach ($service in $services) {
                         if ("dbatools.DbaSqlService" -in $service.PSObject.TypeNames) {
                             $cimObject = $service._CimObject
+                            # A service that gets no CIM call is returned in the same wrapper as the others below, because
+                            # the caller reads Service and ServiceExitCode from it. The bare service has neither, so these
+                            # services vanished from the output, and Restart-DbaService never started a stopped service.
                             if (($cimObject.State -eq "Running" -and $action -eq "start") -or ($cimObject.State -eq "Stopped" -and $action -eq "stop")) {
-                                $service | Add-Member -Force -NotePropertyName Status -NotePropertyValue "Successful" -PassThru |
-                                    Add-Member -Force -NotePropertyName Message -NotePropertyValue "The service is already $actionText, no action required" -PassThru
+                                Add-Member -Force -InputObject $service -NotePropertyName Status -NotePropertyValue "Successful"
+                                Add-Member -Force -InputObject $service -NotePropertyName Message -NotePropertyValue "The service is already $actionText, no action required"
+                                $service.State = $cimObject.State
+                                [psobject]@{
+                                    Service         = $service
+                                    ServiceExitCode = 0
+                                }
                             } elseif ($cimObject.StartMode -eq "Disabled" -and $action -in "start", "restart") {
-                                $service | Add-Member -Force -NotePropertyName Status -NotePropertyValue "Failed" -PassThru |
-                                    Add-Member -Force -NotePropertyName Message -NotePropertyValue "The service is disabled and cannot be $actionText" -PassThru
+                                Add-Member -Force -InputObject $service -NotePropertyName Status -NotePropertyValue "Failed"
+                                Add-Member -Force -InputObject $service -NotePropertyName Message -NotePropertyValue "The service is disabled and cannot be $actionText"
+                                $service.State = $cimObject.State
+                                # 14 is "The service has been disabled from the system." in Get-DbaServiceErrorMessage
+                                [psobject]@{
+                                    Service         = $service
+                                    ServiceExitCode = 14
+                                }
                             } else {
                                 $servicesToRestart += $service
                             }
