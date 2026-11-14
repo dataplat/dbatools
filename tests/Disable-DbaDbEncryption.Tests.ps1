@@ -52,6 +52,8 @@ Describe $CommandName -Tag IntegrationTests {
         if ($delmastercert) {
             $mastercert | Remove-DbaDbCertificate
         }
+
+        $PSDefaultParameterValues.Remove("*:Confirm")
     }
 
     Context "When disabling encryption via pipeline" {
