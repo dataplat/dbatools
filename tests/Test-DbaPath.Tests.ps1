@@ -163,6 +163,8 @@ Describe $CommandName -Tag IntegrationTests {
             # Force, because Test-DbaPath leaves the session of the login in the connection pool
             $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login $loginName -Force -ErrorAction SilentlyContinue
             Remove-Item -LiteralPath $quoteFolder, $unicodeFolder -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Finds an existing file for a login that is not sysadmin" {
