@@ -91,4 +91,73 @@ Describe $CommandName -Tag IntegrationTests {
             $results | Remove-DbaDbCertificate
         }
     }
+
+    Context "Several paths and folders without certificates (#10835)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $multiBackupPath = "$($TestConfig.Temp)\$CommandName-$(Get-Random)"
+            $null = New-Item -Path $multiBackupPath -ItemType Directory
+
+            $multiDbName = "dbatoolsci_restorecert_$(Get-Random)"
+            $multiMasterKeyPassword = ConvertTo-SecureString -String "GoodPass1234!" -AsPlainText -Force
+            $multiCertificatePassword = ConvertTo-SecureString -String "GoodPass1234!!" -AsPlainText -Force
+
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $multiDbName
+            $null = New-DbaDbMasterKey -SqlInstance $TestConfig.InstanceSingle -Database $multiDbName -Password $multiMasterKeyPassword
+
+            # Two certificates in one folder, so that -Path can name both files or the folder
+            $multiBackups = foreach ($certificateName in "dbatoolsci_restorecert_a", "dbatoolsci_restorecert_b") {
+                $multiCert = New-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database $multiDbName -Name $certificateName
+                Backup-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Certificate $multiCert.Name -Database $multiDbName -EncryptionPassword $multiCertificatePassword -Path $multiBackupPath
+                $null = $multiCert | Remove-DbaDbCertificate
+            }
+
+            $emptyFolder = "$multiBackupPath\dbatoolsci_empty"
+            $null = New-Item -Path $emptyFolder -ItemType Directory
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterEach {
+            $null = Get-DbaDbCertificate -SqlInstance $TestConfig.InstanceSingle -Database $multiDbName | Where-Object Name -like "dbatoolsci_restorecert_*" | Remove-DbaDbCertificate -ErrorAction SilentlyContinue
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $multiDbName -ErrorAction SilentlyContinue
+            Remove-Item -Path $multiBackupPath -Recurse -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "restores every certificate once when passing in several .cer files" {
+            # The files of -Path were processed once per entry of -Path, so the second round failed on certificates that already existed
+            $splatRestoreFiles = @{
+                SqlInstance        = $TestConfig.InstanceSingle
+                Path               = $multiBackups.ExportPath
+                Password           = $multiCertificatePassword
+                Database           = $multiDbName
+                EncryptionPassword = $multiCertificatePassword
+            }
+            $results = Restore-DbaDbCertificate @splatRestoreFiles
+            @($results).Count | Should -Be 2
+            ($results.Name | Sort-Object -Unique).Count | Should -Be 2
+            $WarnVar | Should -BeNullOrEmpty
+        }
+
+        It "warns when a folder holds no certificate file" {
+            # This used to return nothing without a word, which also hid that a login without sysadmin cannot list a folder
+            $splatRestoreEmpty = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Path        = $emptyFolder
+                Password    = $multiCertificatePassword
+                Database    = $multiDbName
+            }
+            $results = Restore-DbaDbCertificate @splatRestoreEmpty -WarningAction SilentlyContinue
+            $results | Should -BeNullOrEmpty
+            $WarnVar | Should -BeLike "*No certificate file (.cer) found*"
+        }
+    }
 }
