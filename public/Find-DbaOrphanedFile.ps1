@@ -6,12 +6,12 @@ function Find-DbaOrphanedFile {
     .DESCRIPTION
         Scans filesystem directories for database files (.mdf, .ldf, .ndf) that exist on disk but are not currently attached to the SQL Server instance. This is essential for cleanup operations after database drops, detaches, or failed restores that leave behind orphaned files consuming disk space.
 
-        The command compares files found via xp_dirtree against sys.master_files to identify true orphans. By default, it searches the root\data directory, default data and log paths, system paths, and any directory currently used by attached databases.
+        The command compares the files it finds, with sys.dm_os_enumerate_filesystem on SQL Server 2017 and later and with xp_dirtree on older versions, against sys.master_files to identify true orphans. By default, it searches the root\data directory, default data and log paths, system paths, and any directory currently used by attached databases.
 
         Perfect for storage cleanup scenarios where you need to reclaim disk space by identifying leftover database files that can be safely removed. You can specify additional file types using -FileType and additional search paths using -Path parameter.
 
     .PARAMETER SqlInstance
-        The target SQL Server instance or instances. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
+        The target SQL Server instance or instances. On SQL Server 2017 and later the login needs VIEW ANY DEFINITION, CREATE ANY DATABASE or ALTER ANY DATABASE to see the files of all databases, on older versions it must be a member of sysadmin, because xp_dirtree lists nothing for other logins.
 
     .PARAMETER SqlCredential
         Login to the target instance using alternative credentials. Accepts PowerShell credentials (Get-Credential).
@@ -48,7 +48,7 @@ function Find-DbaOrphanedFile {
         Copyright: (c) 2018 by dbatools, licensed under MIT
         License: MIT https://opensource.org/licenses/MIT
 
-        Requires: sysadmin access on SQL Servers
+        Requires: VIEW ANY DEFINITION, CREATE ANY DATABASE or ALTER ANY DATABASE on SQL Server 2017 and later, sysadmin on older versions
 
         Thanks to Paul Randal's notes on FILESTREAM which can be found at http://www.sqlskills.com/blogs/paul/filestream-directory-structure/
 
@@ -138,20 +138,49 @@ function Find-DbaOrphanedFile {
                 , parent nvarchar(512)
                 , parent_id int
                 );
+                CREATE TABLE #fsentry (
+                  fs_filename nvarchar(512)
+                , is_file int
+                , FullPath nvarchar(max)
+                );
                 DECLARE @dir nvarchar(512);
                 "
 
+            if ($Recurse) {
+                $recurseVal = "0"
+            } else {
+                $recurseVal = "1"
+            }
             $q2 = "
-                SET @dir = 'dirname';
-
                 INSERT INTO #enum( fs_filename, depth, is_file )
-                EXEC xp_dirtree @dir, recurse, 1;
+                EXEC xp_dirtree @dir, $recurseVal, 1;
 
                 UPDATE #enum
                 SET parent = @dir,
                 parent_id = (SELECT MAX(i.id) FROM #enum i WHERE i.id < e.id AND i.depth = e.depth-1 AND i.is_file = 0)
                 FROM #enum e
                 WHERE e.parent IS NULL;
+                "
+
+            # xp_dirtree returns no row at all when the login is not sysadmin, while sys.dm_os_enumerate_filesystem lists
+            # the directory for every login, as the service account just the same. It exists since SQL Server 2017 and
+            # returns the full path of every file. Where it fails, for example for a share on a host that does not exist,
+            # the path falls back to xp_dirtree instead of failing the whole batch (#10839)
+            if ($Recurse) {
+                $levelFilter = ""
+            } else {
+                $levelFilter = "level = 0 AND"
+            }
+            $qDmf = "
+                BEGIN TRY
+                    INSERT INTO #fsentry( fs_filename, is_file, FullPath )
+                    SELECT file_or_directory_name, 1, full_filesystem_path
+                    FROM sys.dm_os_enumerate_filesystem(@dir, N'*')
+                    WHERE $levelFilter is_directory = 0;
+                END TRY
+                BEGIN CATCH
+                $q2
+                END CATCH;
                 "
 
             if ($ServerMajorVersion -ge 9) {
@@ -238,8 +267,14 @@ function Find-DbaOrphanedFile {
                             FinalPath fp
                                 ON d.parent_id = fp.Id
                     )
+                    , AllFiles AS
+                    (    -- add the files listed by sys.dm_os_enumerate_filesystem, which come with their full path
+                        SELECT fs_filename, is_file, FullPath FROM FinalPath
+                        UNION ALL
+                        SELECT fs_filename, is_file, FullPath FROM #fsentry
+                    )
                     SELECT e.fs_filename AS filename, e.FullPath
-                    FROM FinalPath AS e
+                    FROM AllFiles AS e
                     WHERE e.fs_filename NOT IN( 'xtp', '5', '`$FSLOG', '`$HKv2', 'filestream.hdr', '" + $($SystemFiles -join "','") + "' )
                     AND CASE
                         WHEN e.fs_filename LIKE '%.%'
@@ -263,12 +298,19 @@ function Find-DbaOrphanedFile {
                     "
             }
 
-            $recurseVal = If ($Recurse) { '0' } Else { '1' }
             # build the query string based on how many directories they want to enumerate
             $sql = $q1
-            $sql += $($SqlPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse',$recurseVal))" } )
-            If ($UserPathList) {
-                $sql += $($UserPathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2.Replace('dirname',$_).Replace('recurse',$recurseVal))" } )
+            foreach ($dirPath in (@($SqlPathList) + @($UserPathList) | Where-Object { $_ })) {
+                # A Unicode literal with doubled quotes, so that a path with a quote or with characters outside the code page
+                # of the instance is searched instead of breaking the batch. It used to go in with Replace, which also turned
+                # a "recurse" in the path into the depth of xp_dirtree (#10839)
+                $quotedPath = "N'" + $dirPath.Replace("'", "''") + "'"
+                $sql += "$([System.Environment]::Newline)SET @dir = $quotedPath;"
+                if ($ServerMajorVersion -ge 14) {
+                    $sql += $qDmf
+                } else {
+                    $sql += $q2
+                }
             }
             $sql += $query_files_sql
             Write-Message -Level Debug -Message $sql
@@ -348,6 +390,12 @@ function Find-DbaOrphanedFile {
 
             # Gather a list of files known to SQL Server
             $sqlfiles = Get-SqlFileStructure $server
+            if (-not $sqlfiles) {
+                # A login without VIEW ANY DEFINITION, CREATE ANY DATABASE or ALTER ANY DATABASE sees no row at all in
+                # sys.master_files, not even the files of master. Every file on disk would then count as orphaned, and the
+                # Split-Path below ended the command with an exception instead (#10839)
+                Stop-Function -Message "Cannot read the database files of $instance from sys.master_files, so orphaned files cannot be told apart from attached ones. The login needs VIEW ANY DEFINITION, CREATE ANY DATABASE or ALTER ANY DATABASE." -Target $instance -Continue
+            }
 
             # Get the parent directories of those files
             $sqlfiles | ForEach-Object {
@@ -369,7 +417,13 @@ function Find-DbaOrphanedFile {
             }
             $sql = Get-SQLDirTreeQuery -SqlPathList $sqlpaths -UserPathList $userpaths -FileTypes $fileTypeComparison -SystemFiles $systemfiles -Recurse:$Recurse -ServerMajorVersion $server.VersionMajor
             # Through the Query script method, which puts the database of the caller back afterwards. See #10555.
-            $dirtreefiles = $server.Databases["master"].Query($sql) | ForEach-Object {
+            try {
+                $dirtreerows = $server.Databases["master"].Query($sql)
+            } catch {
+                # A failing batch used to end the command with an exception also without -EnableException (#10839)
+                Stop-Function -Message "Failure listing the directories on $instance" -ErrorRecord $_ -Target $instance -Continue
+            }
+            $dirtreefiles = $dirtreerows | ForEach-Object {
                 [PSCustomObject]@{
                     FullPath   = $_.Fullpath
                     Comparison = [IO.Path]::GetFullPath($(Format-Path $_.Fullpath))
