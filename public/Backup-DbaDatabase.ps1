@@ -414,7 +414,8 @@ function Backup-DbaDatabase {
                 try {
                     # cl gave a bad example in dbatools in a month of lunches, accommodate it
                     Write-Message -Level Verbose -Message "Checking to see if FilePath is a directory"
-                    $isdir = ($server.Query("EXEC master.dbo.xp_fileexist '$FilePath'")).Item(1)
+                    # Not xp_fileexist, which answers "no directory" for every path when the login is not sysadmin (#10835)
+                    $isdir = (Test-DbaPath -SqlInstance $server -Path @($FilePath) -EnableException).IsContainer
                 } catch {
                     # ignore
                 }
@@ -496,7 +497,8 @@ function Backup-DbaDatabase {
                     try {
                         # cl gave a bad example in dbatools in a month of lunches, accommodate it
                         Write-Message -Level Verbose -Message "Checking to see if FilePath is a directory"
-                        $isdir = ($db.Query("EXEC master.dbo.xp_fileexist '$FilePath'")).Item(1)
+                        # Not xp_fileexist, which answers "no directory" for every path when the login is not sysadmin (#10835)
+                        $isdir = (Test-DbaPath -SqlInstance $db.Parent -Path @($FilePath) -EnableException).IsContainer
                     } catch {
                         # ignore
                     }
@@ -912,7 +914,8 @@ function Backup-DbaDatabase {
                 }
 
                 # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
-                if ($null -eq $StorageBaseUrl -and $Path -and -not $nonwindows -and -not $isdestlinux) {
+                # GetFullPath turns NUL: into \\.\NUL, which SQL Server cannot open, so the NUL device stays as it is
+                if ($null -eq $StorageBaseUrl -and $Path -and -not $nonwindows -and -not $isdestlinux -and $FinalBackupPath[0] -ne "NUL:") {
                     $FinalBackupPath = $FinalBackupPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
                 }
 
