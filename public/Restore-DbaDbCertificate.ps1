@@ -131,21 +131,28 @@ function Restore-DbaDbCertificate {
         }
 
         foreach ($dir in $Path) {
-            if (-not (Test-DbaPath -SqlInstance $server -Path $dir)) {
+            # Test-DbaPath also tells a directory from a file. The xp_fileexist that did that here answered "no directory"
+            # for every path when the login is not sysadmin, so a directory was taken for a certificate file (#10835)
+            $pathInfo = Test-DbaPath -SqlInstance $server -Path @($dir)
+            if (-not $pathInfo.FileExists) {
                 Stop-Function -Message "$SqlInstance cannot access $dir" -Continue -Target $dir
             }
 
-            try {
-                $isdir = ($server.Query("EXEC master.dbo.xp_fileexist '$dir'")).Item(1)
-            } catch {
-                Stop-Function -Message $_ -ErrorRecord $_ -Target $server.Name -Continue
-            }
-            if ($isdir) {
+            # Not $path, which is the same variable as the parameter $Path: a file then processed every entry of -Path
+            # and a later file the certificates of an earlier directory, so they were restored more than once
+            if ($pathInfo.IsContainer) {
                 Write-Message -Level Verbose -Message "Path is a directory - processing all certs within"
-                $path = (Get-DbaFile -SqlInstance $server -Path $dir -FileType cer).Filename
+                $certificateFiles = (Get-DbaFile -SqlInstance $server -Path $dir -FileType cer).Filename
+                if (-not $certificateFiles) {
+                    # Get-DbaFile lists the directory with xp_dirtree, which returns nothing for a login that is not sysadmin,
+                    # so an empty result is not proof of an empty directory
+                    Write-Message -Level Warning -Message "No certificate file (.cer) found in $dir on $SqlInstance. A login that is not sysadmin cannot list a directory, it has to pass the .cer files instead." -Target $dir
+                }
+            } else {
+                $certificateFiles = $dir
             }
 
-            foreach ($fullname in $path) {
+            foreach ($fullname in $certificateFiles) {
                 Write-Message -Level Verbose -Message ("Processing {0}" -f $fullname)
 
                 $directory = Split-Path $fullname
