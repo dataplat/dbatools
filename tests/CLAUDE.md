@@ -30,7 +30,9 @@ $TestConfig.Temp              # Temp directory for test files
 $PSDefaultParameterValues["*:SqlCredential"] = $TestConfig.SqlCred
 ```
 
-This allows you to manually test commands against actual SQL Server instances before running the full test suite using `Invoke-ManualPester`
+This allows you to manually test commands against actual SQL Server instances before running the full test suite using `.\tests\Invoke-ManualPester.ps1 -Path <command>` from the root of the working copy.
+
+`Invoke-ManualPester.ps1` is a script and not a dbatools command on purpose. Pester runs the test files in the scope of whoever calls `Invoke-Pester`, and inside the dbatools module `Get-Module -Name dbatools` also returns the binary module that `dbatools.psm1` loads from `dbatools.dll`, which breaks `Mock -ModuleName dbatools` and every read of the module base (#10827). Start Pester from outside the module, as the script and `appveyor.pester.ps1` do. A test that needs the module base filters on `ModuleType -eq "Script"`.
 
 ## CHOOSING A TEST INSTANCE
 
@@ -93,7 +95,7 @@ param(
 )
 ```
 
-The suite runs on Pester 6.0.0. The `ModuleVersion="5.0"` declaration is intentionally retained as a minimum-version header: `#Requires` reads it as "5.0 or newer", so it is satisfied by 6.0.0. `Invoke-ManualPester` refuses to run a test file that does not carry it, because dbatools has no Pester 4 tests left and a missing header is a mistake in the file.
+The suite runs on Pester 6.0.0. The `ModuleVersion="5.0"` declaration is intentionally retained as a minimum-version header: `#Requires` reads it as "5.0 or newer", so it is satisfied by 6.0.0. `Invoke-ManualPester.ps1` refuses to run a test file that does not carry it, because dbatools has no Pester 4 tests left and a missing header is a mistake in the file.
 
 **Critical Requirements:**
 - Use a **static command name** as a string literal (e.g., "Get-DbaDatabase")

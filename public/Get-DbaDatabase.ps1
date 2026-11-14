@@ -8,6 +8,7 @@ function Get-DbaDatabase {
         This command provides comprehensive filtering options for database status, access type, recovery model, backup history, and encryption status, making it essential for database inventory, compliance auditing, and maintenance planning.
         Unlike querying sys.databases directly, this returns full SMO database objects with calculated properties for backup status, usage statistics from DMVs, and consistent formatting across SQL Server versions.
         Supports both on-premises SQL Server (2000+) and Azure SQL Database with automatic compatibility handling.
+        When SqlInstance is a server object from Connect-DbaInstance, the databases that object has loaded before are refreshed, so properties like Status and LogReuseWaitStatus show the current state and databases created since then are included.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -376,6 +377,19 @@ function Get-DbaDatabase {
             }
 
 
+            # A server object passed in by the caller keeps every database object it has loaded, with the values of
+            # that moment: Status or LogReuseWaitStatus stay as they were, and a database created since then is
+            # missing from the collection (#10825). Note which databases were loaded before this call to refresh them
+            # below. InternalStorage is not public, but it shows them without loading the whole collection. A new
+            # connection has none, so a call with an instance name sends no extra query.
+            $loadedBefore = @()
+            try {
+                $storageProperty = $server.Databases.GetType().GetProperty("InternalStorage", [System.Reflection.BindingFlags]"Instance,NonPublic")
+                $loadedBefore = @(foreach ($loadedDb in $storageProperty.GetValue($server.Databases, $null)) { $loadedDb.Name })
+            } catch {
+                Write-Message -Level Verbose -Message "Could not read the databases loaded before, so none are refreshed: $_"
+            }
+
             $inputObject = @()
             foreach ($dt in $backed_info) {
                 try {
@@ -386,6 +400,23 @@ function Get-DbaDatabase {
                     # So we implement the fallback that was used before #8333.
                     Write-Message -Level Verbose -Message "Failure: $_"
                     $inputObject += $server.Databases[$dt.name]
+                }
+            }
+            if ($loadedBefore.Count -gt 0) {
+                if ($backed_info -and $inputObject.Count -lt @($backed_info).Count) {
+                    # Refresh adds the databases created after the collection was loaded, but keeps the loaded objects as they are
+                    $server.Databases.Refresh()
+                    $foundNames = $inputObject.Name
+                    foreach ($dt in $backed_info) {
+                        if ($dt.name -cnotin $foundNames) {
+                            $inputObject += $server.Databases | Where-Object Name -ceq $dt.name
+                        }
+                    }
+                }
+                foreach ($refreshDb in $inputObject) {
+                    if ($refreshDb.Name -cin $loadedBefore) {
+                        $refreshDb.Refresh()
+                    }
                 }
             }
             if ($server.isAzure) {

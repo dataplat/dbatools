@@ -288,14 +288,13 @@ jobs:
           }
           $scriptPath = Join-Path $env:RUNNER_TEMP "Invoke-WindowsSspiTest.ps1"
           @'
-          . C:\github\dbatools\private\testing\Invoke-ManualPester.ps1
           $splatPester = @{
               Path            = "C:\github\dbatools\tests\Connect-DbaInstance.WindowsSspi.Tests.ps1"
               TestIntegration = $true
               PassThru        = $true
               Show            = "Detailed"
           }
-          $result = @(Invoke-ManualPester @splatPester) |
+          $result = @(& C:\github\dbatools\tests\Invoke-ManualPester.ps1 @splatPester) |
               Where-Object { $null -ne $PSItem.PSObject.Properties["FailedCount"] } |
               Select-Object -Last 1
           if ($null -eq $result) {

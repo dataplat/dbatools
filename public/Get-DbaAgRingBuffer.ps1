@@ -117,6 +117,9 @@ function Get-DbaAgRingBuffer {
             try {
                 [long]$currentTimestamp = ($server.Query("SELECT cpu_ticks / CONVERT(FLOAT, (cpu_ticks / ms_ticks)) AS TimeStamp FROM sys.dm_os_sys_info")).TimeStamp
                 Write-Message -Level Verbose -Message "Using current timestamp of $currentTimestamp"
+                # DATEADD takes an int, so an age in milliseconds overflows for every record older than 24.8 days, even one the
+                # WHERE clause would filter out. The query therefore filters on the timestamp and converts the age in seconds.
+                $oldestTimestamp = $currentTimestamp - [long]$CollectionMinutes * 60000
 
                 if ($RingBufferType) {
                     $typeList = ($RingBufferType | ForEach-Object { "N'$_'" }) -join ", "
@@ -128,19 +131,19 @@ function Get-DbaAgRingBuffer {
                     (
                         SELECT
                             ring_buffer_type,
-                            timestamp,
+                            CONVERT(BIGINT, $currentTimestamp - [timestamp]) AS age_ms,
                             CONVERT(XML, record) AS record
                         FROM sys.dm_os_ring_buffers
                         WHERE ring_buffer_type IN ($typeList)
+                        AND [timestamp] > $oldestTimestamp
                     )
                     SELECT
                         SERVERPROPERTY('ServerName') AS ServerName,
                         ring_buffer_type,
                         record.value('(./Record/@id)[1]', 'int') AS record_id,
-                        DATEADD(ms, -1 * ($currentTimestamp - [timestamp]), GETDATE()) AS EventTime,
+                        DATEADD(ms, -1 * (age_ms % 1000), DATEADD(ss, -1 * (age_ms / 1000), GETDATE())) AS EventTime,
                         record
                     FROM HadrRingBuffer
-                    WHERE DATEADD(ms, -1 * ($currentTimestamp - [timestamp]), GETDATE()) > DATEADD(MINUTE, -$CollectionMinutes, GETDATE())
                     ORDER BY EventTime DESC;"
 
                 Write-Message -Level Verbose -Message "Executing SQL Statement: $sql"
