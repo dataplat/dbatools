@@ -130,4 +130,66 @@ Describe $CommandName -Tag IntegrationTests {
             ($results | Where-Object FilePath -eq $trueTestPath).IsContainer | Should -Be $true
         }
     }
+
+    Context "Logins without sysadmin and paths that need quoting (#10835)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Before SQL Server 2017 there is only xp_fileexist, which answers only for members of sysadmin
+            $supportsFileExistsDmf = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1).VersionMajor -ge 14
+
+            # A new login is only a member of public
+            $loginName = "dbatoolsci_testpath_$(Get-Random)"
+            $loginPassword = ConvertTo-SecureString -String "dbatools.IO$(Get-Random)" -AsPlainText -Force
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login $loginName -SecurePassword $loginPassword
+            $loginCredential = New-Object System.Management.Automation.PSCredential($loginName, $loginPassword)
+
+            # The instance checks these folders, so they go to the temp folder that the instance can reach.
+            # The name of the second one is built from code points, because Windows PowerShell reads a test
+            # file without byte order mark in the ANSI code page.
+            $quoteFolder = "$($TestConfig.Temp)\dbatoolsci_O'Brien_$(Get-Random)"
+            $unicodeFolder = "$($TestConfig.Temp)\dbatoolsci_M$([char]0x00FC)ller_$([char]0x65E5)$([char]0x672C)_$(Get-Random)"
+            $null = New-Item -Path $quoteFolder, $unicodeFolder -ItemType Directory
+
+            # sys.dm_os_file_exists fails for a share on a host that does not exist, xp_fileexist answers "not found"
+            $unreachablePath = "\\dbatoolsci-nohost-$(Get-Random)\share\file.bak"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Force, because Test-DbaPath leaves the session of the login in the connection pool
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login $loginName -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $quoteFolder, $unicodeFolder -ErrorAction SilentlyContinue
+        }
+
+        It "Finds an existing file for a login that is not sysadmin" {
+            if (-not $supportsFileExistsDmf) {
+                Set-ItResult -Skipped -Because "xp_fileexist answers only for members of sysadmin before SQL Server 2017"
+            }
+            $result = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -SqlCredential $loginCredential -Path $trueTest
+            $result | Should -Be $true
+        }
+
+        It "Finds a path with a quote without failing the other paths of the batch" {
+            $results = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path $quoteFolder, $trueTest
+            ($results | Where-Object FilePath -eq $quoteFolder).IsContainer | Should -Be $true
+            ($results | Where-Object FilePath -eq $trueTest).FileExists | Should -Be $true
+            $WarnVar | Should -BeNullOrEmpty
+        }
+
+        It "Finds a path with characters outside the code page of the instance" {
+            $result = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path $unicodeFolder
+            $result | Should -Be $true
+        }
+
+        It "Reports an unreachable share as not found without failing the other paths of the batch" {
+            $results = Test-DbaPath -SqlInstance $TestConfig.InstanceMulti1 -Path $unreachablePath, $trueTest
+            ($results | Where-Object FilePath -eq $unreachablePath).FileExists | Should -Be $false
+            ($results | Where-Object FilePath -eq $trueTest).FileExists | Should -Be $true
+            $WarnVar | Should -BeNullOrEmpty
+        }
+    }
 }
