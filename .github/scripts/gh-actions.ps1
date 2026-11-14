@@ -271,6 +271,29 @@ END
         (Get-DbaXESessionTemplate | Measure-Object).Count | Should -BeGreaterThan 40
     }
 
+    It "lists a directory on Linux also for a login that is not sysadmin" {
+        # Get-DbaFile lists a directory with sys.dm_os_enumerate_filesystem on SQL Server 2017 and later, because
+        # xp_dirtree lists nothing for a login that is not sysadmin (#10839). This is its only test on Linux.
+        $masterPath = (Connect-DbaInstance).MasterDBPath
+        $sysadminFiles = Get-DbaFile -Path $masterPath -FileType mdf
+        $loginName = "dbatoolsci_getfile_$(Get-Random)"
+        $loginPassword = ConvertTo-SecureString "dbatools.IO$(Get-Random)" -AsPlainText -Force
+        $null = New-DbaLogin -Login $loginName -SecurePassword $loginPassword -EnableException
+        try {
+            $loginCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $loginName, $loginPassword
+            # A connection of its own that is closed again, so that no pooled session blocks dropping the login.
+            # Get-DbaFile ignores the default SqlCredential for a server object.
+            $loginServer = Connect-DbaInstance -SqlCredential $loginCredential -NonPooledConnection
+            $publicFiles = Get-DbaFile -SqlInstance $loginServer -Path $masterPath -FileType mdf
+            $null = $loginServer | Disconnect-DbaInstance
+        } finally {
+            # Force, in case the connection of the login is still open
+            $null = Remove-DbaLogin -Login $loginName -Force
+        }
+        $sysadminFiles.Filename | Should -Contain "$($masterPath.TrimEnd("/"))/master.mdf"
+        $publicFiles.Filename | Should -Be $sysadminFiles.Filename
+    }
+
     It "copies a certificate" {
         $passwd = ConvertTo-SecureString "dbatools.IOXYZ" -AsPlainText -Force
         $null = New-DbaDbMasterKey -Database tempdb -SecurePassword $passwd -Confirm:$false
