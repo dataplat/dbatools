@@ -4,7 +4,7 @@ function Test-DbaPath {
         Tests if files or directories are accessible to the SQL Server service account.
 
     .DESCRIPTION
-        Verifies file and directory accessibility from SQL Server's perspective using the master.dbo.xp_fileexist extended stored procedure. This is essential before backup operations, restore tasks, or any SQL Server process that requires file system access. The function tests from the SQL Server service account's security context, which may differ from your user account's permissions. Returns detailed information about file existence and whether the path is a container (directory).
+        Verifies file and directory accessibility from SQL Server's perspective. On SQL Server 2017 and later this uses sys.dm_os_file_exists, which works for logins without sysadmin, and falls back to master.dbo.xp_fileexist for a path that sys.dm_os_file_exists cannot check, such as a share on a host that does not exist. On older versions this uses master.dbo.xp_fileexist, which answers only for members of sysadmin and reports every path as not found for other logins. This is essential before backup operations, restore tasks, or any SQL Server process that requires file system access. The function tests from the SQL Server service account's security context, which may differ from your user account's permissions. Returns detailed information about file existence and whether the path is a container (directory).
 
     .PARAMETER SqlInstance
         The SQL Server you want to run the test on.
@@ -92,21 +92,33 @@ function Test-DbaPath {
                 $PathsBatch = $g.Group
                 $query = @()
                 foreach ($p in $PathsBatch) {
-                    $query += "EXEC master.dbo.xp_fileexist '$p'"
+                    # N keeps characters outside the code page of the database, and the doubled quote keeps a path like
+                    # O'Brien from breaking the whole batch, which then reported every path of it as not found (#10835)
+                    $quotedPath = "N'" + $p.Replace("'", "''") + "'"
+                    if ($server.VersionMajor -ge 14) {
+                        # xp_fileexist answers "not found" for every path when the login is not sysadmin, while
+                        # sys.dm_os_file_exists answers for every login and checks as the service account just the same.
+                        # It exists since SQL Server 2017. Where xp_fileexist answers "not found", for example for a share
+                        # on a host that does not exist, sys.dm_os_file_exists fails, so that path falls back to
+                        # xp_fileexist instead of failing the whole batch (#10835)
+                        $query += "BEGIN TRY SELECT file_exists, file_is_a_directory, parent_directory_exists FROM sys.dm_os_file_exists($quotedPath) END TRY BEGIN CATCH EXEC master.dbo.xp_fileexist $quotedPath END CATCH"
+                    } else {
+                        $query += "EXEC master.dbo.xp_fileexist $quotedPath"
+                    }
                 }
-                $sql = $query -join ';'
+                $sql = $query -join ";"
                 try {
                     $batchresult = $server.ConnectionContext.ExecuteWithResults($sql)
                 } catch {
                     if ($EnableException) {
-                        Stop-Function -Message "xp_fileexist execution failed for path(s) on $instance." -ErrorRecord $_ -Target $instance
+                        Stop-Function -Message "Testing the path(s) failed on $instance." -ErrorRecord $_ -Target $instance
                         return
                     }
 
                     # Warning, not Verbose: swallowing the real error here made batch-level
                     # failures (permissions, timeouts) indistinguishable from files that
                     # genuinely do not exist (#10512)
-                    Write-Message -Level Warning -Message "xp_fileexist execution failed for path(s) on $instance, so existence could not be determined and the path(s) are reported as not found. The SQL Server service account may not have access to the specified path(s). Error: $_"
+                    Write-Message -Level Warning -Message "Testing the path(s) failed on $instance, so existence could not be determined and the path(s) are reported as not found. The SQL Server service account may not have access to the specified path(s). Error: $_"
                     if ($Path.Count -eq 1 -and $SqlInstance.Count -eq 1 -and (-not($RawPath -is [array]))) {
                         return $false
                     } else {
@@ -123,15 +135,18 @@ function Test-DbaPath {
                     }
                     continue
                 }
+                # One row per path. A path that fell back to xp_fileexist leaves the empty result set of the failed
+                # sys.dm_os_file_exists in front of the one of xp_fileexist, so the rows count, not the result sets.
+                $rows = @($batchresult.Tables | ForEach-Object { $PSItem.Rows })
                 if ($Path.Count -eq 1 -and $SqlInstance.Count -eq 1 -and (-not($RawPath -is [array]))) {
-                    if ($batchresult.Tables.rows[0] -eq $true -or $batchresult.Tables.rows[1] -eq $true) {
+                    if ($rows[0][0] -eq $true -or $rows[0][1] -eq $true) {
                         return $true
                     } else {
                         return $false
                     }
                 } else {
                     $i = 0
-                    foreach ($r in $batchresult.tables.rows) {
+                    foreach ($r in $rows) {
                         $DoesPass = $r[0] -eq $true -or $r[1] -eq $true
                         [PSCustomObject]@{
                             SqlInstance  = $server.Name
