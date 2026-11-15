@@ -4,7 +4,7 @@ function Get-DbaUptime {
         Retrieves uptime information for SQL Server instances and their hosting Windows servers
 
     .DESCRIPTION
-        This function determines SQL Server uptime by checking the tempdb creation date and calculates Windows server uptime using CIM/WMI calls to get the last boot time. Essential for monitoring system stability, troubleshooting unexpected restarts, and generating compliance reports that require uptime documentation. Returns both raw TimeSpan objects for calculations and formatted strings for reporting, covering both the SQL Server service and the underlying Windows host.
+        This function determines the SQL Server start time from the tempdb creation date, lets the instance measure its own uptime, and calculates Windows server uptime using CIM/WMI calls to get the last boot time. Essential for monitoring system stability, troubleshooting unexpected restarts, and generating compliance reports that require uptime documentation. Returns both raw TimeSpan objects for calculations and formatted strings for reporting, covering both the SQL Server service and the underlying Windows host.
 
     .PARAMETER SqlInstance
         The target SQL Server instance or instances.
@@ -46,7 +46,7 @@ function Get-DbaUptime {
         - InstanceName: The SQL Server instance name
         - SqlServer: The full SQL Server instance name
         - SqlStartTime: DateTime when SQL Server was started (based on tempdb creation date)
-        - SqlUptime: TimeSpan object showing SQL Server uptime duration
+        - SqlUptime: TimeSpan object showing SQL Server uptime duration, measured by the instance itself (sys.dm_os_sys_info), or up to the current time of the instance for a login without VIEW SERVER STATE
         - SinceSqlStart: Formatted string of SQL Server uptime as "X days Y hours Z minutes A seconds"
         - WindowsBootTime: DateTime when the Windows server was last booted
         - WindowsUptime: TimeSpan object showing Windows server uptime duration
@@ -101,7 +101,18 @@ function Get-DbaUptime {
             Write-Message -Level Verbose -Message "Getting start times for $servername"
             #Get tempdb creation date
             [dbadatetime]$SQLStartTime = $server.Databases["tempdb"].CreateDate
-            $SQLUptime = New-TimeSpan -Start $SQLStartTime.ToUniversalTime() -End $nowutc
+            # The creation date of tempdb is a time in the local time of the instance, which cannot be compared with the clock
+            # of this computer when the two are in different time zones. So the instance measures its uptime itself, in
+            # milliseconds since its start, which neither a clock nor a daylight saving change can shift.
+            try {
+                $uptimeMilliseconds = $server.Query("SELECT ms_ticks - sqlserver_start_time_ms_ticks AS UptimeMilliseconds FROM sys.dm_os_sys_info").UptimeMilliseconds
+                $SQLUptime = [timespan]::FromMilliseconds($uptimeMilliseconds)
+            } catch {
+                # sys.dm_os_sys_info needs VIEW SERVER STATE. Without it the uptime is counted up to the current time of the instance.
+                Write-Message -Level Verbose -Message "Could not read sys.dm_os_sys_info on $servername, counting the uptime up to the current time of the instance" -ErrorRecord $_
+                $serverTime = $server.Query("SELECT GETDATE() AS ServerTime").ServerTime
+                $SQLUptime = New-TimeSpan -Start $server.Databases["tempdb"].CreateDate -End $serverTime
+            }
             $SQLUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($SQLUptime.Days), $($SQLUptime.Hours), $($SQLUptime.Minutes), $($SQLUptime.Seconds)
 
             $WindowsServerName = (Resolve-DbaNetworkName $servername -Credential $Credential).FullComputerName
