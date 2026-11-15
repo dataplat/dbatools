@@ -43,6 +43,38 @@ function Update-SqlPermission {
 
     $saname = Get-SaLoginName -SqlInstance $DestServer
 
+    # The principal_id of each name on the destination, looked up there with the collation of the destination. Not the
+    # ID of an SMO object: the collections of a server object keep the objects they loaded once, with their properties,
+    # also after Refresh(). A role that another connection renamed and replaced by a new role of the old name kept the
+    # ID of the renamed role there, so the two counted as the same role. Refreshing those objects instead would throw
+    # away changes of the caller that are not saved with Alter() yet. The keys are the names as given, compared
+    # ordinally, so that names which differ only in case stay apart here, whatever the destination makes of them.
+    $getDestPrincipalId = {
+        param (
+            [string[]]$PrincipalName,
+            [switch]$ServerRole
+        )
+        $principalIds = New-Object -TypeName System.Collections.Hashtable -ArgumentList ([System.StringComparer]::Ordinal)
+        $nameRows = @()
+        for ($nameIndex = 0; $nameIndex -lt $PrincipalName.Count; $nameIndex++) {
+            $escapedName = $PrincipalName[$nameIndex].Replace("'", "''")
+            $nameRows += "($nameIndex, N'$escapedName')"
+        }
+        if ($nameRows.Count -eq 0) {
+            return $principalIds
+        }
+        if ($ServerRole) {
+            $typeFilter = "sp.type = 'R'"
+        } else {
+            $typeFilter = "sp.type <> 'R'"
+        }
+        $principalQuery = "SELECT v.idx, sp.principal_id FROM (VALUES $($nameRows -join ", ")) AS v (idx, name) INNER JOIN sys.server_principals AS sp ON sp.name = v.name WHERE $typeFilter"
+        foreach ($principalRow in @($DestServer.Query($principalQuery))) {
+            $principalIds[$PrincipalName[[int]$principalRow.idx]] = [int]$principalRow.principal_id
+        }
+        $principalIds
+    }
+
     # Sync login enabled/disabled state
     if ($SourceLogin.IsDisabled -ne $DestLogin.IsDisabled) {
         if ($Pscmdlet.ShouldProcess($destination, "Setting login $newLoginName IsDisabled to $($SourceLogin.IsDisabled).")) {
@@ -72,22 +104,20 @@ function Update-SqlPermission {
     $DestServer.Roles.Refresh()
     $sourceMemberOf = @($SourceLogin.ListMembers())
     $destMemberOf = @($DestLogin.ListMembers())
-    $destMemberOfIds = @()
-    foreach ($destRoleName in $destMemberOf) {
-        $destRole = $DestServer.Roles[$destRoleName]
-        if ($null -ne $destRole) {
-            $destMemberOfIds += $destRole.ID
-        }
-    }
+    # The roles are compared by the principal_id that the destination has for them now, see $getDestPrincipalId.
+    $sourceMemberOfIdsByName = & $getDestPrincipalId -PrincipalName $sourceMemberOf -ServerRole
+    $destMemberOfIdsByName = & $getDestPrincipalId -PrincipalName $destMemberOf -ServerRole
+    $destMemberOfIds = @($destMemberOfIdsByName.Values)
 
     $keepRoleIds = @()
     foreach ($roleName in $sourceMemberOf) {
-        $destRole = $DestServer.Roles[$roleName]
-        if ($null -eq $destRole) {
+        if (-not $sourceMemberOfIdsByName.ContainsKey($roleName)) {
             continue
         }
-        $keepRoleIds += $destRole.ID
-        if ($destMemberOfIds -contains $destRole.ID) {
+        $roleId = $sourceMemberOfIdsByName[$roleName]
+        $keepRoleIds += $roleId
+        $destRole = $DestServer.Roles[$roleName]
+        if ($null -eq $destRole -or $destMemberOfIds -contains $roleId) {
             continue
         }
         if ($Pscmdlet.ShouldProcess($destination, "Adding $newLoginName to $($destRole.Name) server role.")) {
@@ -110,7 +140,7 @@ function Update-SqlPermission {
     # different login there.
     foreach ($destRoleName in $destMemberOf) {
         $destRole = $DestServer.Roles[$destRoleName]
-        if ($null -eq $destRole -or $keepRoleIds -contains $destRole.ID) {
+        if ($null -eq $destRole -or -not $destMemberOfIdsByName.ContainsKey($destRoleName) -or $keepRoleIds -contains $destMemberOfIdsByName[$destRoleName]) {
             continue
         }
         if ($Pscmdlet.ShouldProcess($destination, "Removing $newLoginName from $($destRole.Name) server role.")) {
@@ -228,22 +258,25 @@ function Update-SqlPermission {
         $securableClasses = "Login", "ServerRole"
         $sourceObjectPerms = $SourceServer.EnumObjectPermissions($loginName) | Where-Object { "$($_.ObjectClass)" -in $securableClasses }
         $destObjectPerms = $DestServer.EnumObjectPermissions($newLoginName) | Where-Object { "$($_.ObjectClass)" -in $securableClasses }
+        # The principal_id comes from the destination now, see $getDestPrincipalId: with the ID of a login object that the
+        # server object had loaded before another connection renamed that login and created a new one of the old name,
+        # the permission of the source on the new login was revoked and the one on the renamed login kept.
+        $securableLoginNames = @($sourceObjectPerms | Where-Object ObjectClass -eq "Login" | ForEach-Object { "$($PSItem.ObjectName)" })
+        $securableRoleNames = @($sourceObjectPerms | Where-Object ObjectClass -eq "ServerRole" | ForEach-Object { "$($PSItem.ObjectName)" })
+        $securableLoginIds = & $getDestPrincipalId -PrincipalName $securableLoginNames
+        $securableRoleIds = & $getDestPrincipalId -PrincipalName $securableRoleNames -ServerRole
         $sourceStatesBySecurable = @{ }
         foreach ($perm in $sourceObjectPerms) {
             if ("$($perm.ObjectClass)" -eq "Login") {
-                $securables = $DestServer.Logins
+                $securableIds = $securableLoginIds
             } else {
-                $securables = $DestServer.Roles
+                $securableIds = $securableRoleIds
             }
-            # The server object can come from the caller with a collection loaded before the securable was created.
-            if ($null -eq $securables[$perm.ObjectName]) {
-                $securables.Refresh()
-            }
-            $destSecurable = $securables[$perm.ObjectName]
-            if ($null -eq $destSecurable) {
+            $securableName = "$($perm.ObjectName)"
+            if (-not $securableIds.ContainsKey($securableName)) {
                 continue
             }
-            $securableKey = "$($perm.ObjectClass) $($destSecurable.ID) $($perm.PermissionType)"
+            $securableKey = "$($perm.ObjectClass) $($securableIds[$securableName]) $($perm.PermissionType)"
             if ($sourceStatesBySecurable.ContainsKey($securableKey)) {
                 $sourceStatesBySecurable[$securableKey] += "$($perm.PermissionState)"
             } else {
