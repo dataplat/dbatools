@@ -97,16 +97,33 @@ Describe "ghost CI runs in the demand pass" {
             Mock @splatMockEvents
             $splatMockRunPage = @{
                 CommandName     = "Invoke-GhJson"
-                ParameterFilter = { $Path -like "*/workflows/*/runs*" -and $Path -notlike "*status=in_progress*" }
+                ParameterFilter = { $Path -like "*/workflows/*/runs*" -and $Path -notlike "*status=*" }
                 MockWith        = { [pscustomobject]@{ workflow_runs = @($script:GhostRun) } }
             }
             Mock @splatMockRunPage
             $splatMockRunning = @{
                 CommandName     = "Invoke-GhJson"
                 ParameterFilter = { $Path -like "*/workflows/*/runs*status=in_progress*" }
-                MockWith        = { [pscustomobject]@{ workflow_runs = @() } }
+                MockWith        = {
+                    [pscustomobject]@{
+                        total_count   = 0
+                        workflow_runs = @()
+                    }
+                }
             }
             Mock @splatMockRunning
+            # GitHub lists a ghost among the queued builds as well.
+            $splatMockQueued = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/workflows/*/runs*status=queued*" }
+                MockWith        = {
+                    [pscustomobject]@{
+                        total_count   = 1
+                        workflow_runs = @($script:GhostRun)
+                    }
+                }
+            }
+            Mock @splatMockQueued
             $splatMockJobs = @{
                 CommandName     = "Invoke-GhJson"
                 ParameterFilter = { $Path -like "*/runs/*/jobs*" }
@@ -133,13 +150,13 @@ Describe "ghost CI runs in the demand pass" {
             $script:Fleet.GhostRunMinutes = 0
             $demand = Get-RunnerDemand
             $demand.Desired["andreasjordan"] | Should -Be 10
-            $splatRunningRead = @{
+            $splatListingRead = @{
                 CommandName     = "Invoke-GhJson"
-                ParameterFilter = { $Path -like "*status=in_progress*" }
+                ParameterFilter = { $Path -like "*status=*" }
                 Times           = 0
                 Exactly         = $true
             }
-            Should -Invoke @splatRunningRead
+            Should -Invoke @splatListingRead
         }
     }
 
@@ -236,6 +253,106 @@ Describe "ghost CI runs in the demand pass" {
             $warnings = @($output | Where-Object { $PSItem -is [System.Management.Automation.WarningRecord] })
             $demand.Desired["andreasjordan"] | Should -Be 10
             $warnings.Message | Should -Contain "running CI builds arrived without a run list; no run is treated as a ghost this pass"
+        }
+    }
+
+    It "keeps the lane when the build ahead reads queued while its jobs wait for runners, older than the whole run page" {
+        # GitHub reports a run's status from its least advanced job (cli/cli#13972), so this
+        # started build is "queued" and absent from the in_progress listing.
+        InModuleScope FleetCore {
+            $splatMockQueued = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/workflows/*/runs*status=queued*" }
+                MockWith        = {
+                    [pscustomobject]@{
+                        total_count   = 2
+                        workflow_runs = @(
+                            $script:GhostRun,
+                            [pscustomobject]@{
+                                id            = 43090000002
+                                status        = "queued"
+                                event         = "pull_request"
+                                display_title = "An older andreasjordan build whose fleet jobs wait for runners"
+                                actor         = [pscustomobject]@{ login = "andreasjordan" }
+                            }
+                        )
+                    }
+                }
+            }
+            Mock @splatMockQueued
+            $splatMockAheadJobs = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/runs/43090000002/jobs*" }
+                MockWith        = {
+                    [pscustomobject]@{
+                        total_count = 2
+                        jobs        = @(
+                            [pscustomobject]@{
+                                status = "completed"
+                                labels = @("ubuntu-latest")
+                            },
+                            [pscustomobject]@{
+                                status = "queued"
+                                labels = @("self-hosted", "dbatools-modern", "dbatools-pool-andreasjordan")
+                            }
+                        )
+                    }
+                }
+            }
+            Mock @splatMockAheadJobs
+            $demand = Get-RunnerDemand
+            $demand.Desired["andreasjordan"] | Should -Be 10
+            $splatAheadRead = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/runs/43090000002/jobs*" }
+                Times           = 1
+                Exactly         = $true
+            }
+            Should -Invoke @splatAheadRead
+            $splatGhostRead = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/runs/43097667289/jobs*" }
+                Times           = 1
+                Exactly         = $true
+            }
+            Should -Invoke @splatGhostRead
+        }
+    }
+
+    It "calls no run a ghost when the queued builds arrive without a run list" {
+        InModuleScope FleetCore {
+            $splatMockQueued = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/workflows/*/runs*status=queued*" }
+                MockWith        = { [pscustomobject]@{ message = "garbled" } }
+            }
+            Mock @splatMockQueued
+            $output = @(Get-RunnerDemand 3>&1)
+            $demand = $output | Where-Object { $PSItem -isnot [System.Management.Automation.WarningRecord] }
+            $warnings = @($output | Where-Object { $PSItem -is [System.Management.Automation.WarningRecord] })
+            $demand.Desired["andreasjordan"] | Should -Be 10
+            $warnings.Message | Should -Contain "queued CI builds arrived without a run list; no run is treated as a ghost this pass"
+        }
+    }
+
+    It "calls no run a ghost when a listing holds fewer runs than GitHub counts" {
+        InModuleScope FleetCore {
+            $splatMockQueued = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/workflows/*/runs*status=queued*" }
+                MockWith        = {
+                    [pscustomobject]@{
+                        total_count   = 150
+                        workflow_runs = @($script:GhostRun)
+                    }
+                }
+            }
+            Mock @splatMockQueued
+            $output = @(Get-RunnerDemand 3>&1)
+            $demand = $output | Where-Object { $PSItem -isnot [System.Management.Automation.WarningRecord] }
+            $warnings = @($output | Where-Object { $PSItem -is [System.Management.Automation.WarningRecord] })
+            $demand.Desired["andreasjordan"] | Should -Be 10
+            $warnings.Message | Should -Contain "queued CI builds arrived with 1 of the 150 runs GitHub counts; no run is treated as a ghost this pass"
         }
     }
 

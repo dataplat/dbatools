@@ -534,6 +534,7 @@ Describe "Get-GhostCiRunId" {
                 [object[]]$WorkflowRuns = @(),
                 [hashtable]$JobsByRun = @{ },
                 [object[]]$InProgressRuns = @(),
+                [object[]]$QueuedRuns = @(),
                 [int]$GhostMinutes = 30
             )
 
@@ -541,6 +542,7 @@ Describe "Get-GhostCiRunId" {
                 WorkflowRuns   = $WorkflowRuns
                 JobsByRun      = $JobsByRun
                 InProgressRuns = $InProgressRuns
+                QueuedRuns     = $QueuedRuns
                 Maintainers    = $script:Maintainers
                 OptInPushUsers = $script:OptInPushUsers
                 Marker         = "[do ci]"
@@ -648,6 +650,96 @@ Describe "Get-GhostCiRunId" {
         $result = Invoke-TestGhost @splatGhost
 
         $result.Count | Should -Be 0
+    }
+
+    It "leaves a build alone whose build ahead reads queued while its jobs wait for runners, older than the whole page" {
+        # GitHub reports a run's status from its least advanced job, so a started build whose
+        # fleet jobs wait for runners reads "queued" (cli/cli#13972). Off the page, only the
+        # queued listing and the jobs read for it show that the lane is working.
+        $waiting = New-GhostCandidate -Id 118
+        $splatAhead = @{
+            Id                = 119
+            CreatedMinutesAgo = 300
+            UpdatedMinutesAgo = 40
+        }
+        $ahead = New-GhostCandidate @splatAhead
+        $jobsByRun = @{
+            "118" = @()
+            "119" = @($script:AuthorizeJob, $script:FleetJob)
+        }
+        $splatGhost = @{
+            WorkflowRuns = @($waiting)
+            JobsByRun    = $jobsByRun
+            QueuedRuns   = @($waiting, $ahead)
+        }
+
+        $result = Invoke-TestGhost @splatGhost
+
+        $result.Count | Should -Be 0
+    }
+
+    It "leaves a build alone that waits behind an unmarked manual run whose jobs wait for runners" {
+        # The unmarked dispatch is on the page but ineligible, so only the queued listing
+        # brings its jobs.
+        $splatWaiting = @{
+            Id    = 125
+            Actor = "potatoqualitee"
+        }
+        $waiting = New-GhostCandidate @splatWaiting
+        $splatDispatch = @{
+            Id                = 126
+            Actor             = "potatoqualitee"
+            TriggerEvent      = "workflow_dispatch"
+            CreatedMinutesAgo = 60
+            UpdatedMinutesAgo = 40
+        }
+        $dispatch = New-GhostCandidate @splatDispatch
+        $jobsByRun = @{
+            "125" = @()
+            "126" = @($script:AuthorizeJob, $script:FleetJob)
+        }
+        $splatGhost = @{
+            WorkflowRuns = @($waiting, $dispatch)
+            JobsByRun    = $jobsByRun
+            QueuedRuns   = @($waiting, $dispatch)
+        }
+
+        $result = Invoke-TestGhost @splatGhost
+
+        $result.Count | Should -Be 0
+    }
+
+    It "leaves a build alone while a queued build of its lane has jobs nobody could read" {
+        $waiting = New-GhostCandidate -Id 122
+        $unread = New-GhostCandidate -Id 123 -CreatedMinutesAgo 300
+        $splatGhost = @{
+            WorkflowRuns = @($waiting)
+            JobsByRun    = @{ "122" = @() }
+            QueuedRuns   = @($waiting, $unread)
+        }
+
+        $result = Invoke-TestGhost @splatGhost
+
+        $result.Count | Should -Be 0
+    }
+
+    It "still names a ghost that the queued listing carries as well" {
+        # Ghosts read "queued" too; a job-less queued run holds no lane, its own included.
+        $ghost = New-GhostCandidate -Id 124
+        $otherGhost = New-GhostCandidate -Id 127 -CreatedMinutesAgo 6000
+        $jobsByRun = @{
+            "124" = @()
+            "127" = @()
+        }
+        $splatGhost = @{
+            WorkflowRuns = @($ghost)
+            JobsByRun    = $jobsByRun
+            QueuedRuns   = @($ghost, $otherGhost)
+        }
+
+        $result = Invoke-TestGhost @splatGhost
+
+        $result | Should -Be @("124")
     }
 
     It "still names a ghost when only another lane is working" {

@@ -295,6 +295,7 @@ function Get-GhostCiRunId {
         [object[]]$WorkflowRuns = @(),
         [hashtable]$JobsByRun = @{ },
         [object[]]$InProgressRuns = @(),
+        [object[]]$QueuedRuns = @(),
         [Parameter(Mandatory)]
         [string[]]$Maintainers,
         [Parameter(Mandatory)]
@@ -320,10 +321,13 @@ function Get-GhostCiRunId {
     #     turn looks exactly like a ghost, except that the build ahead of it is running.
     # A lane is working when one of its runs is in_progress, eligible or not (an unmarked
     # manual dispatch runs real jobs and holds the lane as well), or when one of its live
-    # eligible runs has a job. InProgressRuns is the separate in_progress listing: the build
-    # ahead can be older than every run of the WorkflowRuns page. The concurrency groups
-    # allow one running build per lane, and the authorize job turns a started run
-    # in_progress within seconds, so that listing names every build a lane can wait for.
+    # eligible runs or any of its queued runs has a job. The build ahead can be older than
+    # every run of the WorkflowRuns page, so InProgressRuns and QueuedRuns are the separate
+    # in_progress and queued listings. GitHub reports a run's status from its least advanced
+    # job, so a started build whose jobs wait for runners can read "queued" rather than
+    # "in_progress" (https://github.com/cli/cli/issues/13972). JobsByRun therefore also holds
+    # the jobs of QueuedRuns, and a queued run whose jobs were not read holds its lane, since
+    # it may be such a build.
     # A run whose jobs were not read is never a ghost, so a failed read keeps the old
     # behavior. Zero disables the check.
     if ($GhostMinutes -le 0) {
@@ -340,7 +344,7 @@ function Get-GhostCiRunId {
         })
 
     $workingLanes = @{ }
-    foreach ($run in @(@($WorkflowRuns) + @($InProgressRuns) | Where-Object { $null -ne $PSItem })) {
+    foreach ($run in @(@($WorkflowRuns) + @($InProgressRuns) + @($QueuedRuns) | Where-Object { $null -ne $PSItem })) {
         if ([string]$run.status -eq "in_progress") {
             $workingLanes[(Get-CiRunLane -Run $run -Maintainers $Maintainers)] = $true
         }
@@ -348,6 +352,12 @@ function Get-GhostCiRunId {
     foreach ($run in $liveRuns) {
         $runId = [string]$run.id
         if ($JobsByRun.ContainsKey($runId) -and @($JobsByRun[$runId] | Where-Object { $null -ne $PSItem }).Count -gt 0) {
+            $workingLanes[(Get-CiRunLane -Run $run -Maintainers $Maintainers)] = $true
+        }
+    }
+    foreach ($run in @($QueuedRuns | Where-Object { $null -ne $PSItem -and [string]$PSItem.status -ne "completed" })) {
+        $runId = [string]$run.id
+        if (-not $JobsByRun.ContainsKey($runId) -or @($JobsByRun[$runId] | Where-Object { $null -ne $PSItem }).Count -gt 0) {
             $workingLanes[(Get-CiRunLane -Run $run -Maintainers $Maintainers)] = $true
         }
     }
