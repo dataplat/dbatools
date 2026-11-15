@@ -163,8 +163,9 @@ Describe $CommandName -Tag UnitTests {
             It "preserves rooted default paths for validation and creation" {
                 $null = New-DbaDatabase -SqlInstance "sql1" -Name "db1" -DataFilePath "C:\" -LogFilePath "L:\" -WhatIf
 
-                $script:executedPathQueries | Should -Contain "EXEC master.dbo.xp_fileexist 'L:\'"
-                $script:executedPathQueries | Should -Contain "EXEC master.dbo.xp_fileexist 'C:\'"
+                # Only the paths count here, how Test-DbaPath checks them is its own business
+                $script:executedPathQueries | Where-Object { $PSItem -like "*'L:\'*" } | Should -Not -BeNullOrEmpty
+                $script:executedPathQueries | Where-Object { $PSItem -like "*'C:\'*" } | Should -Not -BeNullOrEmpty
                 $script:createdDataFiles[0].FileName | Should -Be "C:\db1.mdf"
                 $script:createdLogFiles[0].FileName | Should -Be "L:\db1_log.ldf"
             }
