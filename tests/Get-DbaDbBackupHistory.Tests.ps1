@@ -239,4 +239,26 @@ Describe $CommandName -Tag IntegrationTests {
             $warning | Should -BeLike "*-Since must be either a DateTime or TimeSpan object*"
         }
     }
+
+    Context "When the clock of this computer is ahead of the instance" {
+        BeforeAll {
+            # The computer of issue #10818 ran five hours behind its instance, a container in UTC, and issue #10833 found the
+            # same clock in -Since. A test computer shares the clock of its instance, so only the clock of this computer is
+            # moved ahead, the instance stays real. A cutoff taken from this clock would lie four hours in the future.
+            Mock -ModuleName dbatools -CommandName Get-Date -ParameterFilter { $PesterBoundParameters.Count -eq 0 } -MockWith { [datetime]::Now.AddHours(5) }
+        }
+
+        It "Adds a TimeSpan to the clock of the instance" {
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Since (New-TimeSpan -Hours -1)
+            $WarnVar | Should -BeNullOrEmpty
+            @($results).Count | Should -Be 4
+        }
+
+        It "Adds a TimeSpan to the clock of the instance also for the backup chain of Last" {
+            $results = Get-DbaDbBackupHistory -SqlInstance $TestConfig.InstanceSingle -Database $dbname -Since (New-TimeSpan -Hours -1) -Last
+            $WarnVar | Should -BeNullOrEmpty
+            @($results).Count | Should -Be 4
+            $results[0].Type | Should -Be "Full"
+        }
+    }
 }

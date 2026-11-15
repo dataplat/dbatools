@@ -32,7 +32,8 @@ function Get-DbaDbBackupHistory {
 
     .PARAMETER Since
         Filters backup history to only include backups taken after the specified date and time.
-        Accepts DateTime objects or TimeSpan objects (which get added to the current time). Times are compared using the SQL Server instance's timezone.
+        Accepts DateTime objects or TimeSpan objects. A DateTime is compared as it is with the backup times, which the instance records in its own local time.
+        A TimeSpan is added to the current time of the instance, not of the computer that runs the command, so (New-TimeSpan -Hours -1) returns the backups of the last hour also when the two are in different time zones.
         Essential for limiting results when dealing with databases that have extensive backup history.
 
     .PARAMETER RecoveryFork
@@ -176,6 +177,11 @@ function Get-DbaDbBackupHistory {
         Returns backup information only for databases db1 and db2 on SqlInstance2014a since July 1, 2016 at 10:47 AM.
 
     .EXAMPLE
+        PS C:\> Get-DbaDbBackupHistory -SqlInstance sql2016 -Since (New-TimeSpan -Hours -24)
+
+        Returns the backups of the last 24 hours on the clock of sql2016, also when the computer that runs the command is in another time zone.
+
+    .EXAMPLE
         PS C:\> Get-DbaDbBackupHistory -SqlInstance sql2014 -Database AdventureWorks2014, pubs -Force | Format-Table
 
         Returns information only for AdventureWorks2014 and pubs and formats the results as a table.
@@ -301,9 +307,7 @@ function Get-DbaDbBackupHistory {
             return
         }
 
-        if ($Since -is [TimeSpan]) {
-            $Since = (Get-Date).Add($Since);
-        } elseif ($Since -isnot [DateTime]) {
+        if ($Since -isnot [TimeSpan] -and $Since -isnot [DateTime]) {
             Stop-Function -Message "-Since must be either a DateTime or TimeSpan object."
             return
         }
@@ -313,6 +317,15 @@ function Get-DbaDbBackupHistory {
                 $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential -MinimumVersion 9
             } catch {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
+            }
+
+            if ($Since -is [TimeSpan]) {
+                # msdb records backup_finish_date in the local time of the instance,
+                # so the TimeSpan is added to the clock of the instance, not to the clock of this computer
+                $serverTime = $server.Query("SELECT GETDATE() AS ServerTime").ServerTime
+                $sinceDate = $serverTime.Add($Since)
+            } else {
+                $sinceDate = $Since
             }
 
             if ($server.VersionMajor -ge 12) {
@@ -364,8 +377,8 @@ function Get-DbaDbBackupHistory {
 
             if ($last) {
                 foreach ($db in $databases) {
-                    if ($since) {
-                        $sinceSqlFilter = "AND backupset.backup_finish_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
+                    if ($sinceDate) {
+                        $sinceSqlFilter = "AND backupset.backup_finish_date >= CONVERT(datetime,'$($sinceDate.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                     }
                     if ($RecoveryFork) {
                         $recoveryForkSqlFilter = "AND backupset.last_recovery_fork_guid ='$RecoveryFork'"
@@ -404,13 +417,13 @@ function Get-DbaDbBackupHistory {
                     }
                     #Get the full and build upwards
                     $allBackups = @()
-                    $allBackups += $fullDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
+                    $allBackups += $fullDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastFull -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$sinceDate -RecoveryFork $RecoveryFork
                     if ($null -eq $fullDb) {
                         Write-Message -Level Verbose -Message "No Full Backup found for database $($db.Name), skipping"
                         continue
                     }
                     if (-not $IgnoreDiffBackup) {
-                        $diffDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork
+                        $diffDb = Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -LastDiff -raw:$Raw -DeviceType $DeviceType -IncludeCopyOnly:$IncludeCopyOnly -Since:$sinceDate -RecoveryFork $RecoveryFork
                     }
                     if ($diffDb.LastLsn -gt $fullDb.LastLsn -and $diffDb.DatabaseBackupLSN -eq $fullDb.CheckPointLSN ) {
                         Write-Message -Level Verbose -Message "Valid Differential backup "
@@ -427,9 +440,9 @@ function Get-DbaDbBackupHistory {
 
                     if ($IncludeCopyOnly -eq $true) {
                         Write-Message -Level Verbose -Message 'Copy Only check'
-                        $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
+                        $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$sinceDate -RecoveryFork $RecoveryFork | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
                     } else {
-                        $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$since -RecoveryFork $RecoveryFork | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$fullDb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
+                        $allBackups += Get-DbaDbBackupHistory -SqlInstance $server -Database $db.Name -raw:$raw -DeviceType $DeviceType -LastLsn $tlogStartDsn -IncludeCopyOnly:$IncludeCopyOnly -Since:$sinceDate -RecoveryFork $RecoveryFork | Where-Object { $_.Type -eq 'Log' -and [bigint]$_.LastLsn -gt [bigint]$tlogStartDsn -and [bigint]$_.DatabaseBackupLSN -eq [bigint]$fullDb.CheckPointLSN -and $_.LastRecoveryForkGuid -eq $fullDb.LastRecoveryForkGuid }
                     }
                     #This line does the output for -Last!!!
                     $allBackups | Sort-Object -Property LastLsn, Type
@@ -451,8 +464,8 @@ function Get-DbaDbBackupHistory {
                 $sql = ""
                 foreach ($db in $databases) {
                     Write-Message -Level Verbose -Message "Processing $($db.name)" -Target $db
-                    if ($since) {
-                        $sinceSqlFilter = "AND backupset.backup_finish_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
+                    if ($sinceDate) {
+                        $sinceSqlFilter = "AND backupset.backup_finish_date >= CONVERT(datetime,'$($sinceDate.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                     }
                     if ($RecoveryFork) {
                         $recoveryForkSqlFilter = "AND backupset.last_recovery_fork_guid ='$RecoveryFork'"
@@ -494,8 +507,8 @@ function Get-DbaDbBackupHistory {
                     if ($deviceTypeFilter) {
                         $devTypeFilterWhere = "AND mediafamily.device_type $deviceTypeFilterRight"
                     }
-                    if ($since) {
-                        $sinceSqlFilter = "AND backupset.backup_finish_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
+                    if ($sinceDate) {
+                        $sinceSqlFilter = "AND backupset.backup_finish_date >= CONVERT(datetime,'$($sinceDate.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                     }
                     # recap for future editors (as this has been discussed over and over):
                     #   - original editors (from hereon referred as "we") rank over backupset.last_lsn desc, backupset.backup_finish_date desc for a good reason: DST
@@ -671,7 +684,7 @@ function Get-DbaDbBackupHistory {
                 $from = " FROM msdb..backupmediafamily mediafamily
                 INNER JOIN msdb..backupmediaset mediaset ON mediafamily.media_set_id = mediaset.media_set_id
                 INNER JOIN msdb..backupset backupset ON backupset.media_set_id = mediaset.media_set_id"
-                if ($Database -or $ExcludeDatabase -or $Since -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $deviceTypeFilter -or $LastLsn -or $backupTypeFilter) {
+                if ($Database -or $ExcludeDatabase -or $sinceDate -or $Last -or $LastFull -or $LastLog -or $LastDiff -or $deviceTypeFilter -or $LastLsn -or $backupTypeFilter) {
                     $where = " WHERE "
                 }
 
@@ -699,8 +712,8 @@ function Get-DbaDbBackupHistory {
                     $whereArray += "backupset.type not in ('I','G','Q')"
                 }
 
-                if ($null -ne $Since) {
-                    $whereArray += "backupset.backup_finish_date >= CONVERT(datetime,'$($Since.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
+                if ($null -ne $sinceDate) {
+                    $whereArray += "backupset.backup_finish_date >= CONVERT(datetime,'$($sinceDate.ToString("yyyy-MM-ddTHH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))',126)"
                 }
 
                 if ($deviceTypeFilter) {
