@@ -537,6 +537,28 @@ Backup-DbaDatabase @Splat
         }
     }
 
+    Context "Should handle NUL when a backup path is given as well" {
+        BeforeAll {
+            # A Path used to send NUL: through GetFullPath, which made it \\.\NUL and failed the backup
+            $splatNulBackup = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Database    = "master"
+                Path        = $DestBackupDir
+                FilePath    = "NUL"
+            }
+            $results = Backup-DbaDatabase @splatNulBackup
+        }
+
+        It "Should return a successful backup" {
+            $WarnVar | Should -BeNullOrEmpty
+            $results.BackupComplete | Should -BeTrue
+        }
+
+        It "Should have backed up to NUL:" {
+            $results.FullName[0] | Should -Be "NUL:"
+        }
+    }
+
     Context "Should only output a T-SQL String if OutputScriptOnly specified" {
         BeforeAll {
             $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -BackupFileName c:\notexists\file.bak -OutputScriptOnly
