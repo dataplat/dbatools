@@ -70,7 +70,6 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-Item -Path $backupPath -Recurse
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        $PSDefaultParameterValues.Remove("Backup-DbaDbCertificate:Path")
     }
 
     Context "Can backup a database certificate" {

@@ -69,7 +69,6 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
-        $PSDefaultParameterValues.Remove("Backup-DbaDatabase:Path")
     }
 
     Context "Returns output for single database" {
