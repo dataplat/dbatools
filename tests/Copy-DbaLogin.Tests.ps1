@@ -1214,6 +1214,171 @@ WHERE name = N'$callerLoginName'
         }
     }
 
+    Context "A role and a login that were renamed and replaced after the server object of the caller loaded them are told apart from their replacements (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $replacedRandom = Get-Random
+            $replacedLoginName = "dbatoolsci_replaced_$replacedRandom"
+            $replacedRoleName = "dbatoolsci_replacedrole_$replacedRandom"
+            $replacedLegacyRoleName = "dbatoolsci_replacedlegacy_$replacedRandom"
+            $replacedTargetName = "dbatoolsci_replacedtarget_$replacedRandom"
+            $replacedPreviousTargetName = "dbatoolsci_replacedprevious_$replacedRandom"
+
+            # On the source, the login is a member of the role and has IMPERSONATE on the target login.
+            $splatSourceLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $replacedLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Source11" -AsPlainText -Force)
+            }
+            $replacedSourceLogin = New-DbaLogin @splatSourceLogin
+            $splatSourceTarget = @{
+                SqlInstance    = $TestConfig.InstanceCopy1
+                Login          = $replacedTargetName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Target11" -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatSourceTarget
+            $null = New-DbaServerRole -SqlInstance $TestConfig.InstanceCopy1 -ServerRole $replacedRoleName
+            $splatSourceMember = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                ServerRole  = $replacedRoleName
+                Login       = $replacedLoginName
+                Confirm     = $false
+            }
+            $null = Add-DbaServerRoleMember @splatSourceMember
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query "GRANT IMPERSONATE ON LOGIN::[$replacedTargetName] TO [$replacedLoginName]"
+
+            # On the destination, the login has the same SID, is a member of a role of the same name, which has CONTROL
+            # SERVER, and has IMPERSONATE on a target login of the same name.
+            $splatDestLogin = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $replacedLoginName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Dest11" -AsPlainText -Force)
+                Sid            = $replacedSourceLogin.Sid
+            }
+            $null = New-DbaLogin @splatDestLogin
+            $splatDestTarget = @{
+                SqlInstance    = $TestConfig.InstanceCopy2
+                Login          = $replacedTargetName
+                SecurePassword = (ConvertTo-SecureString -String "dbatools.IO.Target11" -AsPlainText -Force)
+            }
+            $null = New-DbaLogin @splatDestTarget
+            $null = New-DbaServerRole -SqlInstance $TestConfig.InstanceCopy2 -ServerRole $replacedRoleName
+            $splatDestMember = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                ServerRole  = $replacedRoleName
+                Login       = $replacedLoginName
+                Confirm     = $false
+            }
+            $null = Add-DbaServerRoleMember @splatDestMember
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "GRANT CONTROL SERVER TO [$replacedRoleName]; GRANT IMPERSONATE ON LOGIN::[$replacedTargetName] TO [$replacedLoginName]"
+
+            # The caller loads the role and the target login of the destination, with their IDs.
+            $replacedDestServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2 -NonPooledConnection
+            $null = $replacedDestServer.Roles[$replacedRoleName].ID
+            $null = $replacedDestServer.Logins[$replacedTargetName].ID
+
+            # Then, through another connection, the role and the target login get new names and keep the membership and
+            # the permission of the login. A new role and a new target login take the old names, and the login gets the
+            # same IMPERSONATE on the new target login that it has on the source.
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "ALTER SERVER ROLE [$replacedRoleName] WITH NAME = [$replacedLegacyRoleName]; ALTER LOGIN [$replacedTargetName] WITH NAME = [$replacedPreviousTargetName]"
+            $null = New-DbaServerRole -SqlInstance $TestConfig.InstanceCopy2 -ServerRole $replacedRoleName
+            $null = New-DbaLogin @splatDestTarget
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "GRANT IMPERSONATE ON LOGIN::[$replacedTargetName] TO [$replacedLoginName]"
+
+            $splatReplacedRoleState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = "SELECT r.name FROM sys.server_role_members AS rm INNER JOIN sys.server_principals AS r ON r.principal_id = rm.role_principal_id WHERE rm.member_principal_id = SUSER_ID(@loginName)"
+                SqlParameter = @{
+                    loginName = $replacedLoginName
+                }
+            }
+            # The columns are put together in PowerShell: the names and the descriptions have different collations.
+            $splatReplacedPermState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = "SELECT sp.name AS securable, p.permission_name, p.state_desc FROM sys.server_permissions AS p INNER JOIN sys.server_principals AS sp ON sp.principal_id = p.major_id WHERE p.class = 101 AND p.grantee_principal_id = SUSER_ID(@loginName)"
+                SqlParameter = @{
+                    loginName = $replacedLoginName
+                }
+            }
+            $splatReplacedUpdate = @{
+                Source         = $TestConfig.InstanceCopy1
+                Destination    = $replacedDestServer
+                Login          = $replacedLoginName
+                UpdateExisting = $true
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $replacedResult = Copy-DbaLogin @splatReplacedUpdate
+            $replacedWarn = $WarnVar
+            $replacedRolesAfter = @((Invoke-DbaQuery @splatReplacedRoleState -EnableException).name)
+            $replacedPermsAfter = @(Invoke-DbaQuery @splatReplacedPermState -EnableException | ForEach-Object { "$($PSItem.securable) $($PSItem.permission_name) $($PSItem.state_desc)" })
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            if ($replacedDestServer) {
+                $null = $replacedDestServer | Disconnect-DbaInstance
+            }
+            # The grantee first: the grantor of IMPERSONATE on a login is that login, SQL Server drops no login that
+            # granted a permission, and no server role that still has members.
+            $splatRemoveGrantee = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Login       = $replacedLoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveGrantee
+            $splatRemoveTarget = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Login       = $replacedTargetName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveTarget
+            # The renamed target login exists on the destination only.
+            $splatRemovePreviousTarget = @{
+                SqlInstance = $TestConfig.InstanceCopy2
+                Login       = $replacedPreviousTargetName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemovePreviousTarget
+            $splatRemoveRole = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                ServerRole  = $replacedRoleName, $replacedLegacyRoleName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaServerRole @splatRemoveRole
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "updates the login in place" {
+            $replacedWarn | Should -BeNullOrEmpty
+            $replacedResult.Status | Should -Be "Successful"
+            $replacedResult.Name | Should -Be $replacedLoginName
+        }
+
+        It "adds the login to the new role of the name the source has" {
+            $replacedRolesAfter | Should -Contain $replacedRoleName
+        }
+
+        It "takes the login out of the renamed role, with its CONTROL SERVER" {
+            $replacedRolesAfter | Should -Not -Contain $replacedLegacyRoleName
+        }
+
+        It "keeps the permission on the new target login of the name the source has" {
+            $replacedPermsAfter | Should -Contain "$replacedTargetName IMPERSONATE GRANT"
+        }
+
+        It "revokes the permission on the renamed target login" {
+            $replacedPermsAfter | Should -Not -Contain "$replacedPreviousTargetName IMPERSONATE GRANT"
+        }
+    }
+
     Context "Permissions that several logins granted, and the grants passed on with a grant option, are revoked from the login updated in place (#10772)" {
         BeforeAll {
             # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
