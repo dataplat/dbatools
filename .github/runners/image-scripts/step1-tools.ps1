@@ -23,7 +23,7 @@ $ErrorActionPreference = "Stop"
 $webClient = New-Object -TypeName System.Net.WebClient
 
 $gitUrl = "https://github.com/git-for-windows/git/releases/download/v2.55.0.windows.2/Git-2.55.0.2-64-bit.exe"
-$runnerUrl = "https://github.com/actions/runner/releases/download/v2.335.1/actions-runner-win-x64-2.335.1.zip"
+$runnerUrl = "https://github.com/actions/runner/releases/download/v2.338.2/actions-runner-win-x64-2.338.2.zip"
 
 foreach ($dir in "C:\Temp", "C:\github", "C:\github-runner") {
     if (-not (Test-Path -Path $dir)) {

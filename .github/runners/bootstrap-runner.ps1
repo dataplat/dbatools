@@ -115,6 +115,77 @@ $null = New-Item -Path "$env:SystemRoot\System32\config\systemprofile\Documents\
 
 Set-Location -Path "C:\github-runner"
 
+# GitHub stops handing jobs to a runner version once its runtime support ends (the
+# runtime_deprecates_at of GET /repos/{repo}/actions/runners/deprecations/{version}), and
+# --disableupdate below keeps the runner from fixing that itself. The golden image staged
+# 2.335.1, whose runtime support ended 2026-09-24; when GitHub enforced it on 2026-11-15
+# every runner registered, exited with "Runner version v2.335.1 is deprecated and cannot
+# receive messages", probed as SPENT and was replaced, so the fleet churned VMs without
+# serving a job. The bootstrap therefore brings the staged runner up to $runnerVersion
+# before config.cmd. Bump the version and its hash together, from the release notes of
+# actions/runner, and the image (image-scripts/step1-tools.ps1) with them. This runs
+# before the bootstrapped-once marker, so a VM whose download or unpack fails still probes
+# as fresh and the next reconcile retries it.
+$runnerVersion = "2.338.2"
+$runnerSha256 = "a1f17aa987fc8158bc7521d284912267a0d01b7c2c4684b33c86783b5e8221cc"
+$runnerRoot = "C:\github-runner"
+$stagedVersion = $null
+try {
+    $stagedVersion = [regex]::Match((@(& "$runnerRoot\bin\Runner.Listener.exe" --version) -join " "), "\d+\.\d+\.\d+").Value
+} catch {
+    $stagedVersion = $null
+}
+if ($stagedVersion -ne $runnerVersion) {
+    "runner $stagedVersion is staged; installing $runnerVersion"
+    $runnerZip = Join-Path -Path $env:TEMP -ChildPath "actions-runner-win-x64-$runnerVersion.zip"
+    $runnerUrl = "https://github.com/actions/runner/releases/download/v$runnerVersion/actions-runner-win-x64-$runnerVersion.zip"
+    $webClient = New-Object -TypeName System.Net.WebClient
+    try {
+        $webClient.DownloadFile($runnerUrl, $runnerZip)
+    } finally {
+        $webClient.Dispose()
+    }
+    $actualSha256 = (Get-FileHash -Path $runnerZip -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actualSha256 -ne $runnerSha256) {
+        "runner download $runnerUrl has SHA256 $actualSha256, expected $runnerSha256"
+        exit 1
+    }
+    # the old bin and externals go first, so no file of the old version outlives the swap
+    foreach ($runnerFolder in "bin", "externals") {
+        $runnerFolderPath = Join-Path -Path $runnerRoot -ChildPath $runnerFolder
+        if (Test-Path -Path $runnerFolderPath) {
+            Remove-Item -Path $runnerFolderPath -Recurse -Force
+        }
+    }
+    # entry by entry with overwrite: ExtractToDirectory refuses the config.cmd and run.cmd
+    # the image already staged at the root
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $runnerArchive = [System.IO.Compression.ZipFile]::OpenRead($runnerZip)
+    try {
+        foreach ($entry in $runnerArchive.Entries) {
+            $entryPath = Join-Path -Path $runnerRoot -ChildPath $entry.FullName
+            if ($entry.FullName.EndsWith("/")) {
+                $null = New-Item -Path $entryPath -ItemType Directory -Force
+                continue
+            }
+            $entryFolder = Split-Path -Path $entryPath -Parent
+            if (-not (Test-Path -Path $entryFolder)) {
+                $null = New-Item -Path $entryFolder -ItemType Directory -Force
+            }
+            [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $entryPath, $true)
+        }
+    } finally {
+        $runnerArchive.Dispose()
+    }
+    Remove-Item -Path $runnerZip -Force
+    $installedVersion = [regex]::Match((@(& "$runnerRoot\bin\Runner.Listener.exe" --version) -join " "), "\d+\.\d+\.\d+").Value
+    if ($installedVersion -ne $runnerVersion) {
+        "runner reports version $installedVersion after the install, expected $runnerVersion"
+        exit 1
+    }
+    "runner $installedVersion installed"
+}
+
 # written before config.cmd on purpose: in service mode the runner can take its job the
 # moment config.cmd starts the service, so a bootstrap that dies mid-config must probe
 # as SPENT (delete and replace) rather than be retried onto a half-configured VM

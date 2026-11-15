@@ -167,4 +167,30 @@ Describe "bootstrap-runner.ps1 contract" {
         $threshold | Should -BeLessOrEqual 5
         $bootstrapText.IndexOf("net accounts /lockoutthreshold:") | Should -BeLessThan $bootstrapText.IndexOf("& .\config.cmd")
     }
+
+    It "installs the pinned runner version, hash checked, before the marker and config.cmd" {
+        # GitHub stops handing jobs to a runner once its runtime support ends, and the image
+        # staged 2.335.1, which ran out on 2026-09-24. Every VM then registered, exited as
+        # deprecated, probed SPENT and was replaced without serving a job (2026-11-15).
+        $bootstrapText = Get-Content -Path $script:BootstrapPath -Raw
+        $versionMatch = [regex]::Match($bootstrapText, "\`$runnerVersion = `"(\d+\.\d+\.\d+)`"")
+        $versionMatch.Success | Should -BeTrue
+        $bootstrapText | Should -Match "\`$runnerSha256 = `"[0-9a-f]{64}`""
+        $bootstrapText | Should -Match ([regex]::Escape("Get-FileHash -Path `$runnerZip -Algorithm SHA256"))
+        $installIndex = $bootstrapText.IndexOf("`$webClient.DownloadFile(`$runnerUrl, `$runnerZip)")
+        $markerIndex = $bootstrapText.IndexOf(".bootstrapped-once`" -Value")
+        $installIndex | Should -BeGreaterThan 0
+        $installIndex | Should -BeLessThan $markerIndex
+        $installIndex | Should -BeLessThan $bootstrapText.IndexOf("& .\config.cmd")
+    }
+
+    It "stages the same runner version in the golden image as the bootstrap installs" {
+        # with the two in step the bootstrap finds the version already staged and skips the
+        # download; a rebuilt image that lags behind still works, it just downloads again
+        $bootstrapText = Get-Content -Path $script:BootstrapPath -Raw
+        $runnerVersion = [regex]::Match($bootstrapText, "\`$runnerVersion = `"(\d+\.\d+\.\d+)`"").Groups[1].Value
+        $imageStepPath = Join-Path -Path $PSScriptRoot -ChildPath "../image-scripts/step1-tools.ps1"
+        $imageStepText = Get-Content -Path $imageStepPath -Raw
+        $imageStepText | Should -Match ([regex]::Escape("releases/download/v$runnerVersion/actions-runner-win-x64-$runnerVersion.zip"))
+    }
 }
