@@ -488,6 +488,382 @@ Describe "Get-PoolJobDemandFromRuns" {
     }
 }
 
+Describe "Get-GhostCiRunId" {
+    BeforeAll {
+        function New-GhostCandidate {
+            param(
+                [Parameter(Mandatory)]
+                [int]$Id,
+                [string]$Actor = "andreasjordan",
+                [string]$Status = "queued",
+                [int]$CreatedMinutesAgo = 120,
+                [int]$StartedMinutesAgo = -1,
+                [int]$UpdatedMinutesAgo = -1,
+                [string]$TriggerEvent = "pull_request",
+                [string]$HeadBranch = "feature"
+            )
+
+            $created = $script:Now.AddMinutes(-$CreatedMinutesAgo)
+            $started = $created
+            if ($StartedMinutesAgo -ge 0) {
+                $started = $script:Now.AddMinutes(-$StartedMinutesAgo)
+            }
+            $updated = $created
+            if ($UpdatedMinutesAgo -ge 0) {
+                $updated = $script:Now.AddMinutes(-$UpdatedMinutesAgo)
+            }
+            $splatRun = @{
+                Id           = $Id
+                Actor        = $Actor
+                Status       = $Status
+                UpdatedAt    = $updated
+                TriggerEvent = $TriggerEvent
+                HeadBranch   = $HeadBranch
+            }
+            $run = New-CiRun @splatRun
+            $stamps = [ordered]@{
+                created_at     = $created.ToString("o")
+                run_started_at = $started.ToString("o")
+            }
+            $run | Add-Member -NotePropertyMembers $stamps
+            $run
+        }
+
+        function Invoke-TestGhost {
+            param(
+                [object[]]$WorkflowRuns = @(),
+                [hashtable]$JobsByRun = @{ },
+                [object[]]$InProgressRuns = @(),
+                [object[]]$QueuedRuns = @(),
+                [int]$GhostMinutes = 30
+            )
+
+            $splatGhost = @{
+                WorkflowRuns   = $WorkflowRuns
+                JobsByRun      = $JobsByRun
+                InProgressRuns = $InProgressRuns
+                QueuedRuns     = $QueuedRuns
+                Maintainers    = $script:Maintainers
+                OptInPushUsers = $script:OptInPushUsers
+                Marker         = "[do ci]"
+                Now            = $script:Now
+                GhostMinutes   = $GhostMinutes
+            }
+            @(Get-GhostCiRunId @splatGhost)
+        }
+
+        $script:AuthorizeJob = [pscustomobject]@{
+            status = "completed"
+            labels = @("ubuntu-latest")
+        }
+        $script:FleetJob = [pscustomobject]@{
+            status = "queued"
+            labels = @("self-hosted", "dbatools-modern", "dbatools-pool-andreasjordan")
+        }
+    }
+
+    It "names a run that is live without jobs, idle past the window, with nothing ahead in its lane" {
+        $ghost = New-GhostCandidate -Id 100
+
+        $result = Invoke-TestGhost -WorkflowRuns @($ghost) -JobsByRun @{ "100" = @() }
+
+        $result | Should -Be @("100")
+    }
+
+    It "leaves a fresh run alone while GitHub is still creating its authorize job" {
+        $fresh = New-GhostCandidate -Id 101 -CreatedMinutesAgo 5
+
+        $result = Invoke-TestGhost -WorkflowRuns @($fresh) -JobsByRun @{ "101" = @() }
+
+        $result.Count | Should -Be 0
+    }
+
+    It "leaves an old run alone once it has any job, even only the authorize job" {
+        $slow = New-GhostCandidate -Id 102
+
+        $result = Invoke-TestGhost -WorkflowRuns @($slow) -JobsByRun @{ "102" = @($script:AuthorizeJob) }
+
+        $result.Count | Should -Be 0
+    }
+
+    It "leaves a build alone that waits its turn behind a build of its own lane whose jobs wait for runners" {
+        # ci-azure.yml queues a lane's builds (concurrency queue: max). The waiting build has
+        # no jobs and may sit for longer than the window, but it is not a ghost. The build
+        # ahead is still "queued" here, so only its jobs show that the lane is working.
+        $waiting = New-GhostCandidate -Id 103
+        $splatAhead = @{
+            Id                = 104
+            CreatedMinutesAgo = 50
+            UpdatedMinutesAgo = 1
+        }
+        $ahead = New-GhostCandidate @splatAhead
+        $jobsByRun = @{
+            "103" = @()
+            "104" = @($script:AuthorizeJob, $script:FleetJob)
+        }
+
+        $result = Invoke-TestGhost -WorkflowRuns @($waiting, $ahead) -JobsByRun $jobsByRun
+
+        $result.Count | Should -Be 0
+    }
+
+    It "leaves a build alone that waits behind an unmarked manual run of its own lane" {
+        # The unmarked dispatch heats nothing, so its jobs are never read, but it runs real
+        # jobs and holds the potatoqualitee lane all the same.
+        $splatWaiting = @{
+            Id    = 114
+            Actor = "potatoqualitee"
+        }
+        $waiting = New-GhostCandidate @splatWaiting
+        $splatDispatch = @{
+            Id                = 115
+            Actor             = "potatoqualitee"
+            Status            = "in_progress"
+            TriggerEvent      = "workflow_dispatch"
+            CreatedMinutesAgo = 60
+            UpdatedMinutesAgo = 1
+        }
+        $dispatch = New-GhostCandidate @splatDispatch
+
+        $result = Invoke-TestGhost -WorkflowRuns @($waiting, $dispatch) -JobsByRun @{ "114" = @() }
+
+        $result.Count | Should -Be 0
+    }
+
+    It "leaves a build alone whose running build ahead is older than the whole page" {
+        # The page holds the newest runs only. The build ahead shows up in the separate
+        # in_progress listing.
+        $waiting = New-GhostCandidate -Id 116
+        $splatAhead = @{
+            Id                = 117
+            Status            = "in_progress"
+            CreatedMinutesAgo = 300
+            UpdatedMinutesAgo = 2
+        }
+        $ahead = New-GhostCandidate @splatAhead
+        $splatGhost = @{
+            WorkflowRuns   = @($waiting)
+            JobsByRun      = @{ "116" = @() }
+            InProgressRuns = @($ahead)
+        }
+
+        $result = Invoke-TestGhost @splatGhost
+
+        $result.Count | Should -Be 0
+    }
+
+    It "leaves a build alone whose build ahead reads queued while its jobs wait for runners, older than the whole page" {
+        # GitHub reports a run's status from its least advanced job, so a started build whose
+        # fleet jobs wait for runners reads "queued" (cli/cli#13972). Off the page, only the
+        # queued listing and the jobs read for it show that the lane is working.
+        $waiting = New-GhostCandidate -Id 118
+        $splatAhead = @{
+            Id                = 119
+            CreatedMinutesAgo = 300
+            UpdatedMinutesAgo = 40
+        }
+        $ahead = New-GhostCandidate @splatAhead
+        $jobsByRun = @{
+            "118" = @()
+            "119" = @($script:AuthorizeJob, $script:FleetJob)
+        }
+        $splatGhost = @{
+            WorkflowRuns = @($waiting)
+            JobsByRun    = $jobsByRun
+            QueuedRuns   = @($waiting, $ahead)
+        }
+
+        $result = Invoke-TestGhost @splatGhost
+
+        $result.Count | Should -Be 0
+    }
+
+    It "leaves a build alone that waits behind an unmarked manual run whose jobs wait for runners" {
+        # The unmarked dispatch is on the page but ineligible, so only the queued listing
+        # brings its jobs.
+        $splatWaiting = @{
+            Id    = 125
+            Actor = "potatoqualitee"
+        }
+        $waiting = New-GhostCandidate @splatWaiting
+        $splatDispatch = @{
+            Id                = 126
+            Actor             = "potatoqualitee"
+            TriggerEvent      = "workflow_dispatch"
+            CreatedMinutesAgo = 60
+            UpdatedMinutesAgo = 40
+        }
+        $dispatch = New-GhostCandidate @splatDispatch
+        $jobsByRun = @{
+            "125" = @()
+            "126" = @($script:AuthorizeJob, $script:FleetJob)
+        }
+        $splatGhost = @{
+            WorkflowRuns = @($waiting, $dispatch)
+            JobsByRun    = $jobsByRun
+            QueuedRuns   = @($waiting, $dispatch)
+        }
+
+        $result = Invoke-TestGhost @splatGhost
+
+        $result.Count | Should -Be 0
+    }
+
+    It "leaves a build alone while a queued build of its lane has jobs nobody could read" {
+        $waiting = New-GhostCandidate -Id 122
+        $unread = New-GhostCandidate -Id 123 -CreatedMinutesAgo 300
+        $splatGhost = @{
+            WorkflowRuns = @($waiting)
+            JobsByRun    = @{ "122" = @() }
+            QueuedRuns   = @($waiting, $unread)
+        }
+
+        $result = Invoke-TestGhost @splatGhost
+
+        $result.Count | Should -Be 0
+    }
+
+    It "still names a ghost that the queued listing carries as well" {
+        # Ghosts read "queued" too; a job-less queued run holds no lane, its own included.
+        $ghost = New-GhostCandidate -Id 124
+        $otherGhost = New-GhostCandidate -Id 127 -CreatedMinutesAgo 6000
+        $jobsByRun = @{
+            "124" = @()
+            "127" = @()
+        }
+        $splatGhost = @{
+            WorkflowRuns = @($ghost)
+            JobsByRun    = $jobsByRun
+            QueuedRuns   = @($ghost, $otherGhost)
+        }
+
+        $result = Invoke-TestGhost @splatGhost
+
+        $result | Should -Be @("124")
+    }
+
+    It "still names a ghost when only another lane is working" {
+        $ghost = New-GhostCandidate -Id 105 -Actor "andreasjordan"
+        $splatOther = @{
+            Id                = 106
+            Actor             = "niphlod"
+            Status            = "in_progress"
+            CreatedMinutesAgo = 10
+            UpdatedMinutesAgo = 1
+        }
+        $other = New-GhostCandidate @splatOther
+        $jobsByRun = @{
+            "105" = @()
+            "106" = @($script:AuthorizeJob)
+        }
+        $splatGhost = @{
+            WorkflowRuns   = @($ghost, $other)
+            JobsByRun      = $jobsByRun
+            InProgressRuns = @($other)
+        }
+
+        $result = Invoke-TestGhost @splatGhost
+
+        $result | Should -Be @("105")
+    }
+
+    It "treats a re-run of an old run as fresh, because a re-run keeps its created_at" {
+        $splatRerun = @{
+            Id                = 107
+            CreatedMinutesAgo = 4000
+            StartedMinutesAgo = 2
+        }
+        $rerun = New-GhostCandidate @splatRerun
+
+        $result = Invoke-TestGhost -WorkflowRuns @($rerun) -JobsByRun @{ "107" = @() }
+
+        $result.Count | Should -Be 0
+    }
+
+    It "never names a run whose jobs were not read" {
+        $unread = New-GhostCandidate -Id 108
+
+        $result = Invoke-TestGhost -WorkflowRuns @($unread) -JobsByRun @{ }
+
+        $result.Count | Should -Be 0
+    }
+
+    It "never names a run whose time stamps cannot be read" {
+        $garbled = New-GhostCandidate -Id 109
+        foreach ($field in @("created_at", "run_started_at", "updated_at")) {
+            $garbled.$field = "not a time"
+        }
+
+        $result = Invoke-TestGhost -WorkflowRuns @($garbled) -JobsByRun @{ "109" = @() }
+
+        $result.Count | Should -Be 0
+    }
+
+    It "never names a completed run" {
+        $done = New-GhostCandidate -Id 110 -Status "completed"
+
+        $result = Invoke-TestGhost -WorkflowRuns @($done) -JobsByRun @{ "110" = @() }
+
+        $result.Count | Should -Be 0
+    }
+
+    It "is switched off by a zero window" {
+        $ghost = New-GhostCandidate -Id 111
+        $splatGhost = @{
+            WorkflowRuns = @($ghost)
+            JobsByRun    = @{ "111" = @() }
+            GhostMinutes = 0
+        }
+
+        $result = Invoke-TestGhost @splatGhost
+
+        $result.Count | Should -Be 0
+    }
+
+    It "reads the DateTime stamps that Invoke-RestMethod delivers" {
+        $old = New-GhostCandidate -Id 112
+        $new = New-GhostCandidate -Id 113
+        foreach ($field in @("created_at", "run_started_at", "updated_at")) {
+            $old.$field = $script:Now.AddMinutes(-120).UtcDateTime
+            $new.$field = $script:Now.AddMinutes(-5).UtcDateTime
+        }
+
+        $result = Invoke-TestGhost -WorkflowRuns @($old, $new) -JobsByRun @{ "112" = @(); "113" = @() }
+
+        $result | Should -Be @("112")
+    }
+
+    It "lets the policy cool lanes that only ghosts held hot" {
+        # The 2026-11-11 shape: a maintainer PR run and merge runs on development, all
+        # queued for days without a single job.
+        $splatPrGhost = @{
+            Id                = 120
+            Actor             = "andreasjordan"
+            CreatedMinutesAgo = 5000
+        }
+        $prGhost = New-GhostCandidate @splatPrGhost
+        $splatMergeGhost = @{
+            Id                = 121
+            Actor             = "potatoqualitee"
+            CreatedMinutesAgo = 5000
+            TriggerEvent      = "push"
+            HeadBranch        = "development"
+        }
+        $mergeGhost = New-GhostCandidate @splatMergeGhost
+        $runs = @($prGhost, $mergeGhost)
+        $ghostIds = Invoke-TestGhost -WorkflowRuns $runs -JobsByRun @{ "120" = @(); "121" = @() }
+        $remaining = @($runs | Where-Object { [string]$PSItem.id -notin $ghostIds })
+
+        $held = Invoke-TestPolicy -WorkflowRuns $runs
+        $cooled = Invoke-TestPolicy -WorkflowRuns $remaining
+
+        $held.andreasjordan | Should -Be 10
+        $held.potatoqualitee | Should -Be 10
+        $cooled.andreasjordan | Should -Be 0
+        $cooled.potatoqualitee | Should -Be 0
+    }
+}
+
 Describe "Get-MarkedPushDispatch" {
     It "returns a new marked branch and SHA" {
         $event = New-PushEvent -Actor "potatoqualitee" -CreatedAt $script:Now.AddMinutes(-5) -Message "work [do ci]" -Sha "marked123" -Branch "feature"
