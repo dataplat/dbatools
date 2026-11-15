@@ -271,7 +271,8 @@ END
         (Get-DbaXESessionTemplate | Measure-Object).Count | Should -BeGreaterThan 40
     }
 
-    It "lists a directory on Linux also for a login that is not sysadmin" {
+    # The gallery job imports the released dbatools, which lists nothing for this login until the fix of #10839 ships.
+    It -Skip:([bool]$env:DBATOOLS_GALLERY_TEST) "lists a directory on Linux also for a login that is not sysadmin" {
         # Get-DbaFile lists a directory with sys.dm_os_enumerate_filesystem on SQL Server 2017 and later, because
         # xp_dirtree lists nothing for a login that is not sysadmin (#10839). This is its only test on Linux.
         $masterPath = (Connect-DbaInstance).MasterDBPath
