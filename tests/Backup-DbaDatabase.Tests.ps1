@@ -594,15 +594,21 @@ Backup-DbaDatabase @Splat
         }
     }
 
-    Context "Should handle NUL as an input path also when a Path is given" {
+    Context "Should handle NUL when a backup path is given as well" {
         BeforeAll {
-            # A Path, also one from $PSDefaultParameterValues, sent NUL: through GetFullPath, which made it \\.\NUL
-            $results = Backup-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database master -Path $DestBackupDir -FilePath NUL
+            # A Path used to send NUL: through GetFullPath, which made it \\.\NUL and failed the backup
+            $splatNulBackup = @{
+                SqlInstance = $TestConfig.InstanceCopy1
+                Database    = "master"
+                Path        = $DestBackupDir
+                FilePath    = "NUL"
+            }
+            $results = Backup-DbaDatabase @splatNulBackup
         }
 
-        It "Should return succesful backup" {
-            $results.BackupComplete | Should -BeTrue
+        It "Should return a successful backup" {
             $WarnVar | Should -BeNullOrEmpty
+            $results.BackupComplete | Should -BeTrue
         }
 
         It "Should have backed up to NUL:" {
