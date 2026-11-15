@@ -142,6 +142,7 @@ function Initialize-FleetContext {
         CommunityCount          = [int]$config["COMMUNITY_COUNT"]
         MaintainerCount         = [int]$config["BOOST_COUNT"]
         MaintainerWindowMinutes = [int]$config["BOOST_HOURS"] * 60
+        GhostRunMinutes         = [int]$config["GHOST_RUN_MINUTES"]
         CommunityGraceMinutes   = [int]$config["COMMUNITY_GRACE_MINUTES"]
         MaxRunners              = [int]$config["MAX_RUNNERS"]
         WarmFloor               = [int]$config["WARM_FLOOR"]
@@ -777,8 +778,84 @@ function Remove-OrphanedNetworking {
     Write-Host "reaped orphans: nics=$($staleNics.Count) pips=$($stalePips.Count)"
 }
 
-function Get-PoolJobDemand {
+function Read-CiRunJob {
+    param(
+        [Parameter(Mandatory)]
+        $Run,
+        [Parameter(Mandatory)]
+        [hashtable]$JobsByRun
+    )
+    # I/O only. Adds the jobs of one run to JobsByRun. A response without a jobs list, with a
+    # null one, or with an empty one that its own total_count contradicts is left out, so the
+    # policy treats that run as unread rather than as job-less.
+    $splatJobs = @{
+        Path      = "repos/$($script:Fleet.Repo)/actions/runs/$($Run.id)/jobs?per_page=100"
+        Operation = "read jobs for run $($Run.id)"
+    }
+    $jobResponse = Invoke-GhJson @splatJobs
+    if ($null -eq $jobResponse -or $null -eq $jobResponse.PSObject.Properties["jobs"] -or $null -eq $jobResponse.jobs) {
+        Write-Warning "jobs for run $($Run.id) arrived without a jobs list; treating the run as unread"
+        return
+    }
+    $runJobs = @($jobResponse.jobs | Where-Object { $null -ne $PSItem })
+    $reportedJobCount = 0
+    $jobCountProperty = $jobResponse.PSObject.Properties["total_count"]
+    if ($runJobs.Count -eq 0 -and $null -ne $jobCountProperty -and [int]::TryParse([string]$jobCountProperty.Value, [ref]$reportedJobCount) -and $reportedJobCount -gt 0) {
+        Write-Warning "jobs for run $($Run.id) arrived empty although GitHub counts $reportedJobCount; treating the run as unread"
+        return
+    }
+    $JobsByRun[[string]$Run.id] = $runJobs
+}
+
+function Get-LiveCiRunJob {
     param([object[]]$WorkflowRuns)
+    # I/O only. Reads the jobs of every eligible run that is not completed, once per pass,
+    # for both the ghost check and the pending demand. Rejected runs are filtered first so
+    # an unmarked push cannot spend an API call.
+    $eligibleLiveRuns = @($WorkflowRuns | Where-Object {
+            $splatEligibility = @{
+                Run            = $PSItem
+                OptInPushUsers = $script:Fleet.OptInPushUsers
+                Marker         = $script:Fleet.CiMarker
+            }
+            [string]$PSItem.status -ne "completed" -and (Test-CiRunEligible @splatEligibility)
+        })
+    $jobsByRun = @{ }
+    foreach ($run in $eligibleLiveRuns) {
+        Read-CiRunJob -Run $run -JobsByRun $jobsByRun
+    }
+    $jobsByRun
+}
+
+function Test-CiRunListing {
+    param(
+        $Response,
+        [Parameter(Mandatory)]
+        [string]$Description
+    )
+    # A status listing for the ghost check counts only when it carries its run list and holds
+    # every run GitHub counts for it, because a run is a ghost only when nothing of its lane
+    # can be running.
+    if ($null -eq $Response -or $null -eq $Response.PSObject.Properties["workflow_runs"] -or $null -eq $Response.workflow_runs) {
+        Write-Warning "$Description arrived without a run list; no run is treated as a ghost this pass"
+        return $false
+    }
+    $listedCount = @($Response.workflow_runs | Where-Object { $null -ne $PSItem }).Count
+    $reportedCount = 0
+    $countProperty = $Response.PSObject.Properties["total_count"]
+    if ($null -ne $countProperty -and [int]::TryParse([string]$countProperty.Value, [ref]$reportedCount) -and $reportedCount -gt $listedCount) {
+        Write-Warning "$Description arrived with $listedCount of the $reportedCount runs GitHub counts; no run is treated as a ghost this pass"
+        return $false
+    }
+    $true
+}
+
+function Get-PoolJobDemand {
+    param(
+        [object[]]$WorkflowRuns,
+        [Parameter(Mandatory)]
+        [hashtable]$JobsByRun
+    )
     # I/O only -- eligibility, matrix-state detection and the demand transform live in
     # runner-policy.ps1, where they are unit tested. Rejected runs are filtered before
     # I/O so an unmarked push cannot spend an API call or inflate an already-hot lane.
@@ -790,19 +867,10 @@ function Get-PoolJobDemand {
             }
             [string]$PSItem.status -ne "completed" -and (Test-CiRunEligible @splatEligibility)
         })
-    $jobsByRun = @{ }
-    foreach ($run in $eligibleLiveRuns) {
-        $splatJobs = @{
-            Path      = "repos/$($script:Fleet.Repo)/actions/runs/$($run.id)/jobs?per_page=100"
-            Operation = "read jobs for run $($run.id)"
-        }
-        $jobResponse = Invoke-GhJson @splatJobs
-        $jobsByRun[[string]$run.id] = @($jobResponse.jobs)
-    }
 
     $splatDemand = @{
         WorkflowRuns    = $eligibleLiveRuns
-        JobsByRun       = $jobsByRun
+        JobsByRun       = $JobsByRun
         Maintainers     = $script:Fleet.Maintainers
         OptInPushUsers  = $script:Fleet.OptInPushUsers
         Marker          = $script:Fleet.CiMarker
@@ -929,11 +997,63 @@ function Get-RunnerDemand {
     $runResponse = Invoke-GhJson @splatRuns
     $workflowRuns = @($runResponse.workflow_runs)
     $now = [DateTimeOffset]::UtcNow
-    $poolJobDemand = Get-PoolJobDemand -WorkflowRuns $workflowRuns
+    $jobsByRun = Get-LiveCiRunJob -WorkflowRuns $workflowRuns
+    $ghostRunIds = @()
+    if ($script:Fleet.GhostRunMinutes -gt 0) {
+        # The build a waiting build sits behind can be older than every run of the page
+        # above, so the ghost check also gets the running and the queued builds on their
+        # own. GitHub reports a run's status from its least advanced job, so a started build
+        # whose jobs wait for runners reads "queued"; the queued builds therefore bring their
+        # jobs too. A listing that arrives without its run list, or with fewer runs than it
+        # counts, calls no run a ghost this pass.
+        $splatRunning = @{
+            Path      = "repos/$($script:Fleet.Repo)/actions/workflows/$($script:Fleet.CiWorkflow)/runs?status=in_progress&per_page=100"
+            Operation = "read running CI builds"
+        }
+        $runningResponse = Invoke-GhJson @splatRunning
+        $splatQueued = @{
+            Path      = "repos/$($script:Fleet.Repo)/actions/workflows/$($script:Fleet.CiWorkflow)/runs?status=queued&per_page=100"
+            Operation = "read queued CI builds"
+        }
+        $queuedResponse = Invoke-GhJson @splatQueued
+        $runningUsable = Test-CiRunListing -Response $runningResponse -Description "running CI builds"
+        $queuedUsable = Test-CiRunListing -Response $queuedResponse -Description "queued CI builds"
+        if ($runningUsable -and $queuedUsable) {
+            $queuedRuns = @($queuedResponse.workflow_runs | Where-Object { $null -ne $PSItem })
+            # Ineligible and off-page queued builds were not read above. Their jobs serve the
+            # ghost check only; pending demand keeps reading the page's eligible runs.
+            $ghostJobsByRun = $jobsByRun.Clone()
+            foreach ($queuedRun in $queuedRuns) {
+                if (-not $ghostJobsByRun.ContainsKey([string]$queuedRun.id)) {
+                    Read-CiRunJob -Run $queuedRun -JobsByRun $ghostJobsByRun
+                }
+            }
+            $splatGhost = @{
+                WorkflowRuns   = $workflowRuns
+                JobsByRun      = $ghostJobsByRun
+                InProgressRuns = @($runningResponse.workflow_runs)
+                QueuedRuns     = $queuedRuns
+                Maintainers    = $script:Fleet.Maintainers
+                OptInPushUsers = $script:Fleet.OptInPushUsers
+                Marker         = $script:Fleet.CiMarker
+                Now            = $now
+                GhostMinutes   = $script:Fleet.GhostRunMinutes
+            }
+            $ghostRunIds = @(Get-GhostCiRunId @splatGhost)
+        }
+    }
+    if ($ghostRunIds) {
+        Write-Host "ignoring ghost CI runs (live, no jobs, idle over $($script:Fleet.GhostRunMinutes) minutes, nothing ahead in their lane): $($ghostRunIds -join ", ")"
+    }
+    # Ghosts leave pending demand and pool sizing only. Marked-push dispatch below still
+    # sees every run: a ghost is GitHub's record that the commit's run was accepted, and
+    # dispatching that commit again is a different decision than this filter makes.
+    $demandRuns = @($workflowRuns | Where-Object { [string]$PSItem.id -notin $ghostRunIds })
+    $poolJobDemand = Get-PoolJobDemand -WorkflowRuns $demandRuns -JobsByRun $jobsByRun
     Write-Host "pending jobs: $(($poolJobDemand.GetEnumerator() | ForEach-Object { "$($PSItem.Key)=$($PSItem.Value)" }) -join ", ")"
     $splatPolicy = @{
         Events                  = $events
-        WorkflowRuns            = $workflowRuns
+        WorkflowRuns            = $demandRuns
         Maintainers             = $script:Fleet.Maintainers
         OptInPushUsers          = $script:Fleet.OptInPushUsers
         MaintainerCount         = $script:Fleet.MaintainerCount

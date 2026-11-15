@@ -25,10 +25,12 @@ function Remove-DbaDbBackupRestoreHistory {
     .PARAMETER KeepDays
         Specifies how many days of backup and restore history to retain when performing server-level cleanup. Records older than this period will be deleted from MSDB history tables.
         Use this for regular maintenance to prevent MSDB growth while preserving recent history for troubleshooting. Cannot be combined with Database parameter.
+        Defaults to 30 days. Use 0 to remove all history up to now. The days are counted back from the current time of the instance, because the instance records the backup and restore times in its own local time.
 
     .PARAMETER Database
-        Specifies specific databases to completely remove all backup and restore history records regardless of age. Accepts multiple database names and wildcards.
+        Specifies specific databases to completely remove all backup and restore history records regardless of age. Accepts multiple database names.
         Use this when decommissioning databases or performing targeted cleanup after major maintenance operations. Cannot be combined with KeepDays parameter.
+        Also removes the history of databases that no longer exist on the instance, because dropping a database leaves its backup and restore history in MSDB.
 
     .PARAMETER InputObject
         Accepts database objects piped from Get-DbaDatabase to remove complete backup and restore history for those specific databases.
@@ -37,7 +39,7 @@ function Remove-DbaDbBackupRestoreHistory {
     .OUTPUTS
         None
 
-        This command performs cleanup operations on the MSDB database backup and restore history tables but does not return any objects to the pipeline. It modifies data through SMO methods (DeleteBackupHistory for server-level cleanup and DropBackupHistory for database-level cleanup).
+        This command performs cleanup operations on the MSDB database backup and restore history tables but does not return any objects to the pipeline. It modifies data through SMO methods (DeleteBackupHistory for server-level cleanup and for databases that no longer exist, DropBackupHistory for database-level cleanup).
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -74,7 +76,12 @@ function Remove-DbaDbBackupRestoreHistory {
     .EXAMPLE
         PS C:\> Remove-DbaDbBackupRestoreHistory -SqlInstance sql2016 -Database db1
 
-        Prompts for confirmation then deletes all backup and restore history for database db1 on SQL Server sql2016
+        Prompts for confirmation then deletes all backup and restore history for database db1 on SQL Server sql2016, also when db1 was already dropped
+
+    .EXAMPLE
+        PS C:\> Remove-DbaDbBackupRestoreHistory -SqlInstance sql2016 -KeepDays 0
+
+        Prompts for confirmation then deletes all backup and restore history on SQL Server sql2016 up to the current time of the instance
 
     .EXAMPLE
         PS C:\> Get-DbaDatabase -SqlInstance sql2016 | Remove-DbaDbBackupRestoreHistory -WhatIf
@@ -85,22 +92,15 @@ function Remove-DbaDbBackupRestoreHistory {
     param (
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
-        [int]$KeepDays,
+        [int]$KeepDays = 30,
         [string[]]$Database,
         [Parameter(ValueFromPipeline)]
         [Microsoft.SqlServer.Management.Smo.Database[]]$InputObject,
         [switch]$EnableException
     )
 
-    begin {
-        if (-not $KeepDays -and -not $Database) {
-            $KeepDays = 30
-        }
-        $odt = (Get-Date).AddDays(-$KeepDays)
-    }
-
     process {
-        if ($KeepDays -and $Database) {
+        if ((Test-Bound -ParameterName KeepDays) -and (Test-Bound -ParameterName Database)) {
             Stop-Function -Message "KeepDays cannot be used with Database. When Database is specified, all backup/restore history for that database is deleted."
             return
         }
@@ -112,16 +112,32 @@ function Remove-DbaDbBackupRestoreHistory {
             }
             if (-not $Database) {
                 try {
-                    if ($Pscmdlet.ShouldProcess($server, "Remove backup/restore history before $($odt) for all databases")) {
+                    # sp_delete_backuphistory compares the cutoff with times the instance recorded in its own local time,
+                    # so the days are counted back from the clock of the instance, not from the clock of this computer
+                    $serverTime = $server.Query("SELECT GETDATE() AS ServerTime").ServerTime
+                    $oldestDate = $serverTime.AddDays(-$KeepDays)
+                    if ($Pscmdlet.ShouldProcess($server, "Remove backup/restore history before $($oldestDate) for all databases")) {
                         # While this method is named DeleteBackupHistory, it also removes restore history
-                        $server.DeleteBackupHistory($odt)
+                        $server.DeleteBackupHistory($oldestDate)
                         $server.Refresh()
                     }
                 } catch {
-                    Stop-Function -Message "Could not remove backup/restore history on $server" -Continue
+                    Stop-Function -Message "Could not remove backup/restore history on $server" -ErrorRecord $_ -Target $server -Continue
                 }
             } else {
-                $InputObject += $server.Databases | Where-Object { $_.Name -in $Database }
+                $existingDatabases = @($server.Databases | Where-Object Name -in $Database)
+                $InputObject += $existingDatabases
+                # Dropping a database leaves its history in msdb, so a name without a database is removed by name
+                foreach ($dbName in ($Database | Where-Object { $PSItem -notin $existingDatabases.Name })) {
+                    try {
+                        if ($Pscmdlet.ShouldProcess("[$dbName] on $($server.Name)", "Remove complete backup/restore history")) {
+                            # While this method is named DeleteBackupHistory, it also removes restore history
+                            $server.DeleteBackupHistory($dbName)
+                        }
+                    } catch {
+                        Stop-Function -Message "Could not remove backup/restore history for database $dbName on $server" -ErrorRecord $_ -Target $dbName -Continue
+                    }
+                }
             }
         }
 
@@ -134,7 +150,7 @@ function Remove-DbaDbBackupRestoreHistory {
                     $db.Refresh()
                 }
             } catch {
-                Stop-Function -Message "Could not remove backup/restore history for database $db on $servername" -Continue
+                Stop-Function -Message "Could not remove backup/restore history for database $db on $servername" -ErrorRecord $_ -Target $db -Continue
             }
         }
     }
