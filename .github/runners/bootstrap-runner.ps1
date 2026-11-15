@@ -67,6 +67,148 @@ function Get-RunnerVmState {
     return "spent"
 }
 
+function Get-RunnerPackageVersion {
+    <#
+    .SYNOPSIS
+        Reports the version the runner listener under RunnerRoot answers with.
+
+    .DESCRIPTION
+        Returns nothing when bin\Runner.Listener.exe is missing, fails to run or prints no
+        version. A function of its own so tests/bootstrap-runner.Tests.ps1 can stand in for
+        a real listener when it exercises Install-RunnerPackage.
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$RunnerRoot
+    )
+
+    $listenerPath = Join-Path -Path $RunnerRoot -ChildPath "bin\Runner.Listener.exe"
+    if (-not (Test-Path -Path $listenerPath)) {
+        return
+    }
+    try {
+        $versionMatch = [regex]::Match((@(& $listenerPath --version) -join " "), "\d+\.\d+\.\d+")
+    } catch {
+        return
+    }
+    if ($versionMatch.Success) {
+        $versionMatch.Value
+    }
+}
+
+function Install-RunnerPackage {
+    <#
+    .SYNOPSIS
+        Replaces the runner staged under RunnerRoot with the package at PackageUrl, unless its
+        listener already reports Version.
+
+    .DESCRIPTION
+        Throws when the download fails, its SHA256 is not Sha256 or the listener does not
+        report Version after the install; the caller turns that into a failed bootstrap.
+
+        The package is downloaded and unpacked into a new staging folder under RunnerRoot,
+        which SYSTEM owns, rather than the shared temp folder, and moved into place with bin
+        last. A runner counts as installed when bin\Runner.Listener.exe reports Version, and
+        bin only arrives once externals and the root files are in place, so an install cut
+        off at any point leaves the old listener or none, and the next pass installs again.
+        Staging folders such a pass left behind are removed first.
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [string]$RunnerRoot,
+        [Parameter(Mandatory)]
+        [string]$Version,
+        [Parameter(Mandatory)]
+        [string]$Sha256,
+        [Parameter(Mandatory)]
+        [string]$PackageUrl
+    )
+
+    # every step stops the install whatever the caller's preference: a failed move that only
+    # warned would let bin arrive without externals and the runner count as installed
+    $ErrorActionPreference = "Stop"
+
+    $stagedVersion = Get-RunnerPackageVersion -RunnerRoot $RunnerRoot
+    if ($stagedVersion -eq $Version) {
+        "runner $Version is staged"
+        return
+    }
+    "runner $stagedVersion is staged; installing $Version"
+
+    foreach ($oldStage in @(Get-ChildItem -Path $RunnerRoot -Filter ".runner-package-*")) {
+        $splatRemoveOldStage = @{
+            Path    = $oldStage.FullName
+            Recurse = $true
+            Force   = $true
+        }
+        Remove-Item @splatRemoveOldStage
+    }
+
+    $stageRoot = Join-Path -Path $RunnerRoot -ChildPath ".runner-package-$([System.Guid]::NewGuid().ToString("N"))"
+    $packagePath = Join-Path -Path $stageRoot -ChildPath "package.zip"
+    $unpackedPath = Join-Path -Path $stageRoot -ChildPath "unpacked"
+    $null = New-Item -Path $stageRoot -ItemType Directory
+    try {
+        $webClient = New-Object -TypeName System.Net.WebClient
+        try {
+            $webClient.DownloadFile($PackageUrl, $packagePath)
+        } finally {
+            $webClient.Dispose()
+        }
+        $actualSha256 = (Get-FileHash -Path $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($actualSha256 -ne $Sha256) {
+            throw "runner download $PackageUrl has SHA256 $actualSha256, expected $Sha256"
+        }
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($packagePath, $unpackedPath)
+
+        # bin goes first and comes back last: without it no listener answers, so an install
+        # cut off anywhere in between probes as not installed. Removing externals too means
+        # no file of the old version outlives the swap.
+        foreach ($runnerFolder in "bin", "externals") {
+            $runnerFolderPath = Join-Path -Path $RunnerRoot -ChildPath $runnerFolder
+            if (Test-Path -Path $runnerFolderPath) {
+                $splatRemoveRunnerFolder = @{
+                    Path    = $runnerFolderPath
+                    Recurse = $true
+                    Force   = $true
+                }
+                Remove-Item @splatRemoveRunnerFolder
+            }
+        }
+        # the root files (config.cmd, run.cmd) replace the ones the image staged
+        foreach ($packageItem in @(Get-ChildItem -Path $unpackedPath)) {
+            if ($packageItem.Name -in "bin", "externals") {
+                continue
+            }
+            $splatCopyPackageItem = @{
+                Path        = $packageItem.FullName
+                Destination = $RunnerRoot
+                Recurse     = $true
+                Force       = $true
+            }
+            Copy-Item @splatCopyPackageItem
+        }
+        # a rename on the same volume, so each folder arrives whole or not at all
+        Move-Item -Path (Join-Path -Path $unpackedPath -ChildPath "externals") -Destination (Join-Path -Path $RunnerRoot -ChildPath "externals")
+        Move-Item -Path (Join-Path -Path $unpackedPath -ChildPath "bin") -Destination (Join-Path -Path $RunnerRoot -ChildPath "bin")
+    } finally {
+        $splatRemoveStage = @{
+            Path        = $stageRoot
+            Recurse     = $true
+            Force       = $true
+            ErrorAction = "SilentlyContinue"
+        }
+        Remove-Item @splatRemoveStage
+    }
+
+    $installedVersion = Get-RunnerPackageVersion -RunnerRoot $RunnerRoot
+    if ($installedVersion -ne $Version) {
+        throw "runner reports version $installedVersion after the install, expected $Version"
+    }
+    "runner $installedVersion installed"
+}
+
 $vmState = Get-RunnerVmState
 if ($vmState -eq "healthy") {
     "runner already configured on $env:COMPUTERNAME"
@@ -128,62 +270,17 @@ Set-Location -Path "C:\github-runner"
 # as fresh and the next reconcile retries it.
 $runnerVersion = "2.338.2"
 $runnerSha256 = "a1f17aa987fc8158bc7521d284912267a0d01b7c2c4684b33c86783b5e8221cc"
-$runnerRoot = "C:\github-runner"
-$stagedVersion = $null
-try {
-    $stagedVersion = [regex]::Match((@(& "$runnerRoot\bin\Runner.Listener.exe" --version) -join " "), "\d+\.\d+\.\d+").Value
-} catch {
-    $stagedVersion = $null
+$splatRunnerPackage = @{
+    RunnerRoot = "C:\github-runner"
+    Version    = $runnerVersion
+    Sha256     = $runnerSha256
+    PackageUrl = "https://github.com/actions/runner/releases/download/v$runnerVersion/actions-runner-win-x64-$runnerVersion.zip"
 }
-if ($stagedVersion -ne $runnerVersion) {
-    "runner $stagedVersion is staged; installing $runnerVersion"
-    $runnerZip = Join-Path -Path $env:TEMP -ChildPath "actions-runner-win-x64-$runnerVersion.zip"
-    $runnerUrl = "https://github.com/actions/runner/releases/download/v$runnerVersion/actions-runner-win-x64-$runnerVersion.zip"
-    $webClient = New-Object -TypeName System.Net.WebClient
-    try {
-        $webClient.DownloadFile($runnerUrl, $runnerZip)
-    } finally {
-        $webClient.Dispose()
-    }
-    $actualSha256 = (Get-FileHash -Path $runnerZip -Algorithm SHA256).Hash.ToLowerInvariant()
-    if ($actualSha256 -ne $runnerSha256) {
-        "runner download $runnerUrl has SHA256 $actualSha256, expected $runnerSha256"
-        exit 1
-    }
-    # the old bin and externals go first, so no file of the old version outlives the swap
-    foreach ($runnerFolder in "bin", "externals") {
-        $runnerFolderPath = Join-Path -Path $runnerRoot -ChildPath $runnerFolder
-        if (Test-Path -Path $runnerFolderPath) {
-            Remove-Item -Path $runnerFolderPath -Recurse -Force
-        }
-    }
-    # entry by entry with overwrite: ExtractToDirectory refuses the config.cmd and run.cmd
-    # the image already staged at the root
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $runnerArchive = [System.IO.Compression.ZipFile]::OpenRead($runnerZip)
-    try {
-        foreach ($entry in $runnerArchive.Entries) {
-            $entryPath = Join-Path -Path $runnerRoot -ChildPath $entry.FullName
-            if ($entry.FullName.EndsWith("/")) {
-                $null = New-Item -Path $entryPath -ItemType Directory -Force
-                continue
-            }
-            $entryFolder = Split-Path -Path $entryPath -Parent
-            if (-not (Test-Path -Path $entryFolder)) {
-                $null = New-Item -Path $entryFolder -ItemType Directory -Force
-            }
-            [System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $entryPath, $true)
-        }
-    } finally {
-        $runnerArchive.Dispose()
-    }
-    Remove-Item -Path $runnerZip -Force
-    $installedVersion = [regex]::Match((@(& "$runnerRoot\bin\Runner.Listener.exe" --version) -join " "), "\d+\.\d+\.\d+").Value
-    if ($installedVersion -ne $runnerVersion) {
-        "runner reports version $installedVersion after the install, expected $runnerVersion"
-        exit 1
-    }
-    "runner $installedVersion installed"
+try {
+    Install-RunnerPackage @splatRunnerPackage
+} catch {
+    "runner install failed: $($PSItem.Exception.Message)"
+    exit 1
 }
 
 # written before config.cmd on purpose: in service mode the runner can take its job the
