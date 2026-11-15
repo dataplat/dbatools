@@ -28,7 +28,11 @@ Describe $CommandName -Tag UnitTests {
 
 Describe $CommandName -Tag UnitTests {
     BeforeAll {
-        $ModuleBase = (Get-Module -Name dbatools | Where-Object ModuleBase -NotMatch net).ModuleBase
+        # The script module, not the binary module that dbatools.psm1 loads from dbatools.dll under the same
+        # name. Filtering on the path ("-NotMatch net") no longer excluded that one, whose base is now
+        # core\lib or desktop\lib, and dropped the script module too when the working copy sits below a
+        # path containing "net", such as C:\Users\Kenneth or D:\dotnet. See #10827.
+        $ModuleBase = (Get-Module -Name dbatools | Where-Object ModuleType -eq "Script").ModuleBase
         $idxfile = "$ModuleBase\bin\dbatools-buildref-index.json"
     }
 
@@ -190,7 +194,8 @@ Describe $CommandName -Tag UnitTests {
         # Everything an It block reads has to be a key of the case, so the version list travels with
         # the release name instead of being looked up again at run time.
         BeforeDiscovery {
-            $moduleBase = (Get-Module -Name dbatools | Where-Object ModuleBase -NotMatch net).ModuleBase
+            # The script module, for the same reason as in the BeforeAll above
+            $moduleBase = (Get-Module -Name dbatools | Where-Object ModuleType -eq "Script").ModuleBase
             $indexReference = Get-Content "$moduleBase\bin\dbatools-buildref-index.json" -Raw | ConvertFrom-Json
             $majorReleaseCase = $indexReference.Data |
                 Group-Object -Property { $PSItem.Version.Split(".")[0 .. 1] -join "." } |

@@ -18,6 +18,11 @@
     BOOST_COUNT             = 10
     BOOST_HOURS             = 1
 
+    # A live ci-azure run that has no jobs and has not moved for this many minutes is a
+    # ghost GitHub never started (2026-11-11: seven of them held 15 idle runners for days).
+    # Ghosts stop heating lanes; see Get-GhostCiRunId in runner-policy.ps1. Zero disables.
+    GHOST_RUN_MINUTES       = 30
+
     # Held by a lane that is hot but has nothing pending. Mirrored by $warmFloor in
     # janitor-runbook.ps1.
     WARM_FLOOR              = 3

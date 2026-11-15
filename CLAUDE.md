@@ -253,6 +253,10 @@ All commands should have proper `.OUTPUTS` documentation. **Use the prompt at `.
 
 When adding a `-Pattern` parameter, it MUST use regular expressions (regex), not SQL LIKE or PowerShell wildcards.
 
+### Build Reference Index
+
+New SQL Server builds (cumulative and security updates) go into `bin/dbatools-buildref-index.json` through `.github/scripts/Sync-BuildReferenceIndex.ps1`, which reads the build version pages of Microsoft and writes the missing entries. Do not type them by hand. The whole workflow, including the cases the script leaves to a human, is in `.claude/skills/update-buildref/SKILL.md`.
+
 ## DBATOOLS.LIBRARY VERSION
 
 The dbatools.library version used by CI and local development is pinned in **`.github/dbatools-library-version.json`** - a single JSON file with `version` and `notes` fields. Never hardcode a library version or release URL in a workflow; change this file instead.

@@ -224,6 +224,163 @@ function Get-PoolJobDemandFromRuns {
     $demand
 }
 
+function ConvertTo-FleetTimestamp {
+    [CmdletBinding()]
+    param(
+        [AllowNull()]
+        $Value
+    )
+
+    # GitHub sends ISO 8601 text, but Invoke-RestMethod on PowerShell 7 has already turned
+    # it into a DateTime by the time the controller reads it, while the tests pass the
+    # text. Both shapes land here. Anything unreadable is $null so the caller can fail safe.
+    if ($null -eq $Value) {
+        return $null
+    }
+    if ($Value -is [DateTimeOffset]) {
+        return $Value
+    }
+    if ($Value -is [datetime]) {
+        return (New-Object -TypeName DateTimeOffset -ArgumentList $Value.ToUniversalTime())
+    }
+    $parsed = [DateTimeOffset]::MinValue
+    $culture = [System.Globalization.CultureInfo]::InvariantCulture
+    $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal
+    if ([DateTimeOffset]::TryParse([string]$Value, $culture, $styles, [ref]$parsed)) {
+        return $parsed
+    }
+    return $null
+}
+
+function Get-CiRunLastActivity {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        $Run
+    )
+
+    # The newest of the three stamps. created_at alone would call a re-run of an old run a
+    # ghost in the seconds before its new attempt's jobs exist, because a re-run keeps the
+    # original created_at and only moves run_started_at and updated_at.
+    $latest = $null
+    foreach ($field in @("created_at", "run_started_at", "updated_at")) {
+        $stamp = ConvertTo-FleetTimestamp -Value $Run.$field
+        if ($null -ne $stamp -and ($null -eq $latest -or $stamp -gt $latest)) {
+            $latest = $stamp
+        }
+    }
+    $latest
+}
+
+function Get-CiRunLane {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        $Run,
+        [Parameter(Mandatory)]
+        [string[]]$Maintainers
+    )
+
+    # The lane is ci-azure.yml's concurrency group: a maintainer's own, or community.
+    $actor = Get-CiRunActor -Run $Run
+    if ($actor -in $Maintainers) {
+        return $actor
+    }
+    return "community"
+}
+
+function Get-GhostCiRunId {
+    [CmdletBinding()]
+    param(
+        [object[]]$WorkflowRuns = @(),
+        [hashtable]$JobsByRun = @{ },
+        [object[]]$InProgressRuns = @(),
+        [object[]]$QueuedRuns = @(),
+        [Parameter(Mandatory)]
+        [string[]]$Maintainers,
+        [Parameter(Mandatory)]
+        [string[]]$OptInPushUsers,
+        [Parameter(Mandatory)]
+        [string]$Marker,
+        [Parameter(Mandatory)]
+        [DateTimeOffset]$Now,
+        [Parameter(Mandatory)]
+        [int]$GhostMinutes
+    )
+
+    # A ghost is a run GitHub accepted but never started. On 2026-11-11 an Actions incident
+    # left seven ci-azure runs "queued" with no jobs; their workflow file was never evaluated
+    # and GitHub refuses to cancel or delete them. Every live run heats its maintainer's lane
+    # and a job-less one is estimated as a full pool, so those seven held 15 idle runners for
+    # days. A ghost is a live eligible run that
+    #   - has no jobs at all, not even the ubuntu authorize job GitHub creates within seconds
+    #     of a real run;
+    #   - has not moved for GhostMinutes (newest of created_at, run_started_at, updated_at);
+    #   - has nothing to wait for: no run in its lane is working. ci-azure.yml queues a
+    #     lane's builds behind each other (concurrency queue: max), and a build waiting its
+    #     turn looks exactly like a ghost, except that the build ahead of it is running.
+    # A lane is working when one of its runs is in_progress, eligible or not (an unmarked
+    # manual dispatch runs real jobs and holds the lane as well), or when one of its live
+    # eligible runs or any of its queued runs has a job. The build ahead can be older than
+    # every run of the WorkflowRuns page, so InProgressRuns and QueuedRuns are the separate
+    # in_progress and queued listings. GitHub reports a run's status from its least advanced
+    # job, so a started build whose jobs wait for runners can read "queued" rather than
+    # "in_progress" (https://github.com/cli/cli/issues/13972). JobsByRun therefore also holds
+    # the jobs of QueuedRuns, and a queued run whose jobs were not read holds its lane, since
+    # it may be such a build.
+    # A run whose jobs were not read is never a ghost, so a failed read keeps the old
+    # behavior. Zero disables the check.
+    if ($GhostMinutes -le 0) {
+        return
+    }
+    $cutoff = $Now.AddMinutes(-$GhostMinutes)
+    $liveRuns = @($WorkflowRuns | Where-Object {
+            $splatEligibility = @{
+                Run            = $PSItem
+                OptInPushUsers = $OptInPushUsers
+                Marker         = $Marker
+            }
+            [string]$PSItem.status -ne "completed" -and (Test-CiRunEligible @splatEligibility)
+        })
+
+    $workingLanes = @{ }
+    foreach ($run in @(@($WorkflowRuns) + @($InProgressRuns) + @($QueuedRuns) | Where-Object { $null -ne $PSItem })) {
+        if ([string]$run.status -eq "in_progress") {
+            $workingLanes[(Get-CiRunLane -Run $run -Maintainers $Maintainers)] = $true
+        }
+    }
+    foreach ($run in $liveRuns) {
+        $runId = [string]$run.id
+        if ($JobsByRun.ContainsKey($runId) -and @($JobsByRun[$runId] | Where-Object { $null -ne $PSItem }).Count -gt 0) {
+            $workingLanes[(Get-CiRunLane -Run $run -Maintainers $Maintainers)] = $true
+        }
+    }
+    foreach ($run in @($QueuedRuns | Where-Object { $null -ne $PSItem -and [string]$PSItem.status -ne "completed" })) {
+        $runId = [string]$run.id
+        if (-not $JobsByRun.ContainsKey($runId) -or @($JobsByRun[$runId] | Where-Object { $null -ne $PSItem }).Count -gt 0) {
+            $workingLanes[(Get-CiRunLane -Run $run -Maintainers $Maintainers)] = $true
+        }
+    }
+
+    foreach ($run in $liveRuns) {
+        $runId = [string]$run.id
+        if (-not $JobsByRun.ContainsKey($runId)) {
+            continue
+        }
+        if (@($JobsByRun[$runId] | Where-Object { $null -ne $PSItem }).Count -gt 0) {
+            continue
+        }
+        $lastActivity = Get-CiRunLastActivity -Run $run
+        if ($null -eq $lastActivity -or $lastActivity -gt $cutoff) {
+            continue
+        }
+        if ($workingLanes.ContainsKey((Get-CiRunLane -Run $run -Maintainers $Maintainers))) {
+            continue
+        }
+        $runId
+    }
+}
+
 function Get-VmssCapacityPlan {
     [CmdletBinding()]
     param(
