@@ -912,7 +912,8 @@ function Backup-DbaDatabase {
                 }
 
                 # Because of #7860, don't use [IO.Path]::GetFullPath on MacOS
-                if ($null -eq $StorageBaseUrl -and $Path -and -not $nonwindows -and -not $isdestlinux) {
+                # GetFullPath also turns the NUL: device into \\.\NUL, which SQL Server cannot open, so a -Path next to -FilePath NUL is left alone
+                if ($null -eq $StorageBaseUrl -and $Path -and $FinalBackupPath[0] -ne "NUL:" -and -not $nonwindows -and -not $isdestlinux) {
                     $FinalBackupPath = $FinalBackupPath | ForEach-Object { [IO.Path]::GetFullPath($_) }
                 }
 
