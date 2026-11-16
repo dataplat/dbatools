@@ -125,6 +125,113 @@ CREATE LOGIN [$stateTestLogin]
         }
     }
 
+    Context "When the database user of a login has another name than the login (#10837)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # A database principal is a user, and a user can have another name than its login, on each server another one.
+            # The permissions were read and revoked by the name of the login: the user kept what the source user does not
+            # have and did not get what it has, while an unrelated user that has the name of the login lost its permissions.
+            $userDbName = "dbatoolsci_userdb_$(Get-Random)"
+            $userLoginName = "dbatoolsci_userlogin_$(Get-Random)"
+            $pairLoginName = "dbatoolsci_pairlogin_$(Get-Random)"
+            $userPassword = ConvertTo-SecureString -String "dbatools.IO!$(Get-Random)" -AsPlainText -Force
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Login $userLoginName, $pairLoginName -SecurePassword $userPassword
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Name $userDbName
+
+            # The first login has a user of the same name on both servers, which is a member of a role on the source. On the
+            # destination it has a permission the source user does not have, and another one from two grantors. A user
+            # without login has the name of the login.
+            # The second login has a user of another name on each server.
+            $sourceUserSql = @"
+CREATE USER [dbatoolsci_user] FOR LOGIN [$userLoginName];
+GRANT VIEW DEFINITION TO [dbatoolsci_user];
+CREATE ROLE [dbatoolsci_userrole];
+ALTER ROLE [dbatoolsci_userrole] ADD MEMBER [dbatoolsci_user];
+CREATE USER [dbatoolsci_sourceuser] FOR LOGIN [$pairLoginName];
+GRANT CREATE VIEW TO [dbatoolsci_sourceuser];
+"@
+            $destUserSql = @"
+CREATE USER [dbatoolsci_user] FOR LOGIN [$userLoginName];
+GRANT ALTER ANY SCHEMA TO [dbatoolsci_user];
+CREATE ROLE [dbatoolsci_userrole];
+CREATE USER [dbatoolsci_grantor] WITHOUT LOGIN;
+GRANT CREATE TABLE TO [dbatoolsci_grantor] WITH GRANT OPTION;
+GRANT CREATE TABLE TO [dbatoolsci_user] AS [dbatoolsci_grantor];
+GRANT CREATE TABLE TO [dbatoolsci_user];
+CREATE USER [$userLoginName] WITHOUT LOGIN;
+GRANT VIEW DATABASE STATE TO [$userLoginName];
+CREATE USER [dbatoolsci_destuser] FOR LOGIN [$pairLoginName];
+GRANT CREATE FUNCTION TO [dbatoolsci_destuser];
+"@
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Database $userDbName -Query $sourceUserSql
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Database $userDbName -Query $destUserSql
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $userSyncResult = Sync-DbaLoginPermission -Source $TestConfig.InstanceMulti1 -Destination $TestConfig.InstanceMulti2 -Login $userLoginName, $pairLoginName
+            $userSyncWarnings = $WarnVar
+
+            $destPermissionSql = @"
+SELECT grantee.name AS Grantee, perm.permission_name AS Permission, grantor.name AS Grantor
+FROM sys.database_permissions AS perm
+INNER JOIN sys.database_principals AS grantee ON grantee.principal_id = perm.grantee_principal_id
+INNER JOIN sys.database_principals AS grantor ON grantor.principal_id = perm.grantor_principal_id
+WHERE perm.class = 0
+"@
+            $destPermissions = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti2 -Database $userDbName -Query $destPermissionSql
+            $destRoleMembers = (Get-DbaDbRoleMember -SqlInstance $TestConfig.InstanceMulti2 -Database $userDbName -Role dbatoolsci_userrole).UserName
+            $destUserNames = (Get-DbaDbUser -SqlInstance $TestConfig.InstanceMulti2 -Database $userDbName).Name
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Database $userDbName -ErrorAction SilentlyContinue
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Login $userLoginName, $pairLoginName -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Syncs both logins without a warning" {
+            $userSyncWarnings | Should -BeNullOrEmpty
+            @($userSyncResult).Count | Should -Be 2
+            $userSyncResult.Status | Should -Be "Successful", "Successful"
+        }
+
+        It "Grants the permissions of the source user to the user" {
+            $destPermissions | Where-Object { $PSItem.Grantee -eq "dbatoolsci_user" -and $PSItem.Permission -eq "VIEW DEFINITION" } | Should -Not -BeNullOrEmpty
+        }
+
+        It "Revokes a permission from the user that the source user does not have" {
+            $destPermissions | Where-Object { $PSItem.Grantee -eq "dbatoolsci_user" -and $PSItem.Permission -eq "ALTER ANY SCHEMA" } | Should -BeNullOrEmpty
+        }
+
+        It "Revokes such a permission from every grantor" {
+            # A REVOKE without AS takes back the grant of dbo only, so the one of the other grantor stayed.
+            $destPermissions | Where-Object { $PSItem.Grantee -eq "dbatoolsci_user" -and $PSItem.Permission -eq "CREATE TABLE" } | Should -BeNullOrEmpty
+            $destPermissions | Where-Object { $PSItem.Grantee -eq "dbatoolsci_grantor" -and $PSItem.Permission -eq "CREATE TABLE" } | Should -Not -BeNullOrEmpty
+        }
+
+        It "Leaves a user alone that has the name of the login" {
+            $destPermissions | Where-Object { $PSItem.Grantee -eq $userLoginName -and $PSItem.Permission -eq "VIEW DATABASE STATE" } | Should -Not -BeNullOrEmpty
+            $destPermissions | Where-Object { $PSItem.Grantee -eq $userLoginName -and $PSItem.Permission -eq "CONNECT" } | Should -Not -BeNullOrEmpty
+        }
+
+        It "Adds the user to the database roles of the source user" {
+            $destRoleMembers | Should -Contain "dbatoolsci_user"
+        }
+
+        It "Syncs the permissions to the user of the login when the users have different names" {
+            $destPermissions | Where-Object { $PSItem.Grantee -eq "dbatoolsci_destuser" -and $PSItem.Permission -eq "CREATE VIEW" } | Should -Not -BeNullOrEmpty
+            $destPermissions | Where-Object { $PSItem.Grantee -eq "dbatoolsci_destuser" -and $PSItem.Permission -eq "CREATE FUNCTION" } | Should -BeNullOrEmpty
+            $destUserNames | Should -Not -Contain "dbatoolsci_sourceuser"
+        }
+    }
+
     Context "When the pipeline ends at the first login" {
         BeforeAll {
             # The command runs in a runspace of its own, created by the PowerShell API without a host. There
