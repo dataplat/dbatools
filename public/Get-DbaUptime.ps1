@@ -46,7 +46,7 @@ function Get-DbaUptime {
         - InstanceName: The SQL Server instance name
         - SqlServer: The full SQL Server instance name
         - SqlStartTime: DateTime when SQL Server was started (based on tempdb creation date)
-        - SqlUptime: TimeSpan object showing SQL Server uptime duration, measured by the instance itself (sys.dm_os_sys_info), or up to the current time of the instance for a login without VIEW SERVER STATE
+        - SqlUptime: TimeSpan object showing SQL Server uptime duration, measured by the instance itself (sys.dm_os_sys_info). For a login without VIEW SERVER STATE it is counted from SqlStartTime up to the current time of the instance, with the offset that the time zone of the instance had at SqlStartTime, so that a daylight saving change since then counts. Before SQL Server 2022 the instance cannot name its time zone, and SqlStartTime is converted with the time zone of this computer, which is right when the instance is in the same time zone
         - SinceSqlStart: Formatted string of SQL Server uptime as "X days Y hours Z minutes A seconds"
         - WindowsBootTime: DateTime when the Windows server was last booted
         - WindowsUptime: TimeSpan object showing Windows server uptime duration
@@ -109,9 +109,29 @@ function Get-DbaUptime {
                 $SQLUptime = [timespan]::FromMilliseconds($uptimeMilliseconds)
             } catch {
                 # sys.dm_os_sys_info needs VIEW SERVER STATE. Without it the uptime is counted up to the current time of the instance.
-                Write-Message -Level Verbose -Message "Could not read sys.dm_os_sys_info on $servername, counting the uptime up to the current time of the instance" -ErrorRecord $_
-                $serverTime = $server.Query("SELECT GETDATE() AS ServerTime").ServerTime
-                $SQLUptime = New-TimeSpan -Start $server.Databases["tempdb"].CreateDate -End $serverTime
+                # Both ends are local times of the instance, and a daylight saving change between them would shift the result by an
+                # hour, so the start is converted to UTC with the offset its time zone had at that date, not with the offset of today.
+                $sysInfoError = $_
+                # Test-DbaFeatureSupport throws on an engine it has no rule for, which then gets the conversion that works on every engine.
+                try {
+                    $instanceNamesTimeZone = Test-DbaFeatureSupport -Server $server -Feature CurrentTimeZoneId
+                } catch {
+                    $instanceNamesTimeZone = $false
+                }
+                if ($instanceNamesTimeZone) {
+                    # SQL Server 2022 and later name the time zone of the instance, and AT TIME ZONE applies the offset of the date it converts.
+                    # The start is SqlStartTime itself, so that the uptime is always counted from the start the command reports.
+                    Write-Message -Level Verbose -Message "Could not read sys.dm_os_sys_info on $servername, counting the uptime up to the current time of the instance in its time zone" -ErrorRecord $sysInfoError
+                    $startTime = $server.Databases["tempdb"].CreateDate.ToString("yyyy-MM-ddTHH:mm:ss.fff", [System.Globalization.CultureInfo]::InvariantCulture)
+                    $uptimeMilliseconds = $server.Query("SELECT DATEDIFF_BIG(MILLISECOND, CONVERT(datetime2(3), '$startTime', 126) AT TIME ZONE CURRENT_TIMEZONE_ID(), SYSDATETIMEOFFSET()) AS UptimeMilliseconds").UptimeMilliseconds
+                    $SQLUptime = [timespan]::FromMilliseconds($uptimeMilliseconds)
+                } else {
+                    # Before SQL Server 2022 the instance cannot name its time zone. The time zone of this computer converts the start, as
+                    # the command always did, which is right when the instance is in the same time zone. Only the end is the clock of the instance.
+                    Write-Message -Level Verbose -Message "Could not read sys.dm_os_sys_info on $servername, counting the uptime up to the current time of the instance in the time zone of this computer" -ErrorRecord $sysInfoError
+                    $serverUtcTime = $server.Query("SELECT SYSUTCDATETIME() AS ServerUtcTime").ServerUtcTime
+                    $SQLUptime = New-TimeSpan -Start $SQLStartTime.ToUniversalTime() -End $serverUtcTime
+                }
             }
             $SQLUptimeString = "{0} days {1} hours {2} minutes {3} seconds" -f $($SQLUptime.Days), $($SQLUptime.Hours), $($SQLUptime.Minutes), $($SQLUptime.Seconds)
 
