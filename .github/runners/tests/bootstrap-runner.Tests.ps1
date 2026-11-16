@@ -559,8 +559,14 @@ Describe "build-modern-image.ps1 against a stand-in az" {
     }
 
     AfterAll {
-        Remove-Item -Path function:global:az, function:global:Start-Sleep -ErrorAction SilentlyContinue
-        Remove-Variable -Name FakeAzCalls, FakeAzFailOn, FakeAzFreeCores, FakeAzVersionState -Scope Global -ErrorAction SilentlyContinue
+        # Function:\ resolves to the global stand-ins; a "global:" inside the path matches nothing
+        Remove-Item -Path Function:\az, Function:\Start-Sleep
+        $splatRemoveFakeState = @{
+            Name        = "FakeAzCalls", "FakeAzFailOn", "FakeAzFreeCores", "FakeAzVersionState"
+            Scope       = "Global"
+            ErrorAction = "SilentlyContinue"
+        }
+        Remove-Variable @splatRemoveFakeState
     }
 
     BeforeEach {
