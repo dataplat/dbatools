@@ -38,6 +38,10 @@
     # Workflow the controller reads demand from and dispatches marked pushes to.
     CI_WORKFLOW             = "ci-azure.yml"
 
+    # The GitHub login of the controller's App. The daily runner version check only
+    # touches issues opened under this login, never one another bot or a person opened.
+    BOT_LOGIN               = "dbatools-fleet-controller[bot]"
+
     # A queued nudge older than this is dropped unprocessed. Every pass re-reads all
     # of GitHub and Azure anyway, so a stale wake-up adds nothing -- and when a run
     # burst backs the queue up (2026-08-08: 3.3 hours behind), replaying old nudges
