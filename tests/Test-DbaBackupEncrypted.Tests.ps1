@@ -39,6 +39,8 @@ Describe $CommandName -Tag IntegrationTests {
         Remove-Item -Path $backupPath -Recurse
         # TODO: Should be refactored next to only remove the created databases.
         Get-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -ExcludeSystem | Remove-DbaDatabase
+
+        $PSDefaultParameterValues.Remove("*:Confirm")
     }
 
     Context "Command actually works" {
