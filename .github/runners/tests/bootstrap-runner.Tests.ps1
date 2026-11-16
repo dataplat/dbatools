@@ -308,9 +308,9 @@ Describe "bootstrap-runner.ps1 contract" {
         $buildAst = [System.Management.Automation.Language.Parser]::ParseFile($buildScriptPath, [ref]$parseTokens, [ref]$parseErrors)
         $parseErrors | Should -BeNullOrEmpty
         $azWrites = @($buildAst.FindAll({
-                    $args[0] -is [System.Management.Automation.Language.CommandAst] -and $args[0].GetCommandName() -eq "az" -and $args[0].Extent.Text -match "\b(create|deallocate|generalize|list-usage)\b|@(launchArgs|createArgs|definitionArgs|versionArgs)\b"
+                    $args[0] -is [System.Management.Automation.Language.CommandAst] -and $args[0].GetCommandName() -eq "az" -and $args[0].Extent.Text -match "\b(create|delete|deallocate|generalize|list-usage)\b|@(launchArgs|createArgs|definitionArgs|versionArgs)\b"
                 }, $true))
-        $azWrites.Count | Should -Be 8
+        $azWrites.Count | Should -Be 9
         foreach ($azWrite in $azWrites) {
             # climb to the statement that holds the call, then look at the one after it
             $statement = $azWrite
@@ -517,5 +517,88 @@ Describe "Install-RunnerPackage" {
         Join-Path -Path $root -ChildPath "bin\Runner.Listener.exe" | Should -Not -Exist
         Get-RunnerPackageVersion -RunnerRoot $root | Should -BeNullOrEmpty
         @(Get-ChildItem -Path $root -Filter ".runner-package-*") | Should -HaveCount 0
+    }
+}
+
+Describe "build-modern-image.ps1 against a stand-in az" {
+    BeforeAll {
+        $script:BuildScriptPath = Join-Path -Path $PSScriptRoot -ChildPath "../build-modern-image.ps1"
+
+        # az is a native command, so the stand-in is a function: functions win over
+        # applications, and it sets $LASTEXITCODE the way az.exe would
+        function global:az {
+            $azLine = $args -join " "
+            $global:FakeAzCalls += $azLine
+            $global:LASTEXITCODE = 0
+            if ($global:FakeAzFailOn -and $azLine -like $global:FakeAzFailOn) {
+                $global:LASTEXITCODE = 1
+                return
+            }
+            if ($azLine -like "vm list-usage*") {
+                $usedCores = 65 - $global:FakeAzFreeCores
+                return "[{`"name`":`"cores`",`"current`":$usedCores,`"limit`":65},{`"name`":`"standardDDSv5Family`",`"current`":$usedCores,`"limit`":65}]"
+            }
+            if ($azLine -like "vm run-command invoke*poll-step.ps1*") {
+                return "STATUS: done"
+            }
+            if ($azLine -like "vm show -d*") {
+                return "VM stopped"
+            }
+            if ($azLine -like "sig image-definition show*") {
+                return "{}"
+            }
+            if ($azLine -like "vm show *--query id*") {
+                return "/subscriptions/0/resourceGroups/dbatools-ci-imagebuild/providers/Microsoft.Compute/virtualMachines/dbat-imgbuild"
+            }
+            if ($azLine -like "sig image-version show*") {
+                return $global:FakeAzVersionState
+            }
+        }
+        # the build waits between polls; the stand-in answers at once
+        function global:Start-Sleep { }
+    }
+
+    AfterAll {
+        Remove-Item -Path function:global:az, function:global:Start-Sleep -ErrorAction SilentlyContinue
+        Remove-Variable -Name FakeAzCalls, FakeAzFailOn, FakeAzFreeCores, FakeAzVersionState -Scope Global -ErrorAction SilentlyContinue
+    }
+
+    BeforeEach {
+        $global:FakeAzCalls = @()
+        $global:FakeAzFailOn = $null
+        $global:FakeAzFreeCores = 10
+        $global:FakeAzVersionState = "Succeeded"
+    }
+
+    It "creates nothing while the fleet holds the cores the build VM needs" {
+        $global:FakeAzFreeCores = 1
+        { & $script:BuildScriptPath -ImageVersion "9.9.9" 6>$null } | Should -Throw "*has 1 free cores core(s) of 65 and the build VM needs 4*"
+        @($global:FakeAzCalls | Where-Object { $PSItem -like "group create*" -or $PSItem -like "vm create*" }).Count | Should -Be 0
+    }
+
+    It "runs no step when the build VM cannot be created" {
+        $global:FakeAzFailOn = "vm create*"
+        { & $script:BuildScriptPath -ImageVersion "9.9.9" 6>$null } | Should -Throw "*could not create the build VM dbat-imgbuild*"
+        @($global:FakeAzCalls | Where-Object { $PSItem -like "vm run-command*" }).Count | Should -Be 0
+    }
+
+    It "keeps the build VM when the image version does not succeed" {
+        $global:FakeAzVersionState = "Failed"
+        { & $script:BuildScriptPath -ImageVersion "9.9.9" 6>$null } | Should -Throw "*image version 9.9.9 is Failed, not Succeeded*"
+        @($global:FakeAzCalls | Where-Object { $PSItem -like "group delete*" }).Count | Should -Be 0
+    }
+
+    It "keeps the build VM when the capture fails" {
+        $global:FakeAzFailOn = "sig image-version create*"
+        { & $script:BuildScriptPath -ImageVersion "9.9.9" 6>$null } | Should -Throw "*could not create image version 9.9.9*"
+        @($global:FakeAzCalls | Where-Object { $PSItem -like "group delete*" }).Count | Should -Be 0
+    }
+
+    It "publishes, then deletes the build group, when every step succeeds" {
+        { & $script:BuildScriptPath -ImageVersion "9.9.9" 6>$null } | Should -Not -Throw
+        $sqlLaunches = @($global:FakeAzCalls | Where-Object { $PSItem -like "vm run-command invoke*invoke-step-async.ps1*Step=step2-sqlinstance*" })
+        $sqlLaunches.Count | Should -Be 3
+        $sqlLaunches | ForEach-Object { $PSItem | Should -Match "ArgsBase64=[A-Za-z0-9+/]+=*( |$)" }
+        @($global:FakeAzCalls | Where-Object { $PSItem -like "group delete*" }).Count | Should -Be 1
     }
 }

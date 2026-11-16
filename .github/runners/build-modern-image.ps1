@@ -257,4 +257,5 @@ Write-Host "== image published: $ImageDefinition $ImageVersion" -ForegroundColor
 if (-not $KeepBuildVm) {
     Write-Host "== deleting build RG" -ForegroundColor Cyan
     az group delete --name $ResourceGroup --yes --no-wait --only-show-errors
+    Assert-AzSuccess -Action "start deleting $ResourceGroup (the image is published)"
 }
