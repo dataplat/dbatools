@@ -200,9 +200,25 @@ Describe "bootstrap-runner.ps1 contract" {
         # download; a rebuilt image that lags behind still works, it just downloads again
         $bootstrapText = Get-Content -Path $script:BootstrapPath -Raw
         $runnerVersion = [regex]::Match($bootstrapText, "\`$runnerVersion = `"(\d+\.\d+\.\d+)`"").Groups[1].Value
+        $runnerSha256 = [regex]::Match($bootstrapText, "\`$runnerSha256 = `"([0-9a-f]{64})`"").Groups[1].Value
         $imageStepPath = Join-Path -Path $PSScriptRoot -ChildPath "../image-scripts/step1-tools.ps1"
         $imageStepText = Get-Content -Path $imageStepPath -Raw
-        $imageStepText | Should -Match ([regex]::Escape("releases/download/v$runnerVersion/actions-runner-win-x64-$runnerVersion.zip"))
+        $imageStepText | Should -Match "\`$runnerVersion = `"$([regex]::Escape($runnerVersion))`""
+        $imageStepText | Should -Match "\`$runnerSha256 = `"$runnerSha256`""
+        $imageStepText | Should -Match ([regex]::Escape("releases/download/v`$runnerVersion/actions-runner-win-x64-`$runnerVersion.zip"))
+    }
+
+    It "refuses a golden image runner download whose hash is not the pinned one" {
+        # the image bakes the runner into every VM, so a tampered or truncated download would
+        # reach the whole fleet; the image build stops instead
+        $imageStepPath = Join-Path -Path $PSScriptRoot -ChildPath "../image-scripts/step1-tools.ps1"
+        $imageStepText = Get-Content -Path $imageStepPath -Raw
+        $downloadIndex = $imageStepText.IndexOf("DownloadFile(`$runnerUrl")
+        $hashIndex = $imageStepText.IndexOf("-ne `$runnerSha256")
+        $extractIndex = $imageStepText.IndexOf("ExtractToDirectory(`$runnerZip")
+        $downloadIndex | Should -BeGreaterThan 0
+        $hashIndex | Should -BeGreaterThan $downloadIndex
+        $hashIndex | Should -BeLessThan $extractIndex
     }
 }
 

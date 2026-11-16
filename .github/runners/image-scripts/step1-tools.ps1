@@ -23,7 +23,11 @@ $ErrorActionPreference = "Stop"
 $webClient = New-Object -TypeName System.Net.WebClient
 
 $gitUrl = "https://github.com/git-for-windows/git/releases/download/v2.55.0.windows.2/Git-2.55.0.2-64-bit.exe"
-$runnerUrl = "https://github.com/actions/runner/releases/download/v2.338.2/actions-runner-win-x64-2.338.2.zip"
+# the same version and hash bootstrap-runner.ps1 installs; tests/bootstrap-runner.Tests.ps1
+# fails when the two drift apart
+$runnerVersion = "2.338.2"
+$runnerSha256 = "a1f17aa987fc8158bc7521d284912267a0d01b7c2c4684b33c86783b5e8221cc"
+$runnerUrl = "https://github.com/actions/runner/releases/download/v$runnerVersion/actions-runner-win-x64-$runnerVersion.zip"
 
 foreach ($dir in "C:\Temp", "C:\github", "C:\github-runner") {
     if (-not (Test-Path -Path $dir)) {
@@ -108,9 +112,13 @@ if (-not (Test-Path -Path "C:\github\dbatools\dbatools.psd1")) {
 $library = Get-Module -Name dbatools.library -ListAvailable | Select-Object -First 1
 Write-Output "dbatools.library installed: v$($library.Version)"
 
-Write-Output "== actions runner 2.335.1 staged at C:\github-runner"
+Write-Output "== actions runner $runnerVersion staged at C:\github-runner"
 $runnerZip = "C:\Temp\runner.zip"
 $webClient.DownloadFile($runnerUrl, $runnerZip)
+$runnerZipSha256 = (Get-FileHash -Path $runnerZip -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($runnerZipSha256 -ne $runnerSha256) {
+    throw "runner download $runnerUrl has SHA256 $runnerZipSha256, expected $runnerSha256"
+}
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 [System.IO.Compression.ZipFile]::ExtractToDirectory($runnerZip, "C:\github-runner")
 Remove-Item -Path $runnerZip -Force
@@ -121,5 +129,5 @@ Write-Output "git: $(git --version)"
 Write-Output "choco: $(choco --version)"
 Write-Output "Pester: $((Get-Module -Name Pester -ListAvailable | Select-Object -First 1).Version)"
 Write-Output "PSScriptAnalyzer: $((Get-Module -Name PSScriptAnalyzer -ListAvailable | Select-Object -First 1).Version)"
-Write-Output "runner staged: $runnerStaged"
+Write-Output "runner staged: $runnerStaged ($runnerVersion)"
 Get-PSDrive -Name C | ForEach-Object { "C: free $([math]::Round($_.Free / 1GB, 1)) GB" }

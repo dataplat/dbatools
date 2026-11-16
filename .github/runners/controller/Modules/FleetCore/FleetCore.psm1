@@ -1627,6 +1627,124 @@ function Invoke-FleetSpendReport {
     Write-Host "posted month-to-date spend $cost to issue $issueNumber"
 }
 
+function Get-PinnedRunnerVersion {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$BootstrapPath
+    )
+
+    # The fleet runs whatever version this bootstrap installs, so the check reads the copy
+    # deployed beside this module rather than a setting that could drift away from it.
+    $bootstrapText = Get-Content -Path $BootstrapPath -Raw
+    $versionMatch = [regex]::Match($bootstrapText, "(?m)^\`$runnerVersion = `"(\d+\.\d+\.\d+)`"")
+    if (-not $versionMatch.Success) {
+        throw "Cannot read `$runnerVersion from $BootstrapPath; the runner deprecation check has no version to check"
+    }
+    $versionMatch.Groups[1].Value
+}
+
+function Invoke-RunnerVersionCheck {
+    [CmdletBinding()]
+    param(
+        [DateTimeOffset]$Now = [DateTimeOffset]::UtcNow
+    )
+
+    # bootstrap-runner.ps1 registers with --disableupdate, so nothing on a VM moves the
+    # runner forward when GitHub retires its version. 2.335.1 stopped CI that way on
+    # 2026-11-15, seven weeks after the date GitHub had published for it. This reads the
+    # same schedule every day and keeps one issue open per retiring version.
+    $null = Initialize-FleetContext
+    $version = Get-PinnedRunnerVersion -BootstrapPath $script:Fleet.BootstrapPath
+    $splatDeprecation = @{
+        Path      = "repos/$($script:Fleet.Repo)/actions/runners/deprecations/$version"
+        Operation = "read the deprecation schedule of runner $version"
+    }
+    $deprecation = Invoke-GhJson @splatDeprecation
+
+    $latestRelease = $null
+    try {
+        $latestRelease = Invoke-GhJson -Path "repos/actions/runner/releases/latest" -Operation "read the latest actions runner release"
+    } catch {
+        Write-Warning "Cannot read the latest actions runner release; an issue would point at the releases page instead. $($PSItem.Exception.Message)"
+    }
+
+    $splatNotice = @{
+        Version       = $version
+        Deprecation   = $deprecation
+        LatestRelease = $latestRelease
+        Now           = $Now
+    }
+    $notice = Get-RunnerDeprecationNotice @splatNotice
+    $currentTitle = Get-RunnerDeprecationTitle -Version $version
+    if ($notice) {
+        Write-Warning "runner ${version}: GitHub retires it at $($notice.Deadline.UtcDateTime.ToString("yyyy-MM-dd HH:mm")) UTC, $($notice.DaysLeft) day(s) from now"
+    } else {
+        Write-Host "runner ${version}: GitHub has not scheduled its deprecation"
+    }
+
+    # Only issues the controller opened: a title match alone could be a person quoting it.
+    $titleQuery = [uri]::EscapeDataString("repo:$($script:Fleet.Repo) is:issue is:open in:title `"CI runner deprecation`"")
+    $splatSearch = @{
+        Path      = "search/issues?q=$titleQuery&per_page=100"
+        Operation = "find open runner deprecation issues"
+    }
+    $search = Invoke-GhJson @splatSearch
+    $titlePattern = Get-RunnerDeprecationTitle -Version "*"
+    $ownIssues = @($search.items | Where-Object {
+            [string]$PSItem.title -like $titlePattern -and [string]$PSItem.user.type -eq "Bot"
+        })
+
+    foreach ($staleIssue in @($ownIssues | Where-Object { [string]$PSItem.title -ne $currentTitle })) {
+        $staleVersion = ([string]$staleIssue.title).Substring($titlePattern.Length - 1)
+        $closeComment = "The deployed fleet controller now installs actions runner $version, so the retirement of $staleVersion no longer affects CI."
+        if (Test-FleetDryRun -Decision "close issue=$($staleIssue.number) comment=$closeComment") {
+            continue
+        }
+        $splatCloseComment = @{
+            Path      = "repos/$($script:Fleet.Repo)/issues/$($staleIssue.number)/comments"
+            Method    = "Post"
+            Body      = @{ body = $closeComment }
+            Operation = "comment on runner deprecation issue $($staleIssue.number)"
+        }
+        $null = Invoke-GhJson @splatCloseComment
+        $splatClose = @{
+            Path      = "repos/$($script:Fleet.Repo)/issues/$($staleIssue.number)"
+            Method    = "Patch"
+            Body      = @{
+                state        = "closed"
+                state_reason = "completed"
+            }
+            Operation = "close runner deprecation issue $($staleIssue.number)"
+        }
+        $null = Invoke-GhJson @splatClose
+        Write-Host "closed issue $($staleIssue.number) about runner $staleVersion"
+    }
+
+    if (-not $notice) {
+        return
+    }
+    $openIssue = @($ownIssues | Where-Object { [string]$PSItem.title -eq $currentTitle }) | Select-Object -First 1
+    if ($openIssue) {
+        Write-Host "issue $($openIssue.number) already reports the retirement of runner $version"
+        return
+    }
+    if (Test-FleetDryRun -Decision "open issue title=$($notice.Title)") {
+        return
+    }
+    $splatOpen = @{
+        Path      = "repos/$($script:Fleet.Repo)/issues"
+        Method    = "Post"
+        Body      = @{
+            title = $notice.Title
+            body  = $notice.Body
+        }
+        Operation = "open the runner deprecation issue"
+    }
+    $issue = Invoke-GhJson @splatOpen
+    Write-Host "opened issue $($issue.number): $($notice.Title)"
+}
+
 function Get-FleetNudge {
     [CmdletBinding()]
     param(
@@ -1703,6 +1821,7 @@ $splatExport = @{
     Function = @(
         "Invoke-FleetReconcile",
         "Invoke-FleetSpendReport",
+        "Invoke-RunnerVersionCheck",
         "Get-FleetNudge",
         "Initialize-FleetContext",
         "Get-FleetConfig",

@@ -1312,3 +1312,158 @@ Describe "parallel registration" {
         }
     }
 }
+
+Describe "runner version check" {
+    BeforeAll {
+        $script:FakeBootstrap = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "bootstrap-version-$([System.Guid]::NewGuid().ToString("N")).ps1"
+        Set-Content -Path $script:FakeBootstrap -Value "`$runnerVersion = `"2.338.2`"`n`$runnerSha256 = `"$("0" * 64)`""
+        $script:CurrentTitle = "CI runner deprecation - GitHub retires actions runner 2.338.2"
+
+        function New-SearchHit {
+            param(
+                [Parameter(Mandatory)]
+                [int]$Number,
+                [Parameter(Mandatory)]
+                [string]$Title,
+                [string]$UserType = "Bot"
+            )
+
+            [pscustomobject]@{
+                number = $Number
+                title  = $Title
+                user   = [pscustomobject]@{ type = $UserType }
+            }
+        }
+    }
+
+    AfterAll {
+        Remove-Item -Path $script:FakeBootstrap -Force -ErrorAction SilentlyContinue
+    }
+
+    BeforeEach {
+        $fakeBootstrapPath = $script:FakeBootstrap
+        InModuleScope FleetCore -Parameters @{ BootstrapPath = $fakeBootstrapPath } {
+            param($BootstrapPath)
+            $script:Fleet = [pscustomobject]@{
+                DryRun        = $false
+                Repo          = "dataplat/dbatools"
+                BootstrapPath = $BootstrapPath
+            }
+        }
+        # Read and written by the Invoke-GhJson mock, which runs in this file's scope
+        $script:Deprecation = [pscustomobject]@{
+            runner_version             = "2.338.2"
+            registration_deprecates_at = $null
+            runtime_deprecates_at      = "2026-12-20T00:00:00Z"
+        }
+        $script:SearchHits = @()
+        $script:ReleaseFails = $false
+        $script:GhCalls = @()
+        Mock -ModuleName FleetCore Initialize-FleetContext { }
+        Mock -ModuleName FleetCore Invoke-GhJson {
+            $script:GhCalls += [pscustomobject]@{
+                Path   = $Path
+                Method = $Method
+                Body   = $Body
+            }
+            if ($Path -like "*/actions/runners/deprecations/*") {
+                return $script:Deprecation
+            }
+            if ($Path -eq "repos/actions/runner/releases/latest") {
+                if ($script:ReleaseFails) {
+                    throw "read the latest actions runner release failed after 3 attempts."
+                }
+                return [pscustomobject]@{
+                    tag_name = "v2.339.0"
+                    html_url = "https://github.com/actions/runner/releases/tag/v2.339.0"
+                    body     = "<!-- BEGIN SHA win-x64 -->$("a" * 64)<!-- END SHA win-x64 -->"
+                }
+            }
+            if ($Path -like "search/issues*") {
+                return [pscustomobject]@{ items = $script:SearchHits }
+            }
+            [pscustomobject]@{ number = 4242 }
+        }
+    }
+
+    It "reads the version the shipped bootstrap installs" {
+        $bootstrapPath = (Resolve-Path "$PSScriptRoot/../bootstrap-runner.ps1").Path
+        $bootstrapText = Get-Content -Path $bootstrapPath -Raw
+        $expected = [regex]::Match($bootstrapText, "\`$runnerVersion = `"(\d+\.\d+\.\d+)`"").Groups[1].Value
+        InModuleScope FleetCore -Parameters @{ BootstrapPath = $bootstrapPath } {
+            param($BootstrapPath)
+            Get-PinnedRunnerVersion -BootstrapPath $BootstrapPath
+        } | Should -Be $expected
+    }
+
+    It "opens one issue when GitHub schedules the retirement of the pinned version" {
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck -Now ([DateTimeOffset]::Parse("2026-11-16T06:00:00Z")) -WarningAction SilentlyContinue }
+        $deprecationRead = @($script:GhCalls | Where-Object Path -eq "repos/dataplat/dbatools/actions/runners/deprecations/2.338.2")
+        $deprecationRead.Count | Should -Be 1
+        $opened = @($script:GhCalls | Where-Object { $PSItem.Method -eq "Post" -and $PSItem.Path -eq "repos/dataplat/dbatools/issues" })
+        $opened.Count | Should -Be 1
+        $opened[0].Body.title | Should -Be $script:CurrentTitle
+        $opened[0].Body.body | Should -Match ([regex]::Escape("`$runnerVersion = `"2.339.0`""))
+    }
+
+    It "opens nothing while GitHub has scheduled nothing" {
+        $script:Deprecation.runtime_deprecates_at = $null
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck }
+        @($script:GhCalls | Where-Object Method -in "Post", "Patch").Count | Should -Be 0
+    }
+
+    It "does not open a second issue while the first is open" {
+        $script:SearchHits = @(New-SearchHit -Number 77 -Title $script:CurrentTitle)
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck -WarningAction SilentlyContinue }
+        @($script:GhCalls | Where-Object Method -in "Post", "Patch").Count | Should -Be 0
+    }
+
+    It "opens its own issue when only a person's issue carries the title" {
+        $script:SearchHits = @(New-SearchHit -Number 78 -Title $script:CurrentTitle -UserType "User")
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck -WarningAction SilentlyContinue }
+        @($script:GhCalls | Where-Object { $PSItem.Method -eq "Post" -and $PSItem.Path -eq "repos/dataplat/dbatools/issues" }).Count | Should -Be 1
+        @($script:GhCalls | Where-Object Method -eq "Patch").Count | Should -Be 0
+    }
+
+    It "closes its issue about a version the bootstrap no longer installs, and leaves a person's alone" {
+        $script:Deprecation.runtime_deprecates_at = $null
+        $script:SearchHits = @(
+            New-SearchHit -Number 80 -Title "CI runner deprecation - GitHub retires actions runner 2.335.1"
+            New-SearchHit -Number 81 -Title "CI runner deprecation - GitHub retires actions runner 2.336.0" -UserType "User"
+        )
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck }
+        $closed = @($script:GhCalls | Where-Object Method -eq "Patch")
+        $closed.Count | Should -Be 1
+        $closed[0].Path | Should -Be "repos/dataplat/dbatools/issues/80"
+        $closed[0].Body.state | Should -Be "closed"
+        $comment = @($script:GhCalls | Where-Object Path -eq "repos/dataplat/dbatools/issues/80/comments")
+        $comment.Count | Should -Be 1
+        $comment[0].Body.body | Should -Match "now installs actions runner 2\.338\.2, so the retirement of 2\.335\.1"
+        @($script:GhCalls | Where-Object Path -like "*/issues/81*").Count | Should -Be 0
+    }
+
+    It "still opens the issue when the latest release cannot be read" {
+        $script:ReleaseFails = $true
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck -WarningAction SilentlyContinue }
+        $opened = @($script:GhCalls | Where-Object { $PSItem.Method -eq "Post" -and $PSItem.Path -eq "repos/dataplat/dbatools/issues" })
+        $opened.Count | Should -Be 1
+        $opened[0].Body.body | Should -Match ([regex]::Escape("https://github.com/actions/runner/releases/latest"))
+    }
+
+    It "only logs under DRY_RUN" {
+        InModuleScope FleetCore { $script:Fleet.DryRun = $true }
+        $script:SearchHits = @(New-SearchHit -Number 80 -Title "CI runner deprecation - GitHub retires actions runner 2.335.1")
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck -WarningAction SilentlyContinue 6>$null }
+        @($script:GhCalls | Where-Object Method -in "Post", "Patch").Count | Should -Be 0
+    }
+
+    It "ships the daily timer in the controller package" {
+        $timer = Get-Content -Path "$script:ControllerRoot/RunnerVersionCheck/function.json" -Raw | ConvertFrom-Json
+        $timer.bindings[0].type | Should -Be "timerTrigger"
+        $timer.bindings[0].schedule | Should -Be "0 0 6 * * *"
+        Get-Content -Path "$script:ControllerRoot/RunnerVersionCheck/run.ps1" -Raw | Should -Match "Invoke-RunnerVersionCheck"
+        $deployScript = Get-Content -Path "$script:ControllerRoot/../deploy-controller.ps1" -Raw
+        $deployScript | Should -Match ([regex]::Escape("`"RunnerVersionCheck/function.json`""))
+        $deployScript | Should -Match ([regex]::Escape("`"RunnerVersionCheck/run.ps1`""))
+    }
+}

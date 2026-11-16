@@ -97,6 +97,8 @@ try {
         "ReconcileQueue/run.ps1",
         "SafetyTick/function.json",
         "SafetyTick/run.ps1",
+        "RunnerVersionCheck/function.json",
+        "RunnerVersionCheck/run.ps1",
         "SpendReport/function.json",
         "SpendReport/run.ps1",
         "Modules/GitHubAppAuth/GitHubAppAuth.psm1",
