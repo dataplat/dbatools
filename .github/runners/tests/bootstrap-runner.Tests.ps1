@@ -220,6 +220,40 @@ Describe "bootstrap-runner.ps1 contract" {
         $hashIndex | Should -BeGreaterThan $downloadIndex
         $hashIndex | Should -BeLessThan $extractIndex
     }
+
+    It "hands the image build step its arguments intact, quotes included" {
+        # run from Windows, az is az.cmd, and the quotes of JSON passed as text did not reach
+        # the build VM, so step2-sqlinstance could not read its instance, port or media
+        $buildScriptPath = Join-Path -Path $PSScriptRoot -ChildPath "../build-modern-image.ps1"
+        $asyncStepPath = Join-Path -Path $PSScriptRoot -ChildPath "../image-scripts/invoke-step-async.ps1"
+        $parseTokens = $null
+        $parseErrors = $null
+        $buildAst = [System.Management.Automation.Language.Parser]::ParseFile($buildScriptPath, [ref]$parseTokens, [ref]$parseErrors)
+        $parseErrors | Should -BeNullOrEmpty
+        $asyncAst = [System.Management.Automation.Language.Parser]::ParseFile($asyncStepPath, [ref]$parseTokens, [ref]$parseErrors)
+        $parseErrors | Should -BeNullOrEmpty
+
+        $buildAst.Extent.Text | Should -Not -Match ([regex]::Escape("`"ArgsJson="))
+        $encodeStatement = $buildAst.Find({
+                $args[0] -is [System.Management.Automation.Language.AssignmentStatementAst] -and $args[0].Left.Extent.Text -eq "`$argsBase64"
+            }, $true)
+        $encodeStatement | Should -Not -BeNullOrEmpty
+        $decodeStatement = $asyncAst.Find({
+                $args[0] -is [System.Management.Automation.Language.IfStatementAst] -and $args[0].Clauses[0].Item1.Extent.Text -eq "`$ArgsBase64"
+            }, $true)
+        $decodeStatement | Should -Not -BeNullOrEmpty
+
+        $stepArgs = ConvertTo-Json -InputObject @{
+            instance = "SQL2017"
+            port     = "14334"
+            mediaUrl = "https://go.microsoft.com/fwlink/?linkid=853016&x=`"y`""
+        } -Compress
+        $encode = [scriptblock]::Create("param(`$ArgsJson) $($encodeStatement.Right.Extent.Text)")
+        $encoded = & $encode $stepArgs
+        $encoded | Should -Match "^[A-Za-z0-9+/]+=*$"
+        $decode = [scriptblock]::Create("param(`$ArgsBase64) `$ArgsJson = `$null; $($decodeStatement.Extent.Text); `$ArgsJson")
+        & $decode $encoded | Should -BeExactly $stepArgs
+    }
 }
 
 Describe "Install-RunnerPackage" {

@@ -94,7 +94,11 @@ function Invoke-BuildStep {
         "--parameters", "RawBase=$rawBase", "Step=$Step"
     )
     if ($ArgsJson) {
-        $launchArgs += "ArgsJson=$ArgsJson"
+        # Base64, because the JSON would not survive the trip as text: on Windows az is
+        # az.cmd, and pwsh hands a batch file its arguments without escaping the inner
+        # quotes, so the build VM received {instance:SQL2017,...} and step2 could not parse it
+        $argsBase64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($ArgsJson))
+        $launchArgs += "ArgsBase64=$argsBase64"
     }
     $null = az @launchArgs --only-show-errors
     if ($NoWaitForStatus) {
