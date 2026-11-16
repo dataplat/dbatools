@@ -677,7 +677,13 @@ function Get-RunnerDeprecationNotice {
         $stamp = ConvertTo-FleetTimestamp -Value $rawValue
         if ($null -eq $stamp) {
             $stamp = $Now
-            $scheduleRows += "| $($fieldLabels[$field]) | ``$rawValue`` (unreadable, treated as now) |"
+            # shown as inert text: a backtick, pipe or line break would break out of the code
+            # span or the table, and an @ would mention someone
+            $shownValue = ([string]$rawValue) -replace "[^0-9A-Za-z:.+ -]", "?"
+            if ($shownValue.Length -gt 40) {
+                $shownValue = $shownValue.Substring(0, 40) + "..."
+            }
+            $scheduleRows += "| $($fieldLabels[$field]) | ``$shownValue`` (unreadable, treated as now) |"
         } else {
             $scheduleRows += "| $($fieldLabels[$field]) | $($stamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm")) UTC |"
         }
@@ -704,7 +710,8 @@ function Get-RunnerDeprecationNotice {
     $latestSha256 = $null
     if ($null -ne $LatestRelease) {
         $latestVersion = ([string]$LatestRelease.tag_name) -replace "^v", ""
-        if ([string]$LatestRelease.html_url) {
+        # only a release page of actions/runner goes into the issue
+        if ([string]$LatestRelease.html_url -match "^https://github\.com/actions/runner/releases/tag/v\d+\.\d+\.\d+$") {
             $releasesUrl = [string]$LatestRelease.html_url
         }
         # the release notes carry each package hash between machine-readable markers

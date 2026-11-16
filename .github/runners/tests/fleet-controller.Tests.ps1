@@ -1318,26 +1318,32 @@ Describe "runner version check" {
         $script:FakeBootstrap = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "bootstrap-version-$([System.Guid]::NewGuid().ToString("N")).ps1"
         Set-Content -Path $script:FakeBootstrap -Value "`$runnerVersion = `"2.338.2`"`n`$runnerSha256 = `"$("0" * 64)`""
         $script:CurrentTitle = "CI runner deprecation - GitHub retires actions runner 2.338.2"
+        $script:BotLogin = "dbatools-fleet-controller[bot]"
 
-        function New-SearchHit {
+        function New-IssueHit {
             param(
                 [Parameter(Mandatory)]
                 [int]$Number,
                 [Parameter(Mandatory)]
                 [string]$Title,
-                [string]$UserType = "Bot"
+                [string]$Login = "dbatools-fleet-controller[bot]"
             )
 
             [pscustomobject]@{
                 number = $Number
                 title  = $Title
-                user   = [pscustomobject]@{ type = $UserType }
+                user   = [pscustomobject]@{ login = $Login }
             }
         }
     }
 
     AfterAll {
-        Remove-Item -Path $script:FakeBootstrap -Force -ErrorAction SilentlyContinue
+        $splatRemoveBootstrap = @{
+            Path        = $script:FakeBootstrap
+            Force       = $true
+            ErrorAction = "SilentlyContinue"
+        }
+        Remove-Item @splatRemoveBootstrap
     }
 
     BeforeEach {
@@ -1348,6 +1354,7 @@ Describe "runner version check" {
                 DryRun        = $false
                 Repo          = "dataplat/dbatools"
                 BootstrapPath = $BootstrapPath
+                BotLogin      = "dbatools-fleet-controller[bot]"
             }
         }
         # Read and written by the Invoke-GhJson mock, which runs in this file's scope
@@ -1356,7 +1363,9 @@ Describe "runner version check" {
             registration_deprecates_at = $null
             runtime_deprecates_at      = "2026-12-20T00:00:00Z"
         }
-        $script:SearchHits = @()
+        # one entry per page of the open issue list; the mock ignores creator on purpose,
+        # so the tests also prove the command filters by login itself
+        $script:IssuePages = @(, @())
         $script:ReleaseFails = $false
         $script:GhCalls = @()
         Mock -ModuleName FleetCore Initialize-FleetContext { }
@@ -1379,8 +1388,14 @@ Describe "runner version check" {
                     body     = "<!-- BEGIN SHA win-x64 -->$("a" * 64)<!-- END SHA win-x64 -->"
                 }
             }
-            if ($Path -like "search/issues*") {
-                return [pscustomobject]@{ items = $script:SearchHits }
+            # a mock gets no parameter defaults, so a GET arrives with $Method empty
+            if ($Path -like "repos/dataplat/dbatools/issues?state=open*") {
+                $pageNumber = [int][regex]::Match($Path, "[?&]page=(\d+)").Groups[1].Value
+                if ($pageNumber -gt $script:IssuePages.Count) {
+                    return , @()
+                }
+                # Invoke-RestMethod hands a JSON array over as one object
+                return , @($script:IssuePages[$pageNumber - 1])
             }
             [pscustomobject]@{ number = 4242 }
         }
@@ -1396,10 +1411,17 @@ Describe "runner version check" {
         } | Should -Be $expected
     }
 
+    It "commits the login of the controller's App" {
+        (Get-FleetConfig)["BOT_LOGIN"] | Should -Be $script:BotLogin
+    }
+
     It "opens one issue when GitHub schedules the retirement of the pinned version" {
         InModuleScope FleetCore { Invoke-RunnerVersionCheck -Now ([DateTimeOffset]::Parse("2026-11-16T06:00:00Z")) -WarningAction SilentlyContinue }
         $deprecationRead = @($script:GhCalls | Where-Object Path -eq "repos/dataplat/dbatools/actions/runners/deprecations/2.338.2")
         $deprecationRead.Count | Should -Be 1
+        $issueList = @($script:GhCalls | Where-Object Path -like "repos/dataplat/dbatools/issues?state=open*")
+        $issueList.Count | Should -Be 1
+        $issueList[0].Path | Should -Match ([regex]::Escape("creator=dbatools-fleet-controller%5Bbot%5D"))
         $opened = @($script:GhCalls | Where-Object { $PSItem.Method -eq "Post" -and $PSItem.Path -eq "repos/dataplat/dbatools/issues" })
         $opened.Count | Should -Be 1
         $opened[0].Body.title | Should -Be $script:CurrentTitle
@@ -1413,24 +1435,41 @@ Describe "runner version check" {
     }
 
     It "does not open a second issue while the first is open" {
-        $script:SearchHits = @(New-SearchHit -Number 77 -Title $script:CurrentTitle)
+        $script:IssuePages = @(, @(New-IssueHit -Number 77 -Title $script:CurrentTitle))
         InModuleScope FleetCore { Invoke-RunnerVersionCheck -WarningAction SilentlyContinue }
         @($script:GhCalls | Where-Object Method -in "Post", "Patch").Count | Should -Be 0
     }
 
-    It "opens its own issue when only a person's issue carries the title" {
-        $script:SearchHits = @(New-SearchHit -Number 78 -Title $script:CurrentTitle -UserType "User")
+    It "finds its open issue on a later page of the list" {
+        $otherIssues = foreach ($number in 1..100) {
+            New-IssueHit -Number $number -Title "CI cost tracker $number"
+        }
+        $script:IssuePages = @(
+            , @($otherIssues)
+            , @(New-IssueHit -Number 177 -Title $script:CurrentTitle)
+        )
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck -WarningAction SilentlyContinue }
+        @($script:GhCalls | Where-Object Path -like "repos/dataplat/dbatools/issues?state=open*").Count | Should -Be 2
+        @($script:GhCalls | Where-Object Method -in "Post", "Patch").Count | Should -Be 0
+    }
+
+    It "opens its own issue when only a person or another bot has one with the title" {
+        $script:IssuePages = @(, @(
+                New-IssueHit -Number 78 -Title $script:CurrentTitle -Login "potatoqualitee"
+                New-IssueHit -Number 79 -Title $script:CurrentTitle -Login "another-app[bot]"
+            ))
         InModuleScope FleetCore { Invoke-RunnerVersionCheck -WarningAction SilentlyContinue }
         @($script:GhCalls | Where-Object { $PSItem.Method -eq "Post" -and $PSItem.Path -eq "repos/dataplat/dbatools/issues" }).Count | Should -Be 1
         @($script:GhCalls | Where-Object Method -eq "Patch").Count | Should -Be 0
     }
 
-    It "closes its issue about a version the bootstrap no longer installs, and leaves a person's alone" {
+    It "closes its issue about a version the bootstrap no longer installs, and leaves others alone" {
         $script:Deprecation.runtime_deprecates_at = $null
-        $script:SearchHits = @(
-            New-SearchHit -Number 80 -Title "CI runner deprecation - GitHub retires actions runner 2.335.1"
-            New-SearchHit -Number 81 -Title "CI runner deprecation - GitHub retires actions runner 2.336.0" -UserType "User"
-        )
+        $script:IssuePages = @(, @(
+                New-IssueHit -Number 80 -Title "CI runner deprecation - GitHub retires actions runner 2.335.1"
+                New-IssueHit -Number 81 -Title "CI runner deprecation - GitHub retires actions runner 2.336.0" -Login "potatoqualitee"
+                New-IssueHit -Number 82 -Title "CI runner deprecation - GitHub retires actions runner 2.336.0" -Login "another-app[bot]"
+            ))
         InModuleScope FleetCore { Invoke-RunnerVersionCheck }
         $closed = @($script:GhCalls | Where-Object Method -eq "Patch")
         $closed.Count | Should -Be 1
@@ -1440,6 +1479,13 @@ Describe "runner version check" {
         $comment.Count | Should -Be 1
         $comment[0].Body.body | Should -Match "now installs actions runner 2\.338\.2, so the retirement of 2\.335\.1"
         @($script:GhCalls | Where-Object Path -like "*/issues/81*").Count | Should -Be 0
+        @($script:GhCalls | Where-Object Path -like "*/issues/82*").Count | Should -Be 0
+    }
+
+    It "refuses to run without the login of its App" {
+        InModuleScope FleetCore { $script:Fleet.BotLogin = "" }
+        { InModuleScope FleetCore { Invoke-RunnerVersionCheck -WarningAction SilentlyContinue } } | Should -Throw "*BOT_LOGIN*"
+        @($script:GhCalls | Where-Object Method -in "Post", "Patch").Count | Should -Be 0
     }
 
     It "still opens the issue when the latest release cannot be read" {
@@ -1452,7 +1498,7 @@ Describe "runner version check" {
 
     It "only logs under DRY_RUN" {
         InModuleScope FleetCore { $script:Fleet.DryRun = $true }
-        $script:SearchHits = @(New-SearchHit -Number 80 -Title "CI runner deprecation - GitHub retires actions runner 2.335.1")
+        $script:IssuePages = @(, @(New-IssueHit -Number 80 -Title "CI runner deprecation - GitHub retires actions runner 2.335.1"))
         InModuleScope FleetCore { Invoke-RunnerVersionCheck -WarningAction SilentlyContinue 6>$null }
         @($script:GhCalls | Where-Object Method -in "Post", "Patch").Count | Should -Be 0
     }

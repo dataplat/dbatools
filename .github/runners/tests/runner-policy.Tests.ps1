@@ -1387,6 +1387,41 @@ Describe "Get-RunnerDeprecationNotice" {
         $notice.Body | Should -Match "``soon-ish`` \(unreadable, treated as now\)"
     }
 
+    It "shows a date it cannot read as inert text" {
+        # a backtick, pipe or line break would break out of the code span or the table,
+        # and an @ would mention someone
+        $splatHostile = @{
+            Version       = "2.338.2"
+            Deprecation   = [pscustomobject]@{ runtime_deprecates_at = "x`` | @someone`n# heading $("y" * 60)" }
+            LatestRelease = $script:LatestRelease
+            Now           = $script:Now
+        }
+        $notice = Get-RunnerDeprecationNotice @splatHostile
+        $row = @($notice.Body -split "`n" | Where-Object { $PSItem -like "| Jobs refused from |*" })
+        $row.Count | Should -Be 1
+        $row[0] | Should -Not -Match "@"
+        $row[0] | Should -BeExactly "| Jobs refused from | ``x? ? ?someone?? heading $("y" * 16)...`` (unreadable, treated as now) |"
+        ($row[0] -split "``").Count | Should -Be 3
+        ($row[0] -split "\|").Count | Should -Be 4
+        $notice.Body | Should -Not -Match "(?m)^# heading"
+    }
+
+    It "links only a release page of actions/runner" {
+        $splatOddRelease = @{
+            Version       = "2.338.2"
+            Deprecation   = [pscustomobject]@{ runtime_deprecates_at = "2026-08-06T12:00:00Z" }
+            LatestRelease = [pscustomobject]@{
+                tag_name = "v2.339.0"
+                html_url = "https://example.com/actions/runner/releases/tag/v2.339.0"
+                body     = ""
+            }
+            Now           = $script:Now
+        }
+        $notice = Get-RunnerDeprecationNotice @splatOddRelease
+        $notice.Body | Should -Not -Match "example\.com"
+        $notice.Body | Should -Match ([regex]::Escape("https://github.com/actions/runner/releases/latest"))
+    }
+
     It "gives every version's issue a title the wildcard form matches" {
         $pattern = Get-RunnerDeprecationTitle -Version "*"
         Get-RunnerDeprecationTitle -Version "2.338.2" | Should -BeLike $pattern

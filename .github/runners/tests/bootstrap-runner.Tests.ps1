@@ -212,13 +212,56 @@ Describe "bootstrap-runner.ps1 contract" {
         # the image bakes the runner into every VM, so a tampered or truncated download would
         # reach the whole fleet; the image build stops instead
         $imageStepPath = Join-Path -Path $PSScriptRoot -ChildPath "../image-scripts/step1-tools.ps1"
-        $imageStepText = Get-Content -Path $imageStepPath -Raw
-        $downloadIndex = $imageStepText.IndexOf("DownloadFile(`$runnerUrl")
-        $hashIndex = $imageStepText.IndexOf("-ne `$runnerSha256")
-        $extractIndex = $imageStepText.IndexOf("ExtractToDirectory(`$runnerZip")
-        $downloadIndex | Should -BeGreaterThan 0
-        $hashIndex | Should -BeGreaterThan $downloadIndex
-        $hashIndex | Should -BeLessThan $extractIndex
+        $parseTokens = $null
+        $parseErrors = $null
+        $imageStepAst = [System.Management.Automation.Language.Parser]::ParseFile($imageStepPath, [ref]$parseTokens, [ref]$parseErrors)
+        $parseErrors | Should -BeNullOrEmpty
+        $statements = @($imageStepAst.EndBlock.Statements)
+        $downloadIndex = -1
+        $extractIndex = -1
+        for ($index = 0; $index -lt $statements.Count; $index++) {
+            if ($downloadIndex -lt 0 -and $statements[$index].Extent.Text -like "*DownloadFile(`$runnerUrl*") {
+                $downloadIndex = $index
+            }
+            if ($statements[$index].Extent.Text -like "*ExtractToDirectory(`$runnerZip*") {
+                $extractIndex = $index
+            }
+        }
+        $downloadIndex | Should -BeGreaterOrEqual 0
+        $extractIndex | Should -BeGreaterThan $downloadIndex
+
+        # run what step1 does between the download and the extraction, against a stand-in
+        # download, so the check is exercised rather than only found in the text
+        $checkText = ($statements[$downloadIndex..($extractIndex - 1)] | ForEach-Object { $PSItem.Extent.Text }) -join "`n"
+        $check = [scriptblock]::Create("param(`$webClient, `$runnerUrl, `$runnerZip, `$runnerSha256)`n$checkText")
+        $packageBytes = [System.Text.Encoding]::UTF8.GetBytes("stand-in runner package")
+        $hasher = [System.Security.Cryptography.SHA256]::Create()
+        $packageSha256 = (($hasher.ComputeHash($packageBytes) | ForEach-Object { $PSItem.ToString("x2") }) -join "")
+        $hasher.Dispose()
+        $splatFakeDownload = @{
+            InputObject = New-Object -TypeName PSObject
+            MemberType  = "ScriptMethod"
+            Name        = "DownloadFile"
+            Value       = ({
+                    param($Url, $Path)
+                    [System.IO.File]::WriteAllBytes($Path, $packageBytes)
+                }).GetNewClosure()
+            PassThru    = $true
+        }
+        $fakeWebClient = Add-Member @splatFakeDownload
+        $packagePath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "runner-hash-$([System.Guid]::NewGuid().ToString("N")).zip"
+        $runnerUrl = "https://github.com/actions/runner/releases/download/v9.9.9/actions-runner-win-x64-9.9.9.zip"
+        try {
+            { & $check $fakeWebClient $runnerUrl $packagePath ("0" * 64) } | Should -Throw "*has SHA256 $packageSha256, expected $("0" * 64)*"
+            { & $check $fakeWebClient $runnerUrl $packagePath $packageSha256 } | Should -Not -Throw
+        } finally {
+            $splatRemovePackage = @{
+                Path        = $packagePath
+                Force       = $true
+                ErrorAction = "SilentlyContinue"
+            }
+            Remove-Item @splatRemovePackage
+        }
     }
 
     It "hands the image build step its arguments intact, quotes included" {

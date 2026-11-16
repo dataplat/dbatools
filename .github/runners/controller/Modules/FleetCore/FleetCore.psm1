@@ -149,6 +149,7 @@ function Initialize-FleetContext {
         Maintainers             = @([string]$config["BOOST_USERS"] -split "\s+" | Where-Object { $PSItem })
         OptInPushUsers          = @([string]$config["OPT_IN_PUSH_USERS"] -split "\s+" | Where-Object { $PSItem })
         CiMarker                = [string]$config["CI_MARKER"]
+        BotLogin                = [string]$config["BOT_LOGIN"]
         BootstrapPath           = $bootstrapPath
         DryRun                  = $dryRunSetting -eq "true"
         DeletedVms              = New-Object -TypeName "System.Collections.Generic.HashSet[string]" -ArgumentList ([System.StringComparer]::OrdinalIgnoreCase)
@@ -1683,17 +1684,28 @@ function Invoke-RunnerVersionCheck {
         Write-Host "runner ${version}: GitHub has not scheduled its deprecation"
     }
 
-    # Only issues the controller opened: a title match alone could be a person quoting it.
-    $titleQuery = [uri]::EscapeDataString("repo:$($script:Fleet.Repo) is:issue is:open in:title `"CI runner deprecation`"")
-    $splatSearch = @{
-        Path      = "search/issues?q=$titleQuery&per_page=100"
-        Operation = "find open runner deprecation issues"
+    # Only issues the controller opened: a title match alone could be a person, or another
+    # bot, quoting it. The issue list rather than search, because search can answer
+    # incomplete results and an issue it leaves out would be opened a second time.
+    $botLogin = [string]$script:Fleet.BotLogin
+    if (-not $botLogin) {
+        throw "BOT_LOGIN is empty; the runner deprecation check cannot tell its own issues apart"
     }
-    $search = Invoke-GhJson @splatSearch
     $titlePattern = Get-RunnerDeprecationTitle -Version "*"
-    $ownIssues = @($search.items | Where-Object {
-            [string]$PSItem.title -like $titlePattern -and [string]$PSItem.user.type -eq "Bot"
-        })
+    $ownIssues = @()
+    $page = 1
+    do {
+        $splatList = @{
+            Path      = "repos/$($script:Fleet.Repo)/issues?state=open&creator=$([uri]::EscapeDataString($botLogin))&per_page=100&page=$page"
+            Operation = "list the open issues of $botLogin"
+        }
+        # ForEach-Object unrolls the array Invoke-RestMethod may hand over as one object
+        $pageItems = @(Invoke-GhJson @splatList | ForEach-Object { $PSItem })
+        $ownIssues += @($pageItems | Where-Object {
+                -not $PSItem.pull_request -and [string]$PSItem.user.login -eq $botLogin -and [string]$PSItem.title -like $titlePattern
+            })
+        $page++
+    } while ($pageItems.Count -eq 100)
 
     foreach ($staleIssue in @($ownIssues | Where-Object { [string]$PSItem.title -ne $currentTitle })) {
         $staleVersion = ([string]$staleIssue.title).Substring($titlePattern.Length - 1)
