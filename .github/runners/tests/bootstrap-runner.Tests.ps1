@@ -297,6 +297,31 @@ Describe "bootstrap-runner.ps1 contract" {
         $decode = [scriptblock]::Create("param(`$ArgsBase64) `$ArgsJson = `$null; $($decodeStatement.Extent.Text); `$ArgsJson")
         & $decode $encoded | Should -BeExactly $stepArgs
     }
+
+    It "stops the image build at the first az call that fails to change something" {
+        # az sets $LASTEXITCODE and never trips $ErrorActionPreference: unchecked, a VM create
+        # refused for quota went on to run step1 against no VM, and a failed capture would
+        # still have deleted the build VM
+        $buildScriptPath = Join-Path -Path $PSScriptRoot -ChildPath "../build-modern-image.ps1"
+        $parseTokens = $null
+        $parseErrors = $null
+        $buildAst = [System.Management.Automation.Language.Parser]::ParseFile($buildScriptPath, [ref]$parseTokens, [ref]$parseErrors)
+        $parseErrors | Should -BeNullOrEmpty
+        $azWrites = @($buildAst.FindAll({
+                    $args[0] -is [System.Management.Automation.Language.CommandAst] -and $args[0].GetCommandName() -eq "az" -and $args[0].Extent.Text -match "\b(create|deallocate|generalize|list-usage)\b|@(launchArgs|createArgs|definitionArgs|versionArgs)\b"
+                }, $true))
+        $azWrites.Count | Should -Be 8
+        foreach ($azWrite in $azWrites) {
+            # climb to the statement that holds the call, then look at the one after it
+            $statement = $azWrite
+            while ($statement.Parent -isnot [System.Management.Automation.Language.StatementBlockAst] -and $statement.Parent -isnot [System.Management.Automation.Language.NamedBlockAst]) {
+                $statement = $statement.Parent
+            }
+            $siblings = @($statement.Parent.Statements)
+            $position = [array]::IndexOf($siblings, $statement)
+            $siblings[$position + 1].Extent.Text | Should -BeLike "Assert-AzSuccess *" -Because $statement.Extent.Text
+        }
+    }
 }
 
 Describe "Install-RunnerPackage" {

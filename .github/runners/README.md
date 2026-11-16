@@ -65,8 +65,10 @@ pwsh .github/runners/debug.ps1 -Action run -InstanceName dbatools-runners_xxxxxx
 # manually reconcile now, optionally heating one maintainer lane immediately
 gh workflow run runner-scale-up.yml -f boost_user=potatoqualitee -f boost_message='[do ci]'
 
-# rebuild the modern golden image (new SQL CU, new tooling, or adding sql2025)
-pwsh .github/runners/build-modern-image.ps1 -ImageVersion 1.0.1 -Branch development
+# rebuild the modern golden image (new SQL CU, new tooling, or adding sql2025); run it
+# from the repository root while the fleet is quiet: the 4-core build VM shares the
+# eastus core quota with the runners, and the build stops when they hold every core
+pwsh .github/runners/build-modern-image.ps1 -ImageVersion 1.0.2 -Branch development
 # then point the VMSS at the new version:
 az vmss update -g dbatools-ci -n dbatools-runners --set virtualMachineProfile.storageProfile.imageReference.id=<new image version id>
 
