@@ -8,7 +8,7 @@ function Copy-DbaLogin {
 
         Handles both SQL Server and Windows Authentication logins, copying passwords (with original SIDs to prevent orphaned users), server roles, database permissions, and login properties like password policy enforcement. Includes smart conflict resolution - can drop and recreate existing logins, rename logins during copy, or generate new SIDs when copying to the same server.
 
-        Version compatibility: SQL Server 2000-2008 R2 logins copy to any version, but SQL Server 2012+ logins (due to hash algorithm changes) only copy to SQL Server 2012 and newer. Automatically handles version-specific features and validates compatibility before attempting migration.
+        Version compatibility: SQL Server 2000-2008 R2 logins copy to any version, but SQL Server 2012+ logins (due to hash algorithm changes) only copy to SQL Server 2012 and newer. SQL logins with a password hash in the format of SQL Server 2025 only copy to SQL Server 2022 CU12 and newer. A SQL login whose password hash the destination does not know is skipped with a warning, before anything is dropped. Automatically handles version-specific features and validates compatibility before attempting migration.
 
     .PARAMETER Source
         Source SQL Server. You must have sysadmin access and server version must be SQL Server version 2000 or higher.
@@ -87,6 +87,16 @@ function Copy-DbaLogin {
     .PARAMETER Force
         Drops and recreates existing logins on the destination server, transferring ownership of databases and SQL Agent jobs to 'sa' first.
         Use this when you need to update login passwords or properties that can't be modified in place, but ensure job ownership changes are acceptable.
+        When -UpdateExisting is also specified, it takes precedence: only logins with a different SID on the destination are dropped and recreated.
+        A SQL login whose password hash cannot be read on the source, which requires CONTROL SERVER there, is not dropped but gets a Failed result, because it could not be created again.
+
+    .PARAMETER UpdateExisting
+        Updates logins that already exist on the destination in place instead of skipping them, so a password changed on the source reaches the destination without a drop.
+        For SQL logins the password hash, CHECK_POLICY and CHECK_EXPIRATION are compared, for all logins the default database, the default language and the disabled state. A login that differs is altered with ALTER LOGIN in one transaction, so its SID, the databases and jobs it owns and its open sessions stay as they are.
+        Permissions are then synced for every existing login, whether it differed or not, as after a copy, unless -ExcludePermissionSync is used. Permissions of the login on other logins and server roles, such as IMPERSONATE, that the source login does not have are revoked as well; permissions on endpoints and availability groups stay, because they belong to the replica. A permission is revoked from every login that granted it, and a grant option the source login does not have is revoked with CASCADE, so the grants the login passed on with it are revoked as well. When the default database of the source login does not exist on the destination, the default database of the destination login is left as it is.
+        An in-place update cannot change the SID, so a login with a different SID on the destination is skipped with a warning: database users that come from the source, such as those of an availability group database, are not mapped to it. Add -Force to drop and recreate only those logins. A login of another type on the destination, such as a SQL login where the source has a certificate login, is skipped with a warning, also with -NewSid and with -Force, because an update in place cannot change the type.
+        The login performing the migration is skipped, as with -Force, and so is a Windows group that the current login may depend on for its access.
+        SQL Server 2025 converts an older password hash to its own format at the first successful login. When a login connected to the destination while the source still has the older format, the hashes differ although the password is the same, and the same password is set again.
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -117,8 +127,8 @@ function Copy-DbaLogin {
         - DestinationServer: Name of the destination SQL Server instance
         - Name: Login name that was copied (or renamed login name if -LoginRenameHashtable was used)
         - Type: Login type (e.g., "Login - SqlLogin", "Login - WindowsUser", "Login - WindowsGroup")
-        - Status: Result of the migration attempt (Successful, Skipped, or Failed)
-        - Notes: Additional details about the operation or reason for skipping/failure
+        - Status: Result of the migration attempt (Successful, Skipped, or Failed). The object is returned after the permissions of the login are synced, and Failed also means that syncing a permission failed
+        - Notes: Additional details about the operation or reason for skipping/failure. With -UpdateExisting, a login updated in place lists the properties that were updated. When syncing a permission failed, it ends with "Syncing the permissions failed:" and the first warning
 
         All properties available on the returned object:
         - SourceServer: Name of the source SQL Server instance
@@ -160,6 +170,13 @@ function Copy-DbaLogin {
         PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -Login realcajun, netnerds -force
 
         Copies ONLY Logins netnerds and realcajun. If Login realcajun or netnerds exists on Destination, the existing Login(s) will be dropped and recreated.
+
+    .EXAMPLE
+        PS C:\> Copy-DbaLogin -Source sqlserver2014a -Destination sqlcluster -UpdateExisting
+
+        Copies all logins from Source to Destination. A login that already exists on Destination is not dropped, but updated in place when its password, password policy, default database, default language or disabled state differs from Source, and its permissions are synced.
+
+        A login with a different SID on Destination is skipped with a warning. Add -Force to drop and recreate those logins.
 
     .EXAMPLE
         PS C:\> Copy-DbaLogin -LoginRenameHashtable @{ "PreviousUser" = "newlogin" } -Source $Sql01 -Destination Localhost -SourceSqlCredential $sqlcred -Login PreviousUser
@@ -217,6 +234,7 @@ function Copy-DbaLogin {
         [switch]$KillActiveConnection,
         [switch]$NewSid,
         [switch]$Force,
+        [switch]$UpdateExisting,
         [switch]$ObjectLevel,
         [switch]$ExcludePermissionSync,
         [switch]$ExcludeDatabaseMapping,
@@ -286,7 +304,7 @@ function Copy-DbaLogin {
 
             $currentLogin = $DestServer.ConnectionContext.truelogin
 
-            if ($currentLogin -eq $newUserName -and $force) {
+            if ($currentLogin -eq $newUserName -and ($force -or $UpdateExisting)) {
                 if ($Pscmdlet.ShouldProcess($destinstance, "Login $newUserName is skipped because it is performing the migration")) {
                     Write-Message -Level Verbose -Message "Cannot drop login performing the migration. Skipping."
                     $copyLoginStatus.Status = "Skipped"
@@ -325,9 +343,9 @@ function Copy-DbaLogin {
                 }
             }
 
-            if ($null -ne $destServer.Logins.Item($newUserName) -and !$force) {
+            if ($null -ne $destServer.Logins.Item($newUserName) -and !$force -and !$UpdateExisting) {
                 if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $newUserName because it exists at destination")) {
-                    Write-Message -Level Verbose -Message "$newUserName already exists in destination. Use -Force to drop and recreate."
+                    Write-Message -Level Verbose -Message "$newUserName already exists in destination. Use -UpdateExisting to update it in place or -Force to drop and recreate it."
                     $copyLoginStatus.Status = "Skipped"
                     $copyLoginStatus.Notes = "Already exists on destination"
                     $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -335,10 +353,57 @@ function Copy-DbaLogin {
                 continue
             }
 
-            if ($null -ne $destServer.Logins.Item($newUserName) -and $force) {
+            # A SQL login can only be created from a password hash in a format the destination knows. SQL Server 2012
+            # introduced the format 0x0200, which older versions refuse. SQL Server 2025 introduced 0x0300, which SQL
+            # Server 2022 knows from CU12 (16.0.4115) on. SQL Server 2019 and 2022 RTM (16.0.1000) refuse it with error
+            # 15021 in CREATE LOGIN and ALTER LOGIN. This is checked per login, so other logins are still copied, and
+            # before anything is dropped, because -Force would otherwise drop the destination login and then fail to
+            # create it.
+            # The same holds for a hash that cannot be read at all, on any version: LOGINPROPERTY returns no hash to a
+            # source connection without CONTROL SERVER, even when that connection can see the logins.
+            if ($Login.LoginType -eq "SqlLogin") {
+                try {
+                    $sourceHash = Get-LoginPasswordHash -Login $Login
+                } catch {
+                    $sourceHash = $null
+                }
+                # A hash that could not be read comes back empty or as 0x00.
+                if ($sourceHash -notmatch "^0x0[1-9]00[0-9A-F]+$") {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $newUserName because its password hash could not be read")) {
+                        Write-Message -Level Warning -Message "Could not read the password hash of $($Login.Name) on $($sourceServer.Name), which requires CONTROL SERVER there. Skipping $newUserName."
+                        $copyLoginStatus.Status = "Failed"
+                        $copyLoginStatus.Notes = "Could not read the password hash"
+                        $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
+                    continue
+                }
+            }
+            # For SQL Server 2022 the build decides. It comes from Version, which says 12.0 on Azure SQL Database and
+            # Managed Instance, so they are not affected.
+            $destBeforeHash0300 = $destServer.VersionMajor -lt 16 -or ($destServer.Version.Major -eq 16 -and $destServer.Version -lt [version]"16.0.4115")
+            if ($Login.LoginType -eq "SqlLogin" -and $sourceServer.VersionMajor -ge 11 -and $destBeforeHash0300) {
+                if ($sourceHash -like "0x0300*") {
+                    $hashFormat = "SQL Server 2025"
+                } elseif ($sourceHash -like "0x0200*" -and $destServer.VersionMajor -lt 11) {
+                    $hashFormat = "SQL Server 2012"
+                } else {
+                    $hashFormat = $null
+                }
+                if ($hashFormat) {
+                    if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $newUserName because the destination does not support its password hash")) {
+                        Write-Message -Level Warning -Message "The password hash of $newUserName on $($sourceServer.Name) has the format of $hashFormat, which $destinstance does not support. Skipping."
+                        $copyLoginStatus.Status = "Skipped"
+                        $copyLoginStatus.Notes = "Password hash format of $hashFormat not supported by destination"
+                        $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                    }
+                    continue
+                }
+            }
+
+            if ($null -ne $destServer.Logins.Item($newUserName) -and ($force -or $UpdateExisting)) {
                 if ($newUserName -eq $destServer.ServiceAccount) {
-                    if ($Pscmdlet.ShouldProcess($destinstance, "$newUserName is the destination service account, skipping drop")) {
-                        Write-Message -Level Verbose -Message "$newUserName is the destination service account. Skipping drop."
+                    if ($Pscmdlet.ShouldProcess($destinstance, "$newUserName is the destination service account, skipping")) {
+                        Write-Message -Level Verbose -Message "$newUserName is the destination service account. Skipping."
                         $copyLoginStatus.Status = "Skipped"
                         $copyLoginStatus.Notes = "Destination service account"
                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -406,7 +471,7 @@ function Copy-DbaLogin {
 
                                 if ($currentLogin -in $memberNames) {
                                     if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $newUserName - potential lockout risk")) {
-                                        Write-Message -Level Warning -Message "Skipping $newUserName. You appear to access this server only through this Windows group. Dropping it with -Force may lock you out. Either: 1) Add your individual login first, 2) Use -ExcludeLogin to skip this group, or 3) Ensure you have another way to access this server."
+                                        Write-Message -Level Warning -Message "Skipping $newUserName. You appear to access this server only through this Windows group. Dropping it with -Force or changing it with -UpdateExisting may lock you out. Either: 1) Add your individual login first, 2) Use -ExcludeLogin to skip this group, or 3) Ensure you have another way to access this server."
                                         $copyLoginStatus.Status = "Skipped"
                                         $copyLoginStatus.Notes = "Potential lockout risk - current user may depend on this group for access"
                                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -416,7 +481,7 @@ function Copy-DbaLogin {
                             } catch {
                                 # If we cannot enumerate members (permission issues), err on the side of caution
                                 if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $newUserName - cannot verify group membership")) {
-                                    Write-Message -Level Warning -Message "Cannot enumerate members of $newUserName. If you are a member of this group, dropping it may lock you out. Either: 1) Add your individual login first, 2) Use -ExcludeLogin to skip this group, or 3) Ensure you have another way to access this server."
+                                    Write-Message -Level Warning -Message "Cannot enumerate members of $newUserName. If you are a member of this group, dropping or changing it may lock you out. Either: 1) Add your individual login first, 2) Use -ExcludeLogin to skip this group, or 3) Ensure you have another way to access this server."
                                     $copyLoginStatus.Status = "Skipped"
                                     $copyLoginStatus.Notes = "Cannot verify group membership - potential lockout risk"
                                     $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
@@ -424,6 +489,220 @@ function Copy-DbaLogin {
                                 continue
                             }
                         }
+                    }
+                }
+
+                # After the lockout check of the Windows groups above, because an update can disable a group or the
+                # permission sync can take it out of a server role, just like a drop.
+                if ($UpdateExisting) {
+                    $destLogin = $destServer.Logins.Item($newUserName)
+                    # The server objects can come from the caller and be reused, so the properties cached in both
+                    # login objects may be outdated.
+                    $Login.Refresh()
+                    $destLogin.Refresh()
+
+                    # An update in place keeps the destination login, so it has to be the same kind of login as the
+                    # source. With -NewSid the SIDs are not compared, so a certificate login of the source handed its
+                    # permissions, like CONTROL SERVER, to a SQL login of the same name on the destination, which has a
+                    # password and can connect. A login of another type is not replaced here, also not with -Force: a
+                    # certificate or asymmetric key login can only be created when that key exists in master of the
+                    # destination, so after the drop there could be no login at all.
+                    if ($Login.LoginType -ne $destLogin.LoginType) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $newUserName because it is a login of another type on the destination")) {
+                            Write-Message -Level Warning -Message "Login $newUserName is a $($destLogin.LoginType) login on $destinstance and a $($Login.LoginType) login on $($sourceServer.Name). An update in place cannot change the type of a login, so it is skipped. Drop the login on the destination, or use -Force without -UpdateExisting, to replace it."
+                            $copyLoginStatus.Status = "Skipped"
+                            $copyLoginStatus.Notes = "Different login type on destination"
+                            $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
+                        continue
+                    }
+
+                    # With -NewSid the destination login got a SID of its own, so only then a different SID is expected.
+                    $sidDiffers = -not $NewSid -and (Convert-ByteToHexString $Login.Sid) -ne (Convert-ByteToHexString $destLogin.Sid)
+                    if ($sidDiffers -and -not $force) {
+                        if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $newUserName because it has a different SID on the destination")) {
+                            Write-Message -Level Warning -Message "Login $newUserName exists on $destinstance with a different SID, so database users that come from $($sourceServer.Name), such as those of an availability group database, are not mapped to it. An update in place cannot change the SID. Use -Force to drop and recreate the login."
+                            $copyLoginStatus.Status = "Skipped"
+                            $copyLoginStatus.Notes = "Different SID on destination, use -Force to drop and recreate"
+                            $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
+                        continue
+                    }
+
+                    if ($sidDiffers) {
+                        Write-Message -Level Verbose -Message "$newUserName has a different SID on $destinstance. Force was specified, so it is dropped and recreated."
+                    } else {
+                        $loginIdentifier = "[" + $newUserName.Replace("]", "]]") + "]"
+                        $changes = @()
+                        $setOptions = @()
+                        $newPasswordHash = $null
+
+                        if ($Login.LoginType -eq "SqlLogin") {
+                            try {
+                                $sourceHash = Get-LoginPasswordHash -Login $Login
+                                $destHash = Get-LoginPasswordHash -Login $destLogin
+                            } catch {
+                                $sourceHash = $destHash = $null
+                            }
+                            # A hash that could not be read comes back empty or as 0x00.
+                            if ($sourceHash -notmatch "^0x0[1-9]00[0-9A-F]+$" -or $destHash -notmatch "^0x0[1-9]00[0-9A-F]+$") {
+                                $copyLoginStatus.Status = "Failed"
+                                $copyLoginStatus.Notes = "Could not read the password hash"
+                                $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                Write-Message -Level Verbose -Message "Could not read the password hash of $newUserName on both instances. Skipping."
+                                continue
+                            }
+                            if ($sourceHash -ne $destHash) {
+                                $changes += "password"
+                                $newPasswordHash = $sourceHash
+                            }
+                            if ($Login.PasswordPolicyEnforced -ne $destLogin.PasswordPolicyEnforced) {
+                                $changes += "CHECK_POLICY"
+                            }
+                            if ($Login.PasswordExpirationEnabled -ne $destLogin.PasswordExpirationEnabled) {
+                                $changes += "CHECK_EXPIRATION"
+                            }
+                        }
+
+                        if ($Login.LoginType -in "WindowsUser", "WindowsGroup", "SqlLogin", "ExternalUser", "ExternalGroup") {
+                            if ($Login.DefaultDatabase) {
+                                $defaultDatabase = $destServer.Databases[$Login.DefaultDatabase]
+                                if ($null -eq $defaultDatabase) {
+                                    Write-Message -Level Verbose -Message "Database $($Login.DefaultDatabase) does not exist on $destinstance, so the default database of $newUserName stays $($destLogin.DefaultDatabase)."
+                                } elseif ($defaultDatabase.Name -cne $destLogin.DefaultDatabase) {
+                                    $changes += "default database"
+                                    $setOptions += "DEFAULT_DATABASE = [" + $defaultDatabase.Name.Replace("]", "]]") + "]"
+                                }
+                            }
+                            if ($Login.Language -and $Login.Language -ne $destLogin.Language) {
+                                $changes += "default language"
+                                $setOptions += "DEFAULT_LANGUAGE = [" + $Login.Language.Replace("]", "]]") + "]"
+                            }
+                        }
+
+                        if ($Login.IsDisabled -ne $destLogin.IsDisabled) {
+                            $changes += "disabled state"
+                        }
+
+                        $checkExpiration = if ($Login.PasswordExpirationEnabled) { "ON" } else { "OFF" }
+                        $statements = @()
+                        if ($newPasswordHash) {
+                            # SQL Server refuses a hashed password for a login with CHECK_POLICY turned on (error 33020),
+                            # so the policy is turned off first and set to the value of the source login afterwards.
+                            if ($destLogin.PasswordPolicyEnforced) {
+                                $statements += "ALTER LOGIN $loginIdentifier WITH CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF"
+                            }
+                            $statements += "ALTER LOGIN $loginIdentifier WITH " + ((@("PASSWORD = $newPasswordHash HASHED") + $setOptions) -join ", ")
+                            if ($Login.PasswordPolicyEnforced) {
+                                $statements += "ALTER LOGIN $loginIdentifier WITH CHECK_POLICY = ON, CHECK_EXPIRATION = $checkExpiration"
+                            }
+                        } else {
+                            if ($changes -contains "CHECK_POLICY" -or $changes -contains "CHECK_EXPIRATION") {
+                                $checkPolicy = if ($Login.PasswordPolicyEnforced) { "ON" } else { "OFF" }
+                                $setOptions += "CHECK_POLICY = $checkPolicy", "CHECK_EXPIRATION = $checkExpiration"
+                            }
+                            if ($setOptions) {
+                                $statements += "ALTER LOGIN $loginIdentifier WITH " + ($setOptions -join ", ")
+                            }
+                        }
+                        if ($changes -contains "disabled state") {
+                            $loginState = if ($Login.IsDisabled) { "DISABLE" } else { "ENABLE" }
+                            $statements += "ALTER LOGIN $loginIdentifier $loginState"
+                        }
+
+                        $resultPending = $false
+                        if ($changes) {
+                            $changeList = $changes -join ", "
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Updating $changeList of login $newUserName in place")) {
+                                try {
+                                    # One transaction, so a failing statement takes back the ones before it and the
+                                    # policy turned off for the password is never left off.
+                                    # The connection can come from the caller with a transaction of its own. A rollback
+                                    # would take back the work of the caller as well, so inside that transaction the
+                                    # statements are only taken back to a savepoint.
+                                    $ownsTransaction = $destServer.ConnectionContext.ExecuteScalar("SELECT @@TRANCOUNT") -eq 0
+                                    if ($ownsTransaction) {
+                                        $destServer.ConnectionContext.BeginTransaction()
+                                    } else {
+                                        $null = $destServer.ConnectionContext.ExecuteNonQuery("SAVE TRANSACTION dbatools_CopyDbaLogin")
+                                    }
+                                    $applied = $false
+                                    try {
+                                        foreach ($statement in $statements) {
+                                            $null = $destServer.ConnectionContext.ExecuteNonQuery($statement)
+                                        }
+                                        if ($ownsTransaction) {
+                                            $destServer.ConnectionContext.CommitTransaction()
+                                        }
+                                        $applied = $true
+                                    } finally {
+                                        # A failed ALTER LOGIN leaves the transaction open, and so does a stopped pipeline.
+                                        if (-not $applied) {
+                                            try {
+                                                if ($ownsTransaction) {
+                                                    $destServer.ConnectionContext.RollBackTransaction()
+                                                } elseif ($destServer.ConnectionContext.ExecuteScalar("SELECT XACT_STATE()") -eq 1) {
+                                                    # Back to the savepoint only. A transaction of the caller that can no longer
+                                                    # commit can only be rolled back as a whole, and that is up to the caller.
+                                                    $null = $destServer.ConnectionContext.ExecuteNonQuery("ROLLBACK TRANSACTION dbatools_CopyDbaLogin")
+                                                }
+                                            } catch {
+                                                Write-Message -Level Verbose -Message "Could not roll back the transaction on $destinstance | $PSItem"
+                                            }
+                                        }
+                                    }
+                                    $destLogin.Refresh()
+                                    Write-Message -Level Verbose -Message "Updated $changeList of $newUserName on $destinstance in place."
+                                    $copyLoginStatus.Status = "Successful"
+                                    $copyLoginStatus.Notes = "Updated in place: $changeList"
+                                } catch {
+                                    $copyLoginStatus.Status = "Failed"
+                                    $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_)
+                                    $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                    Write-Message -Level Verbose -Message "Could not update $newUserName on $destinstance | $PSItem"
+                                    continue
+                                }
+                                $resultPending = $true
+                            }
+                        } else {
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Skipping $newUserName because it is identical on source and destination")) {
+                                Write-Message -Level Verbose -Message "$newUserName is identical on source and destination."
+                                $copyLoginStatus.Status = "Skipped"
+                                $copyLoginStatus.Notes = "Login is identical on source and destination"
+                                $resultPending = $true
+                            }
+                        }
+
+                        # The permissions of an existing login are synced whether the login itself differed or not,
+                        # just as -Force syncs them for every login it recreates.
+                        if (-not $ExcludePermissionSync) {
+                            if ($Pscmdlet.ShouldProcess($destinstance, "Updating SQL login $newUserName permissions")) {
+                                $splatPermission = @{
+                                    SourceServer           = $sourceServer
+                                    SourceLogin            = $Login
+                                    DestServer             = $destServer
+                                    DestLogin              = $destLogin
+                                    ObjectLevel            = $ObjectLevel
+                                    ExcludeDatabaseMapping = $ExcludeDatabaseMapping
+                                    WarningVariable        = "permissionWarnings"
+                                }
+                                Update-SqlPermission @splatPermission
+                                # Update-SqlPermission warns about every permission it could not sync and goes on
+                                # with the next one, so a warning means the permissions are not those of the source.
+                                if ($permissionWarnings) {
+                                    $copyLoginStatus.Status = "Failed"
+                                    $copyLoginStatus.Notes = (@($copyLoginStatus.Notes, "Syncing the permissions failed: $($permissionWarnings[0].Message)") | Where-Object { $PSItem }) -join ". "
+                                }
+                            }
+                        }
+                        # The result comes after the permissions. A pipeline that stops at the result, like one with
+                        # Select-Object -First 1, stops this command there, so the permissions were never synced and a
+                        # permission that the source login does not have stayed, although the result said Successful.
+                        if ($resultPending) {
+                            $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
+                        # Return, not continue: like a created login, the destination goes on with -SyncSaName.
+                        return
                     }
                 }
 
@@ -506,8 +785,6 @@ function Copy-DbaLogin {
                     continue
                 }
 
-                $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
-
                 if (-not $ExcludePermissionSync) {
                     if ($Pscmdlet.ShouldProcess($destinstance, "Updating SQL login $newUserName permissions")) {
                         # In rare cases, when the instance has a case sensitive collation and there are two logins that differ only in case, New-DbaLogin will return them both into $destLogin
@@ -520,11 +797,20 @@ function Copy-DbaLogin {
                                 DestLogin              = $dl
                                 ObjectLevel            = $ObjectLevel
                                 ExcludeDatabaseMapping = $ExcludeDatabaseMapping
+                                WarningVariable        = "permissionWarnings"
                             }
                             Update-SqlPermission @splatPermission
+                            # See the update in place above.
+                            if ($permissionWarnings) {
+                                $copyLoginStatus.Status = "Failed"
+                                $copyLoginStatus.Notes = (@($copyLoginStatus.Notes, "Syncing the permissions failed: $($permissionWarnings[0].Message)") | Where-Object { $PSItem }) -join ". "
+                            }
                         }
                     }
                 }
+
+                # The result comes after the permissions, as for the update in place above.
+                $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
             }
         }
     }
@@ -585,12 +871,11 @@ function Copy-DbaLogin {
 
                     try {
                         $destVersionMajor = $destServer.VersionMajor
-                        if ($sourceVersionMajor -gt 10 -and $destVersionMajor -lt 11) {
-                            Stop-Function -Message "Login migration from version $sourceVersionMajor to $destVersionMajor is not supported." -Target $sourceServer
-                        }
-
+                        # The password hash format of a source of SQL Server 2012 or later is checked per login in
+                        # Copy-Login, so that Windows logins are still copied to an older destination and SQL logins are
+                        # skipped before -Force can drop them.
                         if ($sourceVersionMajor -lt 8 -or $destVersionMajor -lt 8) {
-                            Stop-Function -Message "SQL Server 7 and below are not supported." -Target $sourceServer
+                            Stop-Function -Message "SQL Server 7 and below are not supported." -Target $sourceServer -Continue
                         }
 
                         if ($destserver.ConnectionContext.TrueLogin -notin $destserver.Logins.Name -and $Force) {
