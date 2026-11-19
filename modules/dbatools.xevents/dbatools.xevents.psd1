@@ -1,0 +1,55 @@
+@{
+    # Satellite module manifest (migration/specs/modules.md section 5.3). The cmdlet dll is
+    # built from src/project and staged here at publish/dev-stage time; CmdletsToExport is
+    # maintained by the flip tool (Switch-CommandExport.ps1) and stays an explicit name list -
+    # PowerShell auto-loading reads the manifest without executing it, so do not wildcard.
+    RootModule             = 'dbatools.xevents.psm1'
+    ModuleVersion          = '2026.7.6'
+    GUID                   = '004137d9-445c-4d13-a7f3-bf34f40eef92'
+    Author                 = 'the dbatools team'
+    CompanyName            = 'Dataplat'
+    Copyright              = 'Copyright (c) 2026 by dbatools, licensed under MIT'
+    Description            = 'dbatools.xevents: Extended Events and legacy SQL Trace - part of the dbatools module family'
+    PowerShellVersion      = '5.1'
+
+    # Satellites never carry .ps1 command functions (specs/contracts.md section 2)
+    FunctionsToExport      = @()
+    CmdletsToExport        = @(
+        'Get-DbaTrace',
+        'ConvertTo-DbaXESession',
+        'Copy-DbaXESessionTemplate',
+        'Export-DbaXESessionTemplate',
+        'Read-DbaAuditFile',
+        'Read-DbaXEFile',
+        'Remove-DbaTrace',
+        'Start-DbaTrace',
+        'Start-DbaXESession',
+        'Set-DbaXESession',
+        'Stop-DbaTrace',
+        'Copy-DbaXESession',
+        'Export-DbaXESession',
+        'Import-DbaXESessionTemplate',
+        'Invoke-DbaXEReplay',
+        'Read-DbaTraceFile',
+        'Watch-DbaXESession',
+        'Get-DbaXESessionTemplate',
+        'Get-DbaXEObject',
+        'Get-DbaXESession',
+        'Get-DbaXESessionTarget',
+        'Get-DbaXESessionTargetFile',
+        'Get-DbaXEStore',
+        'New-DbaXESession',
+        'Remove-DbaXESession',
+        'Stop-DbaXESession'
+    )
+    VariablesToExport      = @()
+    AliasesToExport        = @()
+
+    PrivateData            = @{
+        PSData = @{
+            Tags       = @('sqlserver', 'migrations', 'sql', 'dba', 'databases', 'dbatools')
+            LicenseUri = 'https://opensource.org/licenses/MIT'
+            ProjectUri = 'https://dbatools.io'
+        }
+    }
+}

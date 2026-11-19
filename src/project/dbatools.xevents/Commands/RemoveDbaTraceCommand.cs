@@ -1,0 +1,134 @@
+#nullable enable
+
+using System;
+using System.Collections;
+using System.Management.Automation;
+using Dataplat.Dbatools.Parameter;
+
+namespace Dataplat.Dbatools.Commands;
+
+/// <summary>
+/// Stops and removes SQL Server traces by ID or piped input from Get-DbaTrace.
+/// </summary>
+/// <remarks>
+/// The trace resolution (Get-DbaTrace), the default-trace guard, the stop/remove sp_trace_setstatus
+/// calls, and the result projection all run the original dbatools PowerShell body VERBATIM inside the
+/// dbatools module scope rather than being reimplemented in C#, so the engine decides the observable
+/// details.
+///
+/// Process-only. The single ShouldProcess uses the OUTER $Pscmdlet, routed to $__realCmdlet (this,
+/// ConfirmImpact Medium) so "Yes to All" persists across pipeline records (a fresh scriptblock $PSCmdlet
+/// per record would reset it). The process hop scriptblock is [CmdletBinding(SupportsShouldProcess)] so
+/// forwarded -WhatIf/-Confirm bind.
+///
+/// The three Stop-Function calls are all -Continue and gain -FunctionName Remove-DbaTrace (in-hop the
+/// call-stack frame is the generated scriptblock, so the attribution must be explicit). The two bare
+/// `return` statements following a Stop-Function -Continue are dead in both worlds (-Continue issues a
+/// loop `continue`; -EnableException throws before the return) and are kept verbatim.
+///
+/// $InputObject is reassigned from Get-DbaTrace only when it is unbound AND -SqlInstance is supplied,
+/// which happens exactly on the single non-piped process invocation; when piped, $InputObject is always
+/// bound and the branch is skipped. So the reassignment never leaks across records and no cross-record
+/// carry is needed. Each removed trace is emitted before a later trace's Query may throw under
+/// -EnableException, so the process hop uses InvokeScopedStreaming to avoid losing the record of a trace
+/// that was actually removed (DEF-001). Surface pinned by migration/baselines/Remove-DbaTrace.json.
+/// </remarks>
+[Cmdlet(VerbsCommon.Remove, "DbaTrace", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
+public sealed class RemoveDbaTraceCommand : DbaBaseCmdlet
+{
+    /// <summary>The target SQL Server instance or instances.</summary>
+    [Parameter(Position = 0)]
+    [PsDbaInstanceArrayCast]
+    public DbaInstanceParameter[]? SqlInstance { get; set; }
+
+    /// <summary>Login to the target instance using alternative credentials.</summary>
+    [Parameter(Position = 1)]
+    public PSCredential? SqlCredential { get; set; }
+
+    /// <summary>The trace IDs to stop and remove from the SQL Server instance.</summary>
+    [Parameter(Position = 2)]
+    public int[]? Id { get; set; }
+
+    /// <summary>Trace objects piped in from Get-DbaTrace.</summary>
+    [Parameter(Position = 3, ValueFromPipeline = true)]
+    public object[]? InputObject { get; set; }
+
+    // EnableException is inherited from DbaBaseCmdlet - the source declares it bare, which the inherited
+    // [Parameter] already matches; no override needed.
+
+    protected override void ProcessRecord()
+    {
+        NestedCommand.InvokeScopedStreaming(this, item =>
+        {
+            if (item?.BaseObject is ErrorRecord nestedError)
+            {
+                NestedCommand.RemoveDuplicateError(this, nestedError);
+                WriteError(NestedCommand.PreserveErrorIdentity(nestedError));
+            }
+            else
+            {
+                WriteObject(item);
+            }
+        }, ProcessScript,
+            InputObject, SqlInstance, SqlCredential, Id, EnableException.ToBool(), this,
+            NestedCommand.BoundCommonParameter(this, "WhatIf"), NestedCommand.BoundCommonParameter(this, "Confirm"),
+            NestedCommand.BoundCommonParameter(this, "Verbose"), NestedCommand.BoundCommonParameter(this, "Debug"));
+    }
+
+    // PS: the process block VERBATIM apart from the one $Pscmdlet.ShouldProcess -> $__realCmdlet.ShouldProcess
+    // and -FunctionName Remove-DbaTrace on the three Stop-Function sites. EnableException is bound so
+    // Stop-Function's scope-walking default inherits the caller's value.
+    private const string ProcessScript = """
+param($InputObject, $SqlInstance, $SqlCredential, $Id, $EnableException, $__realCmdlet, $__boundWhatIf, $__boundConfirm, $__boundVerbose, $__boundDebug)
+$__commonParameters = @{}
+if ($null -ne $__boundWhatIf) { $__commonParameters.WhatIf = [bool]$__boundWhatIf }
+if ($null -ne $__boundConfirm) { $__commonParameters.Confirm = [bool]$__boundConfirm }
+if ($null -ne $__boundVerbose) { $__commonParameters.Verbose = [bool]$__boundVerbose }
+if ($null -ne $__boundDebug) { $__commonParameters.Debug = [bool]$__boundDebug }
+$__dbatoolsModule = Get-Module -Name dbatools | Where-Object ModuleType -eq "Script" | Select-Object -First 1
+& $__dbatoolsModule {
+    [CmdletBinding(SupportsShouldProcess)]
+    param([object[]]$InputObject, [Dataplat.Dbatools.Parameter.DbaInstanceParameter[]]$SqlInstance, $SqlCredential, [int[]]$Id, $EnableException, $__realCmdlet)
+    if (-not $InputObject -and $SqlInstance) {
+        $InputObject = Get-DbaTrace -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Id $Id
+    }
+
+    foreach ($trace in $InputObject) {
+        if (-not $trace.id -and -not $trace.Parent) {
+            Stop-Function -Message "Input is of the wrong type. Use Get-DbaTrace." -Continue -FunctionName Remove-DbaTrace
+            return
+        }
+
+        $server = $trace.Parent
+        $traceid = $trace.id
+        $default = Get-DbaTrace -SqlInstance $server -Default
+
+        if ($default.id -eq $traceid) {
+            Stop-Function -Message "The default trace on $server cannot be stopped. Use Set-DbaSpConfigure to turn it off." -Continue -FunctionName Remove-DbaTrace
+        }
+
+        $stopsql = "EXEC sp_trace_setstatus $traceid, 0"
+        $removesql = "EXEC sp_trace_setstatus $traceid, 2"
+
+        if ($__realCmdlet.ShouldProcess($traceid, "Removing the trace")) {
+            try {
+                $server.Query($stopsql)
+                if (Get-DbaTrace -SqlInstance $server -Id $traceid) {
+                    $server.Query($removesql)
+                }
+                [PSCustomObject]@{
+                    ComputerName = $server.ComputerName
+                    InstanceName = $server.ServiceName
+                    SqlInstance  = $server.DomainInstanceName
+                    Id           = $traceid
+                    Status       = "Stopped, closed and deleted"
+                }
+            } catch {
+                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue -FunctionName Remove-DbaTrace
+                return
+            }
+        }
+    }
+} $InputObject $SqlInstance $SqlCredential $Id $EnableException $__realCmdlet @__commonParameters 3>&1 2>&1
+""";
+}
