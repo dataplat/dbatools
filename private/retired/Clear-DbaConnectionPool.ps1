@@ -4,21 +4,11 @@ function Clear-DbaConnectionPool {
         Clears all SQL Server connection pools on the specified computer to resolve connection issues.
 
     .DESCRIPTION
-        Clears all SQL Server connection pools managed by the .NET SqlClient on the target computer. This forces any pooled connections to be discarded and recreated on the next connection attempt.
-
-        Connection pools can sometimes retain stale or problematic connections that cause intermittent connectivity issues, authentication failures, or performance problems. This command helps resolve these issues by forcing a clean slate for all SQL Server connections from that computer.
+        This command now clears the SqlClient connection pools of the current PowerShell process only. Earlier versions accepted -ComputerName and -Credential and ran ClearAllPools through PowerShell remoting, which cleared the pools of a short-lived remote process and never affected the caller's pools or any pool on the target. Those parameters were removed because they could not do what the help described.
 
         Active connections are marked for disposal and will be discarded when closed, rather than returned to the pool. New connections will be created fresh from the pool after clearing.
 
         Ref: https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.clearallpools(v=vs.110).aspx
-
-    .PARAMETER ComputerName
-        Specifies the computer(s) where SQL Server connection pools should be cleared. Accepts multiple computer names and supports pipeline input.
-        Use this when connection pool issues are occurring on specific client machines or application servers connecting to SQL Server.
-        Defaults to the local computer if not specified.
-
-    .PARAMETER Credential
-        Alternate credential object to use for accessing the target computer(s).
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -39,17 +29,12 @@ function Clear-DbaConnectionPool {
     .OUTPUTS
         None
 
-        This command does not return any output. It performs an action to clear connection pools on the specified computer(s) and completes silently on success.
+        This command does not return any output. It clears connection pools in the current PowerShell process and completes silently on success.
 
     .EXAMPLE
         PS C:\> Clear-DbaConnectionPool
 
         Clears all local connection pools.
-
-    .EXAMPLE
-        PS C:\> Clear-DbaConnectionPool -ComputerName workstation27
-
-        Clears all connection pools on workstation27.
 
     #>
     [CmdletBinding()]

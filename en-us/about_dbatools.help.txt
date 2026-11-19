@@ -21,6 +21,7 @@ LONG DESCRIPTION
 
 	- Getting Help
 	- Import Options
+	- Native Commands
 	
 	
 	#-------------------------------------------------------------------------#
@@ -44,6 +45,20 @@ LONG DESCRIPTION
 	resource cost. This guide explains what the settings do and how to set them:
 	
 	  Get-Help about_dbatools_importoptions
+	
+	
+	#-------------------------------------------------------------------------#
+	#                             Native Commands                             #
+	#-------------------------------------------------------------------------#
+	
+	Many commands now run as native C# cmdlets. On PowerShell 7, passing
+	-Debug explicitly to one of them can prompt for input, show verbose
+	output and display warnings that are otherwise suppressed, so
+	noninteractive callers should omit -Debug. Native commands also reject
+	legacy script message transforms and events with an explicit error. This
+	guide explains both changes:
+	
+	  Get-Help about_dbatools_native
 	
 	
 KEYWORDS

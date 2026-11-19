@@ -253,6 +253,13 @@ function Stop-Function {
 
         # Extra insurance that it'll stop
         Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true -WhatIf:$false
+        $nestedInterruptBeacon = Get-Variable -Name "__dbatools_nested_interrupt_beacon_q7N4v2" -Scope Script -ErrorAction Ignore
+        $callerBoundParameters = Get-Variable -Name "PSBoundParameters" -Scope 1 -ErrorAction Ignore
+        if ($null -ne $nestedInterruptBeacon.Value -and $null -ne $callerBoundParameters) {
+            $nestedInterruptBeacon.Value["Interrupted"] = $true
+            $nestedInterruptBeacon.Value["CallerCommand"] = (Get-PSCallStack)[1].Command
+            $nestedInterruptBeacon.Value["CallerHasBoundParameters"] = $true
+        }
 
         throw $records[0]
     }
@@ -274,7 +281,13 @@ function Stop-Function {
         } else {
             # Make sure the function knows it should be stopping
             Set-Variable -Name "__dbatools_interrupt_function_78Q9VPrM6999g6zo24Qn83m09XF56InEn4hFrA8Fwhu5xJrs6r" -Scope 1 -Value $true -WhatIf:$false
-
+            $nestedInterruptBeacon = Get-Variable -Name "__dbatools_nested_interrupt_beacon_q7N4v2" -Scope Script -ErrorAction Ignore
+            $callerBoundParameters = Get-Variable -Name "PSBoundParameters" -Scope 1 -ErrorAction Ignore
+            if ($null -ne $nestedInterruptBeacon.Value -and $null -ne $callerBoundParameters) {
+                $nestedInterruptBeacon.Value["Interrupted"] = $true
+                $nestedInterruptBeacon.Value["CallerCommand"] = (Get-PSCallStack)[1].Command
+                $nestedInterruptBeacon.Value["CallerHasBoundParameters"] = $true
+            }
             return
         }
     }

@@ -1,4 +1,4 @@
-#requires -Version 3.0
+#requires -Version 5.1
 param(
     [Collections.IDictionary]
     [Alias('Options')]
@@ -35,7 +35,7 @@ Write-ImportTime -Text "Started" -Timestamp $script:start
 $script:PSModuleRoot = $PSScriptRoot
 
 # Ensure TEMP directory is set
-# This is critical for Add-Type operations in dbatools.library
+# This is critical for the Add-Type operations in the library loader
 # If TEMP doesn't exist, try to set it from GetTempPath or find an alternative
 if (-not $Env:TEMP) {
     # Try to get system temp path first
@@ -96,18 +96,74 @@ if (-not $Env:TEMP) {
     }
 }
 
-$script:libraryroot = Get-DbatoolsLibraryPath -ErrorAction Ignore
-
-if (-not $script:libraryroot) {
-    # for the people who bypass the psd1
-    Import-Module dbatools.library -ErrorAction Ignore
-    $script:libraryroot = Get-DbatoolsLibraryPath -ErrorAction Ignore
-
-    if (-not $script:libraryroot) {
-        throw "The dbatools library, dbatools.library, was module not found. Please install it from the PowerShell Gallery."
-    }
-    Write-ImportTime -Text "Couldn't find location for dbatools library module, loading it up"
+# dbatools carries its own library (until 3.0 it was the separate dbatools.library module).
+# A release has it in <module>\library; a source checkout has it in src\artifacts\library
+# after src\build\build.ps1.
+$script:DbatoolsLibraryRoot = Join-Path -Path $script:PSModuleRoot -ChildPath "library"
+if (-not (Test-Path -Path $script:DbatoolsLibraryRoot)) {
+    $script:DbatoolsLibraryRoot = [System.IO.Path]::Combine($script:PSModuleRoot, "src", "artifacts", "library")
 }
+$libraryLoader = Join-Path -Path $script:DbatoolsLibraryRoot -ChildPath "Import-DbatoolsLibrary.ps1"
+if (-not (Test-Path -Path $libraryLoader)) {
+    throw "dbatools could not find its library in $(Join-Path -Path $script:PSModuleRoot -ChildPath "library"). Reinstall dbatools, or in a source checkout run src\build\build.ps1 first."
+}
+
+# The library cannot share a session with another copy of itself: the assembly resolvers run in
+# registration order and the first answer wins, so whichever copy loaded first would serve both.
+if ($PSVersionTable.PSEdition -eq "Core") {
+    $libraryLib = [System.IO.Path]::Combine($script:DbatoolsLibraryRoot, "core", "lib")
+    $redirectorType = "Dataplat.Dbatools.Loader.CoreRedirector" -as [type]
+} else {
+    $libraryLib = [System.IO.Path]::Combine($script:DbatoolsLibraryRoot, "desktop", "lib")
+    $redirectorType = "Dataplat.Dbatools.Loader.Redirector" -as [type]
+}
+$loadedLibrary = $null
+if ($redirectorType -and $redirectorType::LibPath) {
+    $loadedLibrary = ([string]$redirectorType::LibPath).TrimEnd('\', '/')
+}
+if (-not $loadedLibrary) {
+    $loadedDbatools = [System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { -not $PSItem.IsDynamic -and $PSItem.GetName().Name -eq "dbatools" } | Select-Object -First 1
+    if ($loadedDbatools) {
+        $loadedLibrary = Split-Path -Path $loadedDbatools.Location
+    }
+}
+# On Windows PowerShell, dbatools.library 2.x leaves its global Redirector on AssemblyResolve after
+# Remove-Module, and it answers requests for dbatools itself from its own folder.
+if (-not $loadedLibrary -and $PSVersionTable.PSEdition -ne "Core") {
+    $legacyType = "Redirector" -as [type]
+    $legacyField = if ($legacyType) { $legacyType.GetField("_libPath", [System.Reflection.BindingFlags]"NonPublic, Static") }
+    $legacyPath = if ($legacyField) { [string]$legacyField.GetValue($null) }
+    if ($legacyPath -and (Test-Path -Path ([System.IO.Path]::Combine($legacyPath, "dbatools.dll")))) {
+        $loadedLibrary = $legacyPath.TrimEnd('\', '/')
+    }
+}
+if (Get-Module -Name dbatools.library) {
+    throw "dbatools 3.0 carries its own libraries, and dbatools.library (used by dbatools 2.x) is already loaded in this session. Start a new PowerShell session, and remove dbatools.library from your profile or from any module that requires it."
+}
+if ($loadedLibrary -and $loadedLibrary -ne $libraryLib) {
+    throw "dbatools 3.0 carries its own libraries, and another copy of them is already loaded in this session from $loadedLibrary. Start a new PowerShell session to import dbatools from $script:PSModuleRoot."
+}
+
+# A session holds one copy of SMO and of SqlClient. When another module loaded them first, the
+# library reuses that copy instead of loading its own; a different version gets one warning, which
+# the 2.x AvoidConflicts option (now otherwise automatic) silences.
+$avoidConflicts = [bool]($Option["AvoidConflicts"] -or $Option["SkipLoadedAssemblies"] -or $Option["AllowSharedAssemblies"])
+if (-not $avoidConflicts) {
+    foreach ($sharedName in "Microsoft.SqlServer.Smo", "Microsoft.Data.SqlClient") {
+        $foreignAssembly = [System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { -not $PSItem.IsDynamic -and $PSItem.GetName().Name -eq $sharedName -and -not $PSItem.Location.StartsWith($libraryLib, [System.StringComparison]::OrdinalIgnoreCase) } | Select-Object -First 1
+        $ownAssembly = [System.IO.Path]::Combine($libraryLib, "$sharedName.dll")
+        if ($foreignAssembly -and (Test-Path -Path $ownAssembly)) {
+            $loadedVersion = $foreignAssembly.GetName().Version
+            $ownVersion = [System.Reflection.AssemblyName]::GetAssemblyName($ownAssembly).Version
+            if ($loadedVersion -ne $ownVersion) {
+                Write-Warning "$sharedName $loadedVersion is already loaded in this session from $($foreignAssembly.Location), so dbatools uses it instead of its own $ownVersion. A command that needs the version dbatools ships can fail; import dbatools first, or in a new session, to use its own. To hide this warning, import dbatools with -ArgumentList @{ AvoidConflicts = `$true }."
+            }
+        }
+    }
+}
+. $libraryLoader
+$script:libraryroot = Get-DbatoolsLibraryPath
+Write-ImportTime -Text "Loaded the dbatools library"
 
 try {
     # if core add core to the path, otherwise add desktop
@@ -280,6 +336,64 @@ if (-not (Test-Path -Path "$script:PSModuleRoot\dbatools.dat") -or $script:seria
     }
 }
 
+#region Hybrid satellite loader and kill switch (dbatools 3.0 migration)
+# Flipped commands live as binary cmdlets in satellite modules under modules/<name>/; the flip
+# tool (migration/tools/Switch-CommandExport.ps1) maintains bin/retired-index.json. Satellites
+# are imported here BY PATH because channels that import dbatools.psm1 directly bypass the
+# manifest's RequiredModules chain, so the loader cannot rely on it.
+# This block MUST run before the configuration system (and any other import-time code that
+# invokes dbatools commands): pre-flip, every public function was dot-sourced above before
+# configurations executed, so import-time code could call any command. Deferring satellite
+# load past that point makes such calls miss module resolution and trigger PowerShell module
+# auto-loading - on a machine where another module named dbatools (e.g. a Gallery install)
+# sits earlier in PSModulePath, the stale module imports mid-import and its functions shadow
+# every flipped cmdlet (proven live 2026-07-12: paths.ps1's Join-DbaPath calls auto-loaded a
+# Gallery 2.8.2 whose functions then served every flipped command name).
+$script:retiredIndexPath = Join-Path -Path $script:PSModuleRoot -ChildPath "bin\retired-index.json"
+if (Test-Path -Path $script:retiredIndexPath) {
+    $retiredIndex = Get-Content -Path $script:retiredIndexPath -Raw | ConvertFrom-Json
+    $retiredCommands = @($retiredIndex.PSObject.Properties)
+
+    $satelliteNames = @($retiredCommands | ForEach-Object { $_.Value.module } | Sort-Object -Unique)
+    foreach ($satelliteName in $satelliteNames) {
+        if (-not (Get-Module -Name $satelliteName)) {
+            $satelliteManifest = Join-Path -Path $script:PSModuleRoot -ChildPath "modules\$satelliteName\$satelliteName.psd1"
+            if (Test-Path -Path $satelliteManifest) {
+                Import-Module -Name $satelliteManifest -Global
+            } else {
+                Write-Warning -Message "Satellite module $satelliteName is recorded in bin\retired-index.json but $satelliteManifest was not found"
+            }
+        }
+    }
+    Write-ImportTime -Text "Importing satellite modules"
+
+    # Kill switch (migration/specs/modules.md section 6.1): DBATOOLS_LEGACY_FUNCTIONS names
+    # flipped commands (comma-separated, or *) whose retired .ps1 should shadow the satellite
+    # cmdlet. The retired file is dot-sourced into the module scope (so it still sees private
+    # functions like Stop-Function), then re-homed as a global function - its scriptblock stays
+    # module-bound - because the manifest's FunctionsToExport no longer carries the name.
+    # PowerShell command precedence (Function > Cmdlet) does the rest. The env var is read once
+    # at import; changing it requires re-import.
+    if ($env:DBATOOLS_LEGACY_FUNCTIONS) {
+        $legacyRequested = @($env:DBATOOLS_LEGACY_FUNCTIONS -split "," | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+        foreach ($retired in $retiredCommands) {
+            $legacyCommandName = $retired.Name
+            if (($legacyRequested -contains "*") -or ($legacyRequested -contains $legacyCommandName)) {
+                $retiredScript = Join-Path -Path $script:PSModuleRoot -ChildPath $retired.Value.retiredPath
+                if (Test-Path -Path $retiredScript) {
+                    . $retiredScript
+                    Set-Item -Path "function:global:$legacyCommandName" -Value (Get-Item -Path "function:$legacyCommandName").ScriptBlock
+                    Write-Warning -Message "dbatools kill switch: $legacyCommandName is running as the retired legacy function (DBATOOLS_LEGACY_FUNCTIONS)"
+                } else {
+                    Write-Warning -Message "dbatools kill switch: retired script for $legacyCommandName not found at $retiredScript"
+                }
+            }
+        }
+        Write-ImportTime -Text "Applying DBATOOLS_LEGACY_FUNCTIONS kill switch"
+    }
+}
+#endregion Hybrid satellite loader and kill switch
+
 # Load configuration system - Should always go after library and path setting
 # this has its own Write-ImportTimes
 foreach ($file in (Get-ChildItem -File -Path "$script:PSModuleRoot/private/configurations")) {
@@ -290,7 +404,13 @@ foreach ($file in (Get-ChildItem -File -Path "$script:PSModuleRoot/private/confi
 # Not converting the path separators based on OS was also an issue.
 
 if (-not ([Dataplat.Dbatools.Message.LogHost]::LoggingPath)) {
-    [Dataplat.Dbatools.Message.LogHost]::LoggingPath = Join-DbaPath $script:AppData "PowerShell" "dbatools"
+    # Inlined from Join-DbaPath's no-instance branch (byte-identical output). Join-DbaPath is
+    # a satellite cmdlet now; the satellite loader above makes a bare call resolvable again,
+    # but this fallback stays dependency-free so a missing satellite cannot send this line
+    # into PowerShell module auto-loading (the Gallery-shadow class fixed 2026-07-12).
+    [Dataplat.Dbatools.Message.LogHost]::LoggingPath = @($script:AppData) + @("PowerShell", "dbatools") -join
+    [IO.Path]::DirectorySeparatorChar -replace
+    "\\|/", [IO.Path]::DirectorySeparatorChar
 }
 
 # Run all optional code
@@ -315,9 +435,7 @@ if (-not $env:DBATOOLS_DISABLE_TEPP -and -not $global:disablerunspacetepp -and -
 }
 
 # Process transforms
-foreach ($file in (Get-ChildItem -File -Path "$script:PSModuleRoot/private/scripts/message-transforms*")) {
-    Import-Command -Path $file.FullName
-}
+[Dataplat.Dbatools.Message.BuiltinMessageTransforms]::Register()
 Write-ImportTime -Text "Loading Message Transforms"
 
 # Load scripts that must be individually run at the end #
@@ -356,7 +474,10 @@ $shortcuts = @{
     'cdi' = 'Connect-DbaInstance'
 }
 foreach ($sc in $shortcuts.GetEnumerator()) {
-    New-Alias -Name $sc.Key -Value $sc.Value
+    # Satellites export their own shortcut aliases once their command flips to a cmdlet
+    # (BP-604; dbatools.core owns cdi) - -Force keeps this registration idempotent when the
+    # satellite already delivered the alias into the session.
+    New-Alias -Name $sc.Key -Value $sc.Value -Force
 }
 
 # Leave forever
@@ -1167,7 +1288,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5) {
             }
         )
 
-        Export-ModuleMember -Alias $aliasExport -Function $exports -Cmdlet Select-DbaObject, Set-DbatoolsConfig
+        Export-ModuleMember -Alias $aliasExport -Function ($exports + "Get-DbatoolsLibraryPath") -Cmdlet Select-DbaObject, Set-DbatoolsConfig
         Write-ImportTime -Text "Exporting explicit module members"
     } else {
         Export-ModuleMember -Alias * -Function * -Cmdlet *
@@ -1245,3 +1366,6 @@ Register-DbatoolsConfig'
 }
 
 [Dataplat.Dbatools.dbaSystem.SystemHost]::ModuleImported = $true
+
+# A caller-local Force reimport otherwise hides this module from its own nested commands.
+Import-Module -ModuleInfo $ExecutionContext.SessionState.Module -Scope Local

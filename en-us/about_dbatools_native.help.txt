@@ -1,0 +1,94 @@
+TOPIC
+	about_dbatools_native
+
+SHORT DESCRIPTION
+	Explains behavior changes in commands that run as native C# cmdlets.
+
+LONG DESCRIPTION
+	Many dbatools commands now run as native C# cmdlets from dbatools.library
+	instead of PowerShell functions. This topic describes the intentional
+	compatibility breaks in how native commands write messages and handle
+	legacy message extensions.
+
+
+	#-------------------------------------------------------------------------#
+	#                                  Index                                  #
+	#-------------------------------------------------------------------------#
+
+	- Explicit -Debug on PowerShell 7
+	- Message transforms
+	- Message events
+
+
+	#-------------------------------------------------------------------------#
+	#                     Explicit -Debug on PowerShell 7                     #
+	#-------------------------------------------------------------------------#
+
+	Native commands write warnings, verbose messages and debug messages with
+	PowerShell's public stream APIs. On PowerShell 7, when you pass -Debug
+	explicitly to a native command:
+
+	  - a warning or verbose message may ask for confirmation
+	    ("Continue with this operation?") before the command continues;
+	  - verbose messages may appear even though you did not pass -Verbose;
+	  - a warning that dbatools would otherwise suppress, such as the warning
+	    that accompanies a terminating error under -EnableException, may
+	    become visible.
+
+	Noninteractive callers, such as scheduled tasks, agent jobs, CI pipelines
+	and remote sessions, should omit explicit -Debug when they cannot answer
+	these prompts. Setting $DebugPreference = 'Continue' while still passing
+	-Debug does not reliably prevent them.
+
+	Without explicit -Debug, stream routing, -WarningAction, -WarningVariable,
+	-Verbose, the dbatools message log, error records and preference
+	restoration behave as before. The measured comparison found no Windows
+	PowerShell 5.1 differences in the cases it covered; that is not a
+	guarantee for every host.
+
+
+	#-------------------------------------------------------------------------#
+	#                           Message transforms                            #
+	#-------------------------------------------------------------------------#
+
+	Native commands use their own typed transform registries:
+	MessageHost.NativeTargetTransforms, NativeExceptionTransforms,
+	NativeTargetTransformList and NativeExceptionTransformList. Normal module
+	import fills them with the built-in defaults: two target transforms and
+	one conditional exception transform. Native commands never run
+	scriptblocks.
+
+	The script registries used by Register-DbaMessageTransform
+	(MessageHost.TargetTransforms, ExceptionTransforms, TargetTransformList
+	and ExceptionTransformList) now start empty on import. Their counts, value
+	types and default entries have changed, and clearing them no longer clears
+	the native defaults. Use the native registries to replace or remove a
+	native transform.
+
+	Script transforms remain available only to the unfinished legacy
+	Write-Message frontend. The first legacy registration, or the explicit
+	legacy initializer, seeds library-owned defaults: two target transforms
+	and a wildcard exception transform. Native commands ignore these defaults
+	and keep using the native registries. When a caller-supplied exact or
+	conditional registration matches a type that a native command processes,
+	the native command throws NotSupportedException before applying any
+	native default, whatever the registration order. The message names the
+	transform kind, the type, the function and the module. For an exception,
+	the original exception is attached as the InnerException. Remove the
+	matching caller registrations to resume native processing.
+
+
+	#-------------------------------------------------------------------------#
+	#                             Message events                              #
+	#-------------------------------------------------------------------------#
+
+	Native commands still log every message, but they do not run scripts
+	registered with Register-DbaMessageEvent. After logging, each matching
+	subscription produces the nonterminating error
+	NativeMessageEventNotSupported, with category InvalidOperation and the
+	subscription name as its target. Normal -ErrorAction behavior applies,
+	including termination with -ErrorAction Stop. Remove the subscription from
+	MessageHost.Events to stop matching it.
+
+KEYWORDS
+	dbatools native debug message transform event

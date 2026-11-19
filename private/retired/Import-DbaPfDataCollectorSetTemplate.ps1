@@ -212,6 +212,14 @@ function Import-DbaPfDataCollectorSetTemplate {
         #Variable marked as unused by PSScriptAnalyzer
         #$metadata = Import-Clixml "$script:PSModuleRoot\bin\perfmontemplates\collectorsets.xml"
 
+        # $script:PSModuleRoot can resolve empty under the Pester harness (Invoke-ManualPester,
+        # the RB-IMP-51 class), which turns the template paths into rootless C:\bin\... paths.
+        # Fall back to the live module's base path, the same defensive pattern as Get-DbaBuild.
+        $moduleRoot = $script:PSModuleRoot
+        if (-not $moduleRoot) {
+            $moduleRoot = (Get-Module -Name dbatools | Where-Object ModuleType -eq "Script" | Select-Object -First 1).ModuleBase
+        }
+
         $setscript = {
             $setname = $args[0]; $templatexml = $args[1]
             $collectorset = New-Object -ComObject Pla.DataCollectorSet
@@ -240,7 +248,7 @@ function Import-DbaPfDataCollectorSetTemplate {
             $null = Test-ElevationRequirement -ComputerName $computer -Continue
 
             foreach ($file in $template) {
-                $templatepath = "$script:PSModuleRoot\bin\perfmontemplates\collectorsets\$file.xml"
+                $templatepath = "$moduleRoot\bin\perfmontemplates\collectorsets\$file.xml"
                 if ((Test-Path $templatepath)) {
                     $Path += $templatepath
                 } else {

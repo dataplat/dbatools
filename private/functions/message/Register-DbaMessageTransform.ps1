@@ -17,7 +17,13 @@ function Register-DbaMessageTransform {
         For example some APIs might wrap the actual exception into a common wrapper.
         In this scenario you may want the actual exception in order to provide more specific information.
 
-        In all instances, the scriptblock will be called, receiving only the relevant object as its sole input.
+        The unfinished Write-Message frontend and message converters call the scriptblock with the relevant object as its sole input.
+
+        Native commands use separate typed defaults. A matching caller registration, exact or conditional, makes native transformation throw NotSupportedException before applying a default, whatever the registration order; the error identifies the kind, type, function and module, and for an exception it carries the original exception as InnerException. Native commands never invoke these scripts.
+
+        The first registration into an inactive, empty legacy registry pair seeds the defaults for that kind before adding the script. Target defaults include instance parameters and SMO servers. Exception defaults include a wildcard condition. An explicit legacy initializer seeds both kinds. Native commands ignore these library-owned defaults, including the wildcard condition, and keep using their own typed defaults.
+
+        To remove legacy registrations, clear the corresponding MessageHost.TargetTransforms or ExceptionTransforms dictionary and remove conditions from TargetTransformList or ExceptionTransformList. Clearing an activated pair keeps the legacy frontend empty; it does not restore defaults or clear the separate native registries.
 
         Note: This transformation is performed synchronously on the active runspace. Complex scriptblocks may delay execution times when a matching object is passed.
 
@@ -104,17 +110,35 @@ function Register-DbaMessageTransform {
     )
 
     process {
-        if ($TargetType) { [Dataplat.Dbatools.Message.MessageHost]::TargetTransforms[$TargetType.ToLowerInvariant()] = $ScriptBlock }
-        if ($ExceptionType) { [Dataplat.Dbatools.Message.MessageHost]::ExceptionTransforms[$ExceptionType.ToLowerInvariant()] = $ScriptBlock }
+        if ($TargetType -or $TargetTypeFilter) {
+            $targetRegistry = [Dataplat.Dbatools.Message.MessageHost]::TargetTransforms
+            $targetConditions = [Dataplat.Dbatools.Message.MessageHost]::TargetTransformList
+            $hasLegacy = $targetRegistry.Count -ne 0 -or $targetConditions.GetAll().Length -ne 0
+            if (-not [Dataplat.Dbatools.Message.LegacyTransformRegistryMode]::UseLegacy("Target", $targetRegistry, $targetConditions, $hasLegacy)) {
+                [Dataplat.Dbatools.Message.LegacyMessageTransforms]::Register("Target")
+            }
+            [Dataplat.Dbatools.Message.LegacyTransformRegistryMode]::Activate("Target", $targetRegistry, $targetConditions)
+        }
+        if ($ExceptionType -or $ExceptionTypeFilter) {
+            $exceptionRegistry = [Dataplat.Dbatools.Message.MessageHost]::ExceptionTransforms
+            $exceptionConditions = [Dataplat.Dbatools.Message.MessageHost]::ExceptionTransformList
+            $hasLegacy = $exceptionRegistry.Count -ne 0 -or $exceptionConditions.GetAll().Length -ne 0
+            if (-not [Dataplat.Dbatools.Message.LegacyTransformRegistryMode]::UseLegacy("Exception", $exceptionRegistry, $exceptionConditions, $hasLegacy)) {
+                [Dataplat.Dbatools.Message.LegacyMessageTransforms]::Register("Exception")
+            }
+            [Dataplat.Dbatools.Message.LegacyTransformRegistryMode]::Activate("Exception", $exceptionRegistry, $exceptionConditions)
+        }
+        if ($TargetType) { $targetRegistry[$TargetType.ToLowerInvariant()] = $ScriptBlock }
+        if ($ExceptionType) { $exceptionRegistry[$ExceptionType.ToLowerInvariant()] = $ScriptBlock }
 
         if ($TargetTypeFilter) {
             $condition = New-Object Dataplat.Dbatools.Message.TransformCondition($TargetTypeFilter, $ModuleNameFilter, $FunctionNameFilter, $ScriptBlock, "Target")
-            [Dataplat.Dbatools.Message.MessageHost]::TargetTransformList.Add($condition)
+            $targetConditions.Add($condition)
         }
 
         if ($ExceptionTypeFilter) {
             $condition = New-Object Dataplat.Dbatools.Message.TransformCondition($ExceptionTypeFilter, $ModuleNameFilter, $FunctionNameFilter, $ScriptBlock, "Exception")
-            [Dataplat.Dbatools.Message.MessageHost]::ExceptionTransformList.Add($condition)
+            $exceptionConditions.Add($condition)
         }
     }
 }

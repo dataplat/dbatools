@@ -85,9 +85,10 @@ function Disconnect-DbaInstance {
                     if ($server.ConnectionContext) {
                         if ($Pscmdlet.ShouldProcess($server.Name, "Disconnecting SQL Connection")) {
                             $null = $server.ConnectionContext.Disconnect()
-                            if ($script:connectionhash[$server.ConnectionContext.ConnectionString]) {
+                            # P0-010c cache unification (W1-001): the registry lives in ConnectionHost
+                            if ([Dataplat.Dbatools.Connection.ConnectionHost]::ActiveConnections[$server.ConnectionContext.ConnectionString]) {
                                 Write-Message -Level Verbose -Message "removing from connection hash"
-                                $null = $script:connectionhash.Remove($server.ConnectionContext.ConnectionString)
+                                $null = [Dataplat.Dbatools.Connection.ConnectionHost]::ActiveConnections.Remove($server.ConnectionContext.ConnectionString)
                             }
                             [PSCustomObject]@{
                                 SqlInstance      = $server.Name
@@ -103,9 +104,9 @@ function Disconnect-DbaInstance {
                                 $null = $server.Close()
                             }
 
-                            if ($script:connectionhash[$server.ConnectionString]) {
+                            if ([Dataplat.Dbatools.Connection.ConnectionHost]::ActiveConnections[$server.ConnectionString]) {
                                 Write-Message -Level Verbose -Message "removing from connection hash"
-                                $null = $script:connectionhash.Remove($server.ConnectionString)
+                                $null = [Dataplat.Dbatools.Connection.ConnectionHost]::ActiveConnections.Remove($server.ConnectionString)
                             }
 
                             [PSCustomObject]@{

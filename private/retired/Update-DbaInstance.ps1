@@ -700,7 +700,7 @@ function Update-DbaInstance {
             $updateSplat = @{
                 ComputerName         = $_.ComputerName
                 Action               = $_.Actions
-                Restart              = $Restart
+                Restart              = [bool]$Restart
                 Credential           = $Credential
                 EnableException      = $EnableException
                 ExtractPath          = $ExtractPath

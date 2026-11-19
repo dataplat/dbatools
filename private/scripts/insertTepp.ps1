@@ -5,9 +5,12 @@ if ($ExecutionContext.SessionState.InvokeCommand.GetCommand('TabExpansionPlusPlu
     $script:TEPP = $false
 }
 
-$functions = $executionContext.SessionState.InvokeCommand.GetCommands('*-Dba*', 'Function', $true) -as [Management.Automation.FunctionInfo[]]
-[Dataplat.Dbatools.TabExpansion.TabExpansionHost]::DbatoolsCommands = $functions
-$names = $functions.Name
+# Cmdlet as well as Function: flipped commands ship as binary cmdlets, and a Function-only
+# enumeration left every one of them out of DbatoolsCommands, so CalculateTabExpansion never
+# produced a Tepp assignment for them and their completers resolved to null.
+$commands = $executionContext.SessionState.InvokeCommand.GetCommands('*-Dba*', 'Function,Cmdlet', $true) -as [Management.Automation.CommandInfo[]]
+[Dataplat.Dbatools.TabExpansion.TabExpansionHost]::DbatoolsCommands = $commands
+$names = $commands.Name
 
 #region Automatic TEPP by parameter name
 Register-DbaTeppArgumentCompleter -Command $names -Parameter Alert -Name Alert -All

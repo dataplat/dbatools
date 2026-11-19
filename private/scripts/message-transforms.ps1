@@ -1,18 +1,4 @@
-Register-DbaMessageTransform -TargetType 'Dataplat.Dbatools.Parameter.DbaInstanceParameter' -ScriptBlock {
-    $args[0].FullSmoName
+if (-not ("Dataplat.Dbatools.Message.LegacyMessageTransforms" -as [type])) {
+    throw "Explicit legacy message transforms require the LegacyMessageTransforms registration API from dbatools.library."
 }
-Register-DbaMessageTransform -TargetType 'Microsoft.SqlServer.Management.Smo.Server' -ScriptBlock {
-    ([Dataplat.Dbatools.Parameter.DbaInstanceParameter]$args[0]).FullSmoName
-}
-
-Register-DbaMessageTransform -ExceptionTypeFilter '*' -ScriptBlock {
-    if ($args[0] -is [Microsoft.Data.SqlClient.SqlException]) { return $args[0] }
-
-    $item = $args[0]
-    while ($item.InnerException) {
-        $item = $item.InnerException
-        if ($item -is [Microsoft.Data.SqlClient.SqlException]) { return $item }
-    }
-
-    return $args[0]
-}
+[Dataplat.Dbatools.Message.LegacyMessageTransforms]::Register()

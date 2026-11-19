@@ -5,7 +5,9 @@ function Register-DbaMessageEvent {
 
     .DESCRIPTION
         Registers an event to when a message is written.
-        These events will fire whenever the written message fulfills the specified filter criteria.
+        On the unfinished Write-Message frontend, these events fire whenever the written message fulfills the specified filter criteria.
+
+        Native commands keep message logging but do not execute event scripts. After logging, a matching subscription produces the nonterminating error NativeMessageEventNotSupported, with category InvalidOperation and the subscription name as its target. Normal ErrorAction behavior applies, including termination with ErrorAction Stop. Remove the subscription from MessageHost.Events to stop matching it.
 
         This allows integrating direct alerts and reactions to messages as they occur.
 

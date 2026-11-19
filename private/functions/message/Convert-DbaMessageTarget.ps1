@@ -40,9 +40,32 @@ function Convert-DbaMessageTarget {
 
     $typeName = $Target.GetType().FullName.ToLowerInvariant()
 
-    if ([Dataplat.Dbatools.Message.MessageHost]::TargetTransforms.ContainsKey($typeName)) {
-        $scriptBlock = [Dataplat.Dbatools.Message.MessageHost]::TargetTransforms[$typeName]
+    $targetRegistry = [Dataplat.Dbatools.Message.MessageHost]::TargetTransforms
+    $targetConditions = [Dataplat.Dbatools.Message.MessageHost]::TargetTransformlist
+    $hasLegacy = $targetRegistry.Count -ne 0 -or $targetConditions.GetAll().Length -ne 0
+    if (-not [Dataplat.Dbatools.Message.LegacyTransformRegistryMode]::UseLegacy("Target", $targetRegistry, $targetConditions, $hasLegacy)) {
+        if ([Dataplat.Dbatools.Message.MessageHost]::NativeTargetTransforms.ContainsKey($typeName)) {
+            $nativeTransform = [Dataplat.Dbatools.Message.MessageHost]::NativeTargetTransforms[$typeName]
+        } elseif ($nativeCondition = [Dataplat.Dbatools.Message.MessageHost]::NativeTargetTransformList.Get($typeName, $ModuleName, $FunctionName)) {
+            $nativeTransform = $nativeCondition.Transform
+        } else {
+            return $Target
+        }
         try {
+            $nativeResult = $null
+            if ([Dataplat.Dbatools.Message.BuiltinMessageTransforms]::TryTransform($nativeTransform, $Target, [ref]$nativeResult)) { return $nativeResult }
+            return $Target
+        } catch {
+            [Dataplat.Dbatools.Message.MessageHost]::WriteTransformError($_, $FunctionName, $ModuleName, $Target, "Target", ([System.Management.Automation.Runspaces.Runspace]::DefaultRunspace.InstanceId))
+            return $Target
+        }
+    }
+
+    if ($targetRegistry.ContainsKey($typeName)) {
+        $scriptBlock = $targetRegistry[$typeName]
+        try {
+            $nativeResult = $null
+            if ([Dataplat.Dbatools.Message.LegacyMessageTransforms]::TryTransform($scriptBlock, $Target, [ref]$nativeResult)) { return $nativeResult }
             $tempTarget = $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create($scriptBlock.ToString())), $null, $Target)
             return $tempTarget
         } catch {
@@ -51,8 +74,10 @@ function Convert-DbaMessageTarget {
         }
     }
 
-    if ($transform = [Dataplat.Dbatools.Message.MessageHost]::TargetTransformlist.Get($typeName, $ModuleName, $FunctionName)) {
+    if ($transform = $targetConditions.Get($typeName, $ModuleName, $FunctionName)) {
         try {
+            $nativeResult = $null
+            if ([Dataplat.Dbatools.Message.LegacyMessageTransforms]::TryTransform($transform.ScriptBlock, $Target, [ref]$nativeResult)) { return $nativeResult }
             $tempTarget = $ExecutionContext.InvokeCommand.InvokeScript($false, ([scriptblock]::Create($transform.ScriptBlock.ToString())), $null, $Target)
             return $tempTarget
         } catch {

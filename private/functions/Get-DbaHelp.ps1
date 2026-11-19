@@ -230,10 +230,39 @@ function Get-DbaHelp {
         if ($Name -in $script:noncoresmo -or $Name -in $script:windowsonly) {
             $availability = 'Windows only'
         }
+
+        $command = Get-Command $Name
+        $sourceHelp = $null
+        if ($command.CommandType -eq 'Cmdlet' -and $command.Source -like 'dbatools*') {
+            $retiredPath = Join-Path $script:PSModuleRoot "private\retired\$Name.ps1"
+            if (Test-Path -LiteralPath $retiredPath) {
+                $tokens = $null
+                $parseErrors = $null
+                $sourceAst = [System.Management.Automation.Language.Parser]::ParseFile(
+                    $retiredPath,
+                    [ref]$tokens,
+                    [ref]$parseErrors
+                )
+                if ($parseErrors.Count -gt 0) {
+                    throw "Unable to parse retired help source for $Name`: $($parseErrors[0].Message)"
+                }
+
+                $functionAst = $sourceAst.Find({
+                        param($node)
+                        $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+                        $node.Name -eq $Name
+                    }, $true)
+                if (-not $functionAst) {
+                    throw "Unable to find retired function help source for $Name in $retiredPath"
+                }
+                $sourceHelp = $functionAst.GetHelpContent()
+            }
+        }
+
         try {
             $thishelp = Get-Help $Name -Full
         } catch {
-            Stop-Function -Message "Issue getting help for $Name" -Target $Name -ErrorRecord $_ -Continue
+            throw "Issue getting help for $Name`: $($_.Exception.Message)"
         }
 
         $thebase = @{ }
@@ -246,25 +275,49 @@ function Get-DbaHelp {
         $thebase.Alias = $alias.Name -Join ','
 
         ## fetch the description
-        $thebase.Description = $thishelp.Description.Text
+        $thebase.Description = if ($sourceHelp -and $sourceHelp.Description) {
+            $sourceHelp.Description.Trim()
+        } else {
+            $thishelp.Description.Text
+        }
 
         ## fetch examples
-        $thebase.Examples = Get-DbaTrimmedString -Text ($thishelp.Examples | Out-String -Width 200)
+        $thebase.Examples = if ($sourceHelp -and $sourceHelp.Examples) {
+            Get-DbaTrimmedString -Text ($sourceHelp.Examples -join "`n")
+        } else {
+            Get-DbaTrimmedString -Text ($thishelp.Examples | Out-String -Width 200)
+        }
 
         ## fetch help link
-        $thebase.Links = ($thishelp.relatedLinks).NavigationLink.Uri
+        $thebase.Links = if ($sourceHelp -and $sourceHelp.Links) {
+            @($sourceHelp.Links)
+        } else {
+            ($thishelp.relatedLinks).NavigationLink.Uri
+        }
 
         ## fetch the synopsis
-        $thebase.Synopsis = $thishelp.Synopsis
+        $thebase.Synopsis = if ($sourceHelp -and $sourceHelp.Synopsis) {
+            $sourceHelp.Synopsis.Trim()
+        } else {
+            $thishelp.Synopsis
+        }
 
         ## fetch the syntax
         $thebase.Syntax = Get-DbaTrimmedString -Text ($thishelp.Syntax | Out-String -Width 600)
 
         ## fetch outputs
-        $thebase.Outputs = Get-DbaTrimmedString -Text ($thishelp.returnValues | Out-String -Width 200)
+        $thebase.Outputs = if ($sourceHelp -and $sourceHelp.Outputs) {
+            Get-DbaTrimmedString -Text ($sourceHelp.Outputs -join "`n")
+        } else {
+            Get-DbaTrimmedString -Text ($thishelp.returnValues | Out-String -Width 200)
+        }
 
         ## store notes
-        $as = $thishelp.AlertSet | Out-String -Width 600
+        $as = if ($sourceHelp -and $sourceHelp.Notes) {
+            $sourceHelp.Notes
+        } else {
+            $thishelp.AlertSet | Out-String -Width 600
+        }
 
         ## fetch the tags
         $tags = $tagsrex.Match($as).Groups[1].Value
@@ -291,12 +344,20 @@ function Get-DbaHelp {
 
         ## fetch Parameters
         $parameters = $thishelp.parameters.parameter
-        $command = Get-Command $Name
         $params = @()
         foreach ($p in $parameters) {
             $paramAlias = $command.parameters[$p.Name].Aliases
             $validValues = $command.parameters[$p.Name].Attributes.ValidValues -Join ','
-            $paramDescr = Get-DbaTrimmedString -Text ($p.Description | Out-String -Width 200)
+            $sourceParamKey = $p.Name.ToUpperInvariant()
+            $paramDescr = if (
+                $sourceHelp -and
+                $sourceHelp.Parameters -and
+                $sourceHelp.Parameters.ContainsKey($sourceParamKey)
+            ) {
+                Get-DbaTrimmedString -Text $sourceHelp.Parameters[$sourceParamKey]
+            } else {
+                Get-DbaTrimmedString -Text ($p.Description | Out-String -Width 200)
+            }
             $params += , @($p.Name, $paramDescr, ($paramAlias -Join ','), ($p.Required -eq $true), $p.PipelineInput, $p.DefaultValue, $validValues)
         }
 

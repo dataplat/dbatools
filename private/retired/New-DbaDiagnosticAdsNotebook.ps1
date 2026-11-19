@@ -137,7 +137,14 @@ function New-DbaDiagnosticAdsNotebook {
             }
         }
 
-        $diagnosticScriptPath = Get-ChildItem -Path "$($script:PSModuleRoot)\bin\diagnosticquery\" -Filter "SQLServerDiagnosticQueries_$($TargetVersion).sql" | Select-Object -First 1
+        # $script:PSModuleRoot can resolve empty under the Pester harness (Invoke-ManualPester,
+        # the RB-IMP-51 class), which turns the script path rootless. Fall back to the live
+        # module's base path, the same defensive pattern as Invoke-DbaDiagnosticQuery.
+        $moduleRoot = $script:PSModuleRoot
+        if (-not $moduleRoot) {
+            $moduleRoot = (Get-Module -Name dbatools | Where-Object ModuleType -eq "Script" | Select-Object -First 1).ModuleBase
+        }
+        $diagnosticScriptPath = Get-ChildItem -Path "$moduleRoot\bin\diagnosticquery\" -Filter "SQLServerDiagnosticQueries_$($TargetVersion).sql" | Select-Object -First 1
 
         if (-not $diagnosticScriptPath) {
             Stop-Function -Message "No diagnostic queries available for `$TargetVersion = $TargetVersion"

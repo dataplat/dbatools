@@ -56,6 +56,13 @@ function Get-TestConfig {
         # the destination of a copy from InstanceCopy1. No CI environment has such an instance, so this stays empty
         # there and those tests skip themselves. A local configuration whose lab has one sets it.
         InstanceCaseSensitive     = $null
+        # The endpoint for legs that must characterize a connection FAILURE. Deliberately
+        # environment-independent: loopback, so nothing leaves the box, and port 1, which no SQL
+        # Server listens on. The literal IPv4 address avoids the resolver picking ::1 first on
+        # Windows. It is never fast BY ITSELF - a leg using it also pins sql.connection.timeout to
+        # 1 second for the duration, because relying on the environment to refuse quickly costs the
+        # full 15-second default wherever the port is firewalled instead of closed.
+        InstanceUnreachable       = '127.0.0.1,1'
     }
 
     if (Test-Path $LocalConfigPath) {

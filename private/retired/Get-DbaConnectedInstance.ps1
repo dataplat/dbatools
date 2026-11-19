@@ -47,13 +47,17 @@ function Get-DbaConnectedInstance {
     [CmdletBinding()]
     param ()
     process {
-        foreach ($key in $script:connectionhash.Keys) {
-            if ($script:connectionhash[$key].DataSource) {
-                $instance = $script:connectionhash[$key] | Select-Object -First 1 -ExpandProperty DataSource
+        # P0-010c cache unification (W1-001): the registry lives in the process-wide
+        # ConnectionHost so PS functions and the compiled Connect-DbaInstance cmdlet share one
+        # connection state.
+        $connections = [Dataplat.Dbatools.Connection.ConnectionHost]::ActiveConnections
+        foreach ($key in $connections.Keys) {
+            if ($connections[$key].DataSource) {
+                $instance = $connections[$key] | Select-Object -First 1 -ExpandProperty DataSource
             } else {
-                $instance = $script:connectionhash[$key] | Select-Object -First 1 -ExpandProperty Name
+                $instance = $connections[$key] | Select-Object -First 1 -ExpandProperty Name
             }
-            $value = $script:connectionhash[$key] | Select-Object -First 1
+            $value = $connections[$key] | Select-Object -First 1
             if ($value.ConnectionContext.NonPooledConnection -or $value.NonPooledConnection) {
                 $pooling = $false
             } else {
@@ -61,7 +65,7 @@ function Get-DbaConnectedInstance {
             }
             [PSCustomObject]@{
                 SqlInstance      = $instance
-                ConnectionObject = $script:connectionhash[$key]
+                ConnectionObject = $connections[$key]
                 ConnectionType   = $value.GetType().FullName
                 Pooled           = $pooling
                 ConnectionString = (Hide-ConnectionString -ConnectionString $key)
