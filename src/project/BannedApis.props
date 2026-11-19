@@ -1,0 +1,26 @@
+<Project>
+  <!--
+    SMA 3.0.0.0 compatibility-floor enforcement for the cmdlet (satellite) assemblies.
+
+    On a modern Windows host the GAC reference "System.Management.Automation, Version=3.0.0.0"
+    resolves to the physical Windows PowerShell 5.1 assembly (FileVersion 10.x). APIs added
+    after PS 3.0 therefore COMPILE cleanly against the net472 build yet throw
+    MissingMethodException at runtime on a real Windows PowerShell 3.0/4.0 host. The C# compiler
+    cannot see this gap; a Roslyn analyzer with an explicit symbol list can. BannedSymbols.txt
+    enumerates the SMA-3.0.0.0-absent surface the satellites must not reference.
+
+    Imported ONLY by the satellite cmdlet projects, per the "BannedSymbols.txt scoped to cmdlet
+    assemblies" rule in specs/compat-matrix.md section 4 / architecture.md section 11. The shared
+    runtime project keeps its own (reviewer-enforced) rules and does not import this.
+
+    RS0030 (banned-symbol use) defaults to a warning; it is escalated to an error below so the
+    build fails on a violation without relying on TreatWarningsAsErrors being left enabled.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4" PrivateAssets="all" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" />
+  </ItemGroup>
+  <PropertyGroup>
+    <WarningsAsErrors>$(WarningsAsErrors);RS0030;RS0031</WarningsAsErrors>
+  </PropertyGroup>
+</Project>

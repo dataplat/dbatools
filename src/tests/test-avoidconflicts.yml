@@ -1,0 +1,62 @@
+name: Test AvoidConflicts
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'dbatools.library.psm1'
+      - 'tests/test-avoidconflicts.ps1'
+      - '.github/workflows/test-avoidconflicts.yml'
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  test-avoidconflicts:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          8.0.x
+          6.0.x
+
+    - name: Install .NET Framework targeting packs
+      shell: pwsh
+      run: |
+        choco install netfx-4.7.2-devpack -y --no-progress
+
+    - name: Cache SqlServer PowerShell module
+      uses: potatoqualitee/psmodulecache@v6.2
+      with:
+        modules-to-cache: SqlServer
+        shell: pwsh
+
+    - name: Build the library
+      shell: pwsh
+      run: |
+        ./build/build.ps1
+
+    - name: Install SqlServer module
+      shell: pwsh
+      run: |
+        if (-not (Get-Module -ListAvailable -Name SqlServer)) {
+          Write-Host "Installing SqlServer module..." -ForegroundColor Cyan
+          Install-Module -Name SqlServer -Force -AllowClobber -SkipPublisherCheck
+        } else {
+          Write-Host "SqlServer module already installed" -ForegroundColor Green
+        }
+
+        # Verify installation
+        $module = Get-Module -ListAvailable -Name SqlServer | Select-Object -First 1
+        Write-Host "SqlServer module version: $($module.Version)" -ForegroundColor Cyan
+
+    - name: Run AvoidConflicts tests
+      shell: pwsh
+      run: |
+        ./tests/test-avoidconflicts.ps1

@@ -1,0 +1,74 @@
+dbatools-startmigration-transcript.txt
+dbatools-exceptions.txt
+*TempPoint*
+*.pssproj
+
+# ignore the settings folder and files for VSCode
+.vscode/*
+*.psproj
+dbatools.psprojs
+
+# ignore the settings folder and files for Visual Studio
+.vs/*
+
+# VIM backup files
+*~
+
+# msbuild log file and structured binary log file
+msbuild.log
+msbuild.binlog
+
+# Local constant file
+tests/constants.local.ps1
+
+### NCrunch ###
+# NCrunch
+*.ncrunch*
+_NCrunch_*
+*.crunch.xml
+*.ncrunchsolution*
+nCrunchTemp_*
+
+debug.log
+bin/
+temp/
+runtimes/
+lib/
+/third-party
+/third-party-licenses
+/OLDLIB
+.devcontainer/.env
+dbatools.library.zip
+/artifacts
+.roo/mcp.json
+/.claude/*
+!/.claude/
+!/.claude/hooks/
+!/.claude/commands/
+!/.claude/skills/
+!/.claude/settings.json
+!/.claude/hooks/stop-file-length.sh
+!/.claude/commands/*.md
+NUL
+
+# Benchmark artifacts
+benchmarks/**/BenchmarkDotNet.Artifacts/
+benchmarks/**/TestData/
+benchmarks/**/bin/
+benchmarks/**/obj/
+benchmarks/**/*.csv
+
+# Build outputs
+obj/
+*.user
+*.suo
+*.cache
+*.log
+packages/
+*.nupkg
+TestResults/
+
+# Local publish script with API key
+publish.ps1
+/.codex/worktrees
+/.worktrees

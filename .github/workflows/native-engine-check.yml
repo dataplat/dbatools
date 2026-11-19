@@ -1,0 +1,102 @@
+name: Native Engine Check
+# StatementFault.Surface (src/project/dbatools/Commands/Support/StatementFault.cs) reads one engine-internal flag to tell
+# a caller's try from a plain call. These jobs prove that read on the engines dbatools supports; the weekly run under the
+# newest PowerShell 7 preview reports an engine change before a PowerShell release reaches users.
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'tests/native/StatementFault.Engine.Native.Tests.ps1'
+      - '.github/workflows/native-engine-check.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'tests/native/StatementFault.Engine.Native.Tests.ps1'
+      - '.github/workflows/native-engine-check.yml'
+  schedule:
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  engine-check:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows PowerShell 5.1
+            os: windows-latest
+            engine: powershell
+            framework: net472
+          - name: PowerShell 7 on Windows
+            os: windows-latest
+            engine: pwsh
+            framework: net8.0
+          - name: PowerShell 7 on Linux
+            os: ubuntu-latest
+            engine: pwsh
+            framework: net8.0
+          - name: PowerShell 7 preview
+            os: ubuntu-latest
+            engine: preview
+            framework: net8.0
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Build the library
+        shell: pwsh
+        run: |
+          ./src/build/build.ps1
+          if (-not (Test-Path -Path ./src/artifacts/library)) {
+              throw "The build left no library under src/artifacts/library"
+          }
+
+      - name: Run StatementFaultEngineTest
+        shell: pwsh
+        run: |
+          dotnet test src/project/dbatools.Tests/dbatools.Tests.csproj --configuration Release --framework ${{ matrix.framework }} --filter "FullyQualifiedName~StatementFaultEngineTest" --nologo
+          if ($LASTEXITCODE -ne 0) {
+              throw "StatementFaultEngineTest failed with exit code $LASTEXITCODE"
+          }
+
+      - name: Install the newest PowerShell 7 preview
+        if: matrix.engine == 'preview'
+        shell: pwsh
+        run: |
+          $previewPath = Join-Path -Path $env:RUNNER_TEMP -ChildPath "pwsh-preview"
+          $installer = [scriptblock]::Create((Invoke-RestMethod -Uri "https://aka.ms/install-powershell.ps1"))
+          & $installer -Preview -Destination $previewPath
+          & (Join-Path -Path $previewPath -ChildPath "pwsh") -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
+
+      - name: Run StatementFault.Engine.Native.Tests.ps1
+        shell: pwsh
+        run: |
+          $engine = switch ("${{ matrix.engine }}") {
+              "powershell" { "powershell.exe" }
+              "preview" { Join-Path -Path $env:RUNNER_TEMP -ChildPath "pwsh-preview/pwsh" }
+              default { "pwsh" }
+          }
+          $check = Join-Path -Path $env:RUNNER_TEMP -ChildPath "engine-check.ps1"
+          Set-Content -Path $check -Encoding utf8 -Value @'
+          $ErrorActionPreference = "Stop"
+          [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+          Write-Host "Engine: $($PSVersionTable.PSEdition) $($PSVersionTable.PSVersion)"
+          if (-not (Get-Module -ListAvailable -Name Pester | Where-Object Version -ge "5.0")) {
+              Install-Module -Name Pester -MinimumVersion 5.0 -Force -SkipPublisherCheck -Scope CurrentUser
+          }
+          Import-Module -Name Pester -MinimumVersion 5.0
+          Import-Module ./dbatools.psd1 -Force
+          $result = Invoke-Pester -Path ./tests/native/StatementFault.Engine.Native.Tests.ps1 -Output Detailed -PassThru
+          if ($result.FailedCount -or $result.SkippedCount -or $result.NotRunCount -or -not $result.PassedCount) {
+              throw "StatementFault engine check: $($result.PassedCount) passed, $($result.FailedCount) failed, $($result.SkippedCount) skipped, $($result.NotRunCount) not run"
+          }
+          '@
+          & $engine -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $check
+          if ($LASTEXITCODE -ne 0) {
+              throw "The engine check failed under $engine"
+          }

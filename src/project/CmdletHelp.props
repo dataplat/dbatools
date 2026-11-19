@@ -1,0 +1,92 @@
+<Project>
+  <!--
+    MAML help generation for the cmdlet (satellite) assemblies.
+
+    PowerShell's Get-Help renders a binary cmdlet's synopsis, description, parameters and
+    examples from an <AssemblyName>.dll-Help.xml MAML file shipped beside the assembly. This
+    props drives that file straight from the C# XML doc-comments (the <para type="synopsis">/
+    <para type="description">/<example> convention) so the help stays in the source, next to
+    the code it documents, instead of a hand-maintained side file.
+
+    Generation runs ONLY for the net8.0 inner build. The MAML help is target-framework
+    independent - the same cmdlets carry the same help on Windows PowerShell 5.1 and PowerShell
+    7 - so one file generated from the net8.0 assembly (where the generator runs natively) is
+    staged for BOTH editions by build/build.ps1. Restricting generation to net8.0 also avoids
+    loading the net472 assembly, which references the SMA 3.0.0.0 GAC floor, under the net8
+    generator.
+
+    GenerateDocumentationFile is required so the <AssemblyName>.xml doc file exists for the
+    generator to read; CS1591 and friends are silenced because not every public member carries
+    a doc-comment yet and TreatWarningsAsErrors is on. The generator runs in lenient mode (no
+    -strict), so a cmdlet without <example> comments simply gets an empty Examples section
+    rather than failing the build.
+
+    Imported by the satellite cmdlet projects only; the shared runtime project ships no cmdlets.
+  -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591;CS1573;CS1570;CS1574;CS1584;CS1658</NoWarn>
+    <!--
+      -ignoreMissing: do not fail the build on undocumented elements. The shared base-class
+      parameters (EnableException on every cmdlet; SqlInstance/SqlCredential where a satellite
+      does not re-document its override) are declared on DbaBaseCmdlet/DbaInstanceCmdlet in the
+      shared runtime, so their doc-comments live in dbatools.xml, not the satellite's XML doc
+      file the generator reads. Without this flag the generator's PS002 fires and - because
+      TreatWarningsAsErrors is on - fails the build for a doc it structurally cannot see.
+
+      Note that TreatWarningsAsErrors also makes the generator's own targets prepend -strict to
+      whatever is set here, so the run is strict regardless: -ignoreMissing lowers the missing-doc
+      warnings rather than turning off failure-on-warning.
+    -->
+    <XmlDoc2CmdletDocArguments>-ignoreMissing</XmlDoc2CmdletDocArguments>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="MatejKafka.XmlDoc2CmdletDoc" Version="0.7.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!--
+    The generator loads the satellite assembly and reflects over every type (GetTypes()), which
+    force-loads the transitive SMO/SqlClient dependencies. The satellites deliberately do NOT
+    copy those locally - at runtime the module loader resolves them from the shared
+    library lib directory - so the generator's CLR, which probes only the target
+    assembly's own directory, cannot find e.g. Microsoft.SqlServer.SqlEnum and fails with PS100.
+
+    This target seeds the net8.0 output directory with the staged runtime dependency closure
+    (artifacts/library/core/lib, populated before the satellite build in both
+    build/build.ps1 and the pre-seeded build/build-dev.ps1 path) just before the generator runs.
+    Files already in the output - the freshly built dbatools.dll and the satellite itself - are
+    left untouched. These extra assemblies stay in bin only; build.ps1/build-dev.ps1 stage just
+    the satellite dll and its dll-Help.xml, so nothing extra ships.
+  -->
+  <Target Name="SeedHelpGeneratorDependencies"
+          Condition="'$(TargetFramework)' == 'net8.0'"
+          BeforeTargets="XmlDoc2CmdletDoc">
+    <PropertyGroup>
+      <_HelpDepsDir>$(MSBuildThisFileDirectory)..\artifacts\library\core\lib</_HelpDepsDir>
+      <_HelpVendoredDir>$(MSBuildThisFileDirectory)..\var\misc\both</_HelpVendoredDir>
+    </PropertyGroup>
+    <ItemGroup Condition="Exists('$(_HelpDepsDir)')">
+      <_HelpDep Include="$(_HelpDepsDir)\*.dll" />
+    </ItemGroup>
+    <!--
+      RMO and the other closed-source replication assemblies ship VENDORED at var/misc/both,
+      not via the artifacts drop - and the drop is repopulated mid-run by build.ps1, so at the
+      point the satellite loop builds dbatools.replication the staged closure can exist while
+      still lacking them (see the Reference comment in dbatools.replication.csproj). Without
+      this second seed the generator's GetTypes() dies with PS100 FileNotFoundException on
+      Microsoft.SqlServer.Rmo, failing the whole satellite build - which broke every gate on
+      2026-07-23 (first seen: Restore-DbaDbSnapshot verdict 080852). var/misc/both exists at
+      every phase of build.ps1, so this seed is stable where the drop is not.
+    -->
+    <ItemGroup Condition="Exists('$(_HelpVendoredDir)')">
+      <_HelpDep Include="$(_HelpVendoredDir)\*.dll" />
+    </ItemGroup>
+    <ItemGroup>
+      <_HelpDep Remove="@(_HelpDep)" Condition="Exists('$(TargetDir)%(Filename)%(Extension)')" />
+    </ItemGroup>
+    <Copy Condition="'@(_HelpDep)' != ''"
+          SourceFiles="@(_HelpDep)"
+          DestinationFolder="$(TargetDir)"
+          SkipUnchangedFiles="true" />
+  </Target>
+</Project>

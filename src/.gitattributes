@@ -1,0 +1,6 @@
+# EOL policy for the libmigration campaign: git does NOT touch line endings.
+# Mixed Windows/WSL tooling on /mnt/c caused constant CRLF<->LF churn that burned
+# enormous agent time investigating phantom mass-modifications (2026-07-23).
+# EOL-only diffs are noise — never investigate, restore, or commit them.
+# The operator normalizes line endings once, after the campaign.
+* -text

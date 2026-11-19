@@ -1,0 +1,7 @@
+T:System.Management.Automation.ArgumentCompleterAttribute;Absent from SMA 3.0.0.0 (PS 3.0/4.0). Register completers through the module-loader Register-ArgumentCompleter bridge (architecture.md section 9).
+T:System.Management.Automation.ArgumentCompletionsAttribute;Absent from SMA 3.0.0.0 (PS 3.0/4.0). Register completers through the module-loader Register-ArgumentCompleter bridge (architecture.md section 9).
+T:System.Management.Automation.SemanticVersion;Absent from SMA 3.0.0.0 (PS 3.0/4.0). Use System.Version or string handling.
+T:System.Management.Automation.InformationRecord;Absent from SMA 3.0.0.0 (PS 3.0/4.0). Use WriteMessage (BP-005) instead of the information stream.
+M:System.Management.Automation.Cmdlet.WriteInformation(System.Object,System.String[]);Absent from SMA 3.0.0.0 (PS 3.0/4.0). Use WriteMessage (BP-005) instead of the information stream.
+M:System.Management.Automation.Cmdlet.WriteInformation(System.Management.Automation.InformationRecord);Absent from SMA 3.0.0.0 (PS 3.0/4.0). Use WriteMessage (BP-005) instead of the information stream.
+T:System.Management.Automation.ValidateRangeKind;Absent from SMA 3.0.0.0 (PS 3.0/4.0). Use explicit numeric [ValidateRange(min, max)] bounds.

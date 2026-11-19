@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.5" />
+    <!-- Competitor CSV libraries for benchmarking -->
+    <PackageReference Include="Sep" Version="0.13.0" />
+    <PackageReference Include="Sylvan.Data.Csv" Version="1.4.4" />
+    <PackageReference Include="CsvHelper" Version="33.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\project\dbatools\dbatools.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="LumenWorks.Framework.IO">
+      <HintPath>..\..\artifacts\dbatools.library\core\third-party\LumenWorks\LumenWorks.Framework.IO.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>
