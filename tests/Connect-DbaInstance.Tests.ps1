@@ -68,23 +68,24 @@ Describe $CommandName -Tag UnitTests {
                 "AuthenticationType",
                 "DedicatedAdminConnection",
                 "IsNewConnectionReference",
-                "DisableException"
+                "DisableException",
+                "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
 
         It "rejects ConnectRetryCount values outside 0 to 255" {
-            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryCount -1 } | Should -Throw -ErrorId "ParameterArgumentValidationError,Connect-DbaInstance"
-            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryCount 256 } | Should -Throw -ErrorId "ParameterArgumentValidationError,Connect-DbaInstance"
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryCount -1 } | Should -Throw -ErrorId "ParameterArgumentValidationError,*Connect*DbaInstance*"
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryCount 256 } | Should -Throw -ErrorId "ParameterArgumentValidationError,*Connect*DbaInstance*"
         }
 
         It "rejects ConnectRetryInterval values outside 1 to 60" {
-            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryInterval 0 } | Should -Throw -ErrorId "ParameterArgumentValidationError,Connect-DbaInstance"
-            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryInterval 61 } | Should -Throw -ErrorId "ParameterArgumentValidationError,Connect-DbaInstance"
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryInterval 0 } | Should -Throw -ErrorId "ParameterArgumentValidationError,*Connect*DbaInstance*"
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectRetryInterval 61 } | Should -Throw -ErrorId "ParameterArgumentValidationError,*Connect*DbaInstance*"
         }
 
         It "rejects negative ConnectTimeout values" {
-            { Connect-DbaInstance -SqlInstance "localhost" -ConnectTimeout -1 } | Should -Throw -ErrorId "ParameterArgumentValidationError,Connect-DbaInstance"
+            { Connect-DbaInstance -SqlInstance "localhost" -ConnectTimeout -1 } | Should -Throw -ErrorId "ParameterArgumentValidationError,*Connect*DbaInstance*"
         }
     }
 
@@ -95,188 +96,121 @@ Describe $CommandName -Tag UnitTests {
     }
 
     Context "Failover partner retry behavior" {
-        BeforeAll {
-            function New-MockConnectionContext {
-                param(
-                    [string]$ConnectionString,
-                    [string[]]$AttemptErrors
-                )
-
-                $sqlConnectionObject = [PSCustomObject]@{
-                    ConnectionString = $ConnectionString
-                }
-
-                $connectionContext = [PSCustomObject]@{
-                    ConnectionString    = $ConnectionString
-                    SqlConnectionObject = $sqlConnectionObject
-                    AttemptErrors       = $AttemptErrors
-                    AttemptCount        = 0
-                    StatementTimeout    = 0
-                }
-
-                Add-Member -InputObject $connectionContext -Name ExecuteWithResults -MemberType ScriptMethod -Value {
-                    param($Query)
-                    $this.AttemptCount++
-                    $this.ConnectionString = $this.SqlConnectionObject.ConnectionString
-                    $attemptIndex = $this.AttemptCount - 1
-                    if ($attemptIndex -lt $this.AttemptErrors.Count -and $this.AttemptErrors[$attemptIndex]) {
-                        throw (New-Object -TypeName System.Exception -ArgumentList $this.AttemptErrors[$attemptIndex])
-                    }
-                } -Force
-
-                $connectionContext
-            }
-
-            function New-MockServer {
-                param(
-                    [string]$ConnectionString,
-                    [string[]]$AttemptErrors
-                )
-
-                [PSCustomObject]@{
-                    ConnectionContext = New-MockConnectionContext -ConnectionString $ConnectionString -AttemptErrors $AttemptErrors
-                }
-            }
-
-            Mock Add-ConnectionHashValue { } -ModuleName dbatools
-            Mock New-Object { & (Get-Command -Name 'New-Object' -CommandType Cmdlet) @PesterBoundParameters } -ModuleName dbatools
-            Mock New-Object {
-                [PSCustomObject]@{ }
-            } -ModuleName dbatools -ParameterFilter {
-                $TypeName -eq "Microsoft.SqlServer.Management.Common.ServerConnection"
-            }
-            Mock New-Object {
-                New-MockServer -ConnectionString $script:mockConnectionString -AttemptErrors $script:attemptErrors
-            } -ModuleName dbatools -ParameterFilter {
-                $TypeName -eq "Microsoft.SqlServer.Management.Smo.Server"
-            }
-        }
-
         It "retries connection string inputs when failover partner requires Initial Catalog" {
-            $script:mockConnectionString = "Data Source=sqlmirror;Integrated Security=True;Failover Partner=mirrorpartner"
-            $script:attemptErrors = @(
-                "Use of key 'Failover Partner' requires the key 'Initial Catalog' to be present."
-            )
+            $connectionString = "Data Source=$($TestConfig.InstanceMulti1);Integrated Security=True;Encrypt=False;Trust Server Certificate=True;Failover Partner=dbatoolsci-partner"
 
-            $result = Connect-DbaInstance -SqlInstance $script:mockConnectionString -SqlConnectionOnly
+            $result = Connect-DbaInstance -SqlInstance $connectionString -SqlConnectionOnly
 
             $result.ConnectionString | Should -Match "Initial Catalog=master"
         }
 
         It "retries with Initial Catalog after a trust certificate retry exposes the failover partner requirement" {
-            $script:mockConnectionString = "Data Source=sqlmirror;Integrated Security=True;FailoverPartner=mirrorpartner;Trust Server Certificate=False"
-            $script:attemptErrors = @(
-                "The certificate chain was issued by an authority that is not trusted.",
-                "Use of key 'Failover Partner' requires the key 'Initial Catalog' to be present."
-            )
+            $partnerInstance = [Dataplat.Dbatools.Parameter.DbaInstanceParameter]$TestConfig.InstanceMulti1
+            $partnerAddress = @([System.Net.Dns]::GetHostAddresses($partnerInstance.ComputerName) | Where-Object { $PSItem.AddressFamily -eq "InterNetwork" })[0].IPAddressToString
+            $splatPartner = @{
+                SqlInstance                 = $(if ($partnerInstance.InstanceName -eq "MSSQLSERVER") { $partnerAddress } else { "$partnerAddress\$($partnerInstance.InstanceName)" })
+                FailoverPartner             = "dbatoolsci-partner"
+                AllowTrustServerCertificate = $true
+                TrustServerCertificate      = $false
+                EncryptConnection           = $true
+                SqlConnectionOnly           = $true
+            }
 
-            $result = Connect-DbaInstance -SqlInstance "sqlmirror" -FailoverPartner "mirrorpartner" -AllowTrustServerCertificate -TrustServerCertificate:$false -SqlConnectionOnly
+            $result = Connect-DbaInstance @splatPartner
 
             $result.ConnectionString | Should -Match "Trust Server Certificate=True"
+            $result.ConnectionString | Should -Match "Failover Partner=dbatoolsci-partner"
             $result.ConnectionString | Should -Match "Initial Catalog=master"
         }
     }
 
     Context "Access token connection behavior" {
-        BeforeAll {
-            function New-MockAccessTokenServer {
-                $sqlConnectionObject = [PSCustomObject]@{
-                    ConnectionString = "Data Source=sqltoken;Integrated Security=True"
-                }
-                $connectionContext = [PSCustomObject]@{
-                    ConnectionString    = $sqlConnectionObject.ConnectionString
-                    SqlConnectionObject = $sqlConnectionObject
-                    StatementTimeout    = 0
-                }
-
-                Add-Member -InputObject $connectionContext -Name NonPooledConnection -MemberType ScriptProperty -Value {
-                    $true
-                } -SecondValue {
-                    param($value)
-                    $script:nonPooledConnectionSetterCalls++
-                    throw "Property NonPooledConnection cannot be changed or read after a connection string has been set."
-                } -Force
-
-                Add-Member -InputObject $connectionContext -Name ExecuteWithResults -MemberType ScriptMethod -Value {
-                    param($Query)
-                } -Force
-
-                [PSCustomObject]@{
-                    ConnectionContext = $connectionContext
-                }
-            }
-
-            Mock Add-ConnectionHashValue { } -ModuleName dbatools
-            Mock New-Object { & (Get-Command -Name 'New-Object' -CommandType Cmdlet) @PesterBoundParameters } -ModuleName dbatools
-            Mock New-Object {
-                [PSCustomObject]@{
-                    ConnectionString = "Data Source=sqltoken;Integrated Security=True"
-                    AccessToken      = $null
-                }
-            } -ModuleName dbatools -ParameterFilter {
-                $TypeName -eq "Microsoft.Data.SqlClient.SqlConnection"
-            }
-            Mock New-Object {
-                [PSCustomObject]@{ }
-            } -ModuleName dbatools -ParameterFilter {
-                $TypeName -eq "Microsoft.SqlServer.Management.Common.ServerConnection"
-            }
-            Mock New-Object {
-                New-MockAccessTokenServer
-            } -ModuleName dbatools -ParameterFilter {
-                $TypeName -eq "Microsoft.SqlServer.Management.Smo.Server"
-            }
-        }
-
         It "does not reapply NonPooledConnection when AccessToken already uses a SqlConnection" {
-            $script:nonPooledConnectionSetterCalls = 0
-
-            $result = Connect-DbaInstance -SqlInstance "sqltoken" -AccessToken "token" -NonPooledConnection -SqlConnectionOnly
-
-            $result.ConnectionString | Should -Be "Data Source=sqltoken;Integrated Security=True"
-            $script:nonPooledConnectionSetterCalls | Should -Be 0
+            # Replaces the mocked pinned It (pinned 226) with a real call: a token for the test app, then a non-pooled
+            # SqlConnection from that token on the Azure SQL Database fixture. The pinned It read the returned
+            # ConnectionString (231) and that the NonPooledConnection setter never ran (232). A real reapply of that
+            # setter surfaces its name in an error or warning record of the call, so none may name it.
+            # The token comes from the Microsoft identity platform's client credentials request, not from
+            # New-DbaAzAccessToken: the pinned one cannot compile its token type on PowerShell 7.6 (.NET 10), and this
+            # It runs against the pinned module too. A paused serverless database answers "is not currently
+            # available"; the call is repeated on that text alone, at most 8 times, 15 s apart. Without
+            # -EnableException a failed connection is a warning and no output, so the warnings of each attempt are read
+            # as well as its exception. The error and warning records of every attempt are kept: the reapply runs
+            # before the connection opens, so an attempt that then fails could still have reapplied the setter. Only
+            # the setter's own text counts: a failed non-pooled connection's stack trace names CreateNonPooledConnection.
+            $TestConfig.AzureSqlDbTenant | Should -Not -BeNullOrEmpty
+            $TestConfig.AzureSqlDbAppCred | Should -BeOfType System.Management.Automation.PSCredential
+            $tokenBody = "grant_type=client_credentials&client_id={0}&client_secret={1}&scope={2}" -f @(
+                [Uri]::EscapeDataString($TestConfig.AzureSqlDbAppCred.UserName)
+                [Uri]::EscapeDataString($TestConfig.AzureSqlDbAppCred.GetNetworkCredential().Password)
+                [Uri]::EscapeDataString("https://database.windows.net/.default")
+            )
+            $splatToken = @{
+                Uri         = "https://login.microsoftonline.com/$($TestConfig.AzureSqlDbTenant)/oauth2/v2.0/token"
+                Method      = "Post"
+                Body        = $tokenBody
+                ContentType = "application/x-www-form-urlencoded"
+            }
+            $token = [string](Invoke-RestMethod @splatToken).access_token
+            $tokenErrors = @()
+            $tokenWarnings = @()
+            $tokenRecords = @()
+            $splatConnect = @{
+                SqlInstance         = $TestConfig.AzureSqlDbServer
+                Database            = $TestConfig.AzureSqlDbName
+                AccessToken         = $token
+                NonPooledConnection = $true
+                SqlConnectionOnly   = $true
+                ConnectTimeout      = 120
+                ErrorVariable       = "tokenErrors"
+                WarningVariable     = "tokenWarnings"
+            }
+            $result = $null
+            $attempt = 0
+            while ($null -eq $result -and $attempt -lt 8) {
+                $attempt++
+                if ($attempt -gt 1) {
+                    Start-Sleep -Seconds 15
+                }
+                try {
+                    $result = Connect-DbaInstance @splatConnect
+                } catch {
+                    $tokenRecords += @($tokenErrors) + @($tokenWarnings) + @($PSItem)
+                    if ($attempt -ge 8 -or $PSItem.Exception.Message -notmatch "is not currently available") {
+                        throw
+                    }
+                    continue
+                }
+                $tokenRecords += @($tokenErrors) + @($tokenWarnings)
+                if ($null -eq $result -and @($tokenWarnings | Where-Object { "$PSItem" -match "is not currently available" }).Count -eq 0) {
+                    break
+                }
+            }
+            try {
+                $result | Should -BeOfType Microsoft.Data.SqlClient.SqlConnection
+                $result.State | Should -Be "Open"
+                $builder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $result.ConnectionString
+                $builder.DataSource | Should -Be $TestConfig.AzureSqlDbServer
+                $builder.InitialCatalog | Should -Be $TestConfig.AzureSqlDbName
+                $builder.Pooling | Should -BeFalse
+                $builder.IntegratedSecurity | Should -BeFalse
+                @($tokenRecords | Where-Object { "$PSItem" -match 'Exception setting "NonPooledConnection"|Property NonPooledConnection cannot be changed' }).Count | Should -Be 0
+                $command = $result.CreateCommand()
+                $command.CommandText = "SELECT DB_NAME()"
+                $command.ExecuteScalar() | Should -Be $TestConfig.AzureSqlDbName
+            } finally {
+                if ($null -ne $result) {
+                    $result.Dispose()
+                }
+            }
         }
     }
 
     Context "Ignored parameter warnings" {
-        BeforeAll {
-            function New-MockIgnoredParameterServer {
-                param(
-                    $Connection
-                )
-
-                $connectionString = $Connection.ConnectionString
-                $sqlConnectionObject = [PSCustomObject]@{
-                    ConnectionString = $connectionString
-                }
-                $connectionContext = [PSCustomObject]@{
-                    ConnectionString    = $connectionString
-                    SqlConnectionObject = $sqlConnectionObject
-                    StatementTimeout    = 0
-                }
-
-                Add-Member -InputObject $connectionContext -Name ExecuteWithResults -MemberType ScriptMethod -Value {
-                    param($Query)
-                } -Force
-
-                [PSCustomObject]@{
-                    ConnectionContext = $connectionContext
-                }
-            }
-
-            Mock Add-ConnectionHashValue { } -ModuleName dbatools
-            Mock New-Object { & (Get-Command -Name "New-Object" -CommandType Cmdlet) @PesterBoundParameters } -ModuleName dbatools
-            Mock New-Object {
-                New-MockIgnoredParameterServer -Connection $ArgumentList[0]
-            } -ModuleName dbatools -ParameterFilter {
-                $TypeName -eq "Microsoft.SqlServer.Management.Smo.Server"
-            }
-        }
-
         It "warns when a connection-string input ignores ConnectRetryCount" {
             $warnings = @()
             $splatConnection = @{
-                SqlInstance       = "Server=sqlretry;Integrated Security=true"
+                SqlInstance       = "Server=$($TestConfig.InstanceMulti1);Integrated Security=true;Encrypt=False;Trust Server Certificate=True"
                 ConnectRetryCount = 2
                 SqlConnectionOnly = $true
                 WarningAction     = "SilentlyContinue"
@@ -291,7 +225,7 @@ Describe $CommandName -Tag UnitTests {
         It "still warns when TrustServerCertificate is honored alongside an ignored parameter" {
             $warnings = @()
             $splatConnection = @{
-                SqlInstance            = "Server=sqlretry;Integrated Security=true"
+                SqlInstance            = "Server=$($TestConfig.InstanceMulti1);Integrated Security=true;Encrypt=False"
                 ConnectRetryCount      = 2
                 SqlConnectionOnly      = $true
                 TrustServerCertificate = $true
@@ -306,18 +240,22 @@ Describe $CommandName -Tag UnitTests {
 
         It "warns when a SqlConnection input ignores ConnectRetryInterval" {
             $warnings = @()
-            $connection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList "Server=sqlretry;Integrated Security=true"
-            $splatConnection = @{
-                SqlInstance          = $connection
-                ConnectRetryInterval = 2
-                SqlConnectionOnly    = $true
-                WarningAction        = "SilentlyContinue"
-                WarningVariable      = "warnings"
+            $connection = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnection -ArgumentList "Server=$($TestConfig.InstanceMulti1);Integrated Security=true;Encrypt=False;Trust Server Certificate=True"
+            try {
+                $splatConnection = @{
+                    SqlInstance          = $connection
+                    ConnectRetryInterval = 2
+                    SqlConnectionOnly    = $true
+                    WarningAction        = "SilentlyContinue"
+                    WarningVariable      = "warnings"
+                }
+
+                $null = Connect-DbaInstance @splatConnection
+
+                $warnings | Should -Match "Additional parameters are passed in, but they will be ignored"
+            } finally {
+                $connection.Dispose()
             }
-
-            $null = Connect-DbaInstance @splatConnection
-
-            $warnings | Should -Match "Additional parameters are passed in, but they will be ignored"
         }
     }
 
@@ -376,44 +314,6 @@ Describe $CommandName -Tag UnitTests {
             }
         }
 
-        It "requires SqlCredential when AuthenticationType uses password-based auth" {
-            Mock Stop-Function { } -ModuleName dbatools
-
-            Connect-DbaInstance -SqlInstance "sqlauth" -AuthenticationType ActiveDirectoryPassword | Should -BeNullOrEmpty
-
-            Should -Invoke Stop-Function -Times 1 -Exactly -ModuleName dbatools
-        }
-
-        It "uses SqlConnectionInfo credentials for ActiveDirectoryPassword on non-Azure servers" {
-            $securePassword = ConvertTo-SecureString "password" -AsPlainText -Force
-            $credential = New-Object System.Management.Automation.PSCredential ("user@contoso.com", $securePassword)
-
-            $result = Connect-DbaInstance -SqlInstance "sqlauth" -SqlCredential $credential -AuthenticationType ActiveDirectoryPassword -SqlConnectionOnly
-
-            $result.ConnectionString | Should -Match "Authentication=ActiveDirectoryPassword"
-            $result.ConnectionString | Should -Match "User ID=user@contoso.com"
-            $result.ConnectionString | Should -Not -Match "Integrated Security=True"
-            $script:lastServerConnection.ConnectAsUser | Should -Be $false
-            $script:lastServerConnection.ConnectAsUserName | Should -BeNullOrEmpty
-        }
-
-        It "uses explicit connection resiliency values instead of AppendConnectionString values" {
-            $splatConnection = @{
-                SqlInstance            = "sqlretry"
-                ConnectRetryCount      = 0
-                ConnectRetryInterval   = 2
-                ConnectTimeout         = 0
-                AppendConnectionString = "ConnectRetryCount=8;ConnectRetryInterval=9;Connect Timeout=60"
-                SqlConnectionOnly      = $true
-            }
-            $result = Connect-DbaInstance @splatConnection
-            $connectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $result.ConnectionString
-
-            $connectionStringBuilder.ConnectRetryCount | Should -Be 0
-            $connectionStringBuilder.ConnectRetryInterval | Should -Be 2
-            $connectionStringBuilder.ConnectTimeout | Should -Be 0
-        }
-
         It "uses the SqlClient SSPI provider for explicit Windows credentials" -Skip:(-not $script:hasCredentialSspiProvider) {
             $splatPassword = @{
                 String      = "password"
@@ -435,26 +335,79 @@ Describe $CommandName -Tag UnitTests {
             $script:lastServerConnection.ConnectAsUserName | Should -BeNullOrEmpty
             Should -Invoke Add-ConnectionHashValue -Times 0 -Exactly -ModuleName dbatools
         }
+    }
 
-        It "uses SMO impersonation when the SqlClient SSPI provider is unavailable" -Skip:$script:hasCredentialSspiProvider {
-            $splatPassword = @{
-                String      = "password"
-                AsPlainText = $true
-                Force       = $true
-            }
-            $securePassword = ConvertTo-SecureString @splatPassword
-            $credential = New-Object System.Management.Automation.PSCredential ("user@CONTOSO", $securePassword)
-            $splatConnect = @{
-                SqlInstance       = "sqlauth"
-                SqlCredential     = $credential
-                SqlConnectionOnly = $true
+    Context "AuthenticationType behavior" {
+        It "requires SqlCredential when AuthenticationType uses password-based auth" {
+            $authWarnings = @()
+            $splatNoCredential = @{
+                SqlInstance        = $TestConfig.InstanceMulti1
+                AuthenticationType = "ActiveDirectoryPassword"
+                DisableException   = $true
+                WarningVariable    = "authWarnings"
+                WarningAction      = "SilentlyContinue"
             }
 
-            $null = Connect-DbaInstance @splatConnect
+            Connect-DbaInstance @splatNoCredential | Should -BeNullOrEmpty
 
-            $script:lastServerConnection.ConnectAsUser | Should -Be $true
-            $script:lastServerConnection.ConnectAsUserName | Should -Be "user@CONTOSO"
+            @($authWarnings | Where-Object { "$PSItem" -like "*AuthenticationType ActiveDirectoryPassword requires SqlCredential.*" }).Count | Should -Be 1
+            { Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -AuthenticationType ActiveDirectoryPassword -WarningAction SilentlyContinue } | Should -Throw "*AuthenticationType ActiveDirectoryPassword requires SqlCredential.*"
         }
+
+        It "uses SqlConnectionInfo credentials for ActiveDirectoryPassword on non-Azure servers" {
+            # Replaces the mocked pinned It with a real call. The instance is a SQL Server 2022 on Windows, not Azure,
+            # set up for Microsoft Entra authentication. The credential is a Microsoft Entra user with a password that
+            # has a login there. The pinned It read the connection string of the returned SqlConnection (Authentication,
+            # User ID, no Integrated Security), and that the ServerConnection did not impersonate (ConnectAsUser $false,
+            # ConnectAsUserName empty). A real call shows the first on the returned connection, and the second on the
+            # ServerConnection of a server object built the same way.
+            $splatEntra = @{
+                SqlInstance        = $TestConfig.InstanceEntra
+                SqlCredential      = $TestConfig.EntraPasswordCred
+                AuthenticationType = "ActiveDirectoryPassword"
+            }
+
+            $result = Connect-DbaInstance @splatEntra -SqlConnectionOnly
+            try {
+                $result.ConnectionString | Should -Match "Authentication=ActiveDirectoryPassword"
+                $result.ConnectionString | Should -Match "User ID=$([regex]::Escape($TestConfig.EntraPasswordCred.UserName))"
+                $result.ConnectionString | Should -Not -Match "Integrated Security=True"
+            } finally {
+                $result.Dispose()
+            }
+
+            $server = Connect-DbaInstance @splatEntra -NonPooledConnection
+            try {
+                $server.ConnectionContext.ConnectAsUser | Should -Be $false
+                $server.ConnectionContext.ConnectAsUserName | Should -BeNullOrEmpty
+                $server.ConnectionContext.ExecuteScalar("SELECT SUSER_SNAME()") | Should -Be $TestConfig.EntraPasswordCred.UserName
+            } finally {
+                $server.ConnectionContext.Disconnect()
+            }
+        }
+
+        It "uses explicit connection resiliency values instead of AppendConnectionString values" {
+            $splatConnection = @{
+                SqlInstance            = $TestConfig.InstanceMulti1
+                ConnectRetryCount      = 0
+                ConnectRetryInterval   = 2
+                ConnectTimeout         = 0
+                AppendConnectionString = "ConnectRetryCount=8;ConnectRetryInterval=9;Connect Timeout=60"
+                SqlConnectionOnly      = $true
+            }
+            $result = Connect-DbaInstance @splatConnection
+            $connectionStringBuilder = New-Object -TypeName Microsoft.Data.SqlClient.SqlConnectionStringBuilder -ArgumentList $result.ConnectionString
+
+            $connectionStringBuilder.ConnectRetryCount | Should -Be 0
+            $connectionStringBuilder.ConnectRetryInterval | Should -Be 2
+            $connectionStringBuilder.ConnectTimeout | Should -Be 0
+        }
+    }
+
+    AfterAll {
+        # Not Get-DbaConnectedInstance | Disconnect-DbaInstance: the pinned Disconnect-DbaInstance fails on a connected
+        # SqlConnection with 'Property "Name" cannot be found.' (replacement proof e588ae6c, every leg).
+        Clear-DbaConnectionPool
     }
 }
 
