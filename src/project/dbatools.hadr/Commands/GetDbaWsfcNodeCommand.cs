@@ -1,0 +1,150 @@
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using System.Management.Automation;
+using Dataplat.Dbatools.Connection;
+using Dataplat.Dbatools.Message;
+using Dataplat.Dbatools.Parameter;
+using Dataplat.Dbatools.Utility;
+using Microsoft.Management.Infrastructure;
+
+namespace Dataplat.Dbatools.Commands;
+
+/// <summary>
+/// Retrieves detailed node information from Windows Server Failover Clusters hosting SQL Server instances.
+/// Port of public/Get-DbaWsfcNode.ps1; surface pinned by migration/baselines/Get-DbaWsfcNode.json.
+/// </summary>
+[Cmdlet(VerbsCommon.Get, "DbaWsfcNode")]
+[OutputType(typeof(Microsoft.Management.Infrastructure.CimInstance))]
+public sealed class GetDbaWsfcNodeCommand : DbaBaseCmdlet
+{
+    /// <summary>The target cluster name or member node; defaults to the local computer.</summary>
+    [Parameter(ValueFromPipeline = true, Position = 0)]
+    public DbaInstanceParameter[]? ComputerName { get; set; } = DefaultComputerName();
+
+    /// <summary>Allows you to login to the cluster using alternative credentials.</summary>
+    [Parameter(Position = 1)]
+    public PSCredential? Credential { get; set; }
+
+    protected override void ProcessRecord()
+    {
+        if (Interrupted)
+        {
+            return;
+        }
+
+        // PS: [DbaInstanceParameter[]]$ComputerName = $env:COMPUTERNAME - a machine without
+        // the variable yields $null and the foreach body never runs.
+        if (ComputerName is null)
+        {
+            return;
+        }
+
+        foreach (DbaInstanceParameter computer in ComputerName)
+        {
+            // PS: $cluster = Get-DbaWsfcCluster -ComputerName $computer -Credential $Credential
+            // EnableException is NEVER forwarded to the inner cluster lookup, so a CIM failure
+            // surfaces as a warning and the computer is skipped - even when the caller passed
+            // -EnableException (pinned by the characterization tests).
+            string? clusterName = null;
+            string? clusterFqdn = null;
+            try
+            {
+                CimService.CmObjectRequest clusterRequest = new()
+                {
+                    ComputerName = computer.ComputerName,
+                    Credential = Credential,
+                    ClassName = "MSCluster_Cluster",
+                    Namespace = @"root\MSCluster"
+                };
+                CimService.CmObjectResult clusterResult = CimService.GetCmObject(this, clusterRequest);
+                foreach (ErrorRecord passthrough in clusterResult.PassthroughErrors)
+                {
+                    WriteError(NestedCommand.PreserveErrorIdentity(passthrough));
+                }
+                if (clusterResult.Instances.Count > 0)
+                {
+                    PSObject clusterObj = clusterResult.Instances[0];
+                    clusterName = clusterObj.Properties["Name"]?.Value?.ToString();
+                    clusterFqdn = clusterObj.Properties["Fqdn"]?.Value?.ToString();
+                }
+            }
+            catch (PipelineStoppedException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                WriteMessage(MessageLevel.Warning, ex.Message, target: computer.ComputerName, exception: ex.InnerException ?? ex);
+                continue;
+            }
+
+            // PS: $node = Get-DbaCmObject -Computername $computer -Credential $Credential
+            //     -Namespace root\MSCluster -ClassName MSCluster_Node
+            // EnableException is NEVER forwarded, so a CIM failure surfaces as the inner
+            // command's own warning and the computer is skipped.
+            List<PSObject> nodes;
+            try
+            {
+                CimService.CmObjectRequest nodeRequest = new()
+                {
+                    ComputerName = computer.ComputerName,
+                    Credential = Credential,
+                    ClassName = "MSCluster_Node",
+                    Namespace = @"root\MSCluster"
+                };
+                CimService.CmObjectResult nodeResult = CimService.GetCmObject(this, nodeRequest);
+                foreach (ErrorRecord passthrough in nodeResult.PassthroughErrors)
+                {
+                    WriteError(NestedCommand.PreserveErrorIdentity(passthrough));
+                }
+                nodes = nodeResult.Instances;
+            }
+            catch (PipelineStoppedException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                WriteMessage(MessageLevel.Warning, ex.Message, target: computer.ComputerName, exception: ex.InnerException ?? ex);
+                continue;
+            }
+
+            foreach (PSObject node in nodes)
+            {
+                // PS: $node | Add-Member -Force -NotePropertyName ClusterName -NotePropertyValue $cluster.Name
+                // PS: $node | Add-Member -Force -NotePropertyName ClusterFqdn -NotePropertyValue $cluster.Fqdn
+                // Inject cluster identity as NoteProperty members (not native MSCluster_Node CIM properties).
+                if (node.Properties["ClusterName"] is PSNoteProperty)
+                {
+                    node.Properties.Remove("ClusterName");
+                }
+                node.Properties.Add(new PSNoteProperty("ClusterName", clusterName));
+
+                if (node.Properties["ClusterFqdn"] is PSNoteProperty)
+                {
+                    node.Properties.Remove("ClusterFqdn");
+                }
+                node.Properties.Add(new PSNoteProperty("ClusterFqdn", clusterFqdn));
+
+                // PS: $node | Select-DefaultView -Property ClusterName, ClusterFqdn, Name,
+                //     PrimaryOwnerName, PrimaryOwnerContact, Dedicated, NodeHighestVersion, NodeLowestVersion
+                OutputHelper.SetDefaultDisplayPropertySet(node,
+                    "ClusterName", "ClusterFqdn", "Name", "PrimaryOwnerName", "PrimaryOwnerContact",
+                    "Dedicated", "NodeHighestVersion", "NodeLowestVersion");
+                WriteObject(node);
+            }
+        }
+    }
+
+    private static DbaInstanceParameter[]? DefaultComputerName()
+    {
+        string? machine = Environment.GetEnvironmentVariable("COMPUTERNAME");
+        if (string.IsNullOrEmpty(machine))
+        {
+            return null;
+        }
+        return new[] { new DbaInstanceParameter(machine) };
+    }
+}
