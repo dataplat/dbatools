@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Dataplat.Dbatools.Commands</RootNamespace>
+    <TargetFrameworks>net472;net8.0</TargetFrameworks>
+    <AssemblyTitle>dbatools.performance</AssemblyTitle>
+    <Company>Dataplat</Company>
+    <Product>dbatools</Product>
+    <Description>dbatools.performance: read-mostly observation commands</Description>
+    <Copyright>Copyright © 2026</Copyright>
+    <AssemblyName>dbatools.performance</AssemblyName>
+    <LangVersion>12</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\dbatools\dbatools.csproj" />
+  </ItemGroup>
+
+  <!-- Windows-specific GAC reference for net472: SMA 3.0.0.0 so one assembly serves PS 3.0-5.1 -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472' AND '$(OS)' == 'Windows_NT'">
+    <Reference Include="System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Management.Automation.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Linux/non-Windows PowerShell reference for net472 -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472' AND '$(OS)' != 'Windows_NT'">
+    <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.15" PrivateAssets="all" />
+  </ItemGroup>
+  <!-- SMA 3.0.0.0 banned-API floor (compat-matrix.md section 4); scoped to cmdlet assemblies -->
+  <Import Project="..\BannedApis.props" />
+  <!-- dll-Help.xml MAML generation from XML doc-comments (net8.0 only, staged for both editions) -->
+  <Import Project="..\CmdletHelp.props" />
+</Project>
