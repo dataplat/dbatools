@@ -1,0 +1,104 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Dataplat.Dbatools</RootNamespace>
+    <TargetFrameworks>net472;net8.0</TargetFrameworks>
+    <AssemblyTitle>dbatools</AssemblyTitle>
+    <Company>Dataplat</Company>
+    <Product>dbatools</Product>
+    <Description>The dbatools PowerShell Module library</Description>
+    <Copyright>Copyright © 2025</Copyright>
+    <AssemblyVersion>0.10.0.82</AssemblyVersion>
+    <FileVersion>0.10.0.82</FileVersion>
+    <Version>0.10.0.82</Version>
+    <AssemblyName>dbatools</AssemblyName>
+    <SkipFunctionsDepsCopy>false</SkipFunctionsDepsCopy>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugType>full</DebugType>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <OutputPath>..\..\artifacts\lib\$(Configuration)\</OutputPath>
+    <LangVersion>7.3</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineConstants>TRACE</DefineConstants>
+    <OutputPath>..\..\artifacts\lib\$(Configuration)\</OutputPath>
+    <DocumentationFile>..\..\artifacts\lib\$(Configuration)\dbatools.xml</DocumentationFile>
+    <LangVersion>7.3</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ps3|AnyCPU'">
+    <OutputPath>..\..\artifacts\lib\</OutputPath>
+    <DefineConstants>TRACE;NORUNSPACENAME</DefineConstants>
+    <DocumentationFile>..\..\artifacts\lib\dbatools.xml</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <LangVersion>5</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ps4|AnyCPU'">
+    <OutputPath>..\..\artifacts\lib\</OutputPath>
+    <DefineConstants>TRACE;NORUNSPACENAME</DefineConstants>
+    <DocumentationFile>..\..\artifacts\lib\dbatools.xml</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <LangVersion>7.3</LangVersion>
+  </PropertyGroup>
+
+  <!-- Shared packages for both frameworks -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AnalysisServices" Version="19.113.7" />
+    <!-- SqlClient 7 moved Microsoft Entra authentication into Extensions.Azure; the two ship aligned and are referenced at
+         the same version (Microsoft Learn, "What's new in Microsoft.Data.SqlClient", 7.1). -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.1" />
+    <PackageReference Include="Microsoft.Data.SqlClient.Extensions.Azure" Version="7.1.1" />
+    <!-- The Azure stack follows dbatools.library b1b63e031 (aligned with Az.Accounts 5.5.1, so both modules load in one
+         session); MSAL is 4.84.2, the floor Extensions.Azure 7.1.1 declares. The loader loads Azure.Core and
+         Azure.Identity by name. -->
+    <PackageReference Include="Azure.Core" Version="1.56.0" />
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.84.2" />
+    <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.84.2" />
+    <PackageReference Include="Microsoft.SqlServer.DacFx" Version="170.3.93" />
+    <PackageReference Include="Microsoft.SqlServer.SqlManagementObjects" Version="181.19.0" />
+    <PackageReference Include="Microsoft.SqlServer.XEvent.XELite" Version="2024.2.5.1" />
+    <PackageReference Include="System.ClientModel" Version="1.12.0" />
+  </ItemGroup>
+
+  <!-- Framework-specific packages -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <PackageReference Include="System.Threading.Tasks.Dataflow" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Management.Infrastructure" Version="3.0.0" />
+    <!-- WMI rung of CimService.GetCmObject: the inbox assembly, like Get-WmiObject uses -->
+    <Reference Include="System.Management" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="System.Threading.Tasks.Dataflow" Version="10.0.7" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.15" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Management.Infrastructure" Version="3.0.0" />
+    <!-- WMI rung of CimService.GetCmObject (Windows-only at runtime, guarded) -->
+    <PackageReference Include="System.Management" Version="8.0.0" />
+  </ItemGroup>
+
+  <!-- Windows-specific GAC reference for net472 -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472' AND '$(OS)' == 'Windows_NT'">
+    <Reference Include="System.Management.Automation, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>C:\Windows\Microsoft.NET\assembly\GAC_MSIL\System.Management.Automation\v4.0_3.0.0.0__31bf3856ad364e35\System.Management.Automation.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Linux/non-Windows PowerShell reference for net472 -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472' AND '$(OS)' != 'Windows_NT'">
+    <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
+  </ItemGroup>
+</Project>

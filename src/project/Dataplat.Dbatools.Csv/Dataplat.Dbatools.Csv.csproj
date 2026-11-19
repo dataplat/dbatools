@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net472;net8.0</TargetFrameworks>
+    <RootNamespace>Dataplat.Dbatools.Csv</RootNamespace>
+    <AssemblyName>Dataplat.Dbatools.Csv</AssemblyName>
+    <LangVersion>7.3</LangVersion>
+
+    <!-- NuGet Package Metadata -->
+    <PackageId>Dataplat.Dbatools.Csv</PackageId>
+    <Version>1.1.16</Version>
+    <Authors>Chrissy LeMaire</Authors>
+    <Company>Dataplat</Company>
+    <Product>Dataplat.Dbatools.Csv</Product>
+    <Description>High-performance CSV reader with native IDataReader for SqlBulkCopy - 6x faster than legacy solutions for database imports. Database-first design with culture-aware parsing, intelligent null handling, and robust support for messy real-world data (duplicate headers, field mismatches). Features automatic compression (GZip, Deflate, Brotli, ZLib), progress reporting with rows/second metrics, and cancellation support. From the trusted dbatools project.</Description>
+    <Copyright>Copyright (c) 2025 Chrissy LeMaire</Copyright>
+    <PackageTags>csv;parser;reader;writer;datareader;idatareader;sqlbulkcopy;compression;gzip;brotli;dbatools;high-performance;parallel</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://dataplat.dbatools.io/csv</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/dataplat/dbatools.library</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryBranch>main</RepositoryBranch>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>v1.1.10: SQL Server schema inference - auto-detect column types (int, bigint, decimal, datetime2, bit, uniqueidentifier, varchar/nvarchar). v1.1.5: Updated package metadata and URL. v1.1.1: ~25% performance improvement for all-columns reads. v1.1.0: Added CancellationToken and progress reporting support.</PackageReleaseNotes>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>false</IncludeSymbols>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+
+    <!-- Build settings -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>CS1591</NoWarn>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>portable</DebugType>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <!-- Link to CSV source files from main dbatools project -->
+  <ItemGroup>
+    <Compile Include="..\dbatools\Csv\**\*.cs" Link="%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- Polyfill packages needed for net472 -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <PackageReference Include="System.Buffers" Version="4.6.1" />
+    <PackageReference Include="System.Memory" Version="4.6.3" />
+  </ItemGroup>
+
+  <!-- Package README -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <!-- SourceLink for debugging support -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.203" PrivateAssets="All" />
+  </ItemGroup>
+</Project>

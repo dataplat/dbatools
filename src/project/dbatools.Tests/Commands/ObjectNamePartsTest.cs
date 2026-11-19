@@ -1,0 +1,97 @@
+using Dataplat.Dbatools.Commands;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace Dataplat.Dbatools.Commands.Test
+{
+    /// <summary>
+    /// Coverage for the absorbed Get-ObjectNameParts helper (TB-041), carried as TWO
+    /// independent copies: ImportDbaCsvCommand.GetObjectNameParts and
+    /// ExportDbaCsvCommand.ParseObjectNameParts. Both parse a one/two/three-part object
+    /// name into Database/Schema/Name, honoring bracket quoting, the ]]-escape (T-SQL
+    /// QuoteName doubling, temporarily swapped for the first unused char), and the empty
+    /// dbo schema in database..table form. Expected values are ground-truthed against the
+    /// PowerShell source on PS 5.1 and 7.6 (probe 2026-07-17, identical both editions).
+    /// The two copies must also never drift apart.
+    /// </summary>
+    [TestClass]
+    public class ObjectNamePartsTest
+    {
+        // { input, database, schema, name, parsed }. A null element means the parser is
+        // expected to return null for that field - distinct from an empty string, which
+        // the parser produces for the "[]" input's Name.
+        private static readonly string[][] GroundTruth = new[]
+        {
+            new string[] { "table", null, null, "table", "True" },
+            new string[] { "schema.table", null, "schema", "table", "True" },
+            new string[] { "db.schema.table", "db", "schema", "table", "True" },
+            new string[] { "db..table", "db", null, "table", "True" },
+            new string[] { "[Bad. Name]]].[Schema.With.Dots]]].[Another .Silly]] Name..]",
+                    "Bad. Name]", "Schema.With.Dots]", "Another .Silly] Name..", "True" },
+            new string[] { "[weird]]name]", null, null, "weird]name", "True" },
+            new string[] { "[]", null, null, "", "True" },
+            new string[] { "a.b.c.d", null, null, null, "False" },
+            new string[] { "", null, null, null, "False" },
+            new string[] { "[a.b].[c]", null, "a.b", "c", "True" },
+            new string[] { "..table", null, null, "table", "True" },
+            new string[] { "[db]..[table]", "db", null, "table", "True" },
+            new string[] { "dbo.[my.table]", null, "dbo", "my.table", "True" },
+        };
+
+        private static void AssertField(string expected, string actual, string label, string input)
+        {
+            if (expected == null)
+                Assert.IsNull(actual, $"{label} for [{input}] should be null");
+            else
+                Assert.AreEqual(expected, actual, $"{label} for [{input}]");
+        }
+
+        [TestMethod]
+        public void ObjectNameParts_ImportCopyMatchesGroundTruth()
+        {
+            foreach (string[] c in GroundTruth)
+            {
+                ImportDbaCsvCommand.ObjectNameParts r = ImportDbaCsvCommand.GetObjectNameParts(c[0]);
+                AssertField(c[1], r.Database, "Database", c[0]);
+                AssertField(c[2], r.Schema, "Schema", c[0]);
+                AssertField(c[3], r.Name, "Name", c[0]);
+                Assert.AreEqual(bool.Parse(c[4]), r.Parsed, $"Parsed for [{c[0]}]");
+            }
+        }
+
+        [TestMethod]
+        public void ObjectNameParts_ExportCopyMatchesGroundTruth()
+        {
+            foreach (string[] c in GroundTruth)
+            {
+                ExportDbaCsvCommand.ObjectNameParts r = ExportDbaCsvCommand.ParseObjectNameParts(c[0]);
+                AssertField(c[1], r.Database, "Database", c[0]);
+                AssertField(c[2], r.Schema, "Schema", c[0]);
+                AssertField(c[3], r.Name, "Name", c[0]);
+                Assert.AreEqual(bool.Parse(c[4]), r.Parsed, $"Parsed for [{c[0]}]");
+            }
+        }
+
+        [TestMethod]
+        public void ObjectNameParts_BothCopiesAgree()
+        {
+            // The two absorbed copies are independent code today; a future edit to one
+            // must not silently diverge from the other. Sweep the ground-truth inputs
+            // plus a few bracket/dot stressors and require field-for-field agreement.
+            string[] inputs =
+            {
+                "table", "a.b", "a.b.c", "a.b.c.d", "", "[]", "db..table",
+                "[weird]]name]", "[a.b].[c]", "dbo.[my.table]", "...", "[[]]",
+                "master.dbo.[Order Details]", "[a]]]]b]",
+            };
+            foreach (string input in inputs)
+            {
+                ImportDbaCsvCommand.ObjectNameParts a = ImportDbaCsvCommand.GetObjectNameParts(input);
+                ExportDbaCsvCommand.ObjectNameParts b = ExportDbaCsvCommand.ParseObjectNameParts(input);
+                Assert.AreEqual(a.Database, b.Database, $"Database drift at [{input}]");
+                Assert.AreEqual(a.Schema, b.Schema, $"Schema drift at [{input}]");
+                Assert.AreEqual(a.Name, b.Name, $"Name drift at [{input}]");
+                Assert.AreEqual(a.Parsed, b.Parsed, $"Parsed drift at [{input}]");
+            }
+        }
+    }
+}
