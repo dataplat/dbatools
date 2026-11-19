@@ -1,0 +1,691 @@
+#nullable enable
+
+using System;
+using System.Collections;
+using System.Management.Automation;
+using System.Security;
+using Dataplat.Dbatools.Parameter;
+
+namespace Dataplat.Dbatools.Commands;
+
+/// <summary>
+/// <para type="synopsis">Migrates SSIS catalogs including folders, projects, and environments between SQL Server instances.</para>
+/// <para type="description">Copies the complete SSISDB catalog structure from a source SQL Server to one or more
+/// destination instances - folders, projects, and environments - creating the SSISDB catalog on the destination
+/// when it does not exist. Scope can be narrowed to a single -Project, -Folder, or -Environment. Requires the
+/// IntegrationServices object model, which is Windows-PowerShell-only; the command refuses on PowerShell Core.</para>
+/// </summary>
+/// <remarks>
+/// <para>
+/// The command is a module-scoped PowerShell compatibility hop: the original function's begin and process bodies
+/// run verbatim inside the real dbatools module scope, so every micro-semantic (Select-DefaultView, the SMO
+/// IntegrationServices object model, nested Get-DbaService, [DbaDateTime], the interactive host prompts) behaves
+/// identically to the shipped function. The source has NO pipeline-bound parameters, so it processes a single
+/// Source against an array of Destinations exactly once; begin and process therefore run in one invocation. They
+/// are two dot-sourced blocks so the source's begin/process boundary is preserved: begin's early returns stay
+/// local to its block, and the process block re-checks Test-FunctionInterrupt at its top exactly as the source's
+/// process block does. Because both blocks dot-source into the same scriptblock scope, the helper functions and
+/// source connections that begin defines are visible to process, and a begin-scope Stop-Function latch (Core
+/// guard, source connect failure, missing source catalog) reaches the process-top interrupt guard - the same
+/// same-scope latch the source relies on.
+/// </para>
+/// <para>
+/// The command's own (outer) ShouldProcess gates route to the real compiled cmdlet ($__realCmdlet) so -WhatIf,
+/// -Confirm, and the Medium ConfirmImpact are honored by the actual runtime, matching the New-DbaSsisCatalog hop.
+/// The three helper functions (New-CatalogFolder, New-FolderEnvironment, New-SSISDBCatalog) keep their own
+/// advanced-function $PSCmdlet: they are only reached after the outer gate passes and inherit $WhatIfPreference /
+/// $ConfirmPreference (including the source's `if ($Force) { $ConfirmPreference = 'none' }` suppression) from the
+/// hop scope, reproducing the source's double-gate. Write-Message/Stop-Function carry -FunctionName so log
+/// attribution and the friendly error id read Copy-DbaSsisCatalog rather than the hop scriptblock. The live copy
+/// needs a running SSIS service plus the IntegrationServices SMO assemblies and is deferred to the gate host;
+/// what is deterministic on both editions is the pre-copy refusal (Core guard on Core, source connect failure on
+/// Desktop). Surface pinned by migration/baselines/Copy-DbaSsisCatalog.json.
+/// </para>
+/// </remarks>
+// No [OutputType] is declared: the emitted rows are ad-hoc PSCustomObjects (TypeName MigrationObject via
+// Select-DefaultView) and the catalog types come from IntegrationServices assemblies loaded at RUNTIME on
+// Desktop only.
+[Cmdlet(VerbsCommon.Copy, "DbaSsisCatalog", DefaultParameterSetName = "Default", SupportsShouldProcess = true, ConfirmImpact = ConfirmImpact.Medium)]
+public sealed class CopyDbaSsisCatalogCommand : DbaBaseCmdlet
+{
+    /// <summary>Source SQL Server instance containing the SSISDB catalog to copy from.</summary>
+    [Parameter(Mandatory = true, Position = 0)]
+    public DbaInstanceParameter Source { get; set; } = null!;
+
+    /// <summary>Destination SQL Server instances where the SSISDB catalog will be copied to.</summary>
+    [Parameter(Mandatory = true, Position = 1)]
+    public DbaInstanceParameter[] Destination { get; set; } = null!;
+
+    /// <summary>Credentials for connecting to the source SQL Server instance.</summary>
+    [Parameter(Position = 2)]
+    public PSCredential? SourceSqlCredential { get; set; }
+
+    /// <summary>Credentials for connecting to the destination SQL Server instances.</summary>
+    [Parameter(Position = 3)]
+    public PSCredential? DestinationSqlCredential { get; set; }
+
+    /// <summary>A single SSIS project name to copy instead of migrating all projects.</summary>
+    [Parameter(Position = 4)]
+    public string? Project { get; set; }
+
+    /// <summary>A single SSISDB catalog folder to copy instead of migrating all folders.</summary>
+    [Parameter(Position = 5)]
+    public string? Folder { get; set; }
+
+    /// <summary>A single SSIS environment to copy instead of migrating all environments.</summary>
+    [Parameter(Position = 6)]
+    public string? Environment { get; set; }
+
+    /// <summary>Password for creating a new SSISDB catalog on the destination as a SecureString object.</summary>
+    [Parameter(Position = 7)]
+    public SecureString? CreateCatalogPassword { get; set; }
+
+    /// <summary>Automatically enables CLR integration on the destination without prompting for confirmation.</summary>
+    [Parameter]
+    public SwitchParameter EnableSqlClr { get; set; }
+
+    /// <summary>Drops and recreates existing folders, projects, and environments at the destination.</summary>
+    [Parameter]
+    public SwitchParameter Force { get; set; }
+
+    // EnableException is inherited from DbaBaseCmdlet - never redeclared.
+
+    protected override void ProcessRecord()
+    {
+        if (Interrupted)
+        {
+            return;
+        }
+
+        NestedCommand.InvokeScopedStreaming(this, item =>
+        {
+            if (item?.BaseObject is ErrorRecord nestedError)
+            {
+                NestedCommand.RemoveDuplicateError(this, nestedError);
+                WriteError(NestedCommand.PreserveErrorIdentity(nestedError));
+            }
+            else if (item is not null)
+            {
+                WriteObject(item);
+            }
+        }, BodyScript,
+            Source, Destination, SourceSqlCredential, DestinationSqlCredential,
+            Project, Folder, Environment, CreateCatalogPassword,
+            EnableSqlClr.ToBool(), Force.ToBool(), EnableException.ToBool(), this,
+            NestedCommand.BoundCommonParameter(this, "WhatIf"), NestedCommand.BoundCommonParameter(this, "Confirm"),
+            NestedCommand.BoundCommonParameter(this, "Verbose"), NestedCommand.BoundCommonParameter(this, "Debug"));
+    }
+
+    // PS: the source begin and process bodies VERBATIM, each inside a dot-sourced block so their early returns
+    // stay local and the source's begin/process boundary (a Test-FunctionInterrupt guard at the top of process)
+    // is preserved. The command's OWN ShouldProcess gates route to $__realCmdlet so -WhatIf/-Confirm/Medium
+    // ConfirmImpact are honored by the real runtime; the helper functions keep their own advanced-function
+    // $PSCmdlet. Write-Message/Stop-Function carry -FunctionName Copy-DbaSsisCatalog. EnableException is untyped.
+    private const string BodyScript = """
+param($Source, $Destination, $SourceSqlCredential, $DestinationSqlCredential, $Project, $Folder, $Environment, $CreateCatalogPassword, $EnableSqlClr, $Force, $EnableException, $__realCmdlet, $__boundWhatIf, $__boundConfirm, $__boundVerbose, $__boundDebug)
+$__commonParameters = @{}
+if ($null -ne $__boundWhatIf) { $__commonParameters.WhatIf = [bool]$__boundWhatIf }
+if ($null -ne $__boundConfirm) { $__commonParameters.Confirm = [bool]$__boundConfirm }
+if ($null -ne $__boundVerbose) { $__commonParameters.Verbose = [bool]$__boundVerbose }
+if ($null -ne $__boundDebug) { $__commonParameters.Debug = [bool]$__boundDebug }
+$__dbatoolsModule = Get-Module -Name dbatools | Where-Object ModuleType -eq "Script" | Select-Object -First 1
+& $__dbatoolsModule {
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
+    # EnableSqlClr and Force arrive as plain booleans and are forwarded positionally, so they are untyped
+    # here rather than [switch]: a [switch] parameter does not bind a positional value, which would break the
+    # positional alignment of the whole param list. The source body only tests them (if ($Force) / if
+    # (!$EnableSqlClr)) and passes the literal -Force switch to its helper functions, so boolean semantics match.
+    param([Dataplat.Dbatools.Parameter.DbaInstanceParameter]$Source, [Dataplat.Dbatools.Parameter.DbaInstanceParameter[]]$Destination, [System.Management.Automation.PSCredential]$SourceSqlCredential, [System.Management.Automation.PSCredential]$DestinationSqlCredential, [string]$Project, [string]$Folder, [string]$Environment, [System.Security.SecureString]$CreateCatalogPassword, $EnableSqlClr, $Force, $EnableException, $__realCmdlet)
+
+    <# Developer note: The throw calls must stay in this command #>
+    . {
+        if ($PSVersionTable.PSEdition -eq "Core") {
+            Stop-Function -Message "This command is not supported on Linux or macOS" -FunctionName Copy-DbaSsisCatalog
+            return
+        }
+        $ISNamespace = "Microsoft.SqlServer.Management.IntegrationServices"
+
+        if ($Force) { $ConfirmPreference = 'none' }
+
+        function Get-RemoteIntegrationService {
+            param (
+                [Object]$Computer
+            )
+            $result = Get-DbaService -ComputerName $Computer -Type SSIS
+            if ($result) {
+                #Variable marked as unused by PSScriptAnalyzer
+                #$running = $false
+                foreach ($service in $result) {
+                    if (!$service.State -eq "Running") {
+                        Write-Message -Level Warning -Message "Service $($service.DisplayName) was found on the destination, but is currently not running." -FunctionName Copy-DbaSsisCatalog -ModuleName "dbatools"
+                    } else {
+                        Write-Message -Level Verbose -Message "Service $($service.DisplayName) was found running on the destination." -FunctionName Copy-DbaSsisCatalog -ModuleName "dbatools"
+                        #$running = $true
+                    }
+                }
+            } else {
+                throw "No Integration Services service was found on the destination, please ensure the feature is installed and running."
+            }
+        }
+        function Invoke-ProjectDeployment {
+            param (
+                [String]$Project,
+                [String]$Folder
+            )
+            $sqlConn = New-Object Microsoft.Data.SqlClient.SqlConnection
+            $sqlConn.ConnectionString = $sourceServer.ConnectionContext.ConnectionString
+            if ($sqlConn.State -eq "Closed") {
+                $sqlConn.Open()
+            }
+            try {
+                Write-Message -Level Verbose -Message "Deploying project $Project from folder $Folder." -FunctionName Copy-DbaSsisCatalog -ModuleName "dbatools"
+                $cmd = New-Object Microsoft.Data.SqlClient.SqlCommand
+                $cmd.CommandType = "StoredProcedure"
+                $cmd.connection = $sqlConn
+                $cmd.CommandText = "SSISDB.catalog.get_project"
+                $cmd.Parameters.Add("@folder_name", $Folder) | Out-Null;
+                $cmd.Parameters.Add("@project_name", $Project) | Out-Null;
+                [byte[]]$results = $cmd.ExecuteScalar();
+                if ($null -ne $results) {
+                    $destFolder = $destinationFolders | Where-Object {
+                        $_.Name -eq $Folder
+                    }
+                    $deployedProject = $destFolder.DeployProject($Project, $results)
+                    if ($deployedProject.Status -ne "Success") {
+                        Stop-Function -Message "An error occurred deploying project $Project." -Target $Project -Continue -FunctionName Copy-DbaSsisCatalog
+                    }
+                } else {
+                    Stop-Function -Message "Failed deploying $Project from folder $Folder." -Target $Project -Continue -FunctionName Copy-DbaSsisCatalog
+                }
+            } catch {
+                Stop-Function -Message "Failed to deploy project." -Target $Project -ErrorRecord $_ -FunctionName Copy-DbaSsisCatalog
+            } finally {
+                if ($sqlConn.State -eq "Open") {
+                    $sqlConn.Close()
+                }
+            }
+        }
+        function New-CatalogFolder {
+            [CmdletBinding(SupportsShouldProcess)]
+            param (
+                [String]$Folder,
+                [String]$Description,
+                [Switch]$Force
+            )
+            if ($Pscmdlet.ShouldProcess($folder, "Creating new Catalog Folder")) {
+                if ($Force) {
+                    $remove = $destinationFolders | Where-Object {
+                        $_.Name -eq $Folder
+                    }
+                    $envs = $remove.Environments.Name
+                    foreach ($e in $envs) {
+                        $remove.Environments[$e].Drop()
+                    }
+                    $projs = $remove.Projects.Name
+                    foreach ($p in $projs) {
+                        $remove.Projects[$p].Drop()
+                    }
+                    $remove.Drop()
+                    $destinationCatalog.Alter()
+                    $destinationCatalog.Refresh()
+                }
+                Write-Message -Level Verbose -Message "Creating folder $Folder." -FunctionName Copy-DbaSsisCatalog -ModuleName "dbatools"
+                $destFolder = New-Object "$ISNamespace.CatalogFolder" ($destinationCatalog, $Folder, $Description)
+                $destFolder.Create()
+                $destFolder.Alter()
+                $destFolder.Refresh()
+            }
+        }
+        function New-FolderEnvironment {
+            [CmdletBinding(SupportsShouldProcess)]
+            param (
+                [String]$Folder,
+                [String]$Environment,
+                [Switch]$Force
+            )
+            if ($Pscmdlet.ShouldProcess($folder, "Creating new Environment Folder")) {
+                $envDestFolder = $destinationFolders | Where-Object {
+                    $_.Name -eq $Folder
+                }
+                if ($force) {
+                    $envDestFolder.Environments[$Environment].Drop()
+                    $envDestFolder.Alter()
+                    $envDestFolder.Refresh()
+                }
+                $srcEnv = ($sourceFolders | Where-Object {
+                        $_.Name -eq $Folder
+                    }).Environments[$Environment]
+                $targetEnv = New-Object "$ISNamespace.EnvironmentInfo" ($envDestFolder, $srcEnv.Name, $srcEnv.Description)
+                foreach ($var in $srcEnv.Variables) {
+                    if ($var.Value.ToString() -eq "") {
+                        $finalValue = ""
+                    } else {
+                        $finalValue = $var.Value
+                    }
+                    $targetEnv.Variables.Add($var.Name, $var.Type, $finalValue, $var.Sensitive, $var.Description)
+                }
+                Write-Message -Level Verbose -Message "Creating environment $Environment." -FunctionName Copy-DbaSsisCatalog -ModuleName "dbatools"
+                $targetEnv.Create()
+                $targetEnv.Alter()
+                $targetEnv.Refresh()
+            }
+        }
+        function New-SSISDBCatalog {
+            [CmdletBinding(SupportsShouldProcess)]
+            param (
+                [System.Security.SecureString]$SecurePassword
+            )
+            if ($Pscmdlet.ShouldProcess("Creating New SSISDB Catalog")) {
+                if (!$Password) {
+                    Write-Message -Level Verbose -Message "SSISDB Catalog requires a password." -FunctionName Copy-DbaSsisCatalog -ModuleName "dbatools"
+                    $pass1 = Read-Host "Enter a password" -AsSecureString
+                    $plainTextPass1 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass1))
+                    $pass2 = Read-Host "Re-enter password" -AsSecureString
+                    $plainTextPass2 = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pass2))
+                    if ($plainTextPass1 -ne $plainTextPass2) {
+                        throw "Validation error, passwords entered do not match."
+                    }
+                    $plainTextPass = $plainTextPass1
+                } else {
+                    $plainTextPass = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($Password))
+                }
+
+                $catalog = New-Object "$ISNamespace.Catalog" ($destinationSSIS, "SSISDB", $plainTextPass)
+                $catalog.Create()
+                $catalog.Refresh()
+            }
+        }
+
+        try {
+            $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 11
+        } catch {
+            Stop-Function -Message "Error occurred while establishing connection to $Source" -Category ConnectionError -ErrorRecord $_ -Target $Source -FunctionName Copy-DbaSsisCatalog
+            return
+        }
+
+        try {
+            $sourceStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $sourceServer.ConnectionContext.SqlConnectionObject
+            $sourceSSIS = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $sourceStoreConnection
+        } catch {
+            Stop-Function -Message "There was an error connecting to the source integration services." -Target $sourceServer -ErrorRecord $_ -FunctionName Copy-DbaSsisCatalog
+            return
+        }
+
+        $sourceCatalog = $sourceSSIS.Catalogs | Where-Object {
+            $_.Name -eq "SSISDB"
+        }
+        if (!$sourceCatalog) {
+            Stop-Function -Message "The source SSISDB catalog on $Source does not exist." -FunctionName Copy-DbaSsisCatalog
+            return
+        }
+        $sourceFolders = $sourceCatalog.Folders
+    }
+
+    . {
+        if (Test-FunctionInterrupt) {
+            return
+        }
+        foreach ($destinstance in $Destination) {
+            try {
+                $destinationConnection = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 1
+            } catch {
+                Stop-Function -Message "Error occurred while establishing connection to $destinstance" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue -FunctionName Copy-DbaSsisCatalog
+            }
+
+            try {
+                Get-RemoteIntegrationService -Computer $destinstance.ComputerName
+            } catch {
+                Stop-Function -Message "An error occurred when checking the destination for Integration Services. Is Integration Services installed?" -Target $destinstance -ErrorRecord $_ -FunctionName Copy-DbaSsisCatalog
+            }
+
+            try {
+                $destinationStoreConnection = New-Object Microsoft.SqlServer.Management.Sdk.Sfc.SqlStoreConnection $destinationConnection.ConnectionContext.SqlConnectionObject
+                $destinationSSIS = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $destinationStoreConnection
+            } catch {
+                Stop-Function -Message "There was an error connecting to the destination integration services." -Target $destinationCon -ErrorRecord $_ -FunctionName Copy-DbaSsisCatalog
+            }
+
+            $destinationCatalog = $destinationSSIS.Catalogs | Where-Object {
+                $_.Name -eq "SSISDB"
+            }
+            $destinationFolders = $destinationCatalog.Folders
+
+            if (!$destinationCatalog) {
+                if (!$destinationConnection.Configuration.IsSqlClrEnabled.ConfigValue) {
+                    if ($__realCmdlet.ShouldProcess($destinstance, "Enabling SQL CLR configuration option.")) {
+                        if (!$EnableSqlClr) {
+                            $message = "The destination does not have SQL CLR configuration option enabled (required by SSISDB), would you like to enable it?"
+                            $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Enable SQL CLR on $destinstance."
+                            $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Exit."
+                            $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+                            $result = $host.ui.PromptForChoice($null, $message, $options, 0)
+                            switch ($result) {
+                                0 {
+                                    continue
+                                }
+                                1 {
+                                    return
+                                }
+                            }
+                        }
+                        Write-Message -Level Verbose -Message "Enabling SQL CLR configuration option at the destination." -FunctionName Copy-DbaSsisCatalog -ModuleName "dbatools"
+                        if ($destinationConnection.Configuration.ShowAdvancedOptions.ConfigValue -eq $false) {
+                            $destinationConnection.Configuration.ShowAdvancedOptions.ConfigValue = $true
+                            $changeback = $true
+                        }
+
+                        $destinationConnection.Configuration.IsSqlClrEnabled.ConfigValue = $true
+
+                        if ($changeback -eq $true) {
+                            $destinationConnection.Configuration.ShowAdvancedOptions.ConfigValue = $false
+                        }
+                        $destinationConnection.Configuration.Alter()
+                    }
+                } else {
+                    Write-Message -Level Verbose -Message "SQL CLR configuration option is already enabled at the destination." -FunctionName Copy-DbaSsisCatalog -ModuleName "dbatools"
+                }
+                if ($__realCmdlet.ShouldProcess($destinstance, "Create destination SSISDB Catalog")) {
+                    if (!$CreateCatalogPassword) {
+                        $message = "The destination SSISDB catalog does not exist, would you like to create one?"
+                        $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Create an SSISDB catalog on $destinstance."
+                        $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Exit."
+                        $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no)
+                        $result = $host.ui.PromptForChoice($null, $message, $options, 0)
+                        switch ($result) {
+                            0 {
+                                New-SSISDBCatalog
+                            }
+                            1 {
+                                return
+                            }
+                        }
+                    } else {
+                        New-SSISDBCatalog -SecurePassword $CreateCatalogPassword
+                    }
+
+                    $destinationSSIS.Refresh()
+                    $destinationCatalog = $destinationSSIS.Catalogs | Where-Object {
+                        $_.Name -eq "SSISDB"
+                    }
+                    $destinationFolders = $destinationCatalog.Folders
+                } else {
+                    throw "The destination SSISDB catalog does not exist."
+                }
+            }
+            if ($folder) {
+                if ($sourceFolders.Name -contains $folder) {
+                    $srcFolder = $sourceFolders | Where-Object {
+                        $_.Name -eq $folder
+                    }
+                    $copyFolderStatus = [PSCustomObject]@{
+                        SourceServer      = $sourceServer.Name
+                        DestinationServer = $destinationConnection.Name
+                        Type              = "Folder"
+                        Name              = $folder
+                        Status            = $null
+                        Notes             = $null
+                        DateTime          = [DbaDateTime](Get-Date)
+                    }
+                    if ($destinationFolders.Name -contains $folder) {
+                        if (!$force) {
+                            Write-Message -Level Warning -Message "Integration services catalog folder $folder exists at destination. Use -Force to drop and recreate." -FunctionName Copy-DbaSsisCatalog -ModuleName "dbatools"
+                            $copyFolderStatus.Status = "Skipped"
+                            $copyFolderStatus.Notes = "Integration services catalog folder exists at destination. Use -Force to drop and recreate."
+                            $copyFolderStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        } else {
+                            if ($__realCmdlet.ShouldProcess($destinstance, "Dropping folder $folder and recreating")) {
+                                try {
+                                    New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
+                                    $copyFolderStatus.Status = "Successful"
+                                } catch {
+                                    Stop-Function -Message "Issue dropping folder" -Target $folder -ErrorRecord $_ -FunctionName Copy-DbaSsisCatalog
+                                    $copyFolderStatus.Status = "Failed"
+                                    $copyFolderStatus.Notes = $_.Exception.Message
+                                }
+                                $copyFolderStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            }
+                        }
+                    } else {
+                        if ($__realCmdlet.ShouldProcess($destinstance, "Creating folder $folder")) {
+                            try {
+                                New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description
+                                $copyFolderStatus.Status = "Successful"
+                            } catch {
+                                Stop-Function -Message "Issue creating folder" -Target $folder -ErrorRecord $_ -FunctionName Copy-DbaSsisCatalog
+                                $copyFolderStatus.Status = "Failed"
+                                $copyFolderStatus.Notes = $_.Exception.Message
+                            }
+                            $copyFolderStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
+                    }
+                } else {
+                    throw "The source folder provided does not exist in the source Integration Services catalog."
+                }
+            } else {
+                foreach ($srcFolder in $sourceFolders) {
+                    $copyFolderStatus = [PSCustomObject]@{
+                        SourceServer      = $sourceServer.Name
+                        DestinationServer = $destinationConnection.Name
+                        Type              = "Folder"
+                        Name              = $srcFolder.Name
+                        Status            = $null
+                        Notes             = $null
+                        DateTime          = [DbaDateTime](Get-Date)
+                    }
+                    if ($destinationFolders.Name -notcontains $srcFolder.Name) {
+                        if ($__realCmdlet.ShouldProcess($destinstance, "Creating folder $($srcFolder.Name)")) {
+                            try {
+                                New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description
+                                $copyFolderStatus.Status = "Successful"
+                            } catch {
+                                Stop-Function -Message "Issue creating folder" -Target $srcFolder -ErrorRecord $_ -Continue -FunctionName Copy-DbaSsisCatalog
+                                $copyFolderStatus.Status = "Failed"
+                                $copyFolderStatus.Notes = $_.Exception.Message
+                            }
+                            $copyFolderStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
+                    } else {
+                        if (!$force) {
+                            Write-Message -Level Warning -Message "Integration services catalog folder $($srcFolder.Name) exists at destination. Use -Force to drop and recreate." -FunctionName Copy-DbaSsisCatalog -ModuleName "dbatools"
+                            $copyFolderStatus.Status = "Skipped"
+                            $copyFolderStatus.Notes = "Integration services catalog folder exists at destination. Use -Force to drop and recreate."
+                            $copyFolderStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            continue
+                        } else {
+                            if ($__realCmdlet.ShouldProcess($destinstance, "Dropping folder $($srcFolder.Name) and recreating")) {
+                                try {
+                                    New-CatalogFolder -Folder $srcFolder.Name -Description $srcFolder.Description -Force
+                                    $copyFolderStatus.Status = "Successful"
+                                } catch {
+                                    Stop-Function -Message "Issue dropping folder" -Target $srcFolder -ErrorRecord $_ -FunctionName Copy-DbaSsisCatalog
+                                    $copyFolderStatus.Status = "Failed"
+                                    $copyFolderStatus.Notes = $_.Exception.Message
+                                }
+                                $copyFolderStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            }
+                        }
+                    }
+                }
+            }
+
+            # Refresh folders for project and environment deployment
+            if ($__realCmdlet.ShouldProcess($destinstance, "Refresh folders for project deployment")) {
+                try {
+                    $destinationFolders.Alter()
+                } catch {
+                    # Sometimes it says Alter() doesn't exist
+                    # here to avoid an empty catch
+                    $null = 1
+                }
+                $destinationFolders.Refresh()
+            }
+
+            if ($folder) {
+                $sourceFolders = $sourceFolders | Where-Object {
+                    $_.Name -eq $folder
+                }
+                if (!$sourceFolders) {
+                    throw "The source folder $folder does not exist in the source Integration Services catalog."
+                }
+            }
+            if ($project) {
+                $folderDeploy = $sourceFolders | Where-Object {
+                    $_.Projects.Name -eq $project
+                }
+                if (!$folderDeploy) {
+                    throw "The project $project cannot be found in the source Integration Services catalog."
+                } else {
+                    foreach ($f in $folderDeploy) {
+                        if ($__realCmdlet.ShouldProcess($destinstance, "Deploying project $project from folder $($f.Name)")) {
+                            $copyProjectStatus = [PSCustomObject]@{
+                                SourceServer      = $sourceServer.Name
+                                DestinationServer = $destinationConnection.Name
+                                Type              = "Project"
+                                Name              = $project
+                                Status            = $null
+                                Notes             = $null
+                                DateTime          = [DbaDateTime](Get-Date)
+                            }
+                            try {
+                                Invoke-ProjectDeployment -Folder $f.Name -Project $project
+                                $copyProjectStatus.Status = "Successful"
+                            } catch {
+                                Stop-Function -Message "Issue deploying project" -Target $project -ErrorRecord $_ -FunctionName Copy-DbaSsisCatalog
+                                $copyProjectStatus.Status = "Failed"
+                                $copyProjectStatus.Notes = $_.Exception.Message
+                            }
+                            $copyProjectStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
+                    }
+                }
+            } else {
+                foreach ($curFolder in $sourceFolders) {
+                    foreach ($proj in $curFolder.Projects) {
+                        if ($__realCmdlet.ShouldProcess($destinstance, "Deploying project $($proj.Name) from folder $($curFolder.Name)")) {
+                            $copyProjectStatus = [PSCustomObject]@{
+                                SourceServer      = $sourceServer.Name
+                                DestinationServer = $destinationConnection.Name
+                                Type              = "Project"
+                                Name              = $proj.Name
+                                Status            = $null
+                                Notes             = $null
+                                DateTime          = [DbaDateTime](Get-Date)
+                            }
+                            try {
+                                Invoke-ProjectDeployment -Project $proj.Name -Folder $curFolder.Name
+                                $copyProjectStatus.Status = "Successful"
+                            } catch {
+                                Stop-Function -Message "Issue deploying project" -Target $proj -ErrorRecord $_ -FunctionName Copy-DbaSsisCatalog
+                                $copyProjectStatus.Status = "Failed"
+                                $copyProjectStatus.Notes = $_.Exception.Message
+                            }
+                            $copyProjectStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                        }
+                    }
+                }
+            }
+
+            if ($environment) {
+                $folderDeploy = $sourceFolders | Where-Object {
+                    $_.Environments.Name -eq $environment
+                }
+                if (!$folderDeploy) {
+                    throw "The environment $environment cannot be found in the source Integration Services catalog."
+                } else {
+                    foreach ($f in $folderDeploy) {
+                        $copyEnvStatus = [PSCustomObject]@{
+                            SourceServer      = $sourceServer.Name
+                            DestinationServer = $destinationConnection.Name
+                            Type              = "Environment"
+                            Name              = $environment
+                            Status            = $null
+                            Notes             = $null
+                            DateTime          = [DbaDateTime](Get-Date)
+                        }
+                        if ($destinationFolders[$f.Name].Environments.Name -notcontains $environment) {
+                            if ($__realCmdlet.ShouldProcess($destinstance, "Deploying environment $environment from folder $($f.Name)")) {
+                                try {
+                                    New-FolderEnvironment -Folder $f.Name -Environment $environment
+                                    $copyEnvStatus.Status = "Successful"
+                                } catch {
+                                    Stop-Function -Message "Issue deploying environment" -Target $environment -ErrorRecord $_ -FunctionName Copy-DbaSsisCatalog
+                                    $copyEnvStatus.Status = "Failed"
+                                    $copyEnvStatus.Notes = $_.Exception.Message
+                                }
+                                $copyEnvStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            }
+                        } else {
+                            if (!$force) {
+                                Write-Message -Level Warning -Message "Integration services catalog environment $environment exists in folder $($f.Name) at destination. Use -Force to drop and recreate." -FunctionName Copy-DbaSsisCatalog -ModuleName "dbatools"
+                                $copyEnvStatus.Status = "Skipped"
+                                $copyEnvStatus.Notes = "Integration services catalog environment exists in folder $($f.Name) at destination. Use -Force to drop and recreate."
+                                $copyEnvStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            } else {
+                                If ($__realCmdlet.ShouldProcess($destinstance, "Dropping existing environment $environment and deploying environment $environment from folder $($f.Name)")) {
+                                    try {
+                                        New-FolderEnvironment -Folder $f.Name -Environment $environment -Force
+                                        $copyEnvStatus.Status = "Successful"
+                                    } catch {
+                                        Stop-Function -Message "Issue dropping existing environment" -Target $environment -ErrorRecord $_ -FunctionName Copy-DbaSsisCatalog
+                                        $copyEnvStatus.Status = "Failed"
+                                        $copyEnvStatus.Notes = $_.Exception.Message
+                                    }
+                                    $copyEnvStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                foreach ($curFolder in $sourceFolders) {
+                    foreach ($env in $curFolder.Environments) {
+                        $copyEnvStatus = [PSCustomObject]@{
+                            SourceServer      = $sourceServer.Name
+                            DestinationServer = $destinationConnection.Name
+                            Type              = "Environment"
+                            Name              = $env.Name
+                            Status            = $null
+                            Notes             = $null
+                            DateTime          = [DbaDateTime](Get-Date)
+                        }
+                        if ($destinationFolders[$curFolder.Name].Environments.Name -notcontains $env.Name) {
+                            if ($__realCmdlet.ShouldProcess($destinstance, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
+                                try {
+                                    New-FolderEnvironment -Environment $env.Name -Folder $curFolder.Name
+                                    $copyEnvStatus.Status = "Successful"
+                                } catch {
+                                    Stop-Function -Message "Issue deploying environment" -Target $env -ErrorRecord $_ -FunctionName Copy-DbaSsisCatalog
+                                    $copyEnvStatus.Status = "Failed"
+                                    $copyEnvStatus.Notes = $_.Exception.Message
+                                }
+                                $copyEnvStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                            }
+                        } else {
+                            if (!$force) {
+                                Write-Message -Level Warning -Message "Integration services catalog environment $($env.Name) exists in folder $($curFolder.Name) at destination. Use -Force to drop and recreate." -FunctionName Copy-DbaSsisCatalog -ModuleName "dbatools"
+                                $copyEnvStatus.Status = "Skipped"
+                                $copyEnvStatus.Notes = "Integration services catalog environment $($env.Name) exists in folder $($curFolder.Name) at destination. Use -Force to drop and recreate."
+                                $copyEnvStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                continue
+                            } else {
+                                if ($__realCmdlet.ShouldProcess($destinstance, "Deploying environment $($env.Name) from folder $($curFolder.Name)")) {
+                                    try {
+                                        New-FolderEnvironment -Environment $env.Name -Folder $curFolder.Name -Force
+                                        $copyEnvStatus.Status = "Successful"
+                                    } catch {
+                                        Stop-Function -Message "Issue deploying environment" -Target $env -ErrorRecord $_ -FunctionName Copy-DbaSsisCatalog
+                                        $copyEnvStatus.Status = "Failed"
+                                        $copyEnvStatus.Notes = $_.Exception.Message
+                                    }
+                                    $copyEnvStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+} $Source $Destination $SourceSqlCredential $DestinationSqlCredential $Project $Folder $Environment $CreateCatalogPassword $EnableSqlClr $Force $EnableException $__realCmdlet @__commonParameters 3>&1 2>&1
+""";
+}

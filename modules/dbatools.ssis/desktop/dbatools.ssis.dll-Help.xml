@@ -1,0 +1,807 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<helpItems schema="maml" xmlns="http://msh">
+  <!-- Cmdlet: Copy-DbaSsisCatalog -->
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+    <command:details>
+      <command:name>Copy-DbaSsisCatalog</command:name>
+      <command:verb>Copy</command:verb>
+      <command:noun>DbaSsisCatalog</command:noun>
+      <maml:description>
+        <maml:para>Migrates SSIS catalogs including folders, projects, and environments between SQL Server instances.</maml:para>
+        <maml:para>Copies the complete SSISDB catalog structure from a source SQL Server to one or more destination instances - folders, projects, and environments - creating the SSISDB catalog on the destination when it does not exist. Scope can be narrowed to a single -Project, -Folder, or -Environment. Requires the IntegrationServices object model, which is Windows-PowerShell-only; the command refuses on PowerShell Core.</maml:para>
+      </maml:description>
+    </command:details>
+    <command:syntax>
+      <!-- Parameter set: __AllParameterSets -->
+      <command:syntaxItem>
+        <maml:name>Copy-DbaSsisCatalog</maml:name>
+        <!-- Parameter: Source -->
+        <command:parameter required="true" globbing="false" pipelineInput="false" position="0">
+          <maml:name>Source</maml:name>
+          <command:parameterValue required="true">DbaInstanceParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>Dataplat.Dbatools.Parameter.DbaInstanceParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: Destination -->
+        <command:parameter required="true" globbing="false" pipelineInput="false" position="1">
+          <maml:name>Destination</maml:name>
+          <command:parameterValue required="true">DbaInstanceParameter[]</command:parameterValue>
+          <dev:type>
+            <maml:name>Dataplat.Dbatools.Parameter.DbaInstanceParameter[]</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: SourceSqlCredential -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="2">
+          <maml:name>SourceSqlCredential</maml:name>
+          <command:parameterValue required="true">PSCredential</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.PSCredential</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: DestinationSqlCredential -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="3">
+          <maml:name>DestinationSqlCredential</maml:name>
+          <command:parameterValue required="true">PSCredential</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.PSCredential</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: Project -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="4">
+          <maml:name>Project</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: Folder -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="5">
+          <maml:name>Folder</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: Environment -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="6">
+          <maml:name>Environment</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: CreateCatalogPassword -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="7">
+          <maml:name>CreateCatalogPassword</maml:name>
+          <command:parameterValue required="true">SecureString</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Security.SecureString</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: EnableException -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="named">
+          <maml:name>EnableException</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: EnableSqlClr -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="named">
+          <maml:name>EnableSqlClr</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: Force -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="named">
+          <maml:name>Force</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <!-- Parameter: Source -->
+      <command:parameter required="true" globbing="false" pipelineInput="false" position="0">
+        <maml:name>Source</maml:name>
+        <maml:description>
+          <maml:para>Source SQL Server instance containing the SSISDB catalog to copy from.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">DbaInstanceParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>Dataplat.Dbatools.Parameter.DbaInstanceParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: Destination -->
+      <command:parameter required="true" globbing="false" pipelineInput="false" position="1">
+        <maml:name>Destination</maml:name>
+        <maml:description>
+          <maml:para>Destination SQL Server instances where the SSISDB catalog will be copied to.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">DbaInstanceParameter[]</command:parameterValue>
+        <dev:type>
+          <maml:name>Dataplat.Dbatools.Parameter.DbaInstanceParameter[]</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: SourceSqlCredential -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="2">
+        <maml:name>SourceSqlCredential</maml:name>
+        <maml:description>
+          <maml:para>Credentials for connecting to the source SQL Server instance.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">PSCredential</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.PSCredential</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: DestinationSqlCredential -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="3">
+        <maml:name>DestinationSqlCredential</maml:name>
+        <maml:description>
+          <maml:para>Credentials for connecting to the destination SQL Server instances.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">PSCredential</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.PSCredential</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: Project -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="4">
+        <maml:name>Project</maml:name>
+        <maml:description>
+          <maml:para>A single SSIS project name to copy instead of migrating all projects.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: Folder -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="5">
+        <maml:name>Folder</maml:name>
+        <maml:description>
+          <maml:para>A single SSISDB catalog folder to copy instead of migrating all folders.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: Environment -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="6">
+        <maml:name>Environment</maml:name>
+        <maml:description>
+          <maml:para>A single SSIS environment to copy instead of migrating all environments.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: CreateCatalogPassword -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="7">
+        <maml:name>CreateCatalogPassword</maml:name>
+        <maml:description>
+          <maml:para>Password for creating a new SSISDB catalog on the destination as a SecureString object.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">SecureString</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Security.SecureString</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: EnableSqlClr -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="named">
+        <maml:name>EnableSqlClr</maml:name>
+        <maml:description>
+          <maml:para>Automatically enables CLR integration on the destination without prompting for confirmation.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: Force -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="named">
+        <maml:name>Force</maml:name>
+        <maml:description>
+          <maml:para>Drops and recreates existing folders, projects, and environments at the destination.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: EnableException -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="named">
+        <maml:name>EnableException</maml:name>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes />
+    <command:returnValues />
+  </command:command>
+  <!-- Cmdlet: New-DbaSsisCatalog -->
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+    <command:details>
+      <command:name>New-DbaSsisCatalog</command:name>
+      <command:verb>New</command:verb>
+      <command:noun>DbaSsisCatalog</command:noun>
+      <maml:description>
+        <maml:para>Creates and enables the SSIS Catalog (SSISDB) database on SQL Server 2012+ instances.</maml:para>
+        <maml:para>Creates the SSIS Catalog database (SSISDB) required before deploying, managing, or executing SSIS packages. The command validates prerequisites (edition, master-key password, running SSIS service, CLR integration), then builds the catalog through the IntegrationServices object model.</maml:para>
+      </maml:description>
+    </command:details>
+    <command:syntax>
+      <!-- Parameter set: __AllParameterSets -->
+      <command:syntaxItem>
+        <maml:name>New-DbaSsisCatalog</maml:name>
+        <!-- Parameter: SqlInstance -->
+        <command:parameter required="true" globbing="false" pipelineInput="true (ByValue)" position="0">
+          <maml:name>SqlInstance</maml:name>
+          <command:parameterValue required="true">DbaInstanceParameter[]</command:parameterValue>
+          <dev:type>
+            <maml:name>Dataplat.Dbatools.Parameter.DbaInstanceParameter[]</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: SqlCredential -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="1">
+          <maml:name>SqlCredential</maml:name>
+          <command:parameterValue required="true">PSCredential</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.PSCredential</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: Credential -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="2">
+          <maml:name>Credential</maml:name>
+          <command:parameterValue required="true">PSCredential</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.PSCredential</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: SecurePassword -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="3" aliases="Password">
+          <maml:name>SecurePassword</maml:name>
+          <command:parameterValue required="true">SecureString</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Security.SecureString</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: SsisCatalog -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="4">
+          <maml:name>SsisCatalog</maml:name>
+          <command:parameterValue required="true">string</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>SSISDB</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: EnableException -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="named">
+          <maml:name>EnableException</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <!-- Parameter: SqlInstance -->
+      <command:parameter required="true" globbing="false" pipelineInput="true (ByValue)" position="0">
+        <maml:name>SqlInstance</maml:name>
+        <maml:description>
+          <maml:para>SQL Server you wish to run the function on.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">DbaInstanceParameter[]</command:parameterValue>
+        <dev:type>
+          <maml:name>Dataplat.Dbatools.Parameter.DbaInstanceParameter[]</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: SqlCredential -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="1">
+        <maml:name>SqlCredential</maml:name>
+        <maml:description>
+          <maml:para>Login to the target instance using alternative credentials.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">PSCredential</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.PSCredential</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: Credential -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="2">
+        <maml:name>Credential</maml:name>
+        <maml:description>
+          <maml:para>An alternative way to supply the master password using a PSCredential; only the password is used.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">PSCredential</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.PSCredential</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: SecurePassword -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="3" aliases="Password">
+        <maml:name>SecurePassword</maml:name>
+        <maml:description>
+          <maml:para>The master password that encrypts the SSIS catalog database master key.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">SecureString</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Security.SecureString</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: SsisCatalog -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="4">
+        <maml:name>SsisCatalog</maml:name>
+        <maml:description>
+          <maml:para>The name for the SSIS catalog database that will be created. Defaults to 'SSISDB'.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">string</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>SSISDB</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: EnableException -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="named">
+        <maml:name>EnableException</maml:name>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>Dataplat.Dbatools.Parameter.DbaInstanceParameter[]</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues />
+  </command:command>
+  <!-- Cmdlet: Get-DbaSsisEnvironmentVariable -->
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+    <command:details>
+      <command:name>Get-DbaSsisEnvironmentVariable</command:name>
+      <command:verb>Get</command:verb>
+      <command:noun>DbaSsisEnvironmentVariable</command:noun>
+      <maml:description>
+        <maml:para>Retrieves environment variables from SSIS Catalog with decrypted sensitive values.</maml:para>
+        <maml:para>Retrieves all variables from specified SSIS environments stored in the SSISDB catalog database. All sensitive values are automatically decrypted and returned in plaintext for configuration management and troubleshooting purposes.</maml:para>
+        <maml:para>The function queries SSISDB directly using symmetric keys and certificates to decrypt sensitive variable values, bypassing the standard SMO limitations that only return encrypted values.</maml:para>
+      </maml:description>
+    </command:details>
+    <command:syntax>
+      <!-- Parameter set: __AllParameterSets -->
+      <command:syntaxItem>
+        <maml:name>Get-DbaSsisEnvironmentVariable</maml:name>
+        <!-- Parameter: SqlInstance -->
+        <command:parameter required="true" globbing="false" pipelineInput="true (ByValue)" position="0">
+          <maml:name>SqlInstance</maml:name>
+          <command:parameterValue required="true">DbaInstanceParameter[]</command:parameterValue>
+          <dev:type>
+            <maml:name>Dataplat.Dbatools.Parameter.DbaInstanceParameter[]</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: SqlCredential -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="1">
+          <maml:name>SqlCredential</maml:name>
+          <command:parameterValue required="true">PSCredential</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.PSCredential</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: Environment -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="2">
+          <maml:name>Environment</maml:name>
+          <command:parameterValue required="true">object[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Object[]</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: EnvironmentExclude -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="3">
+          <maml:name>EnvironmentExclude</maml:name>
+          <command:parameterValue required="true">object[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Object[]</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: Folder -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="4">
+          <maml:name>Folder</maml:name>
+          <command:parameterValue required="true">object[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Object[]</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: FolderExclude -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="5">
+          <maml:name>FolderExclude</maml:name>
+          <command:parameterValue required="true">object[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Object[]</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: EnableException -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="named">
+          <maml:name>EnableException</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <!-- Parameter: SqlInstance -->
+      <command:parameter required="true" globbing="false" pipelineInput="true (ByValue)" position="0">
+        <maml:name>SqlInstance</maml:name>
+        <maml:description>
+          <maml:para>The target SQL Server instance or instances.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">DbaInstanceParameter[]</command:parameterValue>
+        <dev:type>
+          <maml:name>Dataplat.Dbatools.Parameter.DbaInstanceParameter[]</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: SqlCredential -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="1">
+        <maml:name>SqlCredential</maml:name>
+        <maml:description>
+          <maml:para>Login to the target instance using alternative credentials.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">PSCredential</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.PSCredential</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: Environment -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="2">
+        <maml:name>Environment</maml:name>
+        <maml:description>
+          <maml:para>Specifies one or more SSIS environment names to retrieve variables from within the SSISDB catalog.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">object[]</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Object[]</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: EnvironmentExclude -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="3">
+        <maml:name>EnvironmentExclude</maml:name>
+        <maml:description>
+          <maml:para>Excludes specified SSIS environment names from the results when retrieving variables.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">object[]</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Object[]</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: Folder -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="4">
+        <maml:name>Folder</maml:name>
+        <maml:description>
+          <maml:para>Specifies one or more SSISDB catalog folder names that contain the environments you want to query.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">object[]</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Object[]</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: FolderExclude -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="5">
+        <maml:name>FolderExclude</maml:name>
+        <maml:description>
+          <maml:para>Excludes specified SSISDB catalog folder names from the search when retrieving environment variables.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">object[]</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Object[]</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: EnableException -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="named">
+        <maml:name>EnableException</maml:name>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>Dataplat.Dbatools.Parameter.DbaInstanceParameter[]</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues />
+  </command:command>
+  <!-- Cmdlet: Get-DbaSsisExecutionHistory -->
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10">
+    <command:details>
+      <command:name>Get-DbaSsisExecutionHistory</command:name>
+      <command:verb>Get</command:verb>
+      <command:noun>DbaSsisExecutionHistory</command:noun>
+      <maml:description>
+        <maml:para>Retrieves SSIS package execution history from the SSIS catalog database (SSISDB).</maml:para>
+        <maml:para>Retrieves detailed execution history for SSIS packages from the SSIS catalog database, including execution status, timing, and environment details. This command queries the catalog.executions view in SSISDB to provide comprehensive execution information for troubleshooting failed packages, monitoring performance, and analyzing SSIS workloads.</maml:para>
+        <maml:para>Useful for identifying failed or long-running packages, tracking execution patterns over time, and investigating SSIS deployment issues. Results can be filtered by project, folder, environment, execution status, or date range to focus on specific troubleshooting scenarios.</maml:para>
+      </maml:description>
+    </command:details>
+    <command:syntax>
+      <!-- Parameter set: __AllParameterSets -->
+      <command:syntaxItem>
+        <maml:name>Get-DbaSsisExecutionHistory</maml:name>
+        <!-- Parameter: SqlInstance -->
+        <command:parameter required="true" globbing="false" pipelineInput="false" position="0">
+          <maml:name>SqlInstance</maml:name>
+          <command:parameterValue required="true">DbaInstanceParameter[]</command:parameterValue>
+          <dev:type>
+            <maml:name>Dataplat.Dbatools.Parameter.DbaInstanceParameter[]</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: SqlCredential -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="1">
+          <maml:name>SqlCredential</maml:name>
+          <command:parameterValue required="true">PSCredential</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.PSCredential</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: Since -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="2">
+          <maml:name>Since</maml:name>
+          <command:parameterValue required="true">DateTime</command:parameterValue>
+          <dev:type>
+            <maml:name>System.DateTime</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>1/1/0001 12:00:00 AM</dev:defaultValue>
+        </command:parameter>
+        <!-- Parameter: Status -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="3">
+          <maml:name>Status</maml:name>
+          <command:parameterValue required="true">string[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String[]</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: Project -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="4">
+          <maml:name>Project</maml:name>
+          <command:parameterValue required="true">string[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String[]</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: Folder -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="5">
+          <maml:name>Folder</maml:name>
+          <command:parameterValue required="true">string[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String[]</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: Environment -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="6">
+          <maml:name>Environment</maml:name>
+          <command:parameterValue required="true">string[]</command:parameterValue>
+          <dev:type>
+            <maml:name>System.String[]</maml:name>
+            <maml:uri />
+          </dev:type>
+        </command:parameter>
+        <!-- Parameter: EnableException -->
+        <command:parameter required="false" globbing="false" pipelineInput="false" position="named">
+          <maml:name>EnableException</maml:name>
+          <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+          <dev:type>
+            <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>False</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <!-- Parameter: SqlInstance -->
+      <command:parameter required="true" globbing="false" pipelineInput="false" position="0">
+        <maml:name>SqlInstance</maml:name>
+        <maml:description>
+          <maml:para>The target SQL Server instance or instances.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">DbaInstanceParameter[]</command:parameterValue>
+        <dev:type>
+          <maml:name>Dataplat.Dbatools.Parameter.DbaInstanceParameter[]</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: SqlCredential -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="1">
+        <maml:name>SqlCredential</maml:name>
+        <maml:description>
+          <maml:para>Login to the target instance using alternative credentials.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">PSCredential</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.PSCredential</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: Since -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="2">
+        <maml:name>Since</maml:name>
+        <maml:description>
+          <maml:para>Limits results to executions that started on or after this date and time.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">DateTime</command:parameterValue>
+        <dev:type>
+          <maml:name>System.DateTime</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>1/1/0001 12:00:00 AM</dev:defaultValue>
+      </command:parameter>
+      <!-- Parameter: Status -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="3">
+        <maml:name>Status</maml:name>
+        <maml:description>
+          <maml:para>Filters results to specific execution statuses.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">string[]</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String[]</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: Project -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="4">
+        <maml:name>Project</maml:name>
+        <maml:description>
+          <maml:para>Filters results to specific SSIS projects deployed to the catalog.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">string[]</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String[]</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: Folder -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="5">
+        <maml:name>Folder</maml:name>
+        <maml:description>
+          <maml:para>Filters results to specific SSIS catalog folders.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">string[]</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String[]</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: Environment -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="6">
+        <maml:name>Environment</maml:name>
+        <maml:description>
+          <maml:para>Filters results to specific SSIS environments used during execution.</maml:para>
+        </maml:description>
+        <command:parameterValue required="true">string[]</command:parameterValue>
+        <dev:type>
+          <maml:name>System.String[]</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:parameter>
+      <!-- Parameter: EnableException -->
+      <command:parameter required="false" globbing="false" pipelineInput="false" position="named">
+        <maml:name>EnableException</maml:name>
+        <command:parameterValue required="true">SwitchParameter</command:parameterValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.SwitchParameter</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>False</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes />
+    <command:returnValues>
+      <!-- OutputType: PSObject -->
+      <command:returnValue>
+        <dev:type>
+          <maml:name>System.Management.Automation.PSObject</maml:name>
+          <maml:uri />
+        </dev:type>
+      </command:returnValue>
+    </command:returnValues>
+    <command:examples>
+      <command:example>
+        <maml:title>----------  Example 1  ----------</maml:title>
+        <dev:code>PS C:\&gt; Get-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Folder SMTQ_PRC</dev:code>
+        <dev:remarks>
+          <maml:para>Get all history items for SMTQ01 in folder SMTQ_PRC.</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>----------  Example 2  ----------</maml:title>
+        <dev:code>PS C:\&gt; Get-DbaSsisExecutionHistory -SqlInstance SMTQ01 -Status Failed,Cancelled</dev:code>
+        <dev:remarks>
+          <maml:para>Gets all failed or canceled executions for SMTQ01.</maml:para>
+        </dev:remarks>
+      </command:example>
+    </command:examples>
+  </command:command>
+</helpItems>
