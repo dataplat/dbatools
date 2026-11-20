@@ -76,6 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
                 SelfSigned      = $true
                 KeyLength       = 2048
                 HashAlgorithm   = "Sha256"
+                FriendlyName    = "dbatoolsci_csp_key"
                 EnableException = $true
             }
             if ($vsName) {
@@ -126,7 +127,32 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            $null = Remove-DbaComputerCertificate -ComputerName $computerName -Thumbprint $certificate.Thumbprint, $kspThumbprint -EnableException
+            # The keys go as well. Remove-DbaComputerCertificate -DeleteKey keeps the key on a remote computer, because the WinRM
+            # session cannot open CurrentUser\UserDS (#10823), so the certificates and their key files are removed here.
+            $removeCertificateAndKey = {
+                param ([string[]]$Thumbprint)
+                foreach ($certThumbprint in $Thumbprint) {
+                    $storeCert = Get-Item -Path "Cert:\LocalMachine\My\$certThumbprint" -ErrorAction SilentlyContinue
+                    if ($storeCert) {
+                        $rsa = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($storeCert)
+                        Remove-Item -Path "Cert:\LocalMachine\My\$certThumbprint"
+                        if ($rsa) {
+                            $keyName = $rsa.Key.UniqueName
+                            foreach ($keyFile in "$env:ProgramData\Microsoft\Crypto\RSA\MachineKeys\$keyName", "$env:ProgramData\Microsoft\Crypto\Keys\$keyName") {
+                                if (Test-Path -Path $keyFile -PathType Leaf) {
+                                    [System.IO.File]::Delete($keyFile)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            $splatRemoveCertificates = @{
+                ComputerName = $computerName
+                ScriptBlock  = $removeCertificateAndKey
+                ArgumentList = (, [string[]]($certificate.Thumbprint, $kspThumbprint))
+            }
+            $null = Invoke-Command2 @splatRemoveCertificates
         }
 
         It "Should return a suitable certificate thumbprint" {
@@ -135,6 +161,21 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "Should list a certificate with a Key Storage Provider key as suitable" {
             $results.SuitableCertificate.Thumbprint | Should -Contain $kspThumbprint
+        }
+
+        It "Should report the private key and the friendly name of the suitable certificates" {
+            # For another computer the scriptblock runs in a WinRM session, and the serializer rebuilds each certificate on this
+            # side from its raw data: HasPrivateKey arrived as False and FriendlyName empty, although suitability needs the key.
+            # On CI the instance is local, so the session only happens against a lab whose instance runs on another computer.
+            $cspResult = $results.SuitableCertificate | Where-Object Thumbprint -eq $certificate.Thumbprint
+            $cspResult.HasPrivateKey | Should -Be $true
+            $cspResult.FriendlyName | Should -Be "dbatoolsci_csp_key"
+            $kspResult = $results.SuitableCertificate | Where-Object Thumbprint -eq $kspThumbprint
+            $kspResult.HasPrivateKey | Should -Be $true
+            $kspResult.FriendlyName | Should -Be "dbatoolsci_ksp_key"
+            @($results.SuitableCertificate | Where-Object HasPrivateKey).Count | Should -Be @($results.SuitableCertificate).Count
+            $results.SuitableCertificate[0].PSObject.Properties.Name | Should -Not -Contain "HasKey"
+            $results.SuitableCertificate[0].PSObject.Properties.Name | Should -Not -Contain "FriendlyNameValue"
         }
     }
 }
