@@ -80,8 +80,8 @@ function Get-DbaLastGoodCheckDb {
         - Database: The name of the database
         - DatabaseCreated: DateTime when the database was created; $null if the date cannot be determined
         - LastGoodCheckDb: DateTime of the last successful DBCC CHECKDB operation; $null if CHECKDB has never been performed
-        - DaysSinceDbCreated: Numeric value (days and fractional days) representing time elapsed since database creation
-        - DaysSinceLastGoodCheckDb: Integer number of days since the last successful CHECKDB; only present if CHECKDB was previously run
+        - DaysSinceDbCreated: Numeric value (days and fractional days) representing time elapsed since database creation, up to the current time of the instance
+        - DaysSinceLastGoodCheckDb: Integer number of days since the last successful CHECKDB, up to the current time of the instance; only present if CHECKDB was previously run
         - Status: String status indicator - "Ok" (CHECKDB within last 7 days), "New database, not checked yet" (created within last 7 days), or "CheckDB should be performed" (overdue for CHECKDB)
         - DataPurityEnabled: Boolean indicating if data purity checks are enabled; $null for SQL Server 2008 and newer when not running as sysadmin; based on dbi_dbccFlags field for SQL Server 2005-2008
         - CreateVersion: Integer representing the internal version of the database (from dbi_createVersion DBCC DBINFO field); available only when running SQL Server 2008 and earlier or as sysadmin
@@ -214,8 +214,11 @@ function Get-DbaLastGoodCheckDb {
                         $datecreated = Get-Date '1/1/1900 12:00:00 AM'
                     }
 
-                    $daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -End (Get-Date)).Days
-                    $daysSinceDbCreated = (New-TimeSpan -Start $datecreated -End (Get-Date)).TotalDays
+                    # The instance records both times in its own local time, so the days are counted up to the clock of the instance,
+                    # not to the clock of this computer, which can be in another time zone
+                    $serverTime = $server.Query("SELECT GETDATE() AS ServerTime").ServerTime
+                    $daysSinceCheckDb = (New-TimeSpan -Start $lastKnownGood -End $serverTime).Days
+                    $daysSinceDbCreated = (New-TimeSpan -Start $datecreated -End $serverTime).TotalDays
 
                     if ($daysSinceCheckDb -lt 7) {
                         $Status = 'Ok'
