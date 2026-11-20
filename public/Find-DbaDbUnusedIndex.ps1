@@ -29,7 +29,7 @@ function Find-DbaDbUnusedIndex {
         Commonly used to skip system databases, read-only databases, or databases undergoing maintenance that shouldn't be modified.
 
     .PARAMETER IgnoreUptime
-        Bypasses the 7-day uptime check that normally prevents analysis on recently restarted instances.
+        Bypasses the 7-day uptime check that normally prevents analysis on recently restarted instances. The uptime is measured on the clock of the instance.
         Use this when you need results from a server with recent restarts, but be aware that usage statistics may not reflect normal workload patterns.
 
     .PARAMETER InputObject
@@ -91,6 +91,7 @@ function Find-DbaDbUnusedIndex {
         - CompressionDescription: Data compression type (SQL Server 2008+ only). Values include None, Row, Page, ColumnStore, or ColumnStoreArchive
 
         Indexes are identified as "unused" when their usage statistics fall below the specified thresholds (default: UserSeeks < 1, UserScans < 1, UserLookups < 1).
+        An index that was not used at all since the last SQL Server restart has no row in sys.dm_db_index_usage_stats; it is returned with 0 for every count and without timestamps.
 
     .NOTES
         Tags: Index, Lookup
@@ -178,18 +179,18 @@ function Find-DbaDbUnusedIndex {
         ,i.name AS 'IndexName'
         ,i.index_id AS 'IndexId'
         ,i.type_desc AS 'TypeDesc'
-        ,user_seeks AS 'UserSeeks'
-        ,user_scans AS 'UserScans'
-        ,user_lookups  AS 'UserLookups'
-        ,user_updates  AS 'UserUpdates'
+        ,COALESCE(user_seeks, 0) AS 'UserSeeks'
+        ,COALESCE(user_scans, 0) AS 'UserScans'
+        ,COALESCE(user_lookups, 0) AS 'UserLookups'
+        ,COALESCE(user_updates, 0) AS 'UserUpdates'
         ,last_user_seek  AS 'LastUserSeek'
         ,last_user_scan  AS 'LastUserScan'
         ,last_user_lookup  AS 'LastUserLookup'
         ,last_user_update  AS 'LastUserUpdate'
-        ,system_seeks  AS 'SystemSeeks'
-        ,system_scans  AS 'SystemScans'
-        ,system_lookups  AS 'SystemLookup'
-        ,system_updates  AS 'SystemUpdates'
+        ,COALESCE(system_seeks, 0) AS 'SystemSeeks'
+        ,COALESCE(system_scans, 0) AS 'SystemScans'
+        ,COALESCE(system_lookups, 0) AS 'SystemLookup'
+        ,COALESCE(system_updates, 0) AS 'SystemUpdates'
         ,last_system_seek  AS 'LastSystemSeek'
         ,last_system_scan  AS 'LastSystemScan'
         ,last_system_lookup  AS 'LastSystemLookup'
@@ -213,9 +214,10 @@ function Find-DbaDbUnusedIndex {
                 AND indexSpace.object_id = i.object_id
         WHERE
             OBJECTPROPERTY(i.[object_id], 'IsMSShipped') = 0
-            AND user_seeks < $Seeks
-            AND user_scans < $Scans
-            AND user_lookups < $Lookups
+            -- An index without a row in sys.dm_db_index_usage_stats was not used at all since the start of the instance
+            AND COALESCE(user_seeks, 0) < $Seeks
+            AND COALESCE(user_scans, 0) < $Scans
+            AND COALESCE(user_lookups, 0) < $Lookups
             AND i.type_desc NOT IN ('HEAP', 'CLUSTERED COLUMNSTORE')"
 
         # Replacement values for the SQL above
@@ -233,11 +235,11 @@ function Find-DbaDbUnusedIndex {
         # Return a warning if the database specified was not found
         if ($null -eq $InputObject -or $InputObject.Count -eq 0) {
             Write-Message -Level Warning -Message "Database [$Database] was not found on [$SqlInstance]."
-            continue
+            return
         }
 
         foreach ($db in $InputObject) {
-            if ($db.Parent.Databases[$db].IsAccessible -eq $false) {
+            if ($db.IsAccessible -eq $false) {
                 Write-Message -Level Warning -Message "Database [$db] is not accessible."
                 continue
             }
@@ -249,9 +251,11 @@ function Find-DbaDbUnusedIndex {
                 Stop-Function -Message "This function does not support versions lower than SQL Server 2005 (v9)." -Continue
             }
 
+            # tempdb is created at every start, in the local time of the instance,
+            # so the uptime is measured on the clock of the instance, not on the clock of this computer
             $lastRestart = $server.Databases['tempdb'].CreateDate
-            $endDate = Get-Date -Date $lastRestart
-            $diffDays = (New-TimeSpan -Start $endDate -End (Get-Date)).Days
+            $serverTime = $server.Query("SELECT GETDATE() AS ServerTime").ServerTime
+            $diffDays = (New-TimeSpan -Start $lastRestart -End $serverTime).Days
 
             if ($diffDays -le 6) {
                 if ($IgnoreUptime) {
