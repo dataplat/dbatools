@@ -34,6 +34,7 @@ function Remove-DbaComputerCertificate {
         Before the key is deleted, every folder of the LocalMachine store and of the CurrentUser store of the account running the command is checked for another certificate that still uses the key, archived certificates included, for example a copy of the certificate in another folder (WebHosting and custom folders included) or in the other store, or a renewed certificate that reused the key. If one exists the key is kept and the output says which one.
         Another certificate is recognized by the key reference stored with it: the provider, the key container and whether the key is a machine key. That reference is read from the certificate, so no private key of another certificate is opened; a smart card certificate in the store of the user would otherwise prompt for the card. A certificate that holds the same key in a container of its own, for example the same PFX file imported once for the machine and once for the user, does not keep the key, because deleting one container leaves the other one intact.
         The key is also kept when a folder of either store cannot be read, because then it is unknown whether a certificate in that folder uses the key; the output names the folder.
+        The UserDS folder of the CurrentUser store is not checked. It shows the certificates published on the Active Directory object of the account, which carry no reference to a private key, and it cannot be opened in a remote session without delegation.
         A legacy Cryptographic Service Provider container can hold a key exchange key and a signature key and can only be deleted as a whole, so it is kept when a certificate still uses the other key; the output names that certificate.
         The personal stores of other accounts on the computer cannot be checked, because they are only available to those accounts. A key that only a certificate in one of them still uses is deleted.
 
@@ -395,6 +396,14 @@ namespace Dbatools.Certificate {
                             continue
                         }
                         foreach ($storeName in $storeNames) {
+                            # CurrentUser\UserDS is not a folder of store entries. It shows the certificates published on the
+                            # Active Directory object of the account, read from a domain controller, and they come without
+                            # a key reference, so none of them can use the key. In a remote session without delegation the
+                            # credentials cannot go on to the domain controller and the folder cannot even be opened, which
+                            # would keep every key on a remote computer.
+                            if ($scanLocation -eq "CurrentUser" -and $storeName -eq "UserDS") {
+                                continue
+                            }
                             $otherStore = New-Object System.Security.Cryptography.X509Certificates.X509Store -ArgumentList $storeName, $storeLocation
                             try {
                                 # Archived certificates are hidden unless asked for, and one of them may use the key as well.
