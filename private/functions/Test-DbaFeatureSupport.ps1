@@ -79,6 +79,12 @@ function Test-DbaFeatureSupport {
             AzureSqlDatabase = $false
             ManagedInstance  = $true
         }
+        # CURRENT_TIMEZONE_ID() names the time zone of the instance, which AT TIME ZONE takes to convert its local times.
+        CurrentTimeZoneId             = @{
+            SqlServer        = [version]"16.0"
+            AzureSqlDatabase = $true
+            ManagedInstance  = $true
+        }
     }
 
     if (-not $featureRule.ContainsKey($Feature)) {
