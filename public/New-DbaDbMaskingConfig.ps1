@@ -169,8 +169,10 @@ function New-DbaDbMaskingConfig {
         # Get the known names
         if (-not $ExcludeDefaultKnownName) {
             try {
-                $knownNameFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
-                $knownNames += Get-Content -Path $knownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                # Not $knownNameFilePath: variable names are case insensitive, so that name overwrote -KnownNameFilePath
+                $defaultKnownNameFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
+                # The default files are UTF-8 without a BOM, which Windows PowerShell would otherwise read as ANSI
+                $knownNames += Get-Content -Path $defaultKnownNameFilePath -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Couldn't parse known names file" -ErrorRecord $_
                 return
@@ -180,8 +182,8 @@ function New-DbaDbMaskingConfig {
         # Get the patterns
         if (-not $ExcludeDefaultPattern) {
             try {
-                $patternFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
-                $patterns = Get-Content -Path $patternFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                $defaultPatternFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
+                $patterns = Get-Content -Path $defaultPatternFilePath -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Couldn't parse pattern file" -ErrorRecord $_
                 return

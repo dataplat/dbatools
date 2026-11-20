@@ -1,6 +1,6 @@
 #Requires -Module @{ ModuleName="Pester"; ModuleVersion="5.0" }
 param(
-    $ModuleName  = "dbatools",
+    $ModuleName = "dbatools",
     $CommandName = "New-DbaDbMaskingConfig",
     $PSDefaultParameterValues = $TestConfig.Defaults
 )
@@ -29,6 +29,104 @@ Describe $CommandName -Tag UnitTests {
                 "EnableException"
             )
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
+        }
+    }
+
+    InModuleScope dbatools {
+        Context "Known names" {
+            BeforeAll {
+                function New-MockMaskingDatabase {
+                    param(
+                        [string]$ColumnName
+                    )
+
+                    $mockServer = [PSCustomObject]@{
+                        Name               = "sql1"
+                        ComputerName       = "sql1"
+                        ServiceName        = "MSSQLSERVER"
+                        DomainInstanceName = "sql1"
+                        VersionMajor       = 15
+                    }
+                    [PSCustomObject]@{
+                        Name   = "db1"
+                        Parent = $mockServer
+                        Tables = @(
+                            [PSCustomObject]@{
+                                Name    = "Customer"
+                                Schema  = "dbo"
+                                Indexes = @()
+                                Columns = @(
+                                    [PSCustomObject]@{
+                                        Name                = $ColumnName
+                                        Identity            = $false
+                                        IsForeignKey        = $false
+                                        Computed            = $false
+                                        GeneratedAlwaysType = "None"
+                                        InPrimaryKey        = $false
+                                        Nullable            = $true
+                                        DataType            = [PSCustomObject]@{
+                                            Name          = "nvarchar"
+                                            SqlDataType   = "NVarChar"
+                                            MaximumLength = 20
+                                            NumericScale  = 0
+                                        }
+                                    }
+                                )
+                            }
+                        )
+                    }
+                }
+
+                function Get-MockMaskingColumn {
+                    param(
+                        [object]$File
+                    )
+
+                    (Get-Content -Path $File.FullName -Raw | ConvertFrom-Json).Tables.Columns
+                }
+            }
+
+            It "uses the custom known names in -KnownNameFilePath next to the default ones" {
+                $customKnownNameFile = Join-Path -Path $TestDrive -ChildPath "custom-knownnames.json"
+                Set-Content -Path $customKnownNameFile -Value '[{ "Name": "Shoe size", "Category": "Personal", "Pattern": ["^ShoeSize$"], "MaskingType": "Lorem", "MaskingSubType": "Word" }]'
+                $mockDatabase = New-MockMaskingDatabase -ColumnName "ShoeSize"
+                Mock Get-DbaDatabase { $mockDatabase }
+
+                # -ExcludeDefaultPattern, so that no rows are read
+                $splatConfig = @{
+                    SqlInstance           = "sql1"
+                    Database              = "db1"
+                    Path                  = $TestDrive
+                    KnownNameFilePath     = $customKnownNameFile
+                    ExcludeDefaultPattern = $true
+                }
+                $file = New-DbaDbMaskingConfig @splatConfig
+                $column = Get-MockMaskingColumn -File $file
+
+                $column.MaskingType | Should -Be "Lorem"
+                $column.SubType | Should -Be "Word"
+            }
+
+            It "finds the column name <ColumnName> with a non-ASCII letter as <ExpectedSubType>" -ForEach @(
+                # Built from code points, so that the test file itself stays ASCII for Windows PowerShell
+                @{ ColumnName = "K$([char]0x00F6)n"; ExpectedSubType = "Gender" }
+                @{ ColumnName = "F$([char]0x00F6)rnamn"; ExpectedSubType = "FirstName" }
+            ) {
+                $mockDatabase = New-MockMaskingDatabase -ColumnName $ColumnName
+                Mock Get-DbaDatabase { $mockDatabase }
+
+                $splatConfig = @{
+                    SqlInstance           = "sql1"
+                    Database              = "db1"
+                    Path                  = $TestDrive
+                    ExcludeDefaultPattern = $true
+                }
+                $file = New-DbaDbMaskingConfig @splatConfig
+                $column = Get-MockMaskingColumn -File $file
+
+                $column.Name | Should -Be $ColumnName
+                $column.SubType | Should -Be $ExpectedSubType
+            }
         }
     }
 }

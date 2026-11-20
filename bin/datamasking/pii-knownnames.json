@@ -86,7 +86,8 @@
             "(\\w*)(?i)(sexe)(\\w*)",
             "(\\w*)(?i)(sexo)(\\w*)",
             "(\\w*)(?i)(geslacht)(\\w*)",
-            "(\\w*)(?i)(kön|kjønn|kjonn|sukupuoli)(\\w*)"
+            "(\\w*)(?i)(kön|køn|kjønn|kjonn|sukupuoli)(\\w*)",
+            "^(?i)(kon|koen)$"
         ],
         "MaskingType": "Person",
         "MaskingSubType": "Gender"
