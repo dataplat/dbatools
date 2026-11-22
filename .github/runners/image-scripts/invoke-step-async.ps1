@@ -8,6 +8,10 @@
     from the repo branch, writes optional step arguments, then fires a one-shot scheduled
     task running as SYSTEM. Progress is observed with poll-step.ps1.
 
+    Step arguments arrive as ArgsBase64, the UTF-8 JSON base64 encoded, which is what
+    build-modern-image.ps1 sends. ArgsJson takes the JSON as text, which only works from a
+    shell that keeps its quotes; az.cmd on Windows does not.
+
         az vm run-command invoke --resource-group dbatools-ci-imagebuild --name dbat-imgbuild --command-id RunPowerShellScript --scripts "@.github/runners/image-scripts/invoke-step-async.ps1" --parameters "RawBase=https://raw.githubusercontent.com/dataplat/dbatools/vmssredux" "Step=step1-tools"
 
 .NOTES
@@ -18,7 +22,8 @@ param(
     [string]$RawBase,
     [Parameter(Mandatory)]
     [string]$Step,
-    [string]$ArgsJson
+    [string]$ArgsJson,
+    [string]$ArgsBase64
 )
 
 $ErrorActionPreference = "Stop"
@@ -33,6 +38,10 @@ $webClient = New-Object -TypeName System.Net.WebClient
 $webClient.DownloadFile("$RawBase/.github/runners/image-scripts/run-step.ps1", "$buildRoot\run-step.ps1")
 $webClient.DownloadFile("$RawBase/.github/runners/image-scripts/$Step.ps1", "$buildRoot\$Step.ps1")
 
+# build-modern-image.ps1 sends ArgsBase64: JSON passed as text loses its quotes in az.cmd on Windows
+if ($ArgsBase64) {
+    $ArgsJson = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($ArgsBase64))
+}
 if ($ArgsJson) {
     Set-Content -Path "$buildRoot\$Step.args.json" -Value $ArgsJson
 }

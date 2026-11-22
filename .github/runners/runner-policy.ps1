@@ -224,6 +224,163 @@ function Get-PoolJobDemandFromRuns {
     $demand
 }
 
+function ConvertTo-FleetTimestamp {
+    [CmdletBinding()]
+    param(
+        [AllowNull()]
+        $Value
+    )
+
+    # GitHub sends ISO 8601 text, but Invoke-RestMethod on PowerShell 7 has already turned
+    # it into a DateTime by the time the controller reads it, while the tests pass the
+    # text. Both shapes land here. Anything unreadable is $null so the caller can fail safe.
+    if ($null -eq $Value) {
+        return $null
+    }
+    if ($Value -is [DateTimeOffset]) {
+        return $Value
+    }
+    if ($Value -is [datetime]) {
+        return (New-Object -TypeName DateTimeOffset -ArgumentList $Value.ToUniversalTime())
+    }
+    $parsed = [DateTimeOffset]::MinValue
+    $culture = [System.Globalization.CultureInfo]::InvariantCulture
+    $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal
+    if ([DateTimeOffset]::TryParse([string]$Value, $culture, $styles, [ref]$parsed)) {
+        return $parsed
+    }
+    return $null
+}
+
+function Get-CiRunLastActivity {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        $Run
+    )
+
+    # The newest of the three stamps. created_at alone would call a re-run of an old run a
+    # ghost in the seconds before its new attempt's jobs exist, because a re-run keeps the
+    # original created_at and only moves run_started_at and updated_at.
+    $latest = $null
+    foreach ($field in @("created_at", "run_started_at", "updated_at")) {
+        $stamp = ConvertTo-FleetTimestamp -Value $Run.$field
+        if ($null -ne $stamp -and ($null -eq $latest -or $stamp -gt $latest)) {
+            $latest = $stamp
+        }
+    }
+    $latest
+}
+
+function Get-CiRunLane {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        $Run,
+        [Parameter(Mandatory)]
+        [string[]]$Maintainers
+    )
+
+    # The lane is ci-azure.yml's concurrency group: a maintainer's own, or community.
+    $actor = Get-CiRunActor -Run $Run
+    if ($actor -in $Maintainers) {
+        return $actor
+    }
+    return "community"
+}
+
+function Get-GhostCiRunId {
+    [CmdletBinding()]
+    param(
+        [object[]]$WorkflowRuns = @(),
+        [hashtable]$JobsByRun = @{ },
+        [object[]]$InProgressRuns = @(),
+        [object[]]$QueuedRuns = @(),
+        [Parameter(Mandatory)]
+        [string[]]$Maintainers,
+        [Parameter(Mandatory)]
+        [string[]]$OptInPushUsers,
+        [Parameter(Mandatory)]
+        [string]$Marker,
+        [Parameter(Mandatory)]
+        [DateTimeOffset]$Now,
+        [Parameter(Mandatory)]
+        [int]$GhostMinutes
+    )
+
+    # A ghost is a run GitHub accepted but never started. On 2026-11-11 an Actions incident
+    # left seven ci-azure runs "queued" with no jobs; their workflow file was never evaluated
+    # and GitHub refuses to cancel or delete them. Every live run heats its maintainer's lane
+    # and a job-less one is estimated as a full pool, so those seven held 15 idle runners for
+    # days. A ghost is a live eligible run that
+    #   - has no jobs at all, not even the ubuntu authorize job GitHub creates within seconds
+    #     of a real run;
+    #   - has not moved for GhostMinutes (newest of created_at, run_started_at, updated_at);
+    #   - has nothing to wait for: no run in its lane is working. ci-azure.yml queues a
+    #     lane's builds behind each other (concurrency queue: max), and a build waiting its
+    #     turn looks exactly like a ghost, except that the build ahead of it is running.
+    # A lane is working when one of its runs is in_progress, eligible or not (an unmarked
+    # manual dispatch runs real jobs and holds the lane as well), or when one of its live
+    # eligible runs or any of its queued runs has a job. The build ahead can be older than
+    # every run of the WorkflowRuns page, so InProgressRuns and QueuedRuns are the separate
+    # in_progress and queued listings. GitHub reports a run's status from its least advanced
+    # job, so a started build whose jobs wait for runners can read "queued" rather than
+    # "in_progress" (https://github.com/cli/cli/issues/13972). JobsByRun therefore also holds
+    # the jobs of QueuedRuns, and a queued run whose jobs were not read holds its lane, since
+    # it may be such a build.
+    # A run whose jobs were not read is never a ghost, so a failed read keeps the old
+    # behavior. Zero disables the check.
+    if ($GhostMinutes -le 0) {
+        return
+    }
+    $cutoff = $Now.AddMinutes(-$GhostMinutes)
+    $liveRuns = @($WorkflowRuns | Where-Object {
+            $splatEligibility = @{
+                Run            = $PSItem
+                OptInPushUsers = $OptInPushUsers
+                Marker         = $Marker
+            }
+            [string]$PSItem.status -ne "completed" -and (Test-CiRunEligible @splatEligibility)
+        })
+
+    $workingLanes = @{ }
+    foreach ($run in @(@($WorkflowRuns) + @($InProgressRuns) + @($QueuedRuns) | Where-Object { $null -ne $PSItem })) {
+        if ([string]$run.status -eq "in_progress") {
+            $workingLanes[(Get-CiRunLane -Run $run -Maintainers $Maintainers)] = $true
+        }
+    }
+    foreach ($run in $liveRuns) {
+        $runId = [string]$run.id
+        if ($JobsByRun.ContainsKey($runId) -and @($JobsByRun[$runId] | Where-Object { $null -ne $PSItem }).Count -gt 0) {
+            $workingLanes[(Get-CiRunLane -Run $run -Maintainers $Maintainers)] = $true
+        }
+    }
+    foreach ($run in @($QueuedRuns | Where-Object { $null -ne $PSItem -and [string]$PSItem.status -ne "completed" })) {
+        $runId = [string]$run.id
+        if (-not $JobsByRun.ContainsKey($runId) -or @($JobsByRun[$runId] | Where-Object { $null -ne $PSItem }).Count -gt 0) {
+            $workingLanes[(Get-CiRunLane -Run $run -Maintainers $Maintainers)] = $true
+        }
+    }
+
+    foreach ($run in $liveRuns) {
+        $runId = [string]$run.id
+        if (-not $JobsByRun.ContainsKey($runId)) {
+            continue
+        }
+        if (@($JobsByRun[$runId] | Where-Object { $null -ne $PSItem }).Count -gt 0) {
+            continue
+        }
+        $lastActivity = Get-CiRunLastActivity -Run $run
+        if ($null -eq $lastActivity -or $lastActivity -gt $cutoff) {
+            continue
+        }
+        if ($workingLanes.ContainsKey((Get-CiRunLane -Run $run -Maintainers $Maintainers))) {
+            continue
+        }
+        $runId
+    }
+}
+
 function Get-VmssCapacityPlan {
     [CmdletBinding()]
     param(
@@ -471,4 +628,137 @@ function Get-MarkedPushDispatch {
         }
     }
     return $null
+}
+
+function Get-RunnerDeprecationTitle {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Version
+    )
+
+    # One title per runner version, so the daily check can find the issue it opened before.
+    # Pass "*" for the -like pattern that matches the issue of any version.
+    "CI runner deprecation - GitHub retires actions runner $Version"
+}
+
+function Get-RunnerDeprecationNotice {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Version,
+        [Parameter(Mandatory)]
+        $Deprecation,
+        [AllowNull()]
+        $LatestRelease,
+        [Parameter(Mandatory)]
+        [DateTimeOffset]$Now
+    )
+
+    # GET /repos/{repo}/actions/runners/deprecations/{version} answers two dates, both null
+    # until GitHub schedules the end of a version. Either one stops the fleet: past
+    # registration_deprecates_at config.cmd is refused, past runtime_deprecates_at a runner
+    # registers and then cannot receive its job, which is how 2.335.1 stopped CI on
+    # 2026-11-15. Every fleet VM registers fresh, so the earlier date is the deadline. A
+    # date that does not parse counts as due now, because staying quiet is the failure this
+    # check exists to prevent.
+    $fieldLabels = [ordered]@{
+        registration_deprecates_at = "New runners refused from"
+        runtime_deprecates_at      = "Jobs refused from"
+    }
+    $deadline = $null
+    $scheduleRows = @()
+    foreach ($field in $fieldLabels.Keys) {
+        $rawValue = $Deprecation.$field
+        if ($null -eq $rawValue -or [string]$rawValue -eq "") {
+            $scheduleRows += "| $($fieldLabels[$field]) | not scheduled |"
+            continue
+        }
+        $stamp = ConvertTo-FleetTimestamp -Value $rawValue
+        if ($null -eq $stamp) {
+            $stamp = $Now
+            # shown as inert text: a backtick, pipe or line break would break out of the code
+            # span or the table, and an @ would mention someone
+            $shownValue = ([string]$rawValue) -replace "[^0-9A-Za-z:.+ -]", "?"
+            if ($shownValue.Length -gt 40) {
+                $shownValue = $shownValue.Substring(0, 40) + "..."
+            }
+            $scheduleRows += "| $($fieldLabels[$field]) | ``$shownValue`` (unreadable, treated as now) |"
+        } else {
+            $scheduleRows += "| $($fieldLabels[$field]) | $($stamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm")) UTC |"
+        }
+        if ($null -eq $deadline -or $stamp -lt $deadline) {
+            $deadline = $stamp
+        }
+    }
+    if ($null -eq $deadline) {
+        return $null
+    }
+
+    $daysLeft = [int][math]::Floor(($deadline - $Now).TotalDays)
+    if ($deadline -le $Now) {
+        $urgency = "That date has passed, so GitHub refuses runners of this version and CI stops (or is about to)."
+    } elseif ($daysLeft -lt 1) {
+        $urgency = "That is **less than a day** from now. After it, every new VM registers and then fails, the way 2.335.1 stopped CI on 2026-11-15."
+    } else {
+        $urgency = "That is **$daysLeft day(s)** from now. After it, every new VM registers and then fails, the way 2.335.1 stopped CI on 2026-11-15."
+    }
+
+    $pinFiles = "``.github/runners/bootstrap-runner.ps1`` and ``.github/runners/image-scripts/step1-tools.ps1``"
+    $releasesUrl = "https://github.com/actions/runner/releases/latest"
+    $latestVersion = $null
+    $latestSha256 = $null
+    if ($null -ne $LatestRelease) {
+        $latestVersion = ([string]$LatestRelease.tag_name) -replace "^v", ""
+        # only a release page of actions/runner goes into the issue
+        if ([string]$LatestRelease.html_url -match "^https://github\.com/actions/runner/releases/tag/v\d+\.\d+\.\d+$") {
+            $releasesUrl = [string]$LatestRelease.html_url
+        }
+        # the release notes carry each package hash between machine-readable markers
+        $shaMatch = [regex]::Match([string]$LatestRelease.body, "BEGIN SHA win-x64 -->\s*([0-9a-fA-F]{64})\s*<!--")
+        if ($shaMatch.Success) {
+            $latestSha256 = $shaMatch.Groups[1].Value.ToLowerInvariant()
+        }
+    }
+    if ($latestVersion -notmatch "^\d+\.\d+\.\d+$") {
+        $fixStep = "1. Pin the latest release from $releasesUrl in $pinFiles. Set ```$runnerVersion`` to its version and ```$runnerSha256`` to the win-x64 SHA256 from its release notes."
+    } elseif ($latestVersion -eq $Version) {
+        $fixStep = "1. GitHub has published nothing newer than $Version yet. Once it does ($releasesUrl), pin the new release in $pinFiles. Set ```$runnerVersion`` to its version and ```$runnerSha256`` to the win-x64 SHA256 from its release notes."
+    } elseif (-not $latestSha256) {
+        $fixStep = "1. Pin $latestVersion, the latest release ($releasesUrl), in $pinFiles. Set ```$runnerVersion`` to ``$latestVersion`` and ```$runnerSha256`` to the win-x64 SHA256 from its release notes."
+    } else {
+        $fixStep = @"
+1. Pin $latestVersion, the latest release ($releasesUrl), in ${pinFiles}:
+
+   ``````powershell
+   `$runnerVersion = "$latestVersion"
+   `$runnerSha256 = "$latestSha256"
+   ``````
+"@
+    }
+
+    $body = @"
+GitHub has scheduled the end of actions runner **$Version**, the version ``.github/runners/bootstrap-runner.ps1`` installs on every CI VM.
+
+| | |
+|---|---|
+$($scheduleRows -join "`n")
+
+$urgency
+
+**To fix**
+
+$fixStep
+2. Merge, then deploy the controller with ``.github/runners/deploy-controller.ps1``. The bootstrap ships inside the controller, so the fleet keeps installing $Version until that deploy.
+3. Rebuild the golden image with ``.github/runners/build-modern-image.ps1`` and point the VMSS at it. CI works without this step; it only saves each VM the runner download at boot.
+
+The fleet controller checks this every day. It closes this issue once the deployed bootstrap installs another version. Closed by hand while the bootstrap still installs $Version, it opens a new one the next day.
+"@
+
+    [pscustomobject]@{
+        Title    = Get-RunnerDeprecationTitle -Version $Version
+        Body     = $body -replace "`r`n", "`n"
+        Deadline = $deadline
+        DaysLeft = $daysLeft
+    }
 }

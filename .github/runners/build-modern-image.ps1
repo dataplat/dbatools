@@ -21,6 +21,11 @@
       5. Deallocate + generalize + capture into the compute gallery, 2 replicas
       6. Delete the scratch RG
 
+    The build VM needs 4 free cores in the region, the same Standard_DDSv5 family the CI
+    fleet runs on. The build checks for them first and stops when the fleet holds them;
+    rerun it once the fleet has scaled down. Every az call that changes something is checked,
+    so a failed step stops the build instead of publishing nothing and deleting the VM.
+
     Steps run asynchronously in-guest (scheduled tasks) and are polled, because SQL
     installs outlast comfortable run-command round trips.
 
@@ -54,6 +59,18 @@ param(
 
 $ErrorActionPreference = "Stop"
 $rawBase = "https://raw.githubusercontent.com/dataplat/dbatools/$Branch"
+
+function Assert-AzSuccess {
+    # az is a native command: a failure sets $LASTEXITCODE and never trips
+    # $ErrorActionPreference, so each call that changes something is checked by hand
+    param(
+        [Parameter(Mandatory)]
+        [string]$Action
+    )
+    if ($LASTEXITCODE -ne 0) {
+        throw "az could not $Action (exit code $LASTEXITCODE); see the az error above"
+    }
+}
 
 $instances = @(
     [PSCustomObject]@{
@@ -94,9 +111,14 @@ function Invoke-BuildStep {
         "--parameters", "RawBase=$rawBase", "Step=$Step"
     )
     if ($ArgsJson) {
-        $launchArgs += "ArgsJson=$ArgsJson"
+        # Base64, because the JSON would not survive the trip as text: on Windows az is
+        # az.cmd, and pwsh hands a batch file its arguments without escaping the inner
+        # quotes, so the build VM received {instance:SQL2017,...} and step2 could not parse it
+        $argsBase64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($ArgsJson))
+        $launchArgs += "ArgsBase64=$argsBase64"
     }
     $null = az @launchArgs --only-show-errors
+    Assert-AzSuccess -Action "launch $Step on $VmName"
     if ($NoWaitForStatus) {
         return
     }
@@ -128,8 +150,21 @@ function Invoke-BuildStep {
 }
 
 if (-not $SkipVmCreate) {
+    Write-Host "== checking cores in $Location" -ForegroundColor Cyan
+    # Standard_D4ds_v5 counts against both the regional total and the DDSv5 family; the
+    # CI fleet runs on the same size, so a busy fleet can hold every core
+    $usage = az vm list-usage --location $Location --query "[?name.value=='cores' || name.value=='standardDDSv5Family'].{name:name.value, current:currentValue, limit:limit}" --output json --only-show-errors | ConvertFrom-Json
+    Assert-AzSuccess -Action "read the core usage in $Location"
+    foreach ($quota in $usage) {
+        $freeCores = [int]$quota.limit - [int]$quota.current
+        if ($freeCores -lt 4) {
+            throw "$Location has $freeCores free $($quota.name) core(s) of $($quota.limit) and the build VM needs 4. The CI fleet holds them; rerun once it has scaled down."
+        }
+    }
+
     Write-Host "== creating build RG + VM" -ForegroundColor Cyan
     $null = az group create --name $ResourceGroup --location $Location --tags purpose=modern-image-build --output none --only-show-errors
+    Assert-AzSuccess -Action "create resource group $ResourceGroup"
     $password = "Db" + (-join ((65..90) + (97..122) + (48..57) | Get-Random -Count 16 | ForEach-Object { [char]$_ })) + "!7q"
     $createArgs = @(
         "vm", "create",
@@ -146,6 +181,7 @@ if (-not $SkipVmCreate) {
         "--output", "none"
     )
     az @createArgs --only-show-errors
+    Assert-AzSuccess -Action "create the build VM $VmName"
 }
 
 Invoke-BuildStep -Step "step1-tools" -TimeoutMinutes 30
@@ -173,7 +209,9 @@ if ($powerState -ne "VM stopped") {
 
 Write-Host "== deallocate + generalize + capture" -ForegroundColor Cyan
 az vm deallocate --resource-group $ResourceGroup --name $VmName --only-show-errors
+Assert-AzSuccess -Action "deallocate $VmName"
 az vm generalize --resource-group $ResourceGroup --name $VmName --only-show-errors
+Assert-AzSuccess -Action "generalize $VmName"
 
 $definitionExists = az sig image-definition show --resource-group $GalleryResourceGroup --gallery-name $GalleryName --gallery-image-definition $ImageDefinition --only-show-errors 2>$null
 if (-not $definitionExists) {
@@ -191,9 +229,11 @@ if (-not $definitionExists) {
         "--output", "none"
     )
     az @definitionArgs --only-show-errors
+    Assert-AzSuccess -Action "create the image definition $ImageDefinition"
 }
 
 $vmId = az vm show --resource-group $ResourceGroup --name $VmName --query id --output tsv --only-show-errors
+Assert-AzSuccess -Action "read the id of $VmName"
 $versionArgs = @(
     "sig", "image-version", "create",
     "--resource-group", $GalleryResourceGroup,
@@ -206,9 +246,16 @@ $versionArgs = @(
     "--output", "none"
 )
 az @versionArgs --only-show-errors
+Assert-AzSuccess -Action "create image version $ImageVersion"
+$versionState = az sig image-version show --resource-group $GalleryResourceGroup --gallery-name $GalleryName --gallery-image-definition $ImageDefinition --gallery-image-version $ImageVersion --query provisioningState --output tsv --only-show-errors
+Assert-AzSuccess -Action "read image version $ImageVersion"
+if ($versionState -ne "Succeeded") {
+    throw "image version $ImageVersion is $versionState, not Succeeded; the build VM in $ResourceGroup is kept"
+}
 
 Write-Host "== image published: $ImageDefinition $ImageVersion" -ForegroundColor Green
 if (-not $KeepBuildVm) {
     Write-Host "== deleting build RG" -ForegroundColor Cyan
     az group delete --name $ResourceGroup --yes --no-wait --only-show-errors
+    Assert-AzSuccess -Action "start deleting $ResourceGroup (the image is published)"
 }

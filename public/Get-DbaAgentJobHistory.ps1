@@ -38,7 +38,7 @@ function Get-DbaAgentJobHistory {
         Specify this when investigating issues within a specific timeframe or when older history isn't relevant to your troubleshooting.
 
     .PARAMETER EndDate
-        Sets the latest date and time for job history records to include. Defaults to current date and time.
+        Sets the latest date and time for job history records to include. Without it there is no upper limit, so the history up to the current time of the instance is included, also when the instance is in another time zone than the computer that runs the command.
         Use this with StartDate to focus on a specific time window when troubleshooting incidents or analyzing patterns during maintenance windows.
 
     .PARAMETER OutcomeType
@@ -165,7 +165,7 @@ function Get-DbaAgentJobHistory {
         [object[]]$Job,
         [object[]]$ExcludeJob,
         [DateTime]$StartDate = "1900-01-01",
-        [DateTime]$EndDate = $(Get-Date),
+        [DateTime]$EndDate,
         [ValidateSet('Failed', 'Succeeded', 'Retry', 'Cancelled', 'InProgress', 'Unknown')]
         [Microsoft.SqlServer.Management.Smo.Agent.CompletionResult]$OutcomeType,
         [switch]$ExcludeJobSteps,
@@ -178,7 +178,11 @@ function Get-DbaAgentJobHistory {
     begin {
         $filter = New-Object Microsoft.SqlServer.Management.Smo.Agent.JobHistoryFilter
         $filter.StartRunDate = $StartDate
-        $filter.EndRunDate = $EndDate
+        # SQL Server Agent records the run times in the local time of the instance. Without EndDate there is no upper
+        # limit, because the clock of this computer would cut off the latest runs of an instance that is ahead of it.
+        if (Test-Bound -ParameterName EndDate) {
+            $filter.EndRunDate = $EndDate
+        }
 
         if (Test-Bound OutcomeType) {
             $filter.OutcomeTypes = $OutcomeType

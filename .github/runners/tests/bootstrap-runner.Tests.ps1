@@ -19,6 +19,17 @@ BeforeAll {
     }
     . ([scriptblock]::Create($stateFunction[0].Extent.Text))
 
+    # the runner install is lifted the same way; its tests stand in for the listener
+    foreach ($installFunctionName in "Get-RunnerPackageVersion", "Install-RunnerPackage") {
+        $installFunction = $bootstrapAst.FindAll({
+                $args[0] -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $args[0].Name -eq $installFunctionName
+            }, $true)
+        if (-not $installFunction) {
+            throw "$installFunctionName is missing from bootstrap-runner.ps1; the runner install depends on it"
+        }
+        . ([scriptblock]::Create($installFunction[0].Extent.Text))
+    }
+
     function New-RunnerRoot {
         param(
             [switch]$Bootstrapped,
@@ -166,5 +177,434 @@ Describe "bootstrap-runner.ps1 contract" {
         $threshold | Should -BeGreaterThan 0
         $threshold | Should -BeLessOrEqual 5
         $bootstrapText.IndexOf("net accounts /lockoutthreshold:") | Should -BeLessThan $bootstrapText.IndexOf("& .\config.cmd")
+    }
+
+    It "installs the pinned runner version, hash checked, before the marker and config.cmd" {
+        # GitHub stops handing jobs to a runner once its runtime support ends, and the image
+        # staged 2.335.1, which ran out on 2026-09-24. Every VM then registered, exited as
+        # deprecated, probed SPENT and was replaced without serving a job (2026-11-15).
+        $bootstrapText = Get-Content -Path $script:BootstrapPath -Raw
+        $versionMatch = [regex]::Match($bootstrapText, "\`$runnerVersion = `"(\d+\.\d+\.\d+)`"")
+        $versionMatch.Success | Should -BeTrue
+        $bootstrapText | Should -Match "\`$runnerSha256 = `"[0-9a-f]{64}`""
+        $bootstrapText | Should -Match "Sha256\s+= \`$runnerSha256"
+        $installIndex = $bootstrapText.IndexOf("Install-RunnerPackage @splatRunnerPackage")
+        $markerIndex = $bootstrapText.IndexOf(".bootstrapped-once`" -Value")
+        $installIndex | Should -BeGreaterThan 0
+        $installIndex | Should -BeLessThan $markerIndex
+        $installIndex | Should -BeLessThan $bootstrapText.IndexOf("& .\config.cmd")
+    }
+
+    It "stages the same runner version in the golden image as the bootstrap installs" {
+        # with the two in step the bootstrap finds the version already staged and skips the
+        # download; a rebuilt image that lags behind still works, it just downloads again
+        $bootstrapText = Get-Content -Path $script:BootstrapPath -Raw
+        $runnerVersion = [regex]::Match($bootstrapText, "\`$runnerVersion = `"(\d+\.\d+\.\d+)`"").Groups[1].Value
+        $runnerSha256 = [regex]::Match($bootstrapText, "\`$runnerSha256 = `"([0-9a-f]{64})`"").Groups[1].Value
+        $imageStepPath = Join-Path -Path $PSScriptRoot -ChildPath "../image-scripts/step1-tools.ps1"
+        $imageStepText = Get-Content -Path $imageStepPath -Raw
+        $imageStepText | Should -Match "\`$runnerVersion = `"$([regex]::Escape($runnerVersion))`""
+        $imageStepText | Should -Match "\`$runnerSha256 = `"$runnerSha256`""
+        $imageStepText | Should -Match ([regex]::Escape("releases/download/v`$runnerVersion/actions-runner-win-x64-`$runnerVersion.zip"))
+    }
+
+    It "refuses a golden image runner download whose hash is not the pinned one" {
+        # the image bakes the runner into every VM, so a tampered or truncated download would
+        # reach the whole fleet; the image build stops instead
+        $imageStepPath = Join-Path -Path $PSScriptRoot -ChildPath "../image-scripts/step1-tools.ps1"
+        $parseTokens = $null
+        $parseErrors = $null
+        $imageStepAst = [System.Management.Automation.Language.Parser]::ParseFile($imageStepPath, [ref]$parseTokens, [ref]$parseErrors)
+        $parseErrors | Should -BeNullOrEmpty
+        $statements = @($imageStepAst.EndBlock.Statements)
+        $downloadIndex = -1
+        $extractIndex = -1
+        for ($index = 0; $index -lt $statements.Count; $index++) {
+            if ($downloadIndex -lt 0 -and $statements[$index].Extent.Text -like "*DownloadFile(`$runnerUrl*") {
+                $downloadIndex = $index
+            }
+            if ($statements[$index].Extent.Text -like "*ExtractToDirectory(`$runnerZip*") {
+                $extractIndex = $index
+            }
+        }
+        $downloadIndex | Should -BeGreaterOrEqual 0
+        $extractIndex | Should -BeGreaterThan $downloadIndex
+
+        # run what step1 does between the download and the extraction, against a stand-in
+        # download, so the check is exercised rather than only found in the text
+        $checkText = ($statements[$downloadIndex..($extractIndex - 1)] | ForEach-Object { $PSItem.Extent.Text }) -join "`n"
+        $check = [scriptblock]::Create("param(`$webClient, `$runnerUrl, `$runnerZip, `$runnerSha256)`n$checkText")
+        $packageBytes = [System.Text.Encoding]::UTF8.GetBytes("stand-in runner package")
+        $hasher = [System.Security.Cryptography.SHA256]::Create()
+        $packageSha256 = (($hasher.ComputeHash($packageBytes) | ForEach-Object { $PSItem.ToString("x2") }) -join "")
+        $hasher.Dispose()
+        $splatFakeDownload = @{
+            InputObject = New-Object -TypeName PSObject
+            MemberType  = "ScriptMethod"
+            Name        = "DownloadFile"
+            Value       = ({
+                    param($Url, $Path)
+                    [System.IO.File]::WriteAllBytes($Path, $packageBytes)
+                }).GetNewClosure()
+            PassThru    = $true
+        }
+        $fakeWebClient = Add-Member @splatFakeDownload
+        $packagePath = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "runner-hash-$([System.Guid]::NewGuid().ToString("N")).zip"
+        $runnerUrl = "https://github.com/actions/runner/releases/download/v9.9.9/actions-runner-win-x64-9.9.9.zip"
+        try {
+            { & $check $fakeWebClient $runnerUrl $packagePath ("0" * 64) } | Should -Throw "*has SHA256 $packageSha256, expected $("0" * 64)*"
+            { & $check $fakeWebClient $runnerUrl $packagePath $packageSha256 } | Should -Not -Throw
+        } finally {
+            $splatRemovePackage = @{
+                Path        = $packagePath
+                Force       = $true
+                ErrorAction = "SilentlyContinue"
+            }
+            Remove-Item @splatRemovePackage
+        }
+    }
+
+    It "hands the image build step its arguments intact, quotes included" {
+        # run from Windows, az is az.cmd, and the quotes of JSON passed as text did not reach
+        # the build VM, so step2-sqlinstance could not read its instance, port or media
+        $buildScriptPath = Join-Path -Path $PSScriptRoot -ChildPath "../build-modern-image.ps1"
+        $asyncStepPath = Join-Path -Path $PSScriptRoot -ChildPath "../image-scripts/invoke-step-async.ps1"
+        $parseTokens = $null
+        $parseErrors = $null
+        $buildAst = [System.Management.Automation.Language.Parser]::ParseFile($buildScriptPath, [ref]$parseTokens, [ref]$parseErrors)
+        $parseErrors | Should -BeNullOrEmpty
+        $asyncAst = [System.Management.Automation.Language.Parser]::ParseFile($asyncStepPath, [ref]$parseTokens, [ref]$parseErrors)
+        $parseErrors | Should -BeNullOrEmpty
+
+        $buildAst.Extent.Text | Should -Not -Match ([regex]::Escape("`"ArgsJson="))
+        $encodeStatement = $buildAst.Find({
+                $args[0] -is [System.Management.Automation.Language.AssignmentStatementAst] -and $args[0].Left.Extent.Text -eq "`$argsBase64"
+            }, $true)
+        $encodeStatement | Should -Not -BeNullOrEmpty
+        $decodeStatement = $asyncAst.Find({
+                $args[0] -is [System.Management.Automation.Language.IfStatementAst] -and $args[0].Clauses[0].Item1.Extent.Text -eq "`$ArgsBase64"
+            }, $true)
+        $decodeStatement | Should -Not -BeNullOrEmpty
+
+        $stepArgs = ConvertTo-Json -InputObject @{
+            instance = "SQL2017"
+            port     = "14334"
+            mediaUrl = "https://go.microsoft.com/fwlink/?linkid=853016&x=`"y`""
+        } -Compress
+        $encode = [scriptblock]::Create("param(`$ArgsJson) $($encodeStatement.Right.Extent.Text)")
+        $encoded = & $encode $stepArgs
+        $encoded | Should -Match "^[A-Za-z0-9+/]+=*$"
+        $decode = [scriptblock]::Create("param(`$ArgsBase64) `$ArgsJson = `$null; $($decodeStatement.Extent.Text); `$ArgsJson")
+        & $decode $encoded | Should -BeExactly $stepArgs
+    }
+
+    It "stops the image build at the first az call that fails to change something" {
+        # az sets $LASTEXITCODE and never trips $ErrorActionPreference: unchecked, a VM create
+        # refused for quota went on to run step1 against no VM, and a failed capture would
+        # still have deleted the build VM
+        $buildScriptPath = Join-Path -Path $PSScriptRoot -ChildPath "../build-modern-image.ps1"
+        $parseTokens = $null
+        $parseErrors = $null
+        $buildAst = [System.Management.Automation.Language.Parser]::ParseFile($buildScriptPath, [ref]$parseTokens, [ref]$parseErrors)
+        $parseErrors | Should -BeNullOrEmpty
+        $azWrites = @($buildAst.FindAll({
+                    $args[0] -is [System.Management.Automation.Language.CommandAst] -and $args[0].GetCommandName() -eq "az" -and $args[0].Extent.Text -match "\b(create|delete|deallocate|generalize|list-usage)\b|@(launchArgs|createArgs|definitionArgs|versionArgs)\b"
+                }, $true))
+        $azWrites.Count | Should -Be 9
+        foreach ($azWrite in $azWrites) {
+            # climb to the statement that holds the call, then look at the one after it
+            $statement = $azWrite
+            while ($statement.Parent -isnot [System.Management.Automation.Language.StatementBlockAst] -and $statement.Parent -isnot [System.Management.Automation.Language.NamedBlockAst]) {
+                $statement = $statement.Parent
+            }
+            $siblings = @($statement.Parent.Statements)
+            $position = [array]::IndexOf($siblings, $statement)
+            $siblings[$position + 1].Extent.Text | Should -BeLike "Assert-AzSuccess *" -Because $statement.Extent.Text
+        }
+    }
+}
+
+Describe "Install-RunnerPackage" {
+    BeforeAll {
+        $script:InstallRoots = @()
+
+        # a stand-in listener: bin\Runner.Listener.exe holds the version it reports, as text
+        Mock Get-RunnerPackageVersion {
+            $listenerPath = Join-Path -Path $RunnerRoot -ChildPath "bin\Runner.Listener.exe"
+            if (Test-Path -Path $listenerPath) {
+                (Get-Content -Path $listenerPath -Raw).Trim()
+            }
+        }
+
+        function New-InstallTestFolder {
+            param(
+                [hashtable]$File = @{ }
+            )
+
+            $root = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "runner-install-test-$([System.Guid]::NewGuid().ToString("N"))"
+            $null = [System.IO.Directory]::CreateDirectory($root)
+            foreach ($relativePath in $File.Keys) {
+                $filePath = Join-Path -Path $root -ChildPath $relativePath
+                $null = [System.IO.Directory]::CreateDirectory((Split-Path -Path $filePath -Parent))
+                Set-Content -Path $filePath -Value $File[$relativePath]
+            }
+            $script:InstallRoots += $root
+            $root
+        }
+
+        function New-InstallTestPackage {
+            param(
+                [Parameter(Mandatory)]
+                [string]$ListenerVersion,
+                [switch]$WithoutExternals
+            )
+
+            $packageFiles = @{
+                "bin\Runner.Listener.exe"   = $ListenerVersion
+                "bin\Runner.Worker.dll"     = "worker $ListenerVersion"
+                "externals\node20\node.exe" = "node 20"
+                "config.cmd"                = "config $ListenerVersion"
+                "run.cmd"                   = "run $ListenerVersion"
+            }
+            if ($WithoutExternals) {
+                $packageFiles.Remove("externals\node20\node.exe")
+            }
+            $contentRoot = New-InstallTestFolder -File $packageFiles
+            $packagePath = Join-Path -Path (New-InstallTestFolder) -ChildPath "actions-runner.zip"
+            Add-Type -AssemblyName System.IO.Compression.FileSystem
+            [System.IO.Compression.ZipFile]::CreateFromDirectory($contentRoot, $packagePath)
+            [PSCustomObject]@{
+                Url    = ([System.Uri]$packagePath).AbsoluteUri
+                Sha256 = (Get-FileHash -Path $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
+            }
+        }
+
+        function Get-OldRunnerFile {
+            @{
+                "bin\Runner.Listener.exe"   = "2.335.1"
+                "bin\Runner.Old.dll"        = "only in 2.335.1"
+                "externals\node16\node.exe" = "node 16"
+                "config.cmd"                = "config 2.335.1"
+                "run.cmd"                   = "run 2.335.1"
+            }
+        }
+
+        $script:CurrentPackage = New-InstallTestPackage -ListenerVersion "2.338.2"
+        $script:MissingPackageUrl = ([System.Uri](Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "runner-install-test-missing-$([System.Guid]::NewGuid().ToString("N")).zip")).AbsoluteUri
+    }
+
+    AfterAll {
+        foreach ($root in $script:InstallRoots) {
+            $splatRemoveInstallRoot = @{
+                Path        = $root
+                Recurse     = $true
+                Force       = $true
+                ErrorAction = "SilentlyContinue"
+            }
+            Remove-Item @splatRemoveInstallRoot
+        }
+    }
+
+    It "replaces an older staged runner and leaves no file of it behind" {
+        $root = New-InstallTestFolder -File (Get-OldRunnerFile)
+        $splatInstall = @{
+            RunnerRoot = $root
+            Version    = "2.338.2"
+            Sha256     = $script:CurrentPackage.Sha256
+            PackageUrl = $script:CurrentPackage.Url
+        }
+        $installOutput = @(Install-RunnerPackage @splatInstall)
+        $installOutput[-1] | Should -Be "runner 2.338.2 installed"
+        Get-Content -Path (Join-Path -Path $root -ChildPath "bin\Runner.Listener.exe") | Should -Be "2.338.2"
+        Join-Path -Path $root -ChildPath "bin\Runner.Old.dll" | Should -Not -Exist
+        Join-Path -Path $root -ChildPath "externals\node16" | Should -Not -Exist
+        Join-Path -Path $root -ChildPath "externals\node20\node.exe" | Should -Exist
+        Get-Content -Path (Join-Path -Path $root -ChildPath "config.cmd") | Should -Be "config 2.338.2"
+        @(Get-ChildItem -Path $root -Filter ".runner-package-*") | Should -HaveCount 0
+    }
+
+    It "leaves a runner that already reports the version alone and downloads nothing" {
+        $currentFiles = Get-OldRunnerFile
+        $currentFiles["bin\Runner.Listener.exe"] = "2.338.2"
+        $root = New-InstallTestFolder -File $currentFiles
+        $splatInstall = @{
+            RunnerRoot = $root
+            Version    = "2.338.2"
+            Sha256     = $script:CurrentPackage.Sha256
+            PackageUrl = $script:MissingPackageUrl
+        }
+        Install-RunnerPackage @splatInstall | Should -Be "runner 2.338.2 is staged"
+        Get-Content -Path (Join-Path -Path $root -ChildPath "config.cmd") | Should -Be "config 2.335.1"
+        @(Get-ChildItem -Path $root -Filter ".runner-package-*") | Should -HaveCount 0
+    }
+
+    It "refuses a package whose SHA256 differs and keeps the staged runner" {
+        $root = New-InstallTestFolder -File (Get-OldRunnerFile)
+        $wrongSha256 = "0" * 64
+        $splatInstall = @{
+            RunnerRoot = $root
+            Version    = "2.338.2"
+            Sha256     = $wrongSha256
+            PackageUrl = $script:CurrentPackage.Url
+        }
+        { Install-RunnerPackage @splatInstall } | Should -Throw "*has SHA256 $($script:CurrentPackage.Sha256), expected $wrongSha256"
+        Get-Content -Path (Join-Path -Path $root -ChildPath "bin\Runner.Listener.exe") | Should -Be "2.335.1"
+        Join-Path -Path $root -ChildPath "bin\Runner.Old.dll" | Should -Exist
+        @(Get-ChildItem -Path $root -Filter ".runner-package-*") | Should -HaveCount 0
+    }
+
+    It "fails a download that never arrives and keeps the staged runner" {
+        $root = New-InstallTestFolder -File (Get-OldRunnerFile)
+        $splatInstall = @{
+            RunnerRoot = $root
+            Version    = "2.338.2"
+            Sha256     = $script:CurrentPackage.Sha256
+            PackageUrl = $script:MissingPackageUrl
+        }
+        { Install-RunnerPackage @splatInstall } | Should -Throw
+        Get-Content -Path (Join-Path -Path $root -ChildPath "bin\Runner.Listener.exe") | Should -Be "2.335.1"
+        @(Get-ChildItem -Path $root -Filter ".runner-package-*") | Should -HaveCount 0
+    }
+
+    It "fails an install whose listener reports another version" {
+        $otherPackage = New-InstallTestPackage -ListenerVersion "2.338.1"
+        $root = New-InstallTestFolder -File (Get-OldRunnerFile)
+        $splatInstall = @{
+            RunnerRoot = $root
+            Version    = "2.338.2"
+            Sha256     = $otherPackage.Sha256
+            PackageUrl = $otherPackage.Url
+        }
+        { Install-RunnerPackage @splatInstall } | Should -Throw "runner reports version 2.338.1 after the install, expected 2.338.2"
+    }
+
+    It "finishes an install an earlier pass cut off before bin arrived" {
+        # the state an install leaves when it dies between removing bin and moving the new
+        # one in: no listener, old externals, new root files, a staging folder left behind
+        $cutOffFiles = @{
+            "externals\node16\node.exe"                                         = "node 16"
+            "config.cmd"                                                        = "config 2.338.2"
+            ".runner-package-0123456789abcdef\unpacked\bin\Runner.Listener.exe" = "2.338.2"
+        }
+        $root = New-InstallTestFolder -File $cutOffFiles
+        $splatInstall = @{
+            RunnerRoot = $root
+            Version    = "2.338.2"
+            Sha256     = $script:CurrentPackage.Sha256
+            PackageUrl = $script:CurrentPackage.Url
+        }
+        $installOutput = @(Install-RunnerPackage @splatInstall)
+        $installOutput[-1] | Should -Be "runner 2.338.2 installed"
+        Get-Content -Path (Join-Path -Path $root -ChildPath "bin\Runner.Listener.exe") | Should -Be "2.338.2"
+        Join-Path -Path $root -ChildPath "externals\node16" | Should -Not -Exist
+        Join-Path -Path $root -ChildPath "externals\node20\node.exe" | Should -Exist
+        @(Get-ChildItem -Path $root -Filter ".runner-package-*") | Should -HaveCount 0
+    }
+
+    It "leaves no listener behind when the package cannot be moved in whole" {
+        # bin is the last folder to arrive, so an install that fails before it leaves the VM
+        # probing as not installed and the next pass installs again, rather than one that
+        # registers a 2.338.2 listener without its externals
+        $incompletePackage = New-InstallTestPackage -ListenerVersion "2.338.2" -WithoutExternals
+        $root = New-InstallTestFolder -File (Get-OldRunnerFile)
+        $splatInstall = @{
+            RunnerRoot = $root
+            Version    = "2.338.2"
+            Sha256     = $incompletePackage.Sha256
+            PackageUrl = $incompletePackage.Url
+        }
+        { Install-RunnerPackage @splatInstall } | Should -Throw
+        Join-Path -Path $root -ChildPath "bin\Runner.Listener.exe" | Should -Not -Exist
+        Get-RunnerPackageVersion -RunnerRoot $root | Should -BeNullOrEmpty
+        @(Get-ChildItem -Path $root -Filter ".runner-package-*") | Should -HaveCount 0
+    }
+}
+
+Describe "build-modern-image.ps1 against a stand-in az" {
+    BeforeAll {
+        $script:BuildScriptPath = Join-Path -Path $PSScriptRoot -ChildPath "../build-modern-image.ps1"
+
+        # az is a native command, so the stand-in is a function: functions win over
+        # applications, and it sets $LASTEXITCODE the way az.exe would
+        function global:az {
+            $azLine = $args -join " "
+            $global:FakeAzCalls += $azLine
+            $global:LASTEXITCODE = 0
+            if ($global:FakeAzFailOn -and $azLine -like $global:FakeAzFailOn) {
+                $global:LASTEXITCODE = 1
+                return
+            }
+            if ($azLine -like "vm list-usage*") {
+                $usedCores = 65 - $global:FakeAzFreeCores
+                return "[{`"name`":`"cores`",`"current`":$usedCores,`"limit`":65},{`"name`":`"standardDDSv5Family`",`"current`":$usedCores,`"limit`":65}]"
+            }
+            if ($azLine -like "vm run-command invoke*poll-step.ps1*") {
+                return "STATUS: done"
+            }
+            if ($azLine -like "vm show -d*") {
+                return "VM stopped"
+            }
+            if ($azLine -like "sig image-definition show*") {
+                return "{}"
+            }
+            if ($azLine -like "vm show *--query id*") {
+                return "/subscriptions/0/resourceGroups/dbatools-ci-imagebuild/providers/Microsoft.Compute/virtualMachines/dbat-imgbuild"
+            }
+            if ($azLine -like "sig image-version show*") {
+                return $global:FakeAzVersionState
+            }
+        }
+        # the build waits between polls; the stand-in answers at once
+        function global:Start-Sleep { }
+    }
+
+    AfterAll {
+        # Function:\ resolves to the global stand-ins; a "global:" inside the path matches nothing
+        Remove-Item -Path Function:\az, Function:\Start-Sleep
+        $splatRemoveFakeState = @{
+            Name        = "FakeAzCalls", "FakeAzFailOn", "FakeAzFreeCores", "FakeAzVersionState"
+            Scope       = "Global"
+            ErrorAction = "SilentlyContinue"
+        }
+        Remove-Variable @splatRemoveFakeState
+    }
+
+    BeforeEach {
+        $global:FakeAzCalls = @()
+        $global:FakeAzFailOn = $null
+        $global:FakeAzFreeCores = 10
+        $global:FakeAzVersionState = "Succeeded"
+    }
+
+    It "creates nothing while the fleet holds the cores the build VM needs" {
+        $global:FakeAzFreeCores = 1
+        { & $script:BuildScriptPath -ImageVersion "9.9.9" 6>$null } | Should -Throw "*has 1 free cores core(s) of 65 and the build VM needs 4*"
+        @($global:FakeAzCalls | Where-Object { $PSItem -like "group create*" -or $PSItem -like "vm create*" }).Count | Should -Be 0
+    }
+
+    It "runs no step when the build VM cannot be created" {
+        $global:FakeAzFailOn = "vm create*"
+        { & $script:BuildScriptPath -ImageVersion "9.9.9" 6>$null } | Should -Throw "*could not create the build VM dbat-imgbuild*"
+        @($global:FakeAzCalls | Where-Object { $PSItem -like "vm run-command*" }).Count | Should -Be 0
+    }
+
+    It "keeps the build VM when the image version does not succeed" {
+        $global:FakeAzVersionState = "Failed"
+        { & $script:BuildScriptPath -ImageVersion "9.9.9" 6>$null } | Should -Throw "*image version 9.9.9 is Failed, not Succeeded*"
+        @($global:FakeAzCalls | Where-Object { $PSItem -like "group delete*" }).Count | Should -Be 0
+    }
+
+    It "keeps the build VM when the capture fails" {
+        $global:FakeAzFailOn = "sig image-version create*"
+        { & $script:BuildScriptPath -ImageVersion "9.9.9" 6>$null } | Should -Throw "*could not create image version 9.9.9*"
+        @($global:FakeAzCalls | Where-Object { $PSItem -like "group delete*" }).Count | Should -Be 0
+    }
+
+    It "publishes, then deletes the build group, when every step succeeds" {
+        { & $script:BuildScriptPath -ImageVersion "9.9.9" 6>$null } | Should -Not -Throw
+        $sqlLaunches = @($global:FakeAzCalls | Where-Object { $PSItem -like "vm run-command invoke*invoke-step-async.ps1*Step=step2-sqlinstance*" })
+        $sqlLaunches.Count | Should -Be 3
+        $sqlLaunches | ForEach-Object { $PSItem | Should -Match "ArgsBase64=[A-Za-z0-9+/]+=*( |$)" }
+        @($global:FakeAzCalls | Where-Object { $PSItem -like "group delete*" }).Count | Should -Be 1
     }
 }

@@ -14,6 +14,8 @@ function Connect-DbaInstance {
 
         For Azure connections, it handles the various authentication methods including service principals, managed identities, and access tokens. For on-premises instances, it supports Windows authentication (including alternative credentials), SQL logins, and dedicated administrator connections for emergency access.
 
+        SQL Server 2008 or later is required. Since 2.8.3, dbatools uses SMO 181, which no longer supports SQL Server 2005 and earlier, so a connection to such an instance is refused with an error that names the last release supporting it: dbatools 2.8.2 with dbatools.library 2025.12.28 (for SQL Server 2000, run from Windows PowerShell 5.1).
+
         Reference documentation:
         https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnection.connectionstring.aspx
         https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlconnectionstringbuilder.aspx
@@ -152,6 +154,7 @@ function Connect-DbaInstance {
         Specifies the minimum SQL Server version required for the connection to succeed.
         Use this to ensure scripts only run against SQL Server versions that support the required features, preventing compatibility issues.
         The version is read from SMO, falling back to the version reported by the connection and then to the version reported by T-SQL on instances too old for SMO to describe. If none of these is available the connection is allowed through.
+        Instances older than SQL Server 2008 (version 10) are refused whether or not this parameter is used.
 
     .PARAMETER Tenant
         Specifies the Azure Active Directory tenant ID for Azure SQL Database authentication.
@@ -658,6 +661,7 @@ function Connect-DbaInstance {
 
             Some additional tests:
             * Is $AzureUnsupported set? Test for Azure.
+            * Is the instance older than SQL Server 2008? Refuse it, SMO cannot work with it.
             * Is $MinimumVersion set? Test for that.
             * Is $SqlConnectionOnly set? Then return $server.ConnectionContext.SqlConnectionObject.
             * Does the server object have the additional properties? Add them when necessary.
@@ -1510,40 +1514,62 @@ function Connect-DbaInstance {
                 Stop-Function -Target $instance -Message "Azure SQL Database not supported" -Continue
             }
 
-            if ($MinimumVersion) {
-                # $server.VersionMajor is served by SMO's server information enumerator, which
-                # requires SQL Server 2008 and returns nothing at all on older instances. Testing
-                # the property for truthiness would therefore skip the check on exactly the
-                # versions it exists to refuse, so fall back to sources that do not depend on the
-                # enumerators before deciding.
-                $minimumVersionMajor = $server.VersionMajor
-                if (-not $minimumVersionMajor) {
-                    try {
-                        $minimumVersionMajor = $server.ConnectionContext.ServerVersion.Major
-                        Write-Message -Level Debug -Message "VersionMajor is not available, using ServerVersion.Major [$minimumVersionMajor] from the connection"
-                    } catch {
-                        Write-Message -Level Debug -Message "Failed to read ServerVersion from the connection: $_"
-                    }
+            # $server.VersionMajor is served by SMO's server information enumerator, which
+            # requires SQL Server 2008 and returns nothing at all on older instances. Testing
+            # the property for truthiness would therefore skip the check on exactly the
+            # versions it exists to refuse, so fall back to sources that do not depend on the
+            # enumerators before deciding.
+            $serverVersionMajor = $server.VersionMajor
+            if (-not $serverVersionMajor) {
+                try {
+                    $serverVersionMajor = $server.ConnectionContext.ServerVersion.Major
+                    Write-Message -Level Debug -Message "VersionMajor is not available, using ServerVersion.Major [$serverVersionMajor] from the connection"
+                } catch {
+                    Write-Message -Level Debug -Message "Failed to read ServerVersion from the connection: $_"
                 }
-                if (-not $minimumVersionMajor) {
-                    # SERVERPROPERTY has been answered since SQL Server 2000 and travels the same
-                    # plain T-SQL path that already carried the connection test above, so it can be
-                    # read wherever the connection itself works. On a SQL Server 2005 instance it
-                    # returns 9.00.5000.00 while every SMO-served property comes back empty.
-                    $productVersionQuery = @"
+            }
+            if (-not $serverVersionMajor) {
+                # SERVERPROPERTY has been answered since SQL Server 2000 and travels the same
+                # plain T-SQL path that already carried the connection test above, so it can be
+                # read wherever the connection itself works. On a SQL Server 2005 instance it
+                # returns 9.00.5000.00 while every SMO-served property comes back empty.
+                $productVersionQuery = @"
 SELECT SERVERPROPERTY('ProductVersion')
 "@
-                    try {
-                        $productVersion = $server.ConnectionContext.ExecuteScalar($productVersionQuery)
-                        $productVersionMajor = ($productVersion -split "\.")[0]
-                        $minimumVersionMajor = [int]$productVersionMajor
-                        Write-Message -Level Debug -Message "ServerVersion is not available, using ProductVersion [$productVersion] from T-SQL"
-                    } catch {
-                        Write-Message -Level Debug -Message "Failed to read ProductVersion with T-SQL: $_"
-                    }
+                try {
+                    $productVersion = $server.ConnectionContext.ExecuteScalar($productVersionQuery)
+                    $productVersionMajor = ($productVersion -split "\.")[0]
+                    $serverVersionMajor = [int]$productVersionMajor
+                    Write-Message -Level Debug -Message "ServerVersion is not available, using ProductVersion [$productVersion] from T-SQL"
+                } catch {
+                    Write-Message -Level Debug -Message "Failed to read ProductVersion with T-SQL: $_"
                 }
+            }
+
+            # SMO 181, which dbatools.library ships since 2026.5.3, declares SQL Server 2008 as the
+            # oldest version of every enumerator, so the object model and every command built on it
+            # fail below that - on SMO's own queries, with errors that say nothing about the version.
+            # Refuse such an instance here instead, and name the last release that still manages it.
+            if ($serverVersionMajor -and $serverVersionMajor -lt 10) {
+                if ($isNewConnection) {
+                    $server.ConnectionContext.Disconnect()
+                }
+                switch ($serverVersionMajor) {
+                    9 { $legacyVersionName = "SQL Server 2005" }
+                    8 { $legacyVersionName = "SQL Server 2000" }
+                    default { $legacyVersionName = "SQL Server version $serverVersionMajor" }
+                }
+                $legacyReleaseNote = "The last release that supports $legacyVersionName is dbatools 2.8.2 with dbatools.library 2025.12.28"
+                if ($serverVersionMajor -lt 9) {
+                    # PowerShell 7 cannot log in to SQL Server 2000 at all, see #8425
+                    $legacyReleaseNote += ", run from Windows PowerShell 5.1"
+                }
+                Stop-Function -Target $instance -Message "$server runs $legacyVersionName, which dbatools no longer supports: since 2.8.3, dbatools uses SMO 181, which requires SQL Server 2008 or later. $legacyReleaseNote. See https://github.com/dataplat/dbatools#sql-server-2000-and-2005" -Continue
+            }
+
+            if ($MinimumVersion) {
                 # If none of the sources knows the version, the connection is let through as before.
-                if ($minimumVersionMajor -and $minimumVersionMajor -lt $MinimumVersion) {
+                if ($serverVersionMajor -and $serverVersionMajor -lt $MinimumVersion) {
                     if ($isNewConnection) {
                         $server.ConnectionContext.Disconnect()
                     }

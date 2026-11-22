@@ -6,6 +6,8 @@ function Restart-DbaService {
     .DESCRIPTION
         Restarts SQL Server services across multiple computers while automatically managing service dependencies and restart order. This function performs a controlled stop-then-restart sequence, ensuring that dependent services like SQL Agent are properly handled when restarting the Database Engine. You can target specific service types (Engine, Agent, SSRS, SSAS, etc.) or restart all SQL Server services on a system, making it ideal for maintenance windows or applying configuration changes that require service restarts.
 
+        A service that is stopped is started. A service that is disabled cannot be started and is returned with the Status Failed and a warning, like every service that fails to stop or start. With -EnableException the command also throws when a service failed, after all services were handled.
+
         Requires Local Admin rights on destination computer(s).
 
     .PARAMETER ComputerName
@@ -50,6 +52,7 @@ function Restart-DbaService {
     .PARAMETER Force
         Automatically includes dependent services (SQL Agent, PolyBase, Launchpad) when restarting Database Engine services to ensure proper shutdown sequence.
         Use this when restarting Engine services to avoid dependency conflicts and ensure all related services restart cleanly, particularly important during major configuration changes or patches.
+        A dependent service that is stopped stays stopped, unless the Database Engine itself is stopped: then the dependent services set to start automatically are started with it.
 
     .NOTES
         Tags: Service, Instance, Restart
@@ -76,7 +79,7 @@ function Restart-DbaService {
 
         Services that failed to stop are returned before services that successfully restarted. This allows you to identify which services encountered issues during the restart process.
 
-        If -Force is specified with Engine services, dependent services (Agent, PolyBase, Launchpad) are automatically included and restarted as part of the operation.
+        If -Force is specified with Engine services, dependent services (Agent, PolyBase, Launchpad) are automatically included and restarted as part of the operation: the ones that are running, and when the engine itself is stopped, the ones set to start automatically.
 
     .EXAMPLE
         PS C:\> Restart-DbaService -ComputerName sqlserver2014a
@@ -161,7 +164,17 @@ function Restart-DbaService {
                     }
                     if ($Credential) { $serviceParams.Credential = $Credential }
                     if ($EnableException) { $serviceParams.EnableException = $EnableException }
-                    $processArray += @(Get-DbaService @serviceParams)
+                    # A dependent service only has to be stopped for the engine when it is running, and only then it is
+                    # started again, so one that was stopped on purpose stays stopped. When the engine itself is stopped,
+                    # its dependent services went down with it and their state tells nothing about the intent, so the ones
+                    # set to start automatically are started with the engine, as when the computer starts.
+                    foreach ($dependentServiceObject in @(Get-DbaService @serviceParams)) {
+                        if ($dependentServiceObject.State -ne "Stopped" -or ($service.State -eq "Stopped" -and $dependentServiceObject.StartMode -eq "Automatic")) {
+                            $processArray += $dependentServiceObject
+                        } else {
+                            Write-Message -Level Verbose -Message "Leaving the stopped service $($dependentServiceObject.ServiceName) on $($dependentServiceObject.ComputerName) alone, since the engine is running or the service does not start automatically"
+                        }
+                    }
                 }
             }
         }
@@ -175,14 +188,27 @@ function Restart-DbaService {
                 }
                 if ($Credential) { $splatServiceStatus.Credential = $Credential }
                 $services = Update-ServiceStatus @splatServiceStatus
-                foreach ($service in ($services | Where-Object { $_.Status -eq 'Failed' })) {
+                # A service that cannot be stopped or started is a row with Status "Failed" and a warning. With
+                # EnableException the command throws as well, but only after both steps: throwing after the stop step
+                # would leave the services down that did stop.
+                $failedServices = @()
+                foreach ($service in ($services | Where-Object Status -eq "Failed")) {
+                    $failedServices += $service
                     $service
                 }
-                $services = $services | Where-Object { $_.Status -eq 'Successful' }
+                $services = $services | Where-Object Status -eq "Successful"
                 if ($services) {
                     $splatServiceStatus.InputObject = $services
                     $splatServiceStatus.Action = "restart"
-                    Update-ServiceStatus @splatServiceStatus
+                    # The rows are read through OutVariable: a ForEach-Object behind the call would hide the warnings
+                    # of Update-ServiceStatus from the WarningVariable of the caller.
+                    Update-ServiceStatus @splatServiceStatus -OutVariable restartServiceResults
+                    $failedServices += @($restartServiceResults | Where-Object Status -eq "Failed")
+                }
+                if ($EnableException -and $failedServices) {
+                    $failedServiceText = ($failedServices | ForEach-Object { "$($PSItem.ServiceName) on $($PSItem.ComputerName): $($PSItem.Message)" }) -join " | "
+                    Stop-Function -EnableException $EnableException -Message "Failed to restart $($failedServices.Count) service(s): $failedServiceText" -Category InvalidResult
+                    return
                 }
             }
         } else {

@@ -38,6 +38,7 @@ Describe "fleet configuration" {
         $config["RUNNER_LABEL"] | Should -Be "dbatools-modern"
         $config["CI_MARKER"] | Should -Be "[do ci]"
         $config["STALE_NUDGE_MINUTES"] | Should -Be 5
+        $config["GHOST_RUN_MINUTES"] | Should -Be 30
     }
 
     It "lets an app setting override a committed constant" {
@@ -46,6 +47,348 @@ Describe "fleet configuration" {
             (Get-FleetConfig)["WARM_FLOOR"] | Should -Be "7"
         } finally {
             Remove-Item -Path env:WARM_FLOOR
+        }
+    }
+}
+
+Describe "ghost CI runs in the demand pass" {
+    BeforeAll {
+        InModuleScope FleetCore {
+            $script:Fleet = @{
+                Repo                    = "dataplat/dbatools"
+                CiWorkflow              = "ci-azure.yml"
+                Maintainers             = @("potatoqualitee", "andreasjordan", "niphlod")
+                OptInPushUsers          = @("potatoqualitee")
+                CiMarker                = "[do ci]"
+                MaintainerCount         = 10
+                MaintainerWindowMinutes = 60
+                GhostRunMinutes         = 30
+                CommunityCount          = 5
+                CommunityGraceMinutes   = 20
+                MaxRunners              = 35
+                WarmFloor               = 3
+            }
+            # The run that held andreasjordan's lane from 2026-11-11 on: accepted, never
+            # started, no jobs, and GitHub refuses to cancel it.
+            $script:GhostRun = [pscustomobject]@{
+                id             = 43097667289
+                status         = "queued"
+                event          = "pull_request"
+                head_branch    = "restart-dbaservice-stopped-service"
+                head_sha       = "6b99c806aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                display_title  = "Restart-DbaService - Start a service that is already stopped"
+                actor          = [pscustomobject]@{ login = "andreasjordan" }
+                head_commit    = [pscustomobject]@{ message = "Restart-DbaService - Start a service that is already stopped" }
+                created_at     = "2026-11-11T20:42:53Z"
+                run_started_at = "2026-11-11T20:42:53Z"
+                updated_at     = "2026-11-11T20:42:53Z"
+            }
+        }
+    }
+
+    BeforeEach {
+        InModuleScope FleetCore {
+            $script:Fleet.GhostRunMinutes = 30
+            $splatMockEvents = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/events*" }
+                MockWith        = { @() }
+            }
+            Mock @splatMockEvents
+            $splatMockRunPage = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/workflows/*/runs*" -and $Path -notlike "*status=*" }
+                MockWith        = { [pscustomobject]@{ workflow_runs = @($script:GhostRun) } }
+            }
+            Mock @splatMockRunPage
+            $splatMockRunning = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/workflows/*/runs*status=in_progress*" }
+                MockWith        = {
+                    [pscustomobject]@{
+                        total_count   = 0
+                        workflow_runs = @()
+                    }
+                }
+            }
+            Mock @splatMockRunning
+            # GitHub lists a ghost among the queued builds as well.
+            $splatMockQueued = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/workflows/*/runs*status=queued*" }
+                MockWith        = {
+                    [pscustomobject]@{
+                        total_count   = 1
+                        workflow_runs = @($script:GhostRun)
+                    }
+                }
+            }
+            Mock @splatMockQueued
+            $splatMockJobs = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/runs/*/jobs*" }
+                MockWith        = {
+                    [pscustomobject]@{
+                        total_count = 0
+                        jobs        = @()
+                    }
+                }
+            }
+            Mock @splatMockJobs
+        }
+    }
+
+    It "stops a ghost run from holding its maintainer's lane" {
+        InModuleScope FleetCore {
+            $demand = Get-RunnerDemand
+            $demand.Desired["andreasjordan"] | Should -Be 0
+        }
+    }
+
+    It "holds the lane as before when the check is switched off" {
+        InModuleScope FleetCore {
+            $script:Fleet.GhostRunMinutes = 0
+            $demand = Get-RunnerDemand
+            $demand.Desired["andreasjordan"] | Should -Be 10
+            $splatListingRead = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*status=*" }
+                Times           = 0
+                Exactly         = $true
+            }
+            Should -Invoke @splatListingRead
+        }
+    }
+
+    It "treats a run whose jobs response has no jobs list as unread, not as a ghost" {
+        InModuleScope FleetCore {
+            $splatMockJobs = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/runs/*/jobs*" }
+                MockWith        = { [pscustomobject]@{ message = "garbled" } }
+            }
+            Mock @splatMockJobs
+            $demand = Get-RunnerDemand -WarningAction SilentlyContinue
+            $demand.Desired["andreasjordan"] | Should -Be 10
+        }
+    }
+
+    It "treats a run whose jobs list is null as unread, not as a ghost" {
+        InModuleScope FleetCore {
+            $splatMockJobs = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/runs/*/jobs*" }
+                MockWith        = {
+                    [pscustomobject]@{
+                        total_count = 0
+                        jobs        = $null
+                    }
+                }
+            }
+            Mock @splatMockJobs
+            $output = @(Get-RunnerDemand 3>&1)
+            $demand = $output | Where-Object { $PSItem -isnot [System.Management.Automation.WarningRecord] }
+            $warnings = @($output | Where-Object { $PSItem -is [System.Management.Automation.WarningRecord] })
+            $demand.Desired["andreasjordan"] | Should -Be 10
+            $warnings.Message | Should -Contain "jobs for run 43097667289 arrived without a jobs list; treating the run as unread"
+        }
+    }
+
+    It "treats an empty jobs list that GitHub's own count contradicts as unread, not as a ghost" {
+        InModuleScope FleetCore {
+            $splatMockJobs = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/runs/*/jobs*" }
+                MockWith        = {
+                    [pscustomobject]@{
+                        total_count = 3
+                        jobs        = @()
+                    }
+                }
+            }
+            Mock @splatMockJobs
+            $output = @(Get-RunnerDemand 3>&1)
+            $demand = $output | Where-Object { $PSItem -isnot [System.Management.Automation.WarningRecord] }
+            $warnings = @($output | Where-Object { $PSItem -is [System.Management.Automation.WarningRecord] })
+            $demand.Desired["andreasjordan"] | Should -Be 10
+            $warnings.Message | Should -Contain "jobs for run 43097667289 arrived empty although GitHub counts 3; treating the run as unread"
+        }
+    }
+
+    It "keeps the lane when the build ahead is running but older than the whole run page" {
+        InModuleScope FleetCore {
+            $splatMockRunning = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/workflows/*/runs*status=in_progress*" }
+                MockWith        = {
+                    [pscustomobject]@{
+                        workflow_runs = @(
+                            [pscustomobject]@{
+                                id            = 43090000001
+                                status        = "in_progress"
+                                event         = "pull_request"
+                                display_title = "An older andreasjordan build that still runs"
+                                actor         = [pscustomobject]@{ login = "andreasjordan" }
+                            }
+                        )
+                    }
+                }
+            }
+            Mock @splatMockRunning
+            $demand = Get-RunnerDemand
+            $demand.Desired["andreasjordan"] | Should -Be 10
+        }
+    }
+
+    It "calls no run a ghost when the running builds arrive without a run list" {
+        InModuleScope FleetCore {
+            $splatMockRunning = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/workflows/*/runs*status=in_progress*" }
+                MockWith        = { [pscustomobject]@{ message = "garbled" } }
+            }
+            Mock @splatMockRunning
+            $output = @(Get-RunnerDemand 3>&1)
+            $demand = $output | Where-Object { $PSItem -isnot [System.Management.Automation.WarningRecord] }
+            $warnings = @($output | Where-Object { $PSItem -is [System.Management.Automation.WarningRecord] })
+            $demand.Desired["andreasjordan"] | Should -Be 10
+            $warnings.Message | Should -Contain "running CI builds arrived without a run list; no run is treated as a ghost this pass"
+        }
+    }
+
+    It "keeps the lane when the build ahead reads queued while its jobs wait for runners, older than the whole run page" {
+        # GitHub reports a run's status from its least advanced job (cli/cli#13972), so this
+        # started build is "queued" and absent from the in_progress listing.
+        InModuleScope FleetCore {
+            $splatMockQueued = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/workflows/*/runs*status=queued*" }
+                MockWith        = {
+                    [pscustomobject]@{
+                        total_count   = 2
+                        workflow_runs = @(
+                            $script:GhostRun,
+                            [pscustomobject]@{
+                                id            = 43090000002
+                                status        = "queued"
+                                event         = "pull_request"
+                                display_title = "An older andreasjordan build whose fleet jobs wait for runners"
+                                actor         = [pscustomobject]@{ login = "andreasjordan" }
+                            }
+                        )
+                    }
+                }
+            }
+            Mock @splatMockQueued
+            $splatMockAheadJobs = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/runs/43090000002/jobs*" }
+                MockWith        = {
+                    [pscustomobject]@{
+                        total_count = 2
+                        jobs        = @(
+                            [pscustomobject]@{
+                                status = "completed"
+                                labels = @("ubuntu-latest")
+                            },
+                            [pscustomobject]@{
+                                status = "queued"
+                                labels = @("self-hosted", "dbatools-modern", "dbatools-pool-andreasjordan")
+                            }
+                        )
+                    }
+                }
+            }
+            Mock @splatMockAheadJobs
+            $demand = Get-RunnerDemand
+            $demand.Desired["andreasjordan"] | Should -Be 10
+            $splatAheadRead = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/runs/43090000002/jobs*" }
+                Times           = 1
+                Exactly         = $true
+            }
+            Should -Invoke @splatAheadRead
+            $splatGhostRead = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/runs/43097667289/jobs*" }
+                Times           = 1
+                Exactly         = $true
+            }
+            Should -Invoke @splatGhostRead
+        }
+    }
+
+    It "calls no run a ghost when the queued builds arrive without a run list" {
+        InModuleScope FleetCore {
+            $splatMockQueued = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/workflows/*/runs*status=queued*" }
+                MockWith        = { [pscustomobject]@{ message = "garbled" } }
+            }
+            Mock @splatMockQueued
+            $output = @(Get-RunnerDemand 3>&1)
+            $demand = $output | Where-Object { $PSItem -isnot [System.Management.Automation.WarningRecord] }
+            $warnings = @($output | Where-Object { $PSItem -is [System.Management.Automation.WarningRecord] })
+            $demand.Desired["andreasjordan"] | Should -Be 10
+            $warnings.Message | Should -Contain "queued CI builds arrived without a run list; no run is treated as a ghost this pass"
+        }
+    }
+
+    It "calls no run a ghost when a listing holds fewer runs than GitHub counts" {
+        InModuleScope FleetCore {
+            $splatMockQueued = @{
+                CommandName     = "Invoke-GhJson"
+                ParameterFilter = { $Path -like "*/workflows/*/runs*status=queued*" }
+                MockWith        = {
+                    [pscustomobject]@{
+                        total_count   = 150
+                        workflow_runs = @($script:GhostRun)
+                    }
+                }
+            }
+            Mock @splatMockQueued
+            $output = @(Get-RunnerDemand 3>&1)
+            $demand = $output | Where-Object { $PSItem -isnot [System.Management.Automation.WarningRecord] }
+            $warnings = @($output | Where-Object { $PSItem -is [System.Management.Automation.WarningRecord] })
+            $demand.Desired["andreasjordan"] | Should -Be 10
+            $warnings.Message | Should -Contain "queued CI builds arrived with 1 of the 150 runs GitHub counts; no run is treated as a ghost this pass"
+        }
+    }
+
+    It "keeps a ghost as the dispatch record of its commit" {
+        InModuleScope FleetCore {
+            $script:GhostRun.actor = [pscustomobject]@{ login = "potatoqualitee" }
+            try {
+                $splatMockEvents = @{
+                    CommandName     = "Invoke-GhJson"
+                    ParameterFilter = { $Path -like "*/events*" }
+                    MockWith        = {
+                        @(
+                            [pscustomobject]@{
+                                type       = "PushEvent"
+                                created_at = [DateTimeOffset]::UtcNow.AddMinutes(-5).ToString("o")
+                                actor      = [pscustomobject]@{ login = "potatoqualitee" }
+                                payload    = [pscustomobject]@{
+                                    head    = $script:GhostRun.head_sha
+                                    ref     = "refs/heads/restart-dbaservice-stopped-service"
+                                    commits = @(
+                                        [pscustomobject]@{
+                                            sha     = $script:GhostRun.head_sha
+                                            message = "work [do ci]"
+                                        }
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
+                Mock @splatMockEvents
+                $demand = Get-RunnerDemand
+                $demand.Dispatch | Should -BeNullOrEmpty
+            } finally {
+                $script:GhostRun.actor = [pscustomobject]@{ login = "andreasjordan" }
+            }
         }
     }
 }
@@ -773,6 +1116,7 @@ Describe "fail-closed settings" {
             $env:DRY_RUN = $goodValue
             $context = InModuleScope FleetCore { Initialize-FleetContext }
             $context.DryRun | Should -Be ($goodValue -eq "true" -or $goodValue -eq "TRUE")
+            $context.GhostRunMinutes | Should -Be 30
         }
     }
 }
@@ -966,5 +1310,206 @@ Describe "parallel registration" {
             }
             Invoke-VmRunCommand @splatRunCommand | Should -Be "runner registered"
         }
+    }
+}
+
+Describe "runner version check" {
+    BeforeAll {
+        $script:FakeBootstrap = Join-Path -Path ([System.IO.Path]::GetTempPath()) -ChildPath "bootstrap-version-$([System.Guid]::NewGuid().ToString("N")).ps1"
+        Set-Content -Path $script:FakeBootstrap -Value "`$runnerVersion = `"2.338.2`"`n`$runnerSha256 = `"$("0" * 64)`""
+        $script:CurrentTitle = "CI runner deprecation - GitHub retires actions runner 2.338.2"
+        $script:BotLogin = "dbatools-fleet-controller[bot]"
+
+        function New-IssueHit {
+            param(
+                [Parameter(Mandatory)]
+                [int]$Number,
+                [Parameter(Mandatory)]
+                [string]$Title,
+                [string]$Login = "dbatools-fleet-controller[bot]"
+            )
+
+            [pscustomobject]@{
+                number = $Number
+                title  = $Title
+                user   = [pscustomobject]@{ login = $Login }
+            }
+        }
+    }
+
+    AfterAll {
+        $splatRemoveBootstrap = @{
+            Path        = $script:FakeBootstrap
+            Force       = $true
+            ErrorAction = "SilentlyContinue"
+        }
+        Remove-Item @splatRemoveBootstrap
+    }
+
+    BeforeEach {
+        $fakeBootstrapPath = $script:FakeBootstrap
+        InModuleScope FleetCore -Parameters @{ BootstrapPath = $fakeBootstrapPath } {
+            param($BootstrapPath)
+            $script:Fleet = [pscustomobject]@{
+                DryRun        = $false
+                Repo          = "dataplat/dbatools"
+                BootstrapPath = $BootstrapPath
+                BotLogin      = "dbatools-fleet-controller[bot]"
+            }
+        }
+        # Read and written by the Invoke-GhJson mock, which runs in this file's scope
+        $script:Deprecation = [pscustomobject]@{
+            runner_version             = "2.338.2"
+            registration_deprecates_at = $null
+            runtime_deprecates_at      = "2026-12-20T00:00:00Z"
+        }
+        # one entry per page of the open issue list; the mock ignores creator on purpose,
+        # so the tests also prove the command filters by login itself
+        $script:IssuePages = @(, @())
+        $script:ReleaseFails = $false
+        $script:GhCalls = @()
+        Mock -ModuleName FleetCore Initialize-FleetContext { }
+        Mock -ModuleName FleetCore Invoke-GhJson {
+            $script:GhCalls += [pscustomobject]@{
+                Path   = $Path
+                Method = $Method
+                Body   = $Body
+            }
+            if ($Path -like "*/actions/runners/deprecations/*") {
+                return $script:Deprecation
+            }
+            if ($Path -eq "repos/actions/runner/releases/latest") {
+                if ($script:ReleaseFails) {
+                    throw "read the latest actions runner release failed after 3 attempts."
+                }
+                return [pscustomobject]@{
+                    tag_name = "v2.339.0"
+                    html_url = "https://github.com/actions/runner/releases/tag/v2.339.0"
+                    body     = "<!-- BEGIN SHA win-x64 -->$("a" * 64)<!-- END SHA win-x64 -->"
+                }
+            }
+            # a mock gets no parameter defaults, so a GET arrives with $Method empty
+            if ($Path -like "repos/dataplat/dbatools/issues?state=open*") {
+                $pageNumber = [int][regex]::Match($Path, "[?&]page=(\d+)").Groups[1].Value
+                if ($pageNumber -gt $script:IssuePages.Count) {
+                    return , @()
+                }
+                # Invoke-RestMethod hands a JSON array over as one object
+                return , @($script:IssuePages[$pageNumber - 1])
+            }
+            [pscustomobject]@{ number = 4242 }
+        }
+    }
+
+    It "reads the version the shipped bootstrap installs" {
+        $bootstrapPath = (Resolve-Path "$PSScriptRoot/../bootstrap-runner.ps1").Path
+        $bootstrapText = Get-Content -Path $bootstrapPath -Raw
+        $expected = [regex]::Match($bootstrapText, "\`$runnerVersion = `"(\d+\.\d+\.\d+)`"").Groups[1].Value
+        InModuleScope FleetCore -Parameters @{ BootstrapPath = $bootstrapPath } {
+            param($BootstrapPath)
+            Get-PinnedRunnerVersion -BootstrapPath $BootstrapPath
+        } | Should -Be $expected
+    }
+
+    It "commits the login of the controller's App" {
+        (Get-FleetConfig)["BOT_LOGIN"] | Should -Be $script:BotLogin
+    }
+
+    It "opens one issue when GitHub schedules the retirement of the pinned version" {
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck -Now ([DateTimeOffset]::Parse("2026-11-16T06:00:00Z")) -WarningAction SilentlyContinue }
+        $deprecationRead = @($script:GhCalls | Where-Object Path -eq "repos/dataplat/dbatools/actions/runners/deprecations/2.338.2")
+        $deprecationRead.Count | Should -Be 1
+        $issueList = @($script:GhCalls | Where-Object Path -like "repos/dataplat/dbatools/issues?state=open*")
+        $issueList.Count | Should -Be 1
+        $issueList[0].Path | Should -Match ([regex]::Escape("creator=dbatools-fleet-controller%5Bbot%5D"))
+        $opened = @($script:GhCalls | Where-Object { $PSItem.Method -eq "Post" -and $PSItem.Path -eq "repos/dataplat/dbatools/issues" })
+        $opened.Count | Should -Be 1
+        $opened[0].Body.title | Should -Be $script:CurrentTitle
+        $opened[0].Body.body | Should -Match ([regex]::Escape("`$runnerVersion = `"2.339.0`""))
+    }
+
+    It "opens nothing while GitHub has scheduled nothing" {
+        $script:Deprecation.runtime_deprecates_at = $null
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck }
+        @($script:GhCalls | Where-Object Method -in "Post", "Patch").Count | Should -Be 0
+    }
+
+    It "does not open a second issue while the first is open" {
+        $script:IssuePages = @(, @(New-IssueHit -Number 77 -Title $script:CurrentTitle))
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck -WarningAction SilentlyContinue }
+        @($script:GhCalls | Where-Object Method -in "Post", "Patch").Count | Should -Be 0
+    }
+
+    It "finds its open issue on a later page of the list" {
+        $otherIssues = foreach ($number in 1..100) {
+            New-IssueHit -Number $number -Title "CI cost tracker $number"
+        }
+        $script:IssuePages = @(
+            , @($otherIssues)
+            , @(New-IssueHit -Number 177 -Title $script:CurrentTitle)
+        )
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck -WarningAction SilentlyContinue }
+        @($script:GhCalls | Where-Object Path -like "repos/dataplat/dbatools/issues?state=open*").Count | Should -Be 2
+        @($script:GhCalls | Where-Object Method -in "Post", "Patch").Count | Should -Be 0
+    }
+
+    It "opens its own issue when only a person or another bot has one with the title" {
+        $script:IssuePages = @(, @(
+                New-IssueHit -Number 78 -Title $script:CurrentTitle -Login "potatoqualitee"
+                New-IssueHit -Number 79 -Title $script:CurrentTitle -Login "another-app[bot]"
+            ))
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck -WarningAction SilentlyContinue }
+        @($script:GhCalls | Where-Object { $PSItem.Method -eq "Post" -and $PSItem.Path -eq "repos/dataplat/dbatools/issues" }).Count | Should -Be 1
+        @($script:GhCalls | Where-Object Method -eq "Patch").Count | Should -Be 0
+    }
+
+    It "closes its issue about a version the bootstrap no longer installs, and leaves others alone" {
+        $script:Deprecation.runtime_deprecates_at = $null
+        $script:IssuePages = @(, @(
+                New-IssueHit -Number 80 -Title "CI runner deprecation - GitHub retires actions runner 2.335.1"
+                New-IssueHit -Number 81 -Title "CI runner deprecation - GitHub retires actions runner 2.336.0" -Login "potatoqualitee"
+                New-IssueHit -Number 82 -Title "CI runner deprecation - GitHub retires actions runner 2.336.0" -Login "another-app[bot]"
+            ))
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck }
+        $closed = @($script:GhCalls | Where-Object Method -eq "Patch")
+        $closed.Count | Should -Be 1
+        $closed[0].Path | Should -Be "repos/dataplat/dbatools/issues/80"
+        $closed[0].Body.state | Should -Be "closed"
+        $comment = @($script:GhCalls | Where-Object Path -eq "repos/dataplat/dbatools/issues/80/comments")
+        $comment.Count | Should -Be 1
+        $comment[0].Body.body | Should -Match "now installs actions runner 2\.338\.2, so the retirement of 2\.335\.1"
+        @($script:GhCalls | Where-Object Path -like "*/issues/81*").Count | Should -Be 0
+        @($script:GhCalls | Where-Object Path -like "*/issues/82*").Count | Should -Be 0
+    }
+
+    It "refuses to run without the login of its App" {
+        InModuleScope FleetCore { $script:Fleet.BotLogin = "" }
+        { InModuleScope FleetCore { Invoke-RunnerVersionCheck -WarningAction SilentlyContinue } } | Should -Throw "*BOT_LOGIN*"
+        @($script:GhCalls | Where-Object Method -in "Post", "Patch").Count | Should -Be 0
+    }
+
+    It "still opens the issue when the latest release cannot be read" {
+        $script:ReleaseFails = $true
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck -WarningAction SilentlyContinue }
+        $opened = @($script:GhCalls | Where-Object { $PSItem.Method -eq "Post" -and $PSItem.Path -eq "repos/dataplat/dbatools/issues" })
+        $opened.Count | Should -Be 1
+        $opened[0].Body.body | Should -Match ([regex]::Escape("https://github.com/actions/runner/releases/latest"))
+    }
+
+    It "only logs under DRY_RUN" {
+        InModuleScope FleetCore { $script:Fleet.DryRun = $true }
+        $script:IssuePages = @(, @(New-IssueHit -Number 80 -Title "CI runner deprecation - GitHub retires actions runner 2.335.1"))
+        InModuleScope FleetCore { Invoke-RunnerVersionCheck -WarningAction SilentlyContinue 6>$null }
+        @($script:GhCalls | Where-Object Method -in "Post", "Patch").Count | Should -Be 0
+    }
+
+    It "ships the daily timer in the controller package" {
+        $timer = Get-Content -Path "$script:ControllerRoot/RunnerVersionCheck/function.json" -Raw | ConvertFrom-Json
+        $timer.bindings[0].type | Should -Be "timerTrigger"
+        $timer.bindings[0].schedule | Should -Be "0 0 6 * * *"
+        Get-Content -Path "$script:ControllerRoot/RunnerVersionCheck/run.ps1" -Raw | Should -Match "Invoke-RunnerVersionCheck"
+        $deployScript = Get-Content -Path "$script:ControllerRoot/../deploy-controller.ps1" -Raw
+        $deployScript | Should -Match ([regex]::Escape("`"RunnerVersionCheck/function.json`""))
+        $deployScript | Should -Match ([regex]::Escape("`"RunnerVersionCheck/run.ps1`""))
     }
 }

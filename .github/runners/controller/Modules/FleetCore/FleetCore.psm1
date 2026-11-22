@@ -142,12 +142,14 @@ function Initialize-FleetContext {
         CommunityCount          = [int]$config["COMMUNITY_COUNT"]
         MaintainerCount         = [int]$config["BOOST_COUNT"]
         MaintainerWindowMinutes = [int]$config["BOOST_HOURS"] * 60
+        GhostRunMinutes         = [int]$config["GHOST_RUN_MINUTES"]
         CommunityGraceMinutes   = [int]$config["COMMUNITY_GRACE_MINUTES"]
         MaxRunners              = [int]$config["MAX_RUNNERS"]
         WarmFloor               = [int]$config["WARM_FLOOR"]
         Maintainers             = @([string]$config["BOOST_USERS"] -split "\s+" | Where-Object { $PSItem })
         OptInPushUsers          = @([string]$config["OPT_IN_PUSH_USERS"] -split "\s+" | Where-Object { $PSItem })
         CiMarker                = [string]$config["CI_MARKER"]
+        BotLogin                = [string]$config["BOT_LOGIN"]
         BootstrapPath           = $bootstrapPath
         DryRun                  = $dryRunSetting -eq "true"
         DeletedVms              = New-Object -TypeName "System.Collections.Generic.HashSet[string]" -ArgumentList ([System.StringComparer]::OrdinalIgnoreCase)
@@ -777,8 +779,84 @@ function Remove-OrphanedNetworking {
     Write-Host "reaped orphans: nics=$($staleNics.Count) pips=$($stalePips.Count)"
 }
 
-function Get-PoolJobDemand {
+function Read-CiRunJob {
+    param(
+        [Parameter(Mandatory)]
+        $Run,
+        [Parameter(Mandatory)]
+        [hashtable]$JobsByRun
+    )
+    # I/O only. Adds the jobs of one run to JobsByRun. A response without a jobs list, with a
+    # null one, or with an empty one that its own total_count contradicts is left out, so the
+    # policy treats that run as unread rather than as job-less.
+    $splatJobs = @{
+        Path      = "repos/$($script:Fleet.Repo)/actions/runs/$($Run.id)/jobs?per_page=100"
+        Operation = "read jobs for run $($Run.id)"
+    }
+    $jobResponse = Invoke-GhJson @splatJobs
+    if ($null -eq $jobResponse -or $null -eq $jobResponse.PSObject.Properties["jobs"] -or $null -eq $jobResponse.jobs) {
+        Write-Warning "jobs for run $($Run.id) arrived without a jobs list; treating the run as unread"
+        return
+    }
+    $runJobs = @($jobResponse.jobs | Where-Object { $null -ne $PSItem })
+    $reportedJobCount = 0
+    $jobCountProperty = $jobResponse.PSObject.Properties["total_count"]
+    if ($runJobs.Count -eq 0 -and $null -ne $jobCountProperty -and [int]::TryParse([string]$jobCountProperty.Value, [ref]$reportedJobCount) -and $reportedJobCount -gt 0) {
+        Write-Warning "jobs for run $($Run.id) arrived empty although GitHub counts $reportedJobCount; treating the run as unread"
+        return
+    }
+    $JobsByRun[[string]$Run.id] = $runJobs
+}
+
+function Get-LiveCiRunJob {
     param([object[]]$WorkflowRuns)
+    # I/O only. Reads the jobs of every eligible run that is not completed, once per pass,
+    # for both the ghost check and the pending demand. Rejected runs are filtered first so
+    # an unmarked push cannot spend an API call.
+    $eligibleLiveRuns = @($WorkflowRuns | Where-Object {
+            $splatEligibility = @{
+                Run            = $PSItem
+                OptInPushUsers = $script:Fleet.OptInPushUsers
+                Marker         = $script:Fleet.CiMarker
+            }
+            [string]$PSItem.status -ne "completed" -and (Test-CiRunEligible @splatEligibility)
+        })
+    $jobsByRun = @{ }
+    foreach ($run in $eligibleLiveRuns) {
+        Read-CiRunJob -Run $run -JobsByRun $jobsByRun
+    }
+    $jobsByRun
+}
+
+function Test-CiRunListing {
+    param(
+        $Response,
+        [Parameter(Mandatory)]
+        [string]$Description
+    )
+    # A status listing for the ghost check counts only when it carries its run list and holds
+    # every run GitHub counts for it, because a run is a ghost only when nothing of its lane
+    # can be running.
+    if ($null -eq $Response -or $null -eq $Response.PSObject.Properties["workflow_runs"] -or $null -eq $Response.workflow_runs) {
+        Write-Warning "$Description arrived without a run list; no run is treated as a ghost this pass"
+        return $false
+    }
+    $listedCount = @($Response.workflow_runs | Where-Object { $null -ne $PSItem }).Count
+    $reportedCount = 0
+    $countProperty = $Response.PSObject.Properties["total_count"]
+    if ($null -ne $countProperty -and [int]::TryParse([string]$countProperty.Value, [ref]$reportedCount) -and $reportedCount -gt $listedCount) {
+        Write-Warning "$Description arrived with $listedCount of the $reportedCount runs GitHub counts; no run is treated as a ghost this pass"
+        return $false
+    }
+    $true
+}
+
+function Get-PoolJobDemand {
+    param(
+        [object[]]$WorkflowRuns,
+        [Parameter(Mandatory)]
+        [hashtable]$JobsByRun
+    )
     # I/O only -- eligibility, matrix-state detection and the demand transform live in
     # runner-policy.ps1, where they are unit tested. Rejected runs are filtered before
     # I/O so an unmarked push cannot spend an API call or inflate an already-hot lane.
@@ -790,19 +868,10 @@ function Get-PoolJobDemand {
             }
             [string]$PSItem.status -ne "completed" -and (Test-CiRunEligible @splatEligibility)
         })
-    $jobsByRun = @{ }
-    foreach ($run in $eligibleLiveRuns) {
-        $splatJobs = @{
-            Path      = "repos/$($script:Fleet.Repo)/actions/runs/$($run.id)/jobs?per_page=100"
-            Operation = "read jobs for run $($run.id)"
-        }
-        $jobResponse = Invoke-GhJson @splatJobs
-        $jobsByRun[[string]$run.id] = @($jobResponse.jobs)
-    }
 
     $splatDemand = @{
         WorkflowRuns    = $eligibleLiveRuns
-        JobsByRun       = $jobsByRun
+        JobsByRun       = $JobsByRun
         Maintainers     = $script:Fleet.Maintainers
         OptInPushUsers  = $script:Fleet.OptInPushUsers
         Marker          = $script:Fleet.CiMarker
@@ -929,11 +998,63 @@ function Get-RunnerDemand {
     $runResponse = Invoke-GhJson @splatRuns
     $workflowRuns = @($runResponse.workflow_runs)
     $now = [DateTimeOffset]::UtcNow
-    $poolJobDemand = Get-PoolJobDemand -WorkflowRuns $workflowRuns
+    $jobsByRun = Get-LiveCiRunJob -WorkflowRuns $workflowRuns
+    $ghostRunIds = @()
+    if ($script:Fleet.GhostRunMinutes -gt 0) {
+        # The build a waiting build sits behind can be older than every run of the page
+        # above, so the ghost check also gets the running and the queued builds on their
+        # own. GitHub reports a run's status from its least advanced job, so a started build
+        # whose jobs wait for runners reads "queued"; the queued builds therefore bring their
+        # jobs too. A listing that arrives without its run list, or with fewer runs than it
+        # counts, calls no run a ghost this pass.
+        $splatRunning = @{
+            Path      = "repos/$($script:Fleet.Repo)/actions/workflows/$($script:Fleet.CiWorkflow)/runs?status=in_progress&per_page=100"
+            Operation = "read running CI builds"
+        }
+        $runningResponse = Invoke-GhJson @splatRunning
+        $splatQueued = @{
+            Path      = "repos/$($script:Fleet.Repo)/actions/workflows/$($script:Fleet.CiWorkflow)/runs?status=queued&per_page=100"
+            Operation = "read queued CI builds"
+        }
+        $queuedResponse = Invoke-GhJson @splatQueued
+        $runningUsable = Test-CiRunListing -Response $runningResponse -Description "running CI builds"
+        $queuedUsable = Test-CiRunListing -Response $queuedResponse -Description "queued CI builds"
+        if ($runningUsable -and $queuedUsable) {
+            $queuedRuns = @($queuedResponse.workflow_runs | Where-Object { $null -ne $PSItem })
+            # Ineligible and off-page queued builds were not read above. Their jobs serve the
+            # ghost check only; pending demand keeps reading the page's eligible runs.
+            $ghostJobsByRun = $jobsByRun.Clone()
+            foreach ($queuedRun in $queuedRuns) {
+                if (-not $ghostJobsByRun.ContainsKey([string]$queuedRun.id)) {
+                    Read-CiRunJob -Run $queuedRun -JobsByRun $ghostJobsByRun
+                }
+            }
+            $splatGhost = @{
+                WorkflowRuns   = $workflowRuns
+                JobsByRun      = $ghostJobsByRun
+                InProgressRuns = @($runningResponse.workflow_runs)
+                QueuedRuns     = $queuedRuns
+                Maintainers    = $script:Fleet.Maintainers
+                OptInPushUsers = $script:Fleet.OptInPushUsers
+                Marker         = $script:Fleet.CiMarker
+                Now            = $now
+                GhostMinutes   = $script:Fleet.GhostRunMinutes
+            }
+            $ghostRunIds = @(Get-GhostCiRunId @splatGhost)
+        }
+    }
+    if ($ghostRunIds) {
+        Write-Host "ignoring ghost CI runs (live, no jobs, idle over $($script:Fleet.GhostRunMinutes) minutes, nothing ahead in their lane): $($ghostRunIds -join ", ")"
+    }
+    # Ghosts leave pending demand and pool sizing only. Marked-push dispatch below still
+    # sees every run: a ghost is GitHub's record that the commit's run was accepted, and
+    # dispatching that commit again is a different decision than this filter makes.
+    $demandRuns = @($workflowRuns | Where-Object { [string]$PSItem.id -notin $ghostRunIds })
+    $poolJobDemand = Get-PoolJobDemand -WorkflowRuns $demandRuns -JobsByRun $jobsByRun
     Write-Host "pending jobs: $(($poolJobDemand.GetEnumerator() | ForEach-Object { "$($PSItem.Key)=$($PSItem.Value)" }) -join ", ")"
     $splatPolicy = @{
         Events                  = $events
-        WorkflowRuns            = $workflowRuns
+        WorkflowRuns            = $demandRuns
         Maintainers             = $script:Fleet.Maintainers
         OptInPushUsers          = $script:Fleet.OptInPushUsers
         MaintainerCount         = $script:Fleet.MaintainerCount
@@ -1507,6 +1628,135 @@ function Invoke-FleetSpendReport {
     Write-Host "posted month-to-date spend $cost to issue $issueNumber"
 }
 
+function Get-PinnedRunnerVersion {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$BootstrapPath
+    )
+
+    # The fleet runs whatever version this bootstrap installs, so the check reads the copy
+    # deployed beside this module rather than a setting that could drift away from it.
+    $bootstrapText = Get-Content -Path $BootstrapPath -Raw
+    $versionMatch = [regex]::Match($bootstrapText, "(?m)^\`$runnerVersion = `"(\d+\.\d+\.\d+)`"")
+    if (-not $versionMatch.Success) {
+        throw "Cannot read `$runnerVersion from $BootstrapPath; the runner deprecation check has no version to check"
+    }
+    $versionMatch.Groups[1].Value
+}
+
+function Invoke-RunnerVersionCheck {
+    [CmdletBinding()]
+    param(
+        [DateTimeOffset]$Now = [DateTimeOffset]::UtcNow
+    )
+
+    # bootstrap-runner.ps1 registers with --disableupdate, so nothing on a VM moves the
+    # runner forward when GitHub retires its version. 2.335.1 stopped CI that way on
+    # 2026-11-15, seven weeks after the date GitHub had published for it. This reads the
+    # same schedule every day and keeps one issue open per retiring version.
+    $null = Initialize-FleetContext
+    $version = Get-PinnedRunnerVersion -BootstrapPath $script:Fleet.BootstrapPath
+    $splatDeprecation = @{
+        Path      = "repos/$($script:Fleet.Repo)/actions/runners/deprecations/$version"
+        Operation = "read the deprecation schedule of runner $version"
+    }
+    $deprecation = Invoke-GhJson @splatDeprecation
+
+    $latestRelease = $null
+    try {
+        $latestRelease = Invoke-GhJson -Path "repos/actions/runner/releases/latest" -Operation "read the latest actions runner release"
+    } catch {
+        Write-Warning "Cannot read the latest actions runner release; an issue would point at the releases page instead. $($PSItem.Exception.Message)"
+    }
+
+    $splatNotice = @{
+        Version       = $version
+        Deprecation   = $deprecation
+        LatestRelease = $latestRelease
+        Now           = $Now
+    }
+    $notice = Get-RunnerDeprecationNotice @splatNotice
+    $currentTitle = Get-RunnerDeprecationTitle -Version $version
+    if ($notice) {
+        Write-Warning "runner ${version}: GitHub retires it at $($notice.Deadline.UtcDateTime.ToString("yyyy-MM-dd HH:mm")) UTC, $($notice.DaysLeft) day(s) from now"
+    } else {
+        Write-Host "runner ${version}: GitHub has not scheduled its deprecation"
+    }
+
+    # Only issues the controller opened: a title match alone could be a person, or another
+    # bot, quoting it. The issue list rather than search, because search can answer
+    # incomplete results and an issue it leaves out would be opened a second time.
+    $botLogin = [string]$script:Fleet.BotLogin
+    if (-not $botLogin) {
+        throw "BOT_LOGIN is empty; the runner deprecation check cannot tell its own issues apart"
+    }
+    $titlePattern = Get-RunnerDeprecationTitle -Version "*"
+    $ownIssues = @()
+    $page = 1
+    do {
+        $splatList = @{
+            Path      = "repos/$($script:Fleet.Repo)/issues?state=open&creator=$([uri]::EscapeDataString($botLogin))&per_page=100&page=$page"
+            Operation = "list the open issues of $botLogin"
+        }
+        # ForEach-Object unrolls the array Invoke-RestMethod may hand over as one object
+        $pageItems = @(Invoke-GhJson @splatList | ForEach-Object { $PSItem })
+        $ownIssues += @($pageItems | Where-Object {
+                -not $PSItem.pull_request -and [string]$PSItem.user.login -eq $botLogin -and [string]$PSItem.title -like $titlePattern
+            })
+        $page++
+    } while ($pageItems.Count -eq 100)
+
+    foreach ($staleIssue in @($ownIssues | Where-Object { [string]$PSItem.title -ne $currentTitle })) {
+        $staleVersion = ([string]$staleIssue.title).Substring($titlePattern.Length - 1)
+        $closeComment = "The deployed fleet controller now installs actions runner $version, so the retirement of $staleVersion no longer affects CI."
+        if (Test-FleetDryRun -Decision "close issue=$($staleIssue.number) comment=$closeComment") {
+            continue
+        }
+        $splatCloseComment = @{
+            Path      = "repos/$($script:Fleet.Repo)/issues/$($staleIssue.number)/comments"
+            Method    = "Post"
+            Body      = @{ body = $closeComment }
+            Operation = "comment on runner deprecation issue $($staleIssue.number)"
+        }
+        $null = Invoke-GhJson @splatCloseComment
+        $splatClose = @{
+            Path      = "repos/$($script:Fleet.Repo)/issues/$($staleIssue.number)"
+            Method    = "Patch"
+            Body      = @{
+                state        = "closed"
+                state_reason = "completed"
+            }
+            Operation = "close runner deprecation issue $($staleIssue.number)"
+        }
+        $null = Invoke-GhJson @splatClose
+        Write-Host "closed issue $($staleIssue.number) about runner $staleVersion"
+    }
+
+    if (-not $notice) {
+        return
+    }
+    $openIssue = @($ownIssues | Where-Object { [string]$PSItem.title -eq $currentTitle }) | Select-Object -First 1
+    if ($openIssue) {
+        Write-Host "issue $($openIssue.number) already reports the retirement of runner $version"
+        return
+    }
+    if (Test-FleetDryRun -Decision "open issue title=$($notice.Title)") {
+        return
+    }
+    $splatOpen = @{
+        Path      = "repos/$($script:Fleet.Repo)/issues"
+        Method    = "Post"
+        Body      = @{
+            title = $notice.Title
+            body  = $notice.Body
+        }
+        Operation = "open the runner deprecation issue"
+    }
+    $issue = Invoke-GhJson @splatOpen
+    Write-Host "opened issue $($issue.number): $($notice.Title)"
+}
+
 function Get-FleetNudge {
     [CmdletBinding()]
     param(
@@ -1583,6 +1833,7 @@ $splatExport = @{
     Function = @(
         "Invoke-FleetReconcile",
         "Invoke-FleetSpendReport",
+        "Invoke-RunnerVersionCheck",
         "Get-FleetNudge",
         "Initialize-FleetContext",
         "Get-FleetConfig",

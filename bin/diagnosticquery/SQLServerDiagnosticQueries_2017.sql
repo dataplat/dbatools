@@ -1,7 +1,7 @@
 
 -- SQL Server 2017 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: September 17, 2026
+-- Last Modified: November 16, 2026
 -- https://glennsqlperformance.com/
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -114,6 +114,8 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 14.0.3530.2		CU31 + GDR							5/12/2026		https://support.microsoft.com/en-us/topic/kb5090354-description-of-the-security-update-for-sql-server-2017-cu31-may-12-2026-278c1395-f4e4-42d3-ba28-4b03067a9656
 -- 14.0.3540.1		CU31 + GDR						    7/12/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2017/general-distribution-release/kb5102337-july
 -- 14.0.3550.4		CU31 + GDR							9/8/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2017/general-distribution-release/5122774
+-- 14.0.3560.2		CU31 + GDR						   10/13/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2017/cumulative-update/kb5128496-cu31-gdr-october-2026	
+-- 14.0.3570.2		CU31 + GDR					       11/10/2026	    https://support.microsoft.com/en-us/servicing/sql/sql-server-2017/cumulative-update/kb5132746-cu31-gdr-november-2026
 
 
 -- SQL Server 2017 Azure Connect Pack builds

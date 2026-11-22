@@ -57,14 +57,27 @@ Test-DbaLastBackup -SqlInstance localhost
 ### SQL Server Support
 | Version | Commands Supported |
 |---------|-------------------|
-| SQL Server 2000 | 75% |
-| SQL Server 2005 | 90% |
+| SQL Server 2000 | Not supported since 2.8.3, see below |
+| SQL Server 2005 | Not supported since 2.8.3, see below |
 | SQL Server 2008/R2 | 93% |
 | SQL Server 2012+ | 100% |
 | Azure SQL VM | As per version above |
 | Azure SQL Database | 40% |
 | Azure SQL Managed Instance | 60% |
 | Containers/Kubernetes | 75% |
+
+### SQL Server 2000 and 2005
+
+dbatools 2.8.3 and later use SMO 181, which requires SQL Server 2008 or later, so `Connect-DbaInstance` refuses older instances. **dbatools 2.8.2 with dbatools.library 2025.12.28 is the last release that supports SQL Server 2000 and 2005.** For SQL Server 2000, run it from Windows PowerShell 5.1, because PowerShell 7 cannot log in to SQL Server 2000.
+
+```powershell
+Install-Module dbatools.library -RequiredVersion 2025.12.28 -Scope CurrentUser
+Install-Module dbatools -RequiredVersion 2.8.2 -Scope CurrentUser
+Import-Module dbatools.library -RequiredVersion 2025.12.28
+Import-Module dbatools -RequiredVersion 2.8.2
+```
+
+Import dbatools.library first, so a newer one that is also installed does not load in its place.
 
 ### Operating System Support
 | OS | Commands Supported | PowerShell Required |

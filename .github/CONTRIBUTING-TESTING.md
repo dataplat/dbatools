@@ -314,37 +314,43 @@ Set-DbatoolsConfig -FullName sql.connection.encrypt -Value $false -Register
 
 ### Method 1: Invoke-ManualPester (Recommended)
 
-The `Invoke-ManualPester` function is a helper designed for local testing:
+The `tests\Invoke-ManualPester.ps1` script is a helper designed for local testing. Run it from the
+root of your working copy. It imports dbatools from the working copy itself, so it needs no
+`Import-Module` first.
+
+It is deliberately a script and not a dbatools command: Pester runs the test files in the scope of
+whoever calls it, and inside the dbatools module the tests see a second, binary module named
+dbatools and break (see [#10827](https://github.com/dataplat/dbatools/issues/10827)).
 
 ```powershell
 # Run unit tests only (no SQL Server required)
-Invoke-ManualPester -Path Get-DbaDatabase
+.\tests\Invoke-ManualPester.ps1 -Path Get-DbaDatabase
 
 # Run integration tests (requires SQL Server)
-Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration
+.\tests\Invoke-ManualPester.ps1 -Path Get-DbaDatabase -TestIntegration
 
 # Run with code coverage
-Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -Coverage
+.\tests\Invoke-ManualPester.ps1 -Path Get-DbaDatabase -TestIntegration -Coverage
 
 # Run with full coverage including dependencies
-Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -Coverage -DependencyCoverage
+.\tests\Invoke-ManualPester.ps1 -Path Get-DbaDatabase -TestIntegration -Coverage -DependencyCoverage
 
 # Run with script analyzer check on the test file and the command
-Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -ScriptAnalyzer
+.\tests\Invoke-ManualPester.ps1 -Path Get-DbaDatabase -TestIntegration -ScriptAnalyzer
 
 # Run the repository wide style checks that CI enforces
-Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -Compliance
+.\tests\Invoke-ManualPester.ps1 -Path Get-DbaDatabase -TestIntegration -Compliance
 
 # Run multiple tests matching a pattern
-Invoke-ManualPester -Path "*Backup*" -TestIntegration
+.\tests\Invoke-ManualPester.ps1 -Path "*Backup*" -TestIntegration
 
 # Show less output
-Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -Show None
+.\tests\Invoke-ManualPester.ps1 -Path Get-DbaDatabase -TestIntegration -Show None
 ```
 
 ### Before opening a pull request
 
-`Invoke-ManualPester -Path <command>` runs only that command's test file. Two of the checks CI runs
+`.\tests\Invoke-ManualPester.ps1 -Path <command>` runs only that command's test file. Two of the checks CI runs
 belong to no command's test file at all, so a green run of it says nothing about them:
 
 | Switch | What it adds |
@@ -353,7 +359,7 @@ belong to no command's test file at all, so a green run of it says nothing about
 | `-Compliance` | Runs the `Compliance` tagged tests from [tests/dbatools.Tests.ps1](../tests/dbatools.Tests.ps1) over the whole repository: no UTF-8 BOM, no tabs, no trailing spaces, no ScriptAnalyzer errors. Takes about half a minute. |
 
 ```powershell
-Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration -ScriptAnalyzer -Compliance
+.\tests\Invoke-ManualPester.ps1 -Path Get-DbaDatabase -TestIntegration -ScriptAnalyzer -Compliance
 ```
 
 ### Method 2: Direct Pester Invocation
@@ -568,13 +574,13 @@ $PSDefaultParameterValues["*:SqlCredential"] = $TestConfig.SqlCred
 
 # === RUN TESTS ===
 # Easy way
-Invoke-ManualPester -Path Get-DbaDatabase -TestIntegration
+.\tests\Invoke-ManualPester.ps1 -Path Get-DbaDatabase -TestIntegration
 
 # Direct Pester
 Invoke-Pester .\tests\Get-DbaDatabase.Tests.ps1 -Output Detailed
 
 # Run all tests for a pattern
-Invoke-ManualPester -Path "*Backup*" -TestIntegration
+.\tests\Invoke-ManualPester.ps1 -Path "*Backup*" -TestIntegration
 ```
 
 ---
@@ -585,7 +591,7 @@ Invoke-ManualPester -Path "*Backup*" -TestIntegration
 |------|---------|
 | [tests/constants.local.ps1.example](../tests/constants.local.ps1.example) | Template for local config |
 | [private/testing/Get-TestConfig.ps1](../private/testing/Get-TestConfig.ps1) | Loads test configuration |
-| [private/testing/Invoke-ManualPester.ps1](../private/testing/Invoke-ManualPester.ps1) | Local test runner helper |
+| [tests/Invoke-ManualPester.ps1](../tests/Invoke-ManualPester.ps1) | Local test runner helper |
 | [private/testing/Get-TestInstanceUsage.ps1](../private/testing/Get-TestInstanceUsage.ps1) | Reports which `$TestConfig` instances a test file uses, and therefore which CI lane it runs in |
 | [tests/pester.groups.ps1](../tests/pester.groups.ps1) | Scenario definitions |
 | [tests/appveyor.common.ps1](../tests/appveyor.common.ps1) | CI test discovery logic |

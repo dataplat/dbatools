@@ -1,10 +1,12 @@
 function Get-DbaFile {
     <#
     .SYNOPSIS
-        Enumerates files and directories on remote SQL Server instances using xp_dirtree
+        Enumerates files and directories on remote SQL Server instances using sys.dm_os_enumerate_filesystem or xp_dirtree
 
     .DESCRIPTION
-        Searches directories on SQL Server machines remotely without requiring direct file system access or RDP connections. Uses the xp_dirtree extended stored procedure to return file listings that can be filtered by extension and searched recursively to specified depths. Defaults to the instance's data directory but accepts additional paths for comprehensive file system exploration.
+        Searches directories on SQL Server machines remotely without requiring direct file system access or RDP connections. Uses sys.dm_os_enumerate_filesystem on SQL Server 2017 and later and the xp_dirtree extended stored procedure on older versions to return file listings that can be filtered by extension and searched recursively to specified depths. Defaults to the instance's data directory but accepts additional paths for comprehensive file system exploration.
+
+        The directories are read by the SQL Server service account. On SQL Server 2017 and later this works for every login, on older versions xp_dirtree returns nothing for a login that is not a member of sysadmin. sys.dm_os_enumerate_filesystem also lists hidden and system files, which xp_dirtree leaves out.
 
         Common use cases include locating orphaned database files, finding backup files for restores, auditing disk usage, and preparing for file migrations.
 
@@ -29,7 +31,7 @@ function Get-DbaFile {
         Accepts multiple extensions to search for different file types simultaneously.
 
     .PARAMETER Depth
-        Controls how many subdirectory levels to search recursively. Default is 1 (current directory only).
+        Controls how many subdirectory levels to search recursively. Default is 1 (current directory only), 0 searches every level.
         Increase this value when searching deep folder structures for scattered database files or backup archives.
         Higher values take more time but ensure comprehensive file discovery across complex directory trees.
 
@@ -106,7 +108,8 @@ function Get-DbaFile {
         function Get-SQLDirTreeQuery {
             param
             (
-                $PathList
+                $PathList,
+                [switch]$UseFileSystemDmf
             )
 
             $q1 += "DECLARE @myPath NVARCHAR(4000);
@@ -121,10 +124,18 @@ function Get-DbaFile {
                        ,depth INT
                        ,isfile BIT
                        , ParentDirectory INT
-                       ,flag TINYINT DEFAULT(0));"
+                       ,flag TINYINT DEFAULT(0));
 
-            $q2 = "SET @myPath = 'dirname'
-                    -- top level directory
+                    IF OBJECT_ID('tempdb..#FileSystemEntry') IS NOT NULL
+                    DROP TABLE #FileSystemEntry;
+
+                    CREATE TABLE #FileSystemEntry (
+                       filename NVARCHAR(512)
+                       ,filepath NVARCHAR(MAX)
+                       ,isfile BIT
+                       ,fullpath NVARCHAR(MAX));"
+
+            $q2 = "-- top level directory
                     INSERT #DirectoryTree (subdirectory,depth,isfile)
                        VALUES (@myPath,0,0);
                     -- all the rest under top level
@@ -138,6 +149,27 @@ function Get-DbaFile {
                           WHERE depth = d.depth - 1 AND id < d.id   )
                     FROM #DirectoryTree d
                     WHERE ParentDirectory IS NULL;"
+
+            # xp_dirtree returns no row at all when the login is not sysadmin, while sys.dm_os_enumerate_filesystem
+            # lists the directory for every login, as the service account just the same. It exists since SQL Server 2017.
+            # It always walks every level below the path, but stops at the level that the filter on [level] allows, so
+            # -Depth costs no more than with xp_dirtree. Where it fails, for example for a share on a host that does not
+            # exist, the path falls back to xp_dirtree instead of failing the whole batch (#10839)
+            if ($Depth -gt 0) {
+                $levelFilter = "level < $Depth AND"
+            } else {
+                # xp_dirtree lists every level for a depth of 0
+                $levelFilter = ""
+            }
+            $qDmf = "BEGIN TRY
+                        INSERT #FileSystemEntry (filename,filepath,isfile,fullpath)
+                           SELECT file_or_directory_name, parent_directory, ~CONVERT(BIT, is_directory), full_filesystem_path
+                           FROM sys.dm_os_enumerate_filesystem(@myPath, N'*')
+                           WHERE $levelFilter parent_directory NOT LIKE N'%RECYCLE.BIN%';
+                    END TRY
+                    BEGIN CATCH
+                    $q2
+                    END CATCH;"
 
             $query_files_sql = "-- SEE all with full paths
                     WITH dirs AS (
@@ -158,12 +190,24 @@ function Get-DbaFile {
                     )
                     SELECT subdirectory AS filename, container AS filepath, isfile, dpath AS fullpath FROM dirs
                     WHERE container IS NOT NULL
+                    UNION ALL
+                    SELECT filename, filepath, isfile, fullpath FROM #FileSystemEntry
                     -- Dir style ordering
-                    ORDER BY container, isfile, subdirectory"
+                    ORDER BY filepath, isfile, filename"
 
             # build the query string based on how many directories they want to enumerate
             $sql = $q1
-            $sql += $($PathList | Where-Object { $_ -ne '' } | ForEach-Object { "$([System.Environment]::Newline)$($q2 -Replace 'dirname', $_)" })
+            foreach ($dirPath in ($PathList | Where-Object { $_ -ne "" })) {
+                # A Unicode literal with doubled quotes, so that a path with a quote or with characters outside the code
+                # page of the instance is listed instead of breaking the batch. It used to go in with -Replace (#10839)
+                $quotedPath = "N'" + $dirPath.Replace("'", "''") + "'"
+                $sql += "$([System.Environment]::Newline)SET @myPath = $quotedPath;$([System.Environment]::Newline)"
+                if ($UseFileSystemDmf) {
+                    $sql += $qDmf
+                } else {
+                    $sql += $q2
+                }
+            }
             $sql += $query_files_sql
             #Write-Message -Level Debug -Message $sql
             return $sql
@@ -201,51 +245,50 @@ function Get-DbaFile {
             }
 
             Write-Message -Level Verbose -Message "Adding paths"
-            $sql = Get-SQLDirTreeQuery $Path
+            $sql = Get-SQLDirTreeQuery $Path -UseFileSystemDmf:($server.VersionMajor -ge 14)
             Write-Message -Level Debug -Message $sql
 
             # This should remain as not .Query() to be compat with a PSProvider Chrissy was working on
-            $datatable = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
+            try {
+                $datatable = $server.ConnectionContext.ExecuteWithResults($sql).Tables.Rows
+            } catch {
+                # A failing batch used to end the command with an exception also without -EnableException (#10839)
+                Stop-Function -Message "Failure listing the path(s) on $instance" -ErrorRecord $_ -Target $instance -Continue
+            }
 
             Write-Message -Level Verbose -Message "$($datatable.Rows.Count) files found."
-            if ($FileTypeComparison) {
-                foreach ($row in $datatable) {
+            foreach ($row in $datatable) {
+                if ($FileTypeComparison) {
+                    $rowFilename = $row.filename.ToLowerInvariant()
+                    $hasFileType = $false
                     foreach ($type in $FileTypeComparison) {
-                        if ($row.filename.ToLowerInvariant().EndsWith(".$type")) {
-                            $fullpath = $row.fullpath.Replace("\", $separator)
-
-                            # Replacing all instances of '\\' with single backslashes '\', and maintain the leading SMB share path represented by the initial '\\'.
-                            $is_smb_share_path = $fullpath.SubString(0, 2) -eq "\\"
-                            $fullpath = $fullpath.Replace("\\", "\")
-                            if ($is_smb_share_path) {
-                                $fullpath = $fullpath -replace "^\\", "\\"
-                            }
-
-                            $fullpath = $fullpath.Replace("//", "/")
-                            [PSCustomObject]@{
-                                ComputerName   = $server.ComputerName
-                                InstanceName   = $server.ServiceName
-                                SqlInstance    = $server.DomainInstanceName
-                                Filename       = $fullpath
-                                RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $fullpath
-                            } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, RemoteFilename
+                        if ($rowFilename.EndsWith(".$type")) {
+                            $hasFileType = $true
                         }
                     }
+                    if (-not $hasFileType) {
+                        continue
+                    }
                 }
-            } else {
-                foreach ($row in $datatable) {
-                    $fullpath = $row.fullpath
-                    $fullpath = $fullpath.Replace("\", $separator)
-                    $fullpath = $fullpath.Replace("\\", "\")
-                    $fullpath = $fullpath.Replace("//", "/")
-                    [PSCustomObject]@{
-                        ComputerName   = $server.ComputerName
-                        InstanceName   = $server.ServiceName
-                        SqlInstance    = $server.DomainInstanceName
-                        Filename       = $fullpath
-                        RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $fullpath
-                    } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, RemoteFilename
+
+                $fullpath = $row.fullpath.Replace("\", $separator)
+
+                # Replacing all instances of '\\' with single backslashes '\', and maintain the leading SMB share path represented by the initial '\\'.
+                # Without -FileType all of them were replaced, so a file on a share came back without its leading backslash (#10839)
+                $is_smb_share_path = $fullpath.SubString(0, 2) -eq "\\"
+                $fullpath = $fullpath.Replace("\\", "\")
+                if ($is_smb_share_path) {
+                    $fullpath = $fullpath -replace "^\\", "\\"
                 }
+
+                $fullpath = $fullpath.Replace("//", "/")
+                [PSCustomObject]@{
+                    ComputerName   = $server.ComputerName
+                    InstanceName   = $server.ServiceName
+                    SqlInstance    = $server.DomainInstanceName
+                    Filename       = $fullpath
+                    RemoteFilename = Join-AdminUnc -Servername $server.ComputerName -Filepath $fullpath
+                } | Select-DefaultView -ExcludeProperty ComputerName, InstanceName, RemoteFilename
             }
         }
     }

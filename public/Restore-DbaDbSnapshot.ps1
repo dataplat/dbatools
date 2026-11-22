@@ -156,7 +156,7 @@ function Restore-DbaDbSnapshot {
             }
         }
 
-        foreach ($snap in $InputObject) {
+        :snapshots foreach ($snap in $InputObject) {
             # In the event someone passed -Database and it got all the snaps, most of which were dropped by the first
             if ($snap.Parent) {
                 $server = $snap.Parent
@@ -213,11 +213,13 @@ function Restore-DbaDbSnapshot {
                                     Write-Message -Level Verbose -Message "Deadlock detected during restore of $db on $server. Retrying in $waitSeconds seconds (attempt $retryCount of $maxRetries)"
                                     Start-Sleep -Seconds $waitSeconds
                                 } else {
-                                    Stop-Function -Message "Failiure attempting to restore $db on $server after $maxRetries attempts due to deadlock" -ErrorRecord $_ -Continue
+                                    Stop-Function -Message "Failure attempting to restore $db on $server after $maxRetries attempts due to deadlock" -ErrorRecord $_ -Continue
                                 }
                             } else {
-                                Stop-Function -Message "Failiure attempting to restore $db on $server" -ErrorRecord $_ -Continue
-                                break
+                                # Only a deadlock is worth another try. The -Continue continued this while loop, and as only
+                                # a deadlock counts the tries, the same failing restore ran again and again without end. The
+                                # label goes on with the next snapshot instead.
+                                Stop-Function -Message "Failure attempting to restore $db on $server" -ErrorRecord $_ -Continue -ContinueLabel snapshots
                             }
                         }
                     }

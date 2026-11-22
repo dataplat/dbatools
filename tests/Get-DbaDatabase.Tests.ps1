@@ -145,6 +145,68 @@ Describe $CommandName -Tag IntegrationTests {
     }
 }
 
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $heldRandom = Get-Random
+        $heldDbName = "dbatoolsci_held_$heldRandom"
+        $laterDbName = "dbatoolsci_later_$heldRandom"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $heldDbName -RecoveryModel Full
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $heldDbName -Query "CREATE TABLE dbo.HeldTable (id int)"
+
+        # Two server objects that the caller keeps, as in #10825: one has loaded the whole collection
+        # (and LogReuseWaitStatus, like the displayed output of New-DbaDatabase), the other only one database by name.
+        $heldServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        $heldLoaded = Get-DbaDatabase -SqlInstance $heldServer -Database $heldDbName
+        $null = $heldLoaded.LogReuseWaitStatus
+        $indexerServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
+        $null = $indexerServer.Databases[$heldDbName].RecoveryModel
+
+        # Changes by other sessions after the objects were loaded
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "ALTER DATABASE [$heldDbName] SET RECOVERY SIMPLE"
+        $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $laterDbName
+
+        # An open transaction lets the next checkpoint wait for it, so log_reuse_wait_desc becomes ACTIVE_TRANSACTION
+        $tranServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle -Database $heldDbName -NonPooledConnection
+        $tranServer.ConnectionContext.BeginTransaction()
+        $null = $tranServer.ConnectionContext.ExecuteNonQuery("INSERT dbo.HeldTable VALUES (1)")
+        $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database $heldDbName -Query "CHECKPOINT"
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+    AfterAll {
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $tranServer.ConnectionContext.RollBackTransaction()
+        $null = $tranServer | Disconnect-DbaInstance
+        $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $heldDbName, $laterDbName -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "When the caller passes a server object that has loaded databases before" {
+        It "Returns the current values of a database the server object has loaded" {
+            $result = Get-DbaDatabase -SqlInstance $heldServer -Database $heldDbName
+            $result.RecoveryModel | Should -Be "Simple"
+            $result.LogReuseWaitStatus | Should -Be "Transaction"
+            $WarnVar | Should -BeNullOrEmpty
+        }
+
+        It "Returns a database created after the server object loaded the collection" {
+            $result = Get-DbaDatabase -SqlInstance $heldServer -Database $laterDbName
+            $result.Name | Should -Be $laterDbName
+            $WarnVar | Should -BeNullOrEmpty
+        }
+
+        It "Returns the current values of a database the server object has loaded by name only" {
+            $result = Get-DbaDatabase -SqlInstance $indexerServer -Database $heldDbName
+            $result.RecoveryModel | Should -Be "Simple"
+            $WarnVar | Should -BeNullOrEmpty
+        }
+    }
+}
+
 Describe $CommandName -Tag UnitTests -Skip {
     # Skip UnitTests because they need refactoring.
 

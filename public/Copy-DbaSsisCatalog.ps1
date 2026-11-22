@@ -170,8 +170,8 @@ function Copy-DbaSsisCatalog {
                 $cmd.CommandType = "StoredProcedure"
                 $cmd.connection = $sqlConn
                 $cmd.CommandText = "SSISDB.catalog.get_project"
-                $cmd.Parameters.Add("@folder_name", $Folder) | Out-Null;
-                $cmd.Parameters.Add("@project_name", $Project) | Out-Null;
+                $null = $cmd.Parameters.AddWithValue("@folder_name", $Folder)
+                $null = $cmd.Parameters.AddWithValue("@project_name", $Project)
                 [byte[]]$results = $cmd.ExecuteScalar();
                 if ($null -ne $results) {
                     $destFolder = $destinationFolders | Where-Object {

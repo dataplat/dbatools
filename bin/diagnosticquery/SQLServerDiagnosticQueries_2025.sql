@@ -1,7 +1,7 @@
 
 -- SQL Server 2025 Diagnostic Information Queries
 -- Glenn Berry 
--- Last Modified: October 1, 2026
+-- Last Modified: November 16, 2026
 -- https://glennsqlperformance.com/ 
 -- https://sqlserverperformance.wordpress.com/
 -- YouTube: https://bit.ly/2PkoAM1 
@@ -81,6 +81,10 @@ SELECT @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version In
 -- 17.0.4075.5		CU8									8/13/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2025/cumulative-update/kb5104822-cu8
 -- 17.0.4085.5		CU8 + GDR							9/8/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2025/general-distribution-release/5122769
 -- 17.0.5005.3		CU9									9/15/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2025/cumulative-update/kb5122048-cu9
+-- 17.0.5015.4		CU9 + GDR						   10/13/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2025/cumulative-update/kb5126967-cu9-gdr-october-2026
+-- 17.0.5035.5		CU10							   10/22/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2025/cumulative-update/kb5125471-cu10
+-- 17.0.5045.3		CU10 + GDR							11/1/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2025/cumulative-update/kb5129299-cu10-gdr-november-2026
+-- 17.0.5065.9		CU11							   11/12/2026		https://support.microsoft.com/en-us/servicing/sql/sql-server-2025/cumulative-update/kb5129223-cu11
 
 
 -- SQL Server 2025 will fall out of Mainstream Support on Jan 6, 2031
@@ -271,8 +275,11 @@ SELECT ISNULL(d.[name], bs.[database_name]) AS [Database], d.recovery_model_desc
 	MAX(CASE WHEN bs.[type] = 'D' THEN CONVERT (BIGINT, bs.compressed_backup_size / 1048576 ) ELSE NULL END) AS [Last Full Compressed Backup Size (MB)],
 	MAX(CASE WHEN bs.[type] = 'D' THEN CONVERT (DECIMAL(18,2), bs.backup_size /bs.compressed_backup_size ) ELSE NULL END) AS [Backup Compression Ratio],
 	MAX(CASE WHEN bs.[type] = 'D' THEN bs.compression_algorithm ELSE NULL END) AS [Last Full Backup Compression Algorithm],
+	MAX(CASE WHEN bs.[type] = 'D' THEN bmf.physical_device_name ELSE NULL END) AS [Last Full Backup Location],
     MAX(CASE WHEN bs.[type] = 'I' THEN bs.backup_finish_date ELSE NULL END) AS [Last Differential Backup],
+	MAX(CASE WHEN bs.[type] = 'I' THEN bmf.physical_device_name ELSE NULL END) AS [Last Differential Backup Location],
     MAX(CASE WHEN bs.[type] = 'L' THEN bs.backup_finish_date ELSE NULL END) AS [Last Log Backup],
+	MAX(CASE WHEN bs.[type] = 'L' THEN bmf.physical_device_name ELSE NULL END) AS [Last Log Backup Location],
 	MAX(CASE WHEN bs.[type] = 'L' THEN bs.last_valid_restore_time ELSE NULL END) AS [Last Valid Restore Time],
 	DATABASEPROPERTYEX ((d.[name]), 'LastGoodCheckDbTime') AS [Last Good CheckDB]
 FROM sys.databases AS d WITH (NOLOCK)
@@ -281,6 +288,8 @@ ON d.database_id = mf.database_id
 LEFT OUTER JOIN msdb.dbo.backupset AS bs WITH (NOLOCK)
 ON bs.[database_name] = d.[name]
 AND bs.backup_finish_date > GETDATE()- 30
+LEFT OUTER JOIN msdb.dbo.backupmediafamily AS bmf WITH (NOLOCK)
+ON bs.media_set_id = bmf.media_set_id
 LEFT OUTER JOIN sys.dm_os_performance_counters AS lu WITH (NOLOCK)
 ON d.[name] = lu.instance_name
 LEFT OUTER JOIN sys.dm_os_performance_counters AS ls WITH (NOLOCK)
@@ -288,8 +297,8 @@ ON d.[name] = ls.instance_name
 INNER JOIN sys.dm_os_performance_counters AS ds WITH (NOLOCK)
 ON d.[name] = ds.instance_name
 WHERE d.[name] <> N'tempdb'
-AND lu.counter_name LIKE N'Log File(s) Used Size (KB)%' 
 AND ls.counter_name LIKE N'Log File(s) Size (KB)%'
+AND lu.counter_name LIKE N'Log File(s) Used Size (KB)%' 
 AND ds.counter_name LIKE N'Data File(s) Size (KB)%'
 AND ls.cntr_value > 0 
 GROUP BY ISNULL(d.[name], bs.[database_name]), d.recovery_model_desc, d.log_reuse_wait_desc, d.[name],
@@ -450,6 +459,7 @@ DECLARE @SQLBufferPoolMemoryUsageMB AS DECIMAL (15,2);
 DECLARE @SQLSOSNODEMemoryUsageMB AS DECIMAL (15,2);
 DECLARE @SQLCACHESTORE_SQLCPMemoryUsageMB AS DECIMAL (15,2);
 DECLARE @OBJECTSTORE_LOCK_MANAGERMemoryUsageMB AS DECIMAL (15,2);
+DECLARE @MEMORYCLERK_SQLQERESERVATIONSMemoryUsageMB AS DECIMAL (15,2);
 DECLARE @AvgPageLifeExpectancy int = 0;
 DECLARE @LastMemoryHealthSeverityLevel tinyint = 0;
 DECLARE @PeakMemoryHealthSeverityLevel tinyint = 0;
@@ -500,13 +510,17 @@ FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
 WHERE mc.[type] = N'OBJECTSTORE_LOCK_MANAGER'
 GROUP BY mc.[type] OPTION (RECOMPILE);  
 
+-- MEMORYCLERK_SQLQERESERVATIONS Memory Clerk Usage 
+SELECT @MEMORYCLERK_SQLQERESERVATIONSMemoryUsageMB = CAST((SUM(mc.pages_kb)/1024.0) AS DECIMAL (15,2)) 
+FROM sys.dm_os_memory_clerks AS mc WITH (NOLOCK)
+WHERE mc.[type] = N'MEMORYCLERK_SQLQERESERVATIONS'
+GROUP BY mc.[type] OPTION (RECOMPILE); 
 
--- Most recent and peak sys.dm_os_memory_health_history values
+
+-- Most recent and peak sys.dm_os_memory_health_history values (SQL Server 2025 and newer)
 SELECT TOP (1) @LastMemoryHealthSeverityLevel = mh.severity_level,
-               @PeakMemoryHealthSeverityLevel = (
-                                                SELECT MAX(severity_level)
-                                                FROM sys.dm_os_memory_health_history WITH (NOLOCK)
-                                                ),
+               @PeakMemoryHealthSeverityLevel = (SELECT MAX(severity_level)
+                                                 FROM sys.dm_os_memory_health_history WITH (NOLOCK)),
                @AllocationPotentialMemory = mh.allocation_potential_memory_mb,
                @ReclaimableCacheMemory = mh.reclaimable_cache_memory_mb
 FROM sys.dm_os_memory_health_history AS mh WITH (NOLOCK)
@@ -520,10 +534,8 @@ AND counter_name = N'Page life expectancy');
 
 -- Return final results
 SELECT  @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version Info],
-		CONVERT(INT, @TotalPhysicalMemoryMB) AS [OS Physical Memory (MB)],		
-		@SystemMemoryState AS [System Memory State],
-		@AvailablePhysicalMemoryMB AS [OS Available Memory (MB)],
-		CONVERT(INT, @MaxServerMemoryMB) AS [SQL Server Max Server Memory (MB)],
+		CONVERT(INT, @TotalPhysicalMemoryMB) AS [OS Physical Memory (MB)], @SystemMemoryState AS [System Memory State],
+		@AvailablePhysicalMemoryMB AS [OS Available Memory (MB)], CONVERT(INT, @MaxServerMemoryMB) AS [SQL Server Max Server Memory (MB)],
 		CONVERT(DECIMAL(18,2),(@MaxServerMemoryMB/@TotalPhysicalMemoryMB) * 100.0) AS [Max Server Memory %],
 		@LastMemoryHealthSeverityLevel AS [Last Internal Memory Health Level],
 		@PeakMemoryHealthSeverityLevel AS [Peak Internal Memory Health Level],
@@ -535,6 +547,7 @@ SELECT  @@SERVERNAME AS [Server Name], @@VERSION AS [SQL Server and OS Version I
 		@SQLSOSNODEMemoryUsageMB AS [SOSNODE Memory Clerk Memory Usage (MB)],
 		@SQLCACHESTORE_SQLCPMemoryUsageMB AS [CACHESTORE_SQLCP Memory Clerk Memory Usage (MB)],
 		@OBJECTSTORE_LOCK_MANAGERMemoryUsageMB AS [OBJECTSTORE_LOCK_MANAGER Memory Clerk Memory Usage (MB)],
+		@MEMORYCLERK_SQLQERESERVATIONSMemoryUsageMB AS [MEMORYCLERK_SQLQERESERVATIONS Memory Clerk Memory Usage (MB)],
 		@SQLServerLockedPagesAllocationMB AS [SQL Server Locked Pages Allocation (MB)],
 		@SQLServerStartTime AS [SQL Server Start Time];
 GO
@@ -542,7 +555,7 @@ GO
 -- End of Query 14 ***************************************************
 
 
--- You can skip the next two queries if you know you don't have an AG
+-- You can skip the next two queries if you know you don't have a clustered instance or an AG
 
 -- Get information about any AlwaysOn AG cluster this instance is a part of (Query 15) (AlwaysOn AG Cluster)
 SELECT cluster_name, quorum_type_desc, quorum_state_desc
