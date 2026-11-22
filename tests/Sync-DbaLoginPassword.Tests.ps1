@@ -38,7 +38,6 @@ Describe $CommandName -Tag UnitTests {
 Describe $CommandName -Tag IntegrationTests {
     BeforeAll {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-        $PSDefaultParameterValues["*-Dba*:Confirm"] = $false
         $PSDefaultParameterValues["*-Dba*:WarningAction"] = "SilentlyContinue"
 
         $primaryInstance = $TestConfig.InstanceMulti1

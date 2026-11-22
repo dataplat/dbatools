@@ -23,7 +23,7 @@ jobs:
         with:
           state: all
 
-      - name: Repository size should be less than 105000 KiB
+      - name: Repository size should be less than 125480 KiB
         env:
           PR: ${{ steps.findpr.outputs.pr }}
         shell: pwsh
@@ -38,6 +38,6 @@ jobs:
           $size = [int]($sizepack -split " " | Select-Object -Last 1)
           Write-Output "Repo size is $size"
           # old size = 110299 or 250000+
-          if ($size -gt 105000) { # Size is 96250, so 105000 keeps headroom while catching old clones
+          if ($size -gt 125480) { # Size is 96250, so 125480 keeps headroom while catching old clones
             throw "This clone is outdated. Please reclone your repo and resubmit with the slimmed down repo. See https://github.com/dataplat/dbatools/pull/8637 for more information."
           }

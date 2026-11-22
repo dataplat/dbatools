@@ -674,6 +674,7 @@ Describe "$ModuleName test file structure" -Tag Compliance {
         $noUnitTestFiles = @()
         $loopBuiltTests = @()
         $unbalancedEnableException = @()
+        $unbalancedDefaults = @()
         $discardedComparisons = @()
         $forEachNotFromDiscovery = @()
         $stringSkips = @()
@@ -900,6 +901,24 @@ Describe "$ModuleName test file structure" -Tag Compliance {
                 }
             }
 
+            # The same holds for every other default a test file sets. A Backup-DbaDatabase:Path that
+            # Measure-DbaBackupThroughput.Tests.ps1 left behind sent every later NUL backup of the session
+            # through the Path code and broke Remove-DbaDbBackupRestoreHistory.Tests.ps1. A key that
+            # $TestConfig.Defaults already holds must not be set at all, because removing it again would
+            # remove the default of the whole session. EnableException has its own check above.
+            $joinedContent = $content -join "`n"
+            $setDefaultPattern = "\`$PSDefaultParameterValues\[\s*[`"']([^`"']+)[`"']\s*\]\s*="
+            $removeDefaultPattern = "\`$PSDefaultParameterValues\.Remove\(\s*[`"']([^`"']+)[`"']\s*\)"
+            $setDefaultKeys = @(foreach ($match in [regex]::Matches($joinedContent, $setDefaultPattern)) { $match.Groups[1].Value })
+            $removedDefaultKeys = @(foreach ($match in [regex]::Matches($joinedContent, $removeDefaultPattern)) { $match.Groups[1].Value })
+            foreach ($defaultKey in ($setDefaultKeys + $removedDefaultKeys | Where-Object { $PSItem -ne "*-Dba*:EnableException" } | Select-Object -Unique)) {
+                $defaultSetCount = @($setDefaultKeys | Where-Object { $PSItem -eq $defaultKey }).Count
+                $defaultRemoveCount = @($removedDefaultKeys | Where-Object { $PSItem -eq $defaultKey }).Count
+                if ($defaultSetCount -ne $defaultRemoveCount) {
+                    $unbalancedDefaults += "$($testFile.Name): $defaultKey set $defaultSetCount times, removed $defaultRemoveCount times"
+                }
+            }
+
             # Every one of these is wrapped in @() because -match against $null returns the boolean
             # $false rather than an empty array, and $false is not empty - the check would then fail
             # on every file instead of none.
@@ -960,6 +979,10 @@ Describe "$ModuleName test file structure" -Tag Compliance {
 
     It "every EnableException that is set is removed again" {
         $unbalancedEnableException | Should -BeNullOrEmpty -Because "an enable left behind carries into whatever runs next in the same session"
+    }
+
+    It "every other default parameter value that is set is removed again" {
+        $unbalancedDefaults | Should -BeNullOrEmpty -Because "`$PSDefaultParameterValues is the object from `$TestConfig.Defaults, so a default left behind changes every test file that runs next in the same session"
     }
 
     It "no test file uses a string for -Skip" {

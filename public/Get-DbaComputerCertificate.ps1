@@ -28,6 +28,7 @@ function Get-DbaComputerCertificate {
         Specifies the file system path to a certificate file (.cer, .crt, .pfx) to load and analyze.
         Use this when you need to examine a certificate file before installing it to a certificate store.
         This bypasses the Store and Folder parameters since the certificate is loaded directly from the file system.
+        The file is read on the computer given with ComputerName.
 
     .PARAMETER Type
         Filters certificates by their intended usage. Service returns only certificates with Server Authentication capability, All returns every certificate.
@@ -58,7 +59,7 @@ function Get-DbaComputerCertificate {
     .OUTPUTS
         System.Security.Cryptography.X509Certificates.X509Certificate2
 
-        Returns one X509Certificate2 object per certificate found in the specified store and folder.
+        Returns one object per certificate found in the specified store and folder. The object is a copy of the properties of the X509Certificate2 (type name Selected.System.Security.Cryptography.X509Certificates.X509Certificate2), also for the local computer, so the methods of the certificate are not available on it. Backup-DbaComputerCertificate rebuilds the certificate from RawData.
 
         Default display properties (via Select-DefaultView):
         - ComputerName: The name of the computer where the certificate is stored
@@ -75,7 +76,9 @@ function Get-DbaComputerCertificate {
 
         Additional properties available from the X509Certificate2 object:
         - PublicKey: The public key cryptographic information
-        - PrivateKey: The private key (when available)
+        - HasPrivateKey: Boolean indicating if the certificate in the store has a private key, also for remote computers
+        - EnhancedKeyUsageList: The enhanced key usages of the certificate, including the ones the certificate store adds, also for remote computers
+        - PrivateKey: The private key object, only for the local computer. It is $null for a remote computer, also when HasPrivateKey is True, and in Windows PowerShell also for a key of a Key Storage Provider (CNG)
         - Version: The X.509 certificate version
         - SerialNumber: The serial number assigned by the issuer
         - SignatureAlgorithm: Algorithm details for the certificate signature
@@ -83,7 +86,6 @@ function Get-DbaComputerCertificate {
         - SignatureAlgorithmOid: Object identifier for the signature algorithm
         - IssuerName: X500DistinguishedName of the issuer
         - SubjectName: X500DistinguishedName of the subject
-        - Verify: Method to verify the certificate
 
     .EXAMPLE
         PS C:\> Get-DbaComputerCertificate
@@ -121,13 +123,15 @@ function Get-DbaComputerCertificate {
                 $Thumbprint,
                 $Store,
                 $Folder,
-                $Path
+                $Path,
+                $Type
             )
 
             if ($Path) {
                 $bytes = [System.IO.File]::ReadAllBytes($path)
-                $Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-                $Certificate.Import($bytes, $null, [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet)
+                # The constructor, because Import() throws "X509Certificate is immutable on this platform" in PowerShell 7.
+                $Certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList @(, $bytes)
+                Add-Member -Force -InputObject $Certificate -NotePropertyName HasKey -NotePropertyValue $Certificate.HasPrivateKey
                 return $Certificate
             }
 
@@ -179,6 +183,11 @@ function Get-DbaComputerCertificate {
                     Add-Member -Force -InputObject $c -NotePropertyName ComputerName -NotePropertyValue $env:ComputerName
                     # had to add Name because remotely, "FriendlyName" refused to work. no idea why.
                     Add-Member -Force -InputObject $c -NotePropertyName Name -NotePropertyValue $c.FriendlyName.ToString()
+                    # HasPrivateKey belongs to the store entry as well, and so do the usages that the store adds to EnhancedKeyUsageList,
+                    # as it does for most root certification authorities. The serializer drops a note property that has the name of a
+                    # property of the certificate, so they travel as HasKey and EkuList and are put back on the other side.
+                    Add-Member -Force -InputObject $c -NotePropertyName HasKey -NotePropertyValue $c.HasPrivateKey
+                    Add-Member -Force -InputObject $c -NotePropertyName EkuList -NotePropertyValue $c.EnhancedKeyUsageList
                     Add-Member -Force -InputObject $c -NotePropertyName Store -NotePropertyValue $Store
                     Add-Member -Force -InputObject $c -NotePropertyName Folder -NotePropertyValue $Folder -Passthru
                 }
@@ -232,7 +241,15 @@ function Get-DbaComputerCertificate {
             foreach ($currentStore in $Store) {
                 foreach ($currentFolder in $Folder) {
                     try {
-                        $certificates = Invoke-Command2 -ComputerName $computer -Credential $Credential -ScriptBlock $scriptBlock -ArgumentList $thumbprint, $currentStore, $currentFolder, $Path -ErrorAction Stop
+                        # Type goes in as an argument: on a remote computer the scriptblock cannot see the variables of this command.
+                        $splatGetCertificate = @{
+                            ComputerName = $computer
+                            Credential   = $Credential
+                            ScriptBlock  = $scriptBlock
+                            ArgumentList = $thumbprint, $currentStore, $currentFolder, $Path, $Type
+                            ErrorAction  = "Stop"
+                        }
+                        $certificates = Invoke-Command2 @splatGetCertificate
                     } catch {
                         Stop-Function -Message "Issue connecting to computer" -ErrorRecord $_ -Target $computer -Continue
                     }
@@ -246,6 +263,16 @@ function Get-DbaComputerCertificate {
                             } catch {
                                 Write-Message -Level Verbose -Message "Could not restore the friendly name $($certificate.Name) on the certificate object: $PSItem"
                             }
+                        }
+                        # The same for HasPrivateKey and EnhancedKeyUsageList. From a remote computer HasPrivateKey arrives as False, also
+                        # when the key is there, and EnhancedKeyUsageList holds only the usages written in the certificate itself.
+                        if ($certificate.PSObject.Properties["HasKey"]) {
+                            Add-Member -Force -InputObject $certificate -NotePropertyName HasPrivateKey -NotePropertyValue $certificate.HasKey
+                            $certificate.PSObject.Properties.Remove("HasKey")
+                        }
+                        if ($certificate.PSObject.Properties["EkuList"]) {
+                            Add-Member -Force -InputObject $certificate -NotePropertyName EnhancedKeyUsageList -NotePropertyValue $certificate.EkuList
+                            $certificate.PSObject.Properties.Remove("EkuList")
                         }
                         $certificate | Select-DefaultView -Property ComputerName, Store, Folder, Name, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer, Algorithm
                     }

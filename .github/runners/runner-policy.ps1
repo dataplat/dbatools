@@ -629,3 +629,136 @@ function Get-MarkedPushDispatch {
     }
     return $null
 }
+
+function Get-RunnerDeprecationTitle {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Version
+    )
+
+    # One title per runner version, so the daily check can find the issue it opened before.
+    # Pass "*" for the -like pattern that matches the issue of any version.
+    "CI runner deprecation - GitHub retires actions runner $Version"
+}
+
+function Get-RunnerDeprecationNotice {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Version,
+        [Parameter(Mandatory)]
+        $Deprecation,
+        [AllowNull()]
+        $LatestRelease,
+        [Parameter(Mandatory)]
+        [DateTimeOffset]$Now
+    )
+
+    # GET /repos/{repo}/actions/runners/deprecations/{version} answers two dates, both null
+    # until GitHub schedules the end of a version. Either one stops the fleet: past
+    # registration_deprecates_at config.cmd is refused, past runtime_deprecates_at a runner
+    # registers and then cannot receive its job, which is how 2.335.1 stopped CI on
+    # 2026-11-15. Every fleet VM registers fresh, so the earlier date is the deadline. A
+    # date that does not parse counts as due now, because staying quiet is the failure this
+    # check exists to prevent.
+    $fieldLabels = [ordered]@{
+        registration_deprecates_at = "New runners refused from"
+        runtime_deprecates_at      = "Jobs refused from"
+    }
+    $deadline = $null
+    $scheduleRows = @()
+    foreach ($field in $fieldLabels.Keys) {
+        $rawValue = $Deprecation.$field
+        if ($null -eq $rawValue -or [string]$rawValue -eq "") {
+            $scheduleRows += "| $($fieldLabels[$field]) | not scheduled |"
+            continue
+        }
+        $stamp = ConvertTo-FleetTimestamp -Value $rawValue
+        if ($null -eq $stamp) {
+            $stamp = $Now
+            # shown as inert text: a backtick, pipe or line break would break out of the code
+            # span or the table, and an @ would mention someone
+            $shownValue = ([string]$rawValue) -replace "[^0-9A-Za-z:.+ -]", "?"
+            if ($shownValue.Length -gt 40) {
+                $shownValue = $shownValue.Substring(0, 40) + "..."
+            }
+            $scheduleRows += "| $($fieldLabels[$field]) | ``$shownValue`` (unreadable, treated as now) |"
+        } else {
+            $scheduleRows += "| $($fieldLabels[$field]) | $($stamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm")) UTC |"
+        }
+        if ($null -eq $deadline -or $stamp -lt $deadline) {
+            $deadline = $stamp
+        }
+    }
+    if ($null -eq $deadline) {
+        return $null
+    }
+
+    $daysLeft = [int][math]::Floor(($deadline - $Now).TotalDays)
+    if ($deadline -le $Now) {
+        $urgency = "That date has passed, so GitHub refuses runners of this version and CI stops (or is about to)."
+    } elseif ($daysLeft -lt 1) {
+        $urgency = "That is **less than a day** from now. After it, every new VM registers and then fails, the way 2.335.1 stopped CI on 2026-11-15."
+    } else {
+        $urgency = "That is **$daysLeft day(s)** from now. After it, every new VM registers and then fails, the way 2.335.1 stopped CI on 2026-11-15."
+    }
+
+    $pinFiles = "``.github/runners/bootstrap-runner.ps1`` and ``.github/runners/image-scripts/step1-tools.ps1``"
+    $releasesUrl = "https://github.com/actions/runner/releases/latest"
+    $latestVersion = $null
+    $latestSha256 = $null
+    if ($null -ne $LatestRelease) {
+        $latestVersion = ([string]$LatestRelease.tag_name) -replace "^v", ""
+        # only a release page of actions/runner goes into the issue
+        if ([string]$LatestRelease.html_url -match "^https://github\.com/actions/runner/releases/tag/v\d+\.\d+\.\d+$") {
+            $releasesUrl = [string]$LatestRelease.html_url
+        }
+        # the release notes carry each package hash between machine-readable markers
+        $shaMatch = [regex]::Match([string]$LatestRelease.body, "BEGIN SHA win-x64 -->\s*([0-9a-fA-F]{64})\s*<!--")
+        if ($shaMatch.Success) {
+            $latestSha256 = $shaMatch.Groups[1].Value.ToLowerInvariant()
+        }
+    }
+    if ($latestVersion -notmatch "^\d+\.\d+\.\d+$") {
+        $fixStep = "1. Pin the latest release from $releasesUrl in $pinFiles. Set ```$runnerVersion`` to its version and ```$runnerSha256`` to the win-x64 SHA256 from its release notes."
+    } elseif ($latestVersion -eq $Version) {
+        $fixStep = "1. GitHub has published nothing newer than $Version yet. Once it does ($releasesUrl), pin the new release in $pinFiles. Set ```$runnerVersion`` to its version and ```$runnerSha256`` to the win-x64 SHA256 from its release notes."
+    } elseif (-not $latestSha256) {
+        $fixStep = "1. Pin $latestVersion, the latest release ($releasesUrl), in $pinFiles. Set ```$runnerVersion`` to ``$latestVersion`` and ```$runnerSha256`` to the win-x64 SHA256 from its release notes."
+    } else {
+        $fixStep = @"
+1. Pin $latestVersion, the latest release ($releasesUrl), in ${pinFiles}:
+
+   ``````powershell
+   `$runnerVersion = "$latestVersion"
+   `$runnerSha256 = "$latestSha256"
+   ``````
+"@
+    }
+
+    $body = @"
+GitHub has scheduled the end of actions runner **$Version**, the version ``.github/runners/bootstrap-runner.ps1`` installs on every CI VM.
+
+| | |
+|---|---|
+$($scheduleRows -join "`n")
+
+$urgency
+
+**To fix**
+
+$fixStep
+2. Merge, then deploy the controller with ``.github/runners/deploy-controller.ps1``. The bootstrap ships inside the controller, so the fleet keeps installing $Version until that deploy.
+3. Rebuild the golden image with ``.github/runners/build-modern-image.ps1`` and point the VMSS at it. CI works without this step; it only saves each VM the runner download at boot.
+
+The fleet controller checks this every day. It closes this issue once the deployed bootstrap installs another version. Closed by hand while the bootstrap still installs $Version, it opens a new one the next day.
+"@
+
+    [pscustomobject]@{
+        Title    = Get-RunnerDeprecationTitle -Version $Version
+        Body     = $body -replace "`r`n", "`n"
+        Deadline = $deadline
+        DaysLeft = $daysLeft
+    }
+}

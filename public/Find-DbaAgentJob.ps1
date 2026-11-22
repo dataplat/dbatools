@@ -35,7 +35,8 @@ function Find-DbaAgentJob {
         Combine this with JobName or StepName to further narrow those results.
 
     .PARAMETER LastUsed
-        Finds jobs that haven't executed successfully in the specified number of days.
+        Finds jobs that have not run in the specified number of days, whatever the outcome of their last run, and jobs that have never run.
+        The days are counted back from the current time of the instance, because SQL Server Agent records the run times in the local time of the instance.
         Use this to identify stale or potentially broken jobs that may need attention.
         Common values are 7, 30, or 90 days depending on job frequency and business requirements.
 
@@ -279,10 +280,12 @@ function Find-DbaAgentJob {
             }
 
             if ($LastUsed) {
-                $DaysBack = $LastUsed * -1
-                $SinceDate = (Get-Date).AddDays($DaysBack)
-                Write-Message -Level Verbose -Message "Finding job/s not ran in last $LastUsed days"
-                $output = $jobs | Where-Object { $_.LastRunDate -le $SinceDate }
+                # SQL Server Agent records LastRunDate in the local time of the instance,
+                # so the days are counted back from the clock of the instance, not from the clock of this computer
+                $serverTime = $server.Query("SELECT GETDATE() AS ServerTime").ServerTime
+                $lastUsedDate = $serverTime.AddDays(-$LastUsed)
+                Write-Message -Level Verbose -Message "Finding job/s not ran in last $LastUsed days, that is since $lastUsedDate on the clock of the instance"
+                $output = $jobs | Where-Object { $_.LastRunDate -le $lastUsedDate }
             }
 
             if ($IsDisabled) {

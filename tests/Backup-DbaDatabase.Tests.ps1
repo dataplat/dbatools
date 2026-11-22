@@ -368,6 +368,63 @@ Backup-DbaDatabase @Splat
         }
     }
 
+    Context "FilePath that names a directory, for a login that is not sysadmin (#10835)" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # -FilePath is only taken for a directory when -Path is not bound, so the default of this file has to go here
+            $PSDefaultParameterValues.Remove("Backup-DbaDatabase:Path")
+
+            $filePathDbName = "dbatoolsci_backupfilepath_$(Get-Random)"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Name $filePathDbName
+
+            # A login that is only db_backupoperator of the database
+            $loginName = "dbatoolsci_backupfilepath_$(Get-Random)"
+            $loginPassword = ConvertTo-SecureString -String "dbatools.IO$(Get-Random)" -AsPlainText -Force
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceCopy1 -Login $loginName -SecurePassword $loginPassword
+            $null = New-DbaDbUser -SqlInstance $TestConfig.InstanceCopy1 -Database $filePathDbName -Login $loginName
+            $null = Add-DbaDbRoleMember -SqlInstance $TestConfig.InstanceCopy1 -Database $filePathDbName -Role db_backupoperator -Member $loginName
+            $loginCredential = New-Object System.Management.Automation.PSCredential($loginName, $loginPassword)
+
+            $filePathDirectory = "$DestBackupDir\filepathdirectory"
+            $null = New-Item -Path $filePathDirectory -ItemType Directory
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -Database $filePathDbName -ErrorAction SilentlyContinue
+            # Force, because the backup leaves the session of the login in the connection pool
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceCopy1 -Login $loginName -Force -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues["Backup-DbaDatabase:Path"] = $DestBackupDir
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should back up into the directory" {
+            # xp_fileexist answered "no directory" for this login, so the directory was taken for the name of the backup file
+            $splatFilePathDirectory = @{
+                SqlInstance   = $TestConfig.InstanceCopy1
+                SqlCredential = $loginCredential
+                Database      = $filePathDbName
+                FilePath      = $filePathDirectory
+            }
+            $results = Backup-DbaDatabase @splatFilePathDirectory
+            $results.BackupComplete | Should -BeTrue
+            $results.BackupFolder | Should -Be $filePathDirectory
+            Test-Path -Path $results.FullName | Should -BeTrue
+            $WarnVar | Should -BeNullOrEmpty
+        }
+
+        It "Should back up into the directory when the database is piped in" {
+            $results = Get-DbaDatabase -SqlInstance $TestConfig.InstanceCopy1 -SqlCredential $loginCredential -Database $filePathDbName | Backup-DbaDatabase -FilePath $filePathDirectory
+            $results.BackupComplete | Should -BeTrue
+            $results.BackupFolder | Should -Be $filePathDirectory
+        }
+    }
+
     Context "Should stripe if multiple backupfolders specified (1)" {
         BeforeAll {
             $backupPaths = "$DestBackupDir\stripe1", "$DestBackupDir\stripe2", "$DestBackupDir\stripe3"

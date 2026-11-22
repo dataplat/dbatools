@@ -1281,3 +1281,150 @@ Describe "Runner workflow policy wiring" {
         $script:Readme | Should -Match '\(do <cmd>\).*\[do ci\].*compatible and unrelated'
     }
 }
+
+Describe "Get-RunnerDeprecationNotice" {
+    BeforeAll {
+        $script:LatestRelease = [pscustomobject]@{
+            tag_name = "v2.339.0"
+            html_url = "https://github.com/actions/runner/releases/tag/v2.339.0"
+            body     = "- actions-runner-win-x64-2.339.0.zip <!-- BEGIN SHA win-x64 -->ABCDEF0123456789abcdef0123456789abcdef0123456789abcdef0123456789<!-- END SHA win-x64 -->"
+        }
+    }
+
+    It "stays quiet while GitHub has scheduled nothing for the version" {
+        $splatQuiet = @{
+            Version       = "2.338.2"
+            Deprecation   = [pscustomobject]@{
+                runner_version             = "2.338.2"
+                registration_deprecates_at = $null
+                runtime_deprecates_at      = $null
+            }
+            LatestRelease = $script:LatestRelease
+            Now           = $script:Now
+        }
+        Get-RunnerDeprecationNotice @splatQuiet | Should -BeNullOrEmpty
+    }
+
+    It "takes the earlier of the two dates as the deadline, as Invoke-RestMethod hands them over" {
+        # registration and runtime retirement both stop the fleet, because every VM registers fresh
+        $splatEarlier = @{
+            Version       = "2.338.2"
+            Deprecation   = [pscustomobject]@{
+                registration_deprecates_at = [DateTime]::SpecifyKind([DateTime]"2026-08-30T00:00:00", [DateTimeKind]::Utc)
+                runtime_deprecates_at      = "2026-08-06T12:00:00Z"
+            }
+            LatestRelease = $script:LatestRelease
+            Now           = $script:Now
+        }
+        $notice = Get-RunnerDeprecationNotice @splatEarlier
+        $notice.Deadline | Should -Be ([DateTimeOffset]::Parse("2026-08-06T12:00:00Z"))
+        $notice.DaysLeft | Should -Be 20
+        $notice.Body | Should -Match "\| Jobs refused from \| 2026-08-06 12:00 UTC \|"
+        $notice.Body | Should -Match "\| New runners refused from \| 2026-08-30 00:00 UTC \|"
+        $notice.Body | Should -Match "\*\*20 day\(s\)\*\* from now"
+    }
+
+    It "names the version and hash of the latest release, ready to paste" {
+        $splatPin = @{
+            Version       = "2.338.2"
+            Deprecation   = [pscustomobject]@{ runtime_deprecates_at = "2026-08-06T12:00:00Z" }
+            LatestRelease = $script:LatestRelease
+            Now           = $script:Now
+        }
+        $notice = Get-RunnerDeprecationNotice @splatPin
+        $notice.Title | Should -Be "CI runner deprecation - GitHub retires actions runner 2.338.2"
+        $notice.Body | Should -Match ([regex]::Escape("`$runnerVersion = `"2.339.0`""))
+        $notice.Body | Should -Match ([regex]::Escape("`$runnerSha256 = `"abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789`""))
+        $notice.Body | Should -Match ([regex]::Escape("https://github.com/actions/runner/releases/tag/v2.339.0"))
+        $notice.Body | Should -Not -Match "`r"
+    }
+
+    It "says so when GitHub has published nothing newer than the retiring version" {
+        $splatNothingNewer = @{
+            Version       = "2.339.0"
+            Deprecation   = [pscustomobject]@{ runtime_deprecates_at = "2026-08-06T12:00:00Z" }
+            LatestRelease = $script:LatestRelease
+            Now           = $script:Now
+        }
+        $notice = Get-RunnerDeprecationNotice @splatNothingNewer
+        $notice.Body | Should -Match "published nothing newer than 2\.339\.0"
+        $notice.Body | Should -Not -Match "``````powershell"
+    }
+
+    It "points at the releases page when the latest release could not be read" {
+        $splatNoRelease = @{
+            Version       = "2.338.2"
+            Deprecation   = [pscustomobject]@{ runtime_deprecates_at = "2026-08-06T12:00:00Z" }
+            LatestRelease = $null
+            Now           = $script:Now
+        }
+        $notice = Get-RunnerDeprecationNotice @splatNoRelease
+        $notice.Body | Should -Match ([regex]::Escape("https://github.com/actions/runner/releases/latest"))
+        $notice.Body | Should -Match ([regex]::Escape("``.github/runners/image-scripts/step1-tools.ps1``"))
+    }
+
+    It "says the date has passed once it has" {
+        $splatPassed = @{
+            Version       = "2.335.1"
+            Deprecation   = [pscustomobject]@{ runtime_deprecates_at = "2026-07-01T00:00:00Z" }
+            LatestRelease = $script:LatestRelease
+            Now           = $script:Now
+        }
+        $notice = Get-RunnerDeprecationNotice @splatPassed
+        $notice.DaysLeft | Should -BeLessThan 0
+        $notice.Body | Should -Match "That date has passed"
+    }
+
+    It "treats a date it cannot read as due now rather than staying quiet" {
+        $splatGarbled = @{
+            Version       = "2.338.2"
+            Deprecation   = [pscustomobject]@{ runtime_deprecates_at = "soon-ish" }
+            LatestRelease = $script:LatestRelease
+            Now           = $script:Now
+        }
+        $notice = Get-RunnerDeprecationNotice @splatGarbled
+        $notice.Deadline | Should -Be $script:Now
+        $notice.Body | Should -Match "``soon-ish`` \(unreadable, treated as now\)"
+    }
+
+    It "shows a date it cannot read as inert text" {
+        # a backtick, pipe or line break would break out of the code span or the table,
+        # and an @ would mention someone
+        $splatHostile = @{
+            Version       = "2.338.2"
+            Deprecation   = [pscustomobject]@{ runtime_deprecates_at = "x`` | @someone`n# heading $("y" * 60)" }
+            LatestRelease = $script:LatestRelease
+            Now           = $script:Now
+        }
+        $notice = Get-RunnerDeprecationNotice @splatHostile
+        $row = @($notice.Body -split "`n" | Where-Object { $PSItem -like "| Jobs refused from |*" })
+        $row.Count | Should -Be 1
+        $row[0] | Should -Not -Match "@"
+        $row[0] | Should -BeExactly "| Jobs refused from | ``x? ? ?someone?? heading $("y" * 16)...`` (unreadable, treated as now) |"
+        ($row[0] -split "``").Count | Should -Be 3
+        ($row[0] -split "\|").Count | Should -Be 4
+        $notice.Body | Should -Not -Match "(?m)^# heading"
+    }
+
+    It "links only a release page of actions/runner" {
+        $splatOddRelease = @{
+            Version       = "2.338.2"
+            Deprecation   = [pscustomobject]@{ runtime_deprecates_at = "2026-08-06T12:00:00Z" }
+            LatestRelease = [pscustomobject]@{
+                tag_name = "v2.339.0"
+                html_url = "https://example.com/actions/runner/releases/tag/v2.339.0"
+                body     = ""
+            }
+            Now           = $script:Now
+        }
+        $notice = Get-RunnerDeprecationNotice @splatOddRelease
+        $notice.Body | Should -Not -Match "example\.com"
+        $notice.Body | Should -Match ([regex]::Escape("https://github.com/actions/runner/releases/latest"))
+    }
+
+    It "gives every version's issue a title the wildcard form matches" {
+        $pattern = Get-RunnerDeprecationTitle -Version "*"
+        Get-RunnerDeprecationTitle -Version "2.338.2" | Should -BeLike $pattern
+        "CI cost tracker" | Should -Not -BeLike $pattern
+    }
+}

@@ -222,4 +222,59 @@ Describe $CommandName -Tag IntegrationTests {
             $literalResults.Name | Should -Be "dbatoolsci_LiteralXJob"
         }
     }
+
+    Context "When the clock of this computer is ahead of the instance" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $srvName = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "select @@servername as sn" -As SingleValue
+            $randomSuffix = Get-Random
+            $ranJobName = "dbatoolsci_lastused_ran_$randomSuffix"
+            $neverRanJobName = "dbatoolsci_lastused_neverran_$randomSuffix"
+            foreach ($clockJobName in $ranJobName, $neverRanJobName) {
+                $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $clockJobName -OwnerLogin "sa"
+                $splatClockJobStep = @{
+                    SqlInstance     = $TestConfig.InstanceSingle
+                    Job             = $clockJobName
+                    StepId          = 1
+                    StepName        = "dbatoolsci_select"
+                    Subsystem       = "TransactSql"
+                    SubsystemServer = $srvName
+                    Command         = "SELECT 1"
+                    Database        = "master"
+                    OnSuccessAction = "QuitWithSuccess"
+                    OnFailAction    = "QuitWithFailure"
+                }
+                $null = New-DbaAgentJobStep @splatClockJobStep
+            }
+            $null = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $ranJobName -Wait
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # Issue #10833: SQL Server Agent records LastRunDate in the local time of the instance. A test computer shares
+            # the clock of its instance, so only the clock of this computer is moved ahead, the instance stays real.
+            # A time zone moves the clock by at most 26 hours, which shifts a cutoff of whole days only near its boundary.
+            # Two days ahead show the same mechanism with a job that has just run: a cutoff taken from this clock
+            # would lie one day in the future and report that job as unused.
+            Mock -ModuleName dbatools -CommandName Get-Date -ParameterFilter { $PesterBoundParameters.Count -eq 0 } -MockWith { [datetime]::Now.AddDays(2) }
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $ranJobName, $neverRanJobName -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Counts the days of LastUsed back from the clock of the instance" {
+            $results = Find-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -JobName $ranJobName, $neverRanJobName -LastUsed 1
+            $WarnVar | Should -BeNullOrEmpty
+            @($results).Count | Should -Be 1
+            $results.Name | Should -Be $neverRanJobName
+        }
+    }
 }

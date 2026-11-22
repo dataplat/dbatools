@@ -146,7 +146,9 @@ function Restore-DbaDbCertificate {
                 if (-not $certificateFiles) {
                     # Get-DbaFile lists the directory with xp_dirtree, which returns nothing for a login that is not sysadmin,
                     # so an empty result is not proof of an empty directory
-                    Write-Message -Level Warning -Message "No certificate file (.cer) found in $dir on $SqlInstance. A login that is not sysadmin cannot list a directory, it has to pass the .cer files instead." -Target $dir
+                    # That holds before SQL Server 2017 only: from 2017 on, Get-DbaFile lists the directory with
+                    # sys.dm_os_enumerate_filesystem, which answers a login without sysadmin as well (#10839)
+                    Write-Message -Level Warning -Message "No certificate file (.cer) found in $dir on $SqlInstance. Before SQL Server 2017, a login that is not sysadmin cannot list a directory and has to pass the .cer files instead." -Target $dir
                 }
             } else {
                 $certificateFiles = $dir

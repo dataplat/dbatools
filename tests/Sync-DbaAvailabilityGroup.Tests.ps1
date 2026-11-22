@@ -24,6 +24,7 @@ Describe $CommandName -Tag UnitTests {
                 "ExcludeJob",
                 "DisableJobOnDestination",
                 "UseJobLastModified",
+                "UpdateExistingLogin",
                 "InputObject",
                 "ExcludePassword",
                 "Force",
@@ -532,6 +533,98 @@ WHERE j.name = @jobName AND s.step_id = 1"
             $WarnVar | Should -BeNullOrEmpty
             $destJob = Invoke-DbaQuery @splatDestJob
             $destJob.command | Should -Be "SELECT 2"
+        }
+    }
+
+    Context "Login sync with -UpdateExistingLogin (#10772)" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $syncLoginName = "dbatoolsci_syncag_login_$(Get-Random)"
+            $splatPrimaryLogin = @{
+                SqlInstance            = $TestConfig.InstanceCopy1
+                Login                  = $syncLoginName
+                SecurePassword         = (ConvertTo-SecureString -String "dbatools.IO.Primary1" -AsPlainText -Force)
+                PasswordPolicyEnforced = $true
+            }
+            $primaryLogin = New-DbaLogin @splatPrimaryLogin
+
+            # The same SID as on the primary, as on a replica, but a password that never reached the secondary.
+            $splatSecondaryLogin = @{
+                SqlInstance            = $TestConfig.InstanceCopy2
+                Login                  = $syncLoginName
+                SecurePassword         = (ConvertTo-SecureString -String "dbatools.IO.Secondary1" -AsPlainText -Force)
+                Sid                    = $primaryLogin.Sid
+                PasswordPolicyEnforced = $true
+            }
+            $null = New-DbaLogin @splatSecondaryLogin
+
+            # Only the test login, and every object type except Logins, so nothing else is synced and no DAC is opened
+            $splatLoginSync = @{
+                Primary             = $TestConfig.InstanceCopy1
+                Secondary           = $TestConfig.InstanceCopy2
+                Login               = $syncLoginName
+                UpdateExistingLogin = $true
+                Exclude             = @(
+                    "AgentAlert",
+                    "AgentCategory",
+                    "AgentJob",
+                    "AgentOperator",
+                    "AgentProxy",
+                    "AgentSchedule",
+                    "Credentials",
+                    "CustomErrors",
+                    "DatabaseMail",
+                    "DatabaseOwner",
+                    "LinkedServers",
+                    "LoginPermissions",
+                    "SpConfigure",
+                    "SystemTriggers"
+                )
+            }
+
+            # Read from sys.sql_logins, so the assertions don't depend on cached SMO objects. The principal_id
+            # changes when a login is dropped and recreated.
+            $loginStateQuery = "SELECT principal_id, CONVERT(VARCHAR(514), password_hash, 1) AS password_hash FROM sys.sql_logins WHERE name = @name"
+            $splatPrimaryState = @{
+                SqlInstance  = $TestConfig.InstanceCopy1
+                Query        = $loginStateQuery
+                SqlParameter = @{ name = $syncLoginName }
+            }
+            $splatSecondaryState = @{
+                SqlInstance  = $TestConfig.InstanceCopy2
+                Query        = $loginStateQuery
+                SqlParameter = @{ name = $syncLoginName }
+            }
+            $secondaryStateBefore = Invoke-DbaQuery @splatSecondaryState
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatRemoveLogin = @{
+                SqlInstance = $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2
+                Login       = $syncLoginName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatRemoveLogin
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "updates the password of the existing login on the secondary without dropping it" {
+            $null = Sync-DbaAvailabilityGroup @splatLoginSync
+
+            $WarnVar | Should -BeNullOrEmpty
+            $secondaryState = Invoke-DbaQuery @splatSecondaryState
+            $secondaryState.principal_id | Should -Be $secondaryStateBefore.principal_id
+            $secondaryState.password_hash | Should -Not -Be $secondaryStateBefore.password_hash
+            $secondaryState.password_hash | Should -Be (Invoke-DbaQuery @splatPrimaryState).password_hash
         }
     }
 
