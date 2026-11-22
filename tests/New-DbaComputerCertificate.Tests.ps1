@@ -148,7 +148,8 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            Remove-DbaComputerCertificate -Thumbprint $defaultCert.Thumbprint
+            # DeleteKey, because the command created a private key as well.
+            Remove-DbaComputerCertificate -Thumbprint $defaultCert.Thumbprint -DeleteKey
         }
 
         It "Returns the right EnhancedKeyUsageList" {
@@ -180,7 +181,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            Remove-DbaComputerCertificate -Thumbprint $customCert.Thumbprint
+            Remove-DbaComputerCertificate -Thumbprint $customCert.Thumbprint -DeleteKey
         }
 
         It "Returns the right encryption algorithm" {
@@ -198,7 +199,7 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            Remove-DbaComputerCertificate -Thumbprint $documentCert.Thumbprint
+            Remove-DbaComputerCertificate -Thumbprint $documentCert.Thumbprint -DeleteKey
         }
 
         It "Returns the Document Encryption EKU OID" {
@@ -256,8 +257,13 @@ Describe $CommandName -Tag IntegrationTests {
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            Remove-DbaComputerCertificate -Thumbprint $kspCert.Thumbprint, $cspCert.Thumbprint
-            Remove-DbaComputerCertificate -ComputerName $computerName -Thumbprint $remoteKspCert.Thumbprint
+            Remove-DbaComputerCertificate -Thumbprint $kspCert.Thumbprint, $cspCert.Thumbprint -DeleteKey
+            $splatRemoveRemoteKsp = @{
+                ComputerName = $computerName
+                Thumbprint   = $remoteKspCert.Thumbprint
+                DeleteKey    = $true
+            }
+            Remove-DbaComputerCertificate @splatRemoveRemoteKsp
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
@@ -667,7 +673,7 @@ RequestType = PKCS10
 
         AfterAll {
             if ($firstOnlyCert) {
-                Remove-DbaComputerCertificate -Thumbprint $firstOnlyCert.Thumbprint
+                Remove-DbaComputerCertificate -Thumbprint $firstOnlyCert.Thumbprint -DeleteKey
             }
             if ($firstOnlyFolder) {
                 Remove-Item -Path $firstOnlyFolder -Recurse -ErrorAction SilentlyContinue
