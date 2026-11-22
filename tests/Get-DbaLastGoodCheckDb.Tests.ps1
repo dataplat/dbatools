@@ -106,6 +106,26 @@ Describe $CommandName -Tag IntegrationTests {
             ($duplicateResults | Group-Object SqlInstance, Database | Where-Object Count -gt 1) | Should -BeNullOrEmpty
         }
     }
+
+    Context "When the clock of this computer is ahead of the instance" {
+        BeforeAll {
+            # Issue #10833: the instance records the last good CHECKDB and the creation of a database in its own local time.
+            # A test computer shares the clock of its instance, so only the clock of this computer is moved ahead, the
+            # instance stays real. A time zone moves the clock by at most 26 hours, which shifts the 7-day status only near
+            # its boundary. Eight days ahead show the same mechanism with the database that has just been created and checked:
+            # days counted up to this clock would call it overdue.
+            Mock -ModuleName dbatools -CommandName Get-Date -ParameterFilter { $PesterBoundParameters.Count -eq 0 } -MockWith { [datetime]::Now.AddDays(8) }
+        }
+
+        It "Counts the days up to the clock of the instance" {
+            $result = Get-DbaLastGoodCheckDb -SqlInstance $TestConfig.InstanceMulti1 -Database $dbname
+            $WarnVar | Should -BeNullOrEmpty
+            @($result).Count | Should -Be 1
+            $result.DaysSinceLastGoodCheckDb | Should -Be 0
+            $result.DaysSinceDbCreated | Should -BeLessThan 1
+            $result.Status | Should -Be "Ok"
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {

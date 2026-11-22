@@ -84,9 +84,10 @@ function Add-DbaComputerCertificate {
         System.Security.Cryptography.X509Certificates.X509Certificate2
 
         Returns one certificate object per imported certificate. When importing a PFX file containing a certificate chain, returns multiple objects - one for each certificate in the chain (root, intermediate, and leaf certificates).
+        The object is a copy of the properties of the X509Certificate2 (type name Selected.System.Security.Cryptography.X509Certificates.X509Certificate2), also for the local computer, so the methods of the certificate are not available on it.
 
         Default display properties (via Select-DefaultView):
-        - FriendlyName: The friendly name of the certificate (as configured in the certificate store)
+        - FriendlyName: The friendly name of the certificate (as configured in the certificate store, also for remote computers)
         - DnsNameList: Collection of DNS names the certificate is valid for (Subject Alternative Names)
         - Thumbprint: The SHA-1 hash of the certificate, used as a unique identifier
         - NotBefore: DateTime when the certificate becomes valid
@@ -97,9 +98,9 @@ function Add-DbaComputerCertificate {
         Additional properties available on the X509Certificate2 object:
         - Archived: Boolean indicating if the certificate is marked as archived in the store
         - Extensions: Collection of X.509 extensions (key usage, extended key usage, etc.)
-        - HasPrivateKey: Boolean indicating if the private key is available
+        - HasPrivateKey: Boolean indicating if the certificate in the store has a private key, also for remote computers
         - IssuerName: X500DistinguishedName object for the issuer
-        - PrivateKey: Cryptographic private key object (if HasPrivateKey is true)
+        - PrivateKey: Cryptographic private key object, only for the local computer. It is $null for a remote computer, also when HasPrivateKey is True, and in Windows PowerShell also for a key of a Key Storage Provider (CNG)
         - PublicKey: Cryptographic public key object
         - SerialNumber: Serial number of the certificate
         - SignatureAlgorithm: Algorithm used to sign the certificate
@@ -209,7 +210,9 @@ function Add-DbaComputerCertificate {
                     # Import using plain text password (or null for non-password-protected certificates)
                     # Works reliably in all PowerShell versions v3+
                     # This import intentionally doesn't use $flags to allow re-export
-                    $null = $certCollection.Import($fileBytes, $plainPassword, "Exportable, PersistKeySet")
+                    # Without PersistKeySet, and reset in the finally below: the certificate is meant for the target computer, and with
+                    # PersistKeySet every import of a PFX left a copy of its private key in a key store of this computer.
+                    $null = $certCollection.Import($fileBytes, $plainPassword, "Exportable")
 
                     # Export the entire collection as a single PFX to preserve the chain
                     # This re-exports with the password, creating a fresh encrypted byte array that can be passed to remote
@@ -223,10 +226,36 @@ function Add-DbaComputerCertificate {
                     if ($ptr -ne [IntPtr]::Zero) {
                         [System.Runtime.InteropServices.Marshal]::ZeroFreeGlobalAllocUnicode($ptr)
                     }
+                    # Reset deletes the temporary key file now. Without it the file stays until the object is finalized, and in
+                    # PowerShell 7 it stayed after the process had ended. The process block only needs $collectionData.
+                    foreach ($importedCert in $certCollection) {
+                        $importedCert.Reset()
+                    }
                 }
             } catch {
                 Stop-Function -Message "Can't import certificate." -ErrorRecord $_
                 return
+            }
+        }
+
+        # A certificate that comes back from a WinRM session is rebuilt on this side from its raw data, and what belongs to the
+        # store entry is lost: HasPrivateKey arrives as False, also when the key is there, and FriendlyName empty. The scriptblock
+        # carries both as HasKey and FriendlyNameValue, and this puts them back.
+        function Restore-StoreEntryProperty {
+            param (
+                [Parameter(ValueFromPipeline)]
+                [object]$InputObject
+            )
+            process {
+                if ($InputObject.PSObject.Properties["HasKey"]) {
+                    Add-Member -Force -InputObject $InputObject -NotePropertyName HasPrivateKey -NotePropertyValue $InputObject.HasKey
+                    $InputObject.PSObject.Properties.Remove("HasKey")
+                }
+                if ($InputObject.PSObject.Properties["FriendlyNameValue"]) {
+                    Add-Member -Force -InputObject $InputObject -NotePropertyName FriendlyName -NotePropertyValue $InputObject.FriendlyNameValue
+                    $InputObject.PSObject.Properties.Remove("FriendlyNameValue")
+                }
+                $InputObject
             }
         }
 
@@ -259,7 +288,14 @@ function Add-DbaComputerCertificate {
             $tempStore.Close()
 
             Write-Verbose -Message "Searching Cert:\$Store\$Folder for imported certificates"
-            Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.Thumbprint -in $importedCerts }
+            foreach ($storeCert in (Get-ChildItem "Cert:\$Store\$Folder" -Recurse | Where-Object { $_.Thumbprint -in $importedCerts })) {
+                # HasPrivateKey and FriendlyName belong to the store entry and are lost when the certificate goes back through a
+                # WinRM session. The serializer drops a note property that has the name of a property of the certificate, so
+                # they travel as HasKey and FriendlyNameValue.
+                Add-Member -Force -InputObject $storeCert -NotePropertyName HasKey -NotePropertyValue $storeCert.HasPrivateKey
+                Add-Member -Force -InputObject $storeCert -NotePropertyName FriendlyNameValue -NotePropertyValue $storeCert.FriendlyName
+                $storeCert
+            }
         }
         #endregion Remoting Script
     }
@@ -291,6 +327,7 @@ function Add-DbaComputerCertificate {
                         }
                         try {
                             Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $collectionData, $plainPassword, $Store, $Folder, $flags -ScriptBlock $scriptBlock -ErrorAction Stop |
+                                Restore-StoreEntryProperty |
                                 Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
                         } catch {
                             Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue
@@ -314,6 +351,7 @@ function Add-DbaComputerCertificate {
                             }
                             try {
                                 Invoke-Command2 -ComputerName $computer -Credential $Credential -ArgumentList $certdata, $plainPassword, $Store, $Folder, $flags -ScriptBlock $scriptBlock -ErrorAction Stop |
+                                    Restore-StoreEntryProperty |
                                     Select-DefaultView -Property FriendlyName, DnsNameList, Thumbprint, NotBefore, NotAfter, Subject, Issuer
                             } catch {
                                 Stop-Function -Message "Failure" -ErrorRecord $_ -Target $computer -Continue

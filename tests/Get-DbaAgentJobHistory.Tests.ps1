@@ -392,3 +392,63 @@ Describe $CommandName -Tag UnitTests {
         }
     }
 }
+
+Describe $CommandName -Tag IntegrationTests {
+    BeforeAll {
+        # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $srvName = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "select @@servername as sn" -As SingleValue
+        $historyJobName = "dbatoolsci_jobhistory_$(Get-Random)"
+        $null = New-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $historyJobName -OwnerLogin "sa"
+        $splatHistoryJobStep = @{
+            SqlInstance     = $TestConfig.InstanceSingle
+            Job             = $historyJobName
+            StepId          = 1
+            StepName        = "dbatoolsci_select"
+            Subsystem       = "TransactSql"
+            SubsystemServer = $srvName
+            Command         = "SELECT 1"
+            Database        = "master"
+            OnSuccessAction = "QuitWithSuccess"
+            OnFailAction    = "QuitWithFailure"
+        }
+        $null = New-DbaAgentJobStep @splatHistoryJobStep
+        $null = Start-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $historyJobName -Wait
+
+        # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    AfterAll {
+        # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+        $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+        $null = Remove-DbaAgentJob -SqlInstance $TestConfig.InstanceSingle -Job $historyJobName -ErrorAction SilentlyContinue
+
+        $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+    }
+
+    Context "When the clock of this computer is behind the instance" {
+        BeforeAll {
+            # Issue #10833: SQL Server Agent records the run times in the local time of the instance. A test computer shares
+            # the clock of its instance, so only the clock of this computer is moved back, the instance stays real.
+            # An end date taken from this clock would cut off the run of the job that has just finished.
+            Mock -ModuleName dbatools -CommandName Get-Date -ParameterFilter { $PesterBoundParameters.Count -eq 0 } -MockWith { [datetime]::Now.AddHours(-5) }
+        }
+
+        It "Returns the latest run without EndDate" {
+            $results = Get-DbaAgentJobHistory -SqlInstance $TestConfig.InstanceSingle -Job $historyJobName
+            $WarnVar | Should -BeNullOrEmpty
+            @($results).Count | Should -Be 2
+            $results.StepName | Should -Contain "(Job outcome)"
+            $results.StepName | Should -Contain "dbatoolsci_select"
+        }
+
+        It "Still honors an EndDate that is given" {
+            $results = Get-DbaAgentJobHistory -SqlInstance $TestConfig.InstanceSingle -Job $historyJobName -EndDate ([datetime]::Now.AddHours(-1))
+            $WarnVar | Should -BeNullOrEmpty
+            $results | Should -BeNullOrEmpty
+        }
+    }
+}
