@@ -37,8 +37,9 @@ function Install-DbaFirstResponderKit {
         Use this when you have a specific version cached locally, when internet access is restricted, or when you need to install a customized version of the toolkit.
 
     .PARAMETER OnlyScript
-        Specifies specific script files to install instead of the entire First Responder Kit. Accepts multiple script names and wildcards.
+        Specifies specific script files to install instead of the entire First Responder Kit. Accepts multiple script names.
         Use this to install only the procedures you need (like sp_Blitz.sql, sp_BlitzCache.sql) or to run official install scripts (Install-All-Scripts.sql, Install-Azure.sql). Also supports Uninstall.sql to remove the toolkit.
+        Since First Responder Kit 8.34, sp_Blitz needs sp_ineachdb and fails without it. So when sp_Blitz.sql calls sp_ineachdb, sp_ineachdb.sql is installed with it, unless sp_ineachdb.sql or one of the install scripts, which contain it, is selected as well.
 
     .PARAMETER PublicExecute
         Signs the specified stored procedures with a certificate called "FirstResponderKitCertificate" that lets members of the public server role (that is, everyone) execute those procedures as if they have the CONTROL SERVER permission.
@@ -75,7 +76,7 @@ function Install-DbaFirstResponderKit {
     .OUTPUTS
         PSCustomObject
 
-        Returns one object per script file processed. By default, returns one object per .sql file matching the sp_*.sql pattern plus SqlServerVersions.sql. When using the -OnlyScript parameter, only specified scripts are processed and returned.
+        Returns one object per script file processed. By default, returns one object per .sql file matching the sp_*.sql pattern plus SqlServerVersions.sql. When using the -OnlyScript parameter, only specified scripts are processed and returned, plus sp_ineachdb when sp_Blitz.sql needs it.
 
         Properties:
         - ComputerName: The computer name of the SQL Server instance
@@ -122,7 +123,7 @@ function Install-DbaFirstResponderKit {
     .EXAMPLE
         PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016 -OnlyScript sp_Blitz.sql, sp_BlitzWho.sql, SqlServerVersions.sql
 
-        Installs only the procedures sp_Blitz and sp_BlitzWho and the table SqlServerVersions by running the corresponding scripts.
+        Installs only the procedures sp_Blitz and sp_BlitzWho and the table SqlServerVersions by running the corresponding scripts, and sp_ineachdb, which sp_Blitz needs.
 
     .EXAMPLE
         PS C:\> Install-DbaFirstResponderKit -SqlInstance sql2016 -OnlyScript Install-All-Scripts.sql
@@ -173,7 +174,9 @@ function Install-DbaFirstResponderKit {
                 try {
                     Save-DbaCommunitySoftware -Software FirstResponderKit -Branch $Branch -LocalFile $LocalFile -EnableException
                 } catch {
-                    Stop-Function -Message 'Failed to update local cached copy' -ErrorRecord $_
+                    Stop-Function -Message "Failed to update local cached copy" -ErrorRecord $_
+                    # Without the kit there is nothing to list, and the lines below would only add errors about the missing folder.
+                    return
                 }
             }
         }
@@ -186,6 +189,22 @@ function Install-DbaFirstResponderKit {
                     $sqlScripts += $sqlScript
                 } else {
                     Write-Message -Level Warning -Message "Script $script not found in $LocalCachedCopy, skipping."
+                }
+            }
+            # Since First Responder Kit 8.34, sp_Blitz calls sp_ineachdb and fails at its first run without it. So sp_ineachdb.sql comes
+            # along with an sp_Blitz.sql that calls it, from the same kit, so that the two fit together. The install scripts of the kit
+            # bring sp_ineachdb themselves.
+            $blitzScript = $sqlScripts | Where-Object Name -eq "sp_Blitz.sql"
+            $ineachdbSelected = $sqlScripts | Where-Object Name -in "sp_ineachdb.sql", "Install-All-Scripts.sql", "Install-Azure.sql"
+            if ($blitzScript -and -not $ineachdbSelected) {
+                if (Select-String -Path $blitzScript.FullName -Pattern "EXEC(UTE)?\s+(dbo\.)?sp_ineachdb\b" -Quiet) {
+                    $ineachdbScript = Get-ChildItem $LocalCachedCopy -Filter "sp_ineachdb.sql"
+                    if ($ineachdbScript) {
+                        Write-Message -Level Verbose -Message "sp_Blitz.sql calls sp_ineachdb, so sp_ineachdb.sql is installed as well."
+                        $sqlScripts = @($ineachdbScript) + $sqlScripts
+                    } else {
+                        Write-Message -Level Warning -Message "sp_Blitz.sql calls sp_ineachdb, but sp_ineachdb.sql is not in $LocalCachedCopy. sp_Blitz fails until sp_ineachdb is installed."
+                    }
                 }
             }
         } else {
