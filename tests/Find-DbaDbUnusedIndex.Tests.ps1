@@ -134,4 +134,99 @@ Describe $CommandName -Tag IntegrationTests {
             $testSQLinstance | Should -Be $true
         }
     }
+
+    Context "Never used indexes, inaccessible databases and the uptime of the instance" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $random = Get-Random
+            $unusedDbName = "dbatoolsci_unused_$random"
+            $offlineDbName = "dbatoolsci_unusedoffline_$random"
+            $untouchedIndexName = "dbatoolsci_untouched_$random"
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Name $unusedDbName, $offlineDbName
+            # The index is never read or written, so it gets no row in sys.dm_db_index_usage_stats
+            $splatUntouchedIndex = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $unusedDbName
+                Query       = "CREATE TABLE dbo.dbatoolsci_untouched (ID int); CREATE INDEX $untouchedIndexName ON dbo.dbatoolsci_untouched (ID);"
+            }
+            $null = Invoke-DbaQuery @splatUntouchedIndex
+            $null = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $offlineDbName -Offline -Force
+
+            # tempdb (database_id 2) is created at every start. The uptime decides whether the command refuses to evaluate.
+            $uptimeRow = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Query "SELECT create_date AS CreateDate, GETDATE() AS ServerTime FROM sys.databases WHERE database_id = 2"
+            $recentlyRestarted = (New-TimeSpan -Start $uptimeRow.CreateDate -End $uptimeRow.ServerTime).Days -le 6
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Online again first, so that dropping the database also deletes its files
+            $null = Set-DbaDbState -SqlInstance $TestConfig.InstanceSingle -Database $offlineDbName -Online -Force -ErrorAction SilentlyContinue
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $unusedDbName, $offlineDbName -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Finds an index that was not used at all since the start of the instance" {
+            $results = Find-DbaDbUnusedIndex -SqlInstance $TestConfig.InstanceSingle -Database $unusedDbName -IgnoreUptime
+            $WarnVar | Should -BeNullOrEmpty
+            $untouchedIndex = $results | Where-Object IndexName -eq $untouchedIndexName
+            @($untouchedIndex).Count | Should -Be 1
+            $untouchedIndex.UserSeeks | Should -Be 0
+            $untouchedIndex.UserScans | Should -Be 0
+            $untouchedIndex.UserLookups | Should -Be 0
+        }
+
+        It "Skips a database that is not accessible and goes on with the next one" {
+            $results = Find-DbaDbUnusedIndex -SqlInstance $TestConfig.InstanceSingle -Database $offlineDbName, $unusedDbName -IgnoreUptime -WarningAction SilentlyContinue
+            @($WarnVar).Count | Should -Be 1
+            $WarnVar | Should -BeLike "*$offlineDbName*is not accessible*"
+            $results.IndexName | Should -Contain $untouchedIndexName
+        }
+
+        It "Returns to its caller when no database is found" {
+            # Issue #10806: a continue without a loop of its own skipped the rest of the loop of the caller
+            $iterations = 0
+            foreach ($attempt in 1..2) {
+                $null = Find-DbaDbUnusedIndex -SqlInstance $TestConfig.InstanceSingle -Database "dbatoolsci_nosuchdb_$random" -IgnoreUptime -WarningAction SilentlyContinue
+                $iterations++
+            }
+            $iterations | Should -Be 2
+            $WarnVar | Should -BeLike "*was not found*"
+        }
+
+        It "Measures the uptime on the clock of the instance when this computer is ahead of it" {
+            # Issue #10833: a test computer shares the clock of its instance, so only the clock of this computer is moved,
+            # the instance stays real. An uptime measured on this clock would always look long enough.
+            # Which outcome is right depends on how long ago the instance really started, so the test asks the instance.
+            Mock -ModuleName dbatools -CommandName Get-Date -ParameterFilter { $PesterBoundParameters.Count -eq 0 } -MockWith { [datetime]::Now.AddDays(30) }
+            $results = Find-DbaDbUnusedIndex -SqlInstance $TestConfig.InstanceSingle -Database $unusedDbName -WarningAction SilentlyContinue
+            if ($recentlyRestarted) {
+                $WarnVar | Should -BeLike "*not long enough for a solid evaluation*"
+                $results | Should -BeNullOrEmpty
+            } else {
+                $WarnVar | Should -BeNullOrEmpty
+                $results.IndexName | Should -Contain $untouchedIndexName
+            }
+        }
+
+        It "Measures the uptime on the clock of the instance when this computer is behind it" {
+            # The other direction: an uptime measured on this clock would always look too short.
+            Mock -ModuleName dbatools -CommandName Get-Date -ParameterFilter { $PesterBoundParameters.Count -eq 0 } -MockWith { [datetime]::Now.AddDays(-30) }
+            $results = Find-DbaDbUnusedIndex -SqlInstance $TestConfig.InstanceSingle -Database $unusedDbName -WarningAction SilentlyContinue
+            if ($recentlyRestarted) {
+                $WarnVar | Should -BeLike "*not long enough for a solid evaluation*"
+                $results | Should -BeNullOrEmpty
+            } else {
+                $WarnVar | Should -BeNullOrEmpty
+                $results.IndexName | Should -Contain $untouchedIndexName
+            }
+        }
+    }
 }

@@ -62,6 +62,8 @@ function Get-DbaNetworkConfiguration {
         - SuitableCertificate: Array of certificates from the local machine store that are suitable for SQL Server encryption based on key usage, private key (a legacy CSP key with KeySpec AT_KEYEXCHANGE or a Key Storage Provider key), public key, signature algorithm, validity, and DNS names
         - Advanced: Nested object containing advanced settings (ForceEncryption, HideInstance, AcceptedSPNs, ExtendedProtection)
 
+        The X509Certificate2 objects in Certificate and SuitableCertificate report HasPrivateKey and FriendlyName of the certificate store also for a remote computer. Their PrivateKey is only filled for the local computer.
+
         When -OutputType ServerProtocols is specified:
         - ComputerName: Computer name of the SQL Server instance
         - InstanceName: SQL Server instance name
@@ -112,7 +114,7 @@ function Get-DbaNetworkConfiguration {
         - Expires: DateTime when the certificate expires (NotAfter)
         - IssuedTo: Certificate subject (who it was issued to)
         - IssuedBy: Certificate issuer name
-        - Certificate: The full X509Certificate2 object with complete certificate information
+        - Certificate: The full X509Certificate2 object with complete certificate information (HasPrivateKey and FriendlyName also for a remote computer, PrivateKey only for the local computer)
 
     .EXAMPLE
         PS C:\> Get-DbaNetworkConfiguration -SqlInstance sqlserver2014a
@@ -197,6 +199,18 @@ function Get-DbaNetworkConfiguration {
                 $info
             }
 
+            # A certificate that goes back through a WinRM session is rebuilt on the other side from its raw data, and what belongs
+            # to the store entry is lost there: HasPrivateKey arrives as False, also when the key is there, and FriendlyName empty.
+            # The serializer drops a note property that has the name of a property of the certificate, so both travel as HasKey
+            # and FriendlyNameValue, and the process block puts them back.
+            function Add-StoreEntryCarrier {
+                param ($Certificate)
+                if ($Certificate) {
+                    Add-Member -Force -InputObject $Certificate -NotePropertyName HasKey -NotePropertyValue $Certificate.HasPrivateKey
+                    Add-Member -Force -InputObject $Certificate -NotePropertyName FriendlyNameValue -NotePropertyValue $Certificate.FriendlyName
+                }
+            }
+
             # As we go remote, ensure the assembly is loaded
             [void][System.Reflection.Assembly]::LoadWithPartialName('Microsoft.SqlServer.SqlWmiManagement')
             $wmi = New-Object Microsoft.SqlServer.Management.Smo.Wmi.ManagedComputer
@@ -256,6 +270,7 @@ function Get-DbaNetworkConfiguration {
                     $thumbprint = (Get-ItemProperty -Path $regPath -Name Certificate).Certificate
                     # -Force is needed to also find archived certificates, as SQL Server keeps using a certificate that has been archived.
                     $cert = Get-ChildItem Cert:\LocalMachine -Recurse -Force -ErrorAction SilentlyContinue | Where-Object Thumbprint -eq $thumbprint | Select-Object -First 1
+                    Add-StoreEntryCarrier -Certificate $cert
                     $extendedProtection = switch ((Get-ItemProperty -Path $regPath -Name ExtendedProtection).ExtendedProtection) { 0 { $false } 1 { $true } }
                     $forceEncryption = switch ((Get-ItemProperty -Path $regPath -Name ForceEncryption).ForceEncryption) { 0 { $false } 1 { $true } }
                     $hideInstance = switch ((Get-ItemProperty -Path $regPath -Name HideInstance).HideInstance) { 0 { $false } 1 { $true } }
@@ -314,6 +329,9 @@ function Get-DbaNetworkConfiguration {
                     $false
                 }
             }
+            foreach ($suitable in $suitableCertificate) {
+                Add-StoreEntryCarrier -Certificate $suitable
+            }
 
             [PSCustomObject]@{
                 ComputerName        = $instance.ComputerName
@@ -345,6 +363,26 @@ function Get-DbaNetworkConfiguration {
                 # Test if object is filled to test if instance was found on computer
                 if ($null -eq $netConf.SharedMemoryEnabled) {
                     Stop-Function -Message "Failed to collect network configuration from $($instance.ComputerName) for instance $($instance.InstanceName). No data was found for this instance, so skipping." -Target $instance -ErrorRecord $_ -Continue
+                }
+
+                # Put back what the store entry of each certificate holds, see Add-StoreEntryCarrier in the scriptblock.
+                $netCertificates = @($netConf.Certificate.Certificate) + @($netConf.SuitableCertificate) | Where-Object { $null -ne $PSItem }
+                foreach ($netCertificate in $netCertificates) {
+                    if ($netCertificate.PSObject.Properties["HasKey"]) {
+                        Add-Member -Force -InputObject $netCertificate -NotePropertyName HasPrivateKey -NotePropertyValue $netCertificate.HasKey
+                        $netCertificate.PSObject.Properties.Remove("HasKey")
+                    }
+                    if ($netCertificate.PSObject.Properties["FriendlyNameValue"]) {
+                        # Only an empty name is set, because for the local computer the object is the entry in the store.
+                        if (-not $netCertificate.FriendlyName -and $netCertificate.FriendlyNameValue) {
+                            try {
+                                $netCertificate.FriendlyName = $netCertificate.FriendlyNameValue
+                            } catch {
+                                Write-Message -Level Verbose -Message "Could not restore the friendly name $($netCertificate.FriendlyNameValue) on the certificate object: $PSItem"
+                            }
+                        }
+                        $netCertificate.PSObject.Properties.Remove("FriendlyNameValue")
+                    }
                 }
 
                 if ($OutputType -eq 'Full') {

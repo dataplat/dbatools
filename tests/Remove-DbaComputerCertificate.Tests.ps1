@@ -476,4 +476,74 @@ Describe $CommandName -Tag IntegrationTests {
             $WarnVar | Should -BeNullOrEmpty
         }
     }
+
+    Context "Deletes the private key on the computer of the instance" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # For another computer the command runs in a WinRM session there. Without delegation that session cannot reach a
+            # domain controller, so it cannot open CurrentUser\UserDS, the folder of the certificates published in Active
+            # Directory, and that kept every key on a remote domain member. On CI the instance is local, so the session only
+            # happens against a lab whose instance runs on another domain member.
+            $computerName = ([DbaInstanceParameter]$TestConfig.InstanceSingle).ComputerName
+            $remoteCert = New-DbaComputerCertificate -ComputerName $computerName -SelfSigned
+            $readRemoteKeyFile = {
+                param ($Thumbprint)
+                $storeCert = Get-ChildItem -Path "Cert:\LocalMachine\My\$Thumbprint"
+                $key = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($storeCert).Key
+                "$env:ProgramData\Microsoft\Crypto\RSA\MachineKeys\$($key.UniqueName)"
+            }
+            $splatReadKeyFile = @{
+                ComputerName = $computerName
+                ScriptBlock  = $readRemoteKeyFile
+                ArgumentList = $remoteCert.Thumbprint
+                # Raw, because Invoke-Command2 otherwise wraps the value in an object without it.
+                Raw          = $true
+            }
+            $remoteKeyFile = Invoke-Command2 @splatReadKeyFile
+            $testRemoteKeyFile = {
+                param ($Path)
+                Test-Path -Path $Path -PathType Leaf
+            }
+            $splatTestKeyFile = @{
+                ComputerName = $computerName
+                ScriptBlock  = $testRemoteKeyFile
+                ArgumentList = $remoteKeyFile
+                Raw          = $true
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+            # The certificate and its key file go here as well, in case the test did not get to remove them.
+            $removeRemoteLeftovers = {
+                param ($Thumbprint, $KeyFile)
+                Remove-Item -Path "Cert:\LocalMachine\My\$Thumbprint" -ErrorAction SilentlyContinue
+                if ($KeyFile -and (Test-Path -Path $KeyFile -PathType Leaf)) {
+                    [System.IO.File]::Delete($KeyFile)
+                }
+            }
+            if ($remoteCert) {
+                $splatRemoveLeftovers = @{
+                    ComputerName = $computerName
+                    ScriptBlock  = $removeRemoteLeftovers
+                    ArgumentList = $remoteCert.Thumbprint, $remoteKeyFile
+                }
+                $null = Invoke-Command2 @splatRemoveLeftovers
+            }
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Deletes the legacy CSP key of the certificate" {
+            Invoke-Command2 @splatTestKeyFile | Should -BeTrue
+
+            $result = Remove-DbaComputerCertificate -ComputerName $computerName -Thumbprint $remoteCert.Thumbprint -DeleteKey
+            $result.Status | Should -Be "Removed"
+            $result.PrivateKey | Should -Be "Deleted"
+            Invoke-Command2 @splatTestKeyFile | Should -BeFalse
+            $WarnVar | Should -BeNullOrEmpty
+        }
+    }
 }
