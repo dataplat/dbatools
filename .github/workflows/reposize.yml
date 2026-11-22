@@ -29,10 +29,18 @@ jobs:
         shell: pwsh
         run: |
           cd /tmp
-          gh repo clone dataplat/dbatools
+          # Only development: a clone of every branch also counts branches that have nothing to do with this pull request
+          gh repo clone dataplat/dbatools -- --single-branch --branch development
           cd /tmp/dbatools
+          # gh pr checkout fetches only the branch of the pull request, but it can track that branch only when the fetch
+          # refspec of the clone covers it, which the clone of one branch narrowed to development
+          git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
           Write-Output "Checking out $env:PR"
           gh pr checkout $env:PR
+          # Without the pull request the step would measure development alone and pass
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not check out pull request $env:PR"
+          }
           $objects = git count-objects -v
           $sizepack = $objects | Where-Object { $PSItem -match "size-pack" }
           $size = [int]($sizepack -split " " | Select-Object -Last 1)
