@@ -217,4 +217,109 @@ Describe $CommandName -Tag IntegrationTests {
             $fallbackMessage.Message | Should -BeLike "*in the time zone of this computer*"
         }
     }
+
+    Context "When the instance started in the hour that repeats when the clocks go back" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # A login without VIEW SERVER STATE, so that the uptime is counted from the creation of tempdb
+            $repeatLoginName = "dbatoolsci_uptimerepeat_$(Get-Random)"
+            $repeatPassword = ConvertTo-SecureString -String "dbatools.IO!$(Get-Random)" -AsPlainText -Force
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login $repeatLoginName -SecurePassword $repeatPassword
+            $repeatCredential = New-Object System.Management.Automation.PSCredential($repeatLoginName, $repeatPassword)
+
+            # The second review of #10852: the creation date of tempdb has no offset, and in the hour that repeats when the clocks
+            # go back it names two times. AT TIME ZONE takes the first, so an instance that started in the second reported an hour
+            # more. Such a start counts as the second occurrence, in standard time, as .NET converts it with ConvertTimeToUtc. The
+            # server objects of the login report a creation of tempdb in the last quarter of an hour of the past year that repeated,
+            # in quarters so that a change of half an hour is found too. In a time zone without such an hour, such as UTC on the
+            # runners, the start is two days ago, and the tests then check the uptime only.
+            $getStartInRepeatedHour = {
+                param ($TimeZone)
+                $startTime = [datetime]::SpecifyKind([datetime]::Today.AddDays(-2).AddHours(12), [System.DateTimeKind]::Unspecified)
+                $candidate = [datetime]::SpecifyKind([datetime]::Today, [System.DateTimeKind]::Unspecified)
+                $oldestCandidate = $candidate.AddDays(-366)
+                while ($candidate -gt $oldestCandidate) {
+                    if ($TimeZone.IsAmbiguousTime($candidate)) {
+                        $startTime = $candidate
+                        break
+                    }
+                    $candidate = $candidate.AddMinutes(-15)
+                }
+                $startTime
+            }
+
+            $repeatAdminServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1
+            $repeatInstanceNamesTimeZone = $repeatAdminServer.VersionMajor -ge 16
+            if ($repeatInstanceNamesTimeZone) {
+                $repeatInstanceTimeZone = [System.TimeZoneInfo]::FindSystemTimeZoneById($repeatAdminServer.Query("SELECT CURRENT_TIMEZONE_ID() AS TimeZoneId").TimeZoneId)
+                $repeatStartInInstanceTimeZone = & $getStartInRepeatedHour $repeatInstanceTimeZone
+                $repeatServerInInstanceTimeZone = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -SqlCredential $repeatCredential
+                $repeatTempdbInInstanceTimeZone = @{ tempdb = [PSCustomObject]@{ CreateDate = $repeatStartInInstanceTimeZone } }
+                Add-Member -InputObject $repeatServerInInstanceTimeZone -NotePropertyName Databases -NotePropertyValue $repeatTempdbInInstanceTimeZone -Force
+            }
+
+            # This server object claims SQL Server 2019, so that the start is converted with the time zone of this computer.
+            $repeatStartInLocalTimeZone = & $getStartInRepeatedHour ([System.TimeZoneInfo]::Local)
+            $repeatServerBefore2022 = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -SqlCredential $repeatCredential
+            $repeatTempdbInLocalTimeZone = @{ tempdb = [PSCustomObject]@{ CreateDate = $repeatStartInLocalTimeZone } }
+            Add-Member -InputObject $repeatServerBefore2022 -NotePropertyName Databases -NotePropertyValue $repeatTempdbInLocalTimeZone -Force
+            Add-Member -InputObject $repeatServerBefore2022 -NotePropertyName Version -NotePropertyValue ([version]"15.0.4430.1") -Force
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            foreach ($repeatServer in $repeatServerInInstanceTimeZone, $repeatServerBefore2022, $repeatAdminServer) {
+                if ($repeatServer) {
+                    $null = $repeatServer | Disconnect-DbaInstance
+                }
+            }
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceMulti1 -Login $repeatLoginName -Force -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Counts a start in the repeated hour of the time zone of the instance as the second occurrence" {
+            if (-not $repeatInstanceNamesTimeZone) {
+                Set-ItResult -Skipped -Because "the instance names its time zone with CURRENT_TIMEZONE_ID() from SQL Server 2022 on"
+            }
+            $logStart = Get-Date
+            $result = Get-DbaUptime -SqlInstance $repeatServerInInstanceTimeZone
+            $getWarnings = $WarnVar
+            $serverUtcTime = $repeatAdminServer.Query("SELECT SYSUTCDATETIME() AS ServerUtcTime").ServerUtcTime
+            $expectedUptime = $serverUtcTime - [System.TimeZoneInfo]::ConvertTimeToUtc($repeatStartInInstanceTimeZone, $repeatInstanceTimeZone)
+            $getWarnings | Should -BeNullOrEmpty
+            @($result).Count | Should -Be 1
+            $result.SqlStartTime.ToString() | Should -Be ([dbadatetime]$repeatStartInInstanceTimeZone).ToString()
+            [math]::Abs(($result.SqlUptime - $expectedUptime).TotalSeconds) | Should -BeLessThan 120
+            $commandMessages = Get-DbatoolsLog -FunctionName Get-DbaUptime | Where-Object Timestamp -ge $logStart
+            ($commandMessages | Where-Object Message -like "Could not read sys.dm_os_sys_info*").Message | Should -BeLike "*in its time zone*"
+            if ($repeatInstanceTimeZone.IsAmbiguousTime($repeatStartInInstanceTimeZone)) {
+                ($commandMessages | Where-Object Message -like "SqlStartTime*").Message | Should -BeLike "*lies in the hour that repeats*"
+            }
+        }
+
+        It "Counts a start in the repeated hour of the time zone of this computer as the second occurrence before SQL Server 2022" {
+            $logStart = Get-Date
+            $result = Get-DbaUptime -SqlInstance $repeatServerBefore2022
+            $getWarnings = $WarnVar
+            $serverUtcTime = $repeatAdminServer.Query("SELECT SYSUTCDATETIME() AS ServerUtcTime").ServerUtcTime
+            $expectedUptime = $serverUtcTime - [System.TimeZoneInfo]::ConvertTimeToUtc($repeatStartInLocalTimeZone, [System.TimeZoneInfo]::Local)
+            $getWarnings | Should -BeNullOrEmpty
+            @($result).Count | Should -Be 1
+            $result.SqlStartTime.ToString() | Should -Be ([dbadatetime]$repeatStartInLocalTimeZone).ToString()
+            [math]::Abs(($result.SqlUptime - $expectedUptime).TotalSeconds) | Should -BeLessThan 120
+            $commandMessages = Get-DbatoolsLog -FunctionName Get-DbaUptime | Where-Object Timestamp -ge $logStart
+            ($commandMessages | Where-Object Message -like "Could not read sys.dm_os_sys_info*").Message | Should -BeLike "*in the time zone of this computer*"
+            if ([System.TimeZoneInfo]::Local.IsAmbiguousTime($repeatStartInLocalTimeZone)) {
+                ($commandMessages | Where-Object Message -like "SqlStartTime*").Message | Should -BeLike "*lies in the hour that repeats*"
+            }
+        }
+    }
 }
