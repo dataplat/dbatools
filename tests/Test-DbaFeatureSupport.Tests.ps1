@@ -42,6 +42,10 @@ Describe $CommandName -Tag UnitTests {
             @{ Label = "Azure SQL Database"; ServerProperty = $azureSqlDb; Feature = "QueryStoreOnModel"; Expected = $false }
             @{ Label = "Managed Instance"; ServerProperty = $managedInstance; Feature = "QueryStoreCustomCapturePolicy"; Expected = $true }
             @{ Label = "Managed Instance"; ServerProperty = $managedInstance; Feature = "QueryStoreOnModel"; Expected = $true }
+            @{ Label = "SQL Server 2019 Express"; ServerProperty = $sql2019; Feature = "CurrentTimeZoneId"; Expected = $false }
+            @{ Label = "SQL Server 2022"; ServerProperty = $sql2022; Feature = "CurrentTimeZoneId"; Expected = $true }
+            @{ Label = "Azure SQL Database"; ServerProperty = $azureSqlDb; Feature = "CurrentTimeZoneId"; Expected = $true }
+            @{ Label = "Managed Instance"; ServerProperty = $managedInstance; Feature = "CurrentTimeZoneId"; Expected = $true }
         )
 
         $unreadableCases = @(
@@ -99,6 +103,7 @@ Describe $CommandName -Tag IntegrationTests {
             @{ Feature = "QueryStoreMaxPlansPerQuery"; FirstMajor = 13 }
             @{ Feature = "QueryStoreCustomCapturePolicy"; FirstMajor = 15 }
             @{ Feature = "QueryStoreOnModel"; FirstMajor = 16 }
+            @{ Feature = "CurrentTimeZoneId"; FirstMajor = 16 }
         )
 
         $azureCases = @(
@@ -107,6 +112,7 @@ Describe $CommandName -Tag IntegrationTests {
             @{ Feature = "QueryStoreMaxPlansPerQuery"; Expected = $true }
             @{ Feature = "QueryStoreCustomCapturePolicy"; Expected = $true }
             @{ Feature = "QueryStoreOnModel"; Expected = $false }
+            @{ Feature = "CurrentTimeZoneId"; Expected = $true }
         )
     }
 
@@ -120,6 +126,18 @@ Describe $CommandName -Tag IntegrationTests {
         It "Answers <Feature> by the version of the connected server" -ForEach $sqlServerCases {
             $expected = $serverSingle.Version.Major -ge $FirstMajor
             Test-DbaFeatureSupport -Server $serverSingle -Feature $Feature | Should -BeExactly $expected
+        }
+
+        It "Answers CurrentTimeZoneId exactly where the server knows CURRENT_TIMEZONE_ID()" {
+            # Get-DbaUptime calls the function when the rule says so. Asking the engine itself checks the rule against
+            # the real thing instead of against a version number.
+            try {
+                $null = $serverSingle.Query("SELECT CURRENT_TIMEZONE_ID() AS TimeZoneId")
+                $knowsTimeZoneId = $true
+            } catch {
+                $knowsTimeZoneId = $false
+            }
+            Test-DbaFeatureSupport -Server $serverSingle -Feature CurrentTimeZoneId | Should -BeExactly $knowsTimeZoneId
         }
     }
 
