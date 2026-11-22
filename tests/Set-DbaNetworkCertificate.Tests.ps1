@@ -48,12 +48,19 @@ Describe $CommandName -Tag IntegrationTests {
         $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
         $null = Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -UnsetCertificate -RestartService
+        # The certificates of this test go first, together with the private keys their creation made. The loop after
+        # that removes every other suitable certificate without its key, because it can find certificates of others.
+        foreach ($thumbprint in $script:createdNetworkCertificateThumbprints) {
+            $splatRemoveCreatedCertificate = @{
+                ComputerName = $computerName
+                Thumbprint   = $thumbprint
+                DeleteKey    = $true
+            }
+            $null = Remove-DbaComputerCertificate @splatRemoveCreatedCertificate
+        }
         $test = Test-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart
         foreach ($cert in $test.SuitableCertificates) {
             $null = Remove-DbaComputerCertificate -ComputerName $computerName -Thumbprint $cert.Thumbprint
-        }
-        foreach ($thumbprint in $script:createdNetworkCertificateThumbprints) {
-            $null = Remove-DbaComputerCertificate -ComputerName $computerName -Thumbprint $thumbprint
         }
         Remove-Variable -Name createdNetworkCertificateThumbprints -Scope Script -ErrorAction SilentlyContinue
 
@@ -150,13 +157,18 @@ Describe $CommandName -Tag IntegrationTests {
     }
 
     It "Creates a first self-signed certificate and applies it" {
-        $result = New-DbaComputerCertificate -ComputerName $computerName -SelfSigned | Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -RestartService
+        # Kept for the AfterAll, which removes it with its key.
+        $firstCertificate = New-DbaComputerCertificate -ComputerName $computerName -SelfSigned
+        $script:createdNetworkCertificateThumbprints += $firstCertificate.Thumbprint
+        $result = $firstCertificate | Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -RestartService
         $result.CertificateThumbprint | Should -Not -BeNullOrEmpty
         $WarnVar | Should -BeNullOrEmpty
     }
 
     It "Creates a second self-signed certificate and applies it" {
-        $result = New-DbaComputerCertificate -ComputerName $computerName -SelfSigned | Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -RestartService
+        $secondCertificate = New-DbaComputerCertificate -ComputerName $computerName -SelfSigned
+        $script:createdNetworkCertificateThumbprints += $secondCertificate.Thumbprint
+        $result = $secondCertificate | Set-DbaNetworkCertificate -SqlInstance $TestConfig.InstanceRestart -RestartService
         $result.CertificateThumbprint | Should -Not -BeNullOrEmpty
         $WarnVar | Should -BeNullOrEmpty
     }

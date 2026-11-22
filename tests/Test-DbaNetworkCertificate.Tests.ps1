@@ -103,7 +103,14 @@ Describe $CommandName -Tag IntegrationTests {
         }
 
         AfterAll {
-            $null = Remove-DbaComputerCertificate -ComputerName $computerName -Thumbprint $certificate.Thumbprint -EnableException
+            # DeleteKey, because New-DbaComputerCertificate created a private key on that computer as well.
+            $splatRemoveCertificate = @{
+                ComputerName    = $computerName
+                Thumbprint      = $certificate.Thumbprint
+                DeleteKey       = $true
+                EnableException = $true
+            }
+            $null = Remove-DbaComputerCertificate @splatRemoveCertificate
         }
 
         It "Should return a result" {
@@ -223,7 +230,13 @@ Describe $CommandName -Tag IntegrationTests {
 
         AfterAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
-            $null = Remove-DbaComputerCertificate -ComputerName $computerName -Thumbprint $kspThumbprint, $signatureThumbprint
+            # DeleteKey, because New-SelfSignedCertificate created a private key for each of them.
+            $splatRemoveKeyTypes = @{
+                ComputerName = $computerName
+                Thumbprint   = $kspThumbprint, $signatureThumbprint
+                DeleteKey    = $true
+            }
+            $null = Remove-DbaComputerCertificate @splatRemoveKeyTypes
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
