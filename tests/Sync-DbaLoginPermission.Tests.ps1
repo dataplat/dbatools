@@ -232,6 +232,222 @@ WHERE perm.class = 0
         }
     }
 
+    BeforeDiscovery {
+        # Databases whose names differ only in case exist on a case sensitive instance only. No CI environment has such an
+        # instance, so InstanceCaseSensitive comes from a lab configuration, as for the tests of Copy-DbaLogin, and these
+        # tests skip themselves everywhere else. The value decides a Skip, so it has to exist at discovery time.
+        $hasCaseSensitive = -not [string]::IsNullOrWhiteSpace($TestConfig.InstanceCaseSensitive)
+    }
+
+    Context "When databases on a case sensitive instance differ only in case" -Skip:(-not $hasCaseSensitive) {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The users of a login were looked up by the name of the database with keys that ignore case. So two databases
+            # whose names differ only in case got the user of one of them, which in the other one is the user of another
+            # login: that user got the permissions, and the permissions were compared with its own.
+            # Two logins whose users have the name of each other's user in the other database of a pair, so that each one is
+            # the other login of the other one. The first one is synced to the case sensitive instance, the second one from it.
+            $csRandom = Get-Random
+            $csInstance = $TestConfig.InstanceCaseSensitive
+            $csToLogin = "dbatoolsci_csto_$csRandom"
+            $csBackLogin = "dbatoolsci_csback_$csRandom"
+            $csPassword = ConvertTo-SecureString -String "dbatools.IO!$csRandom" -AsPlainText -Force
+            # Which of the two users the keys kept depends on the order of the databases. So the other instance has the first
+            # database of one pair, in upper case, and the second database of the other pair, in lower case: with either
+            # order one of them got the wrong user.
+            $csDbAUpper = "dbatoolsci_CsDbA_$csRandom"
+            $csDbALower = $csDbAUpper.ToLowerInvariant()
+            $csDbBUpper = "dbatoolsci_CsDbB_$csRandom"
+            $csDbBLower = $csDbBUpper.ToLowerInvariant()
+            $csDatabases = @(
+                $csDbAUpper,
+                $csDbALower,
+                $csDbBUpper,
+                $csDbBLower
+            )
+            $ciDatabases = @(
+                $csDbAUpper,
+                $csDbBLower
+            )
+
+            $splatCsLogin = @{
+                SqlInstance    = $TestConfig.InstanceMulti1, $csInstance
+                Login          = $csToLogin, $csBackLogin
+                SecurePassword = $csPassword
+            }
+            $null = New-DbaLogin @splatCsLogin
+
+            # The second database of each pair is created under a name of its own and renamed, because the names of the
+            # files come from the name of the database, and NTFS ignores case.
+            $null = New-DbaDatabase -SqlInstance $csInstance -Name $csDbAUpper, $csDbBUpper, "dbatoolsci_cstmpa_$csRandom", "dbatoolsci_cstmpb_$csRandom"
+            $null = Invoke-DbaQuery -SqlInstance $csInstance -Query "ALTER DATABASE [dbatoolsci_cstmpa_$csRandom] MODIFY NAME = [$csDbALower]; ALTER DATABASE [dbatoolsci_cstmpb_$csRandom] MODIFY NAME = [$csDbBLower]"
+            # In the databases in upper case the user of the first login has the name in upper case, in the others the user
+            # of the second login. The user of the first login has a permission that the source user of the second login
+            # does not have, and the user of the second login is a member of the role that the first login gets.
+            foreach ($csDb in $csDatabases) {
+                if ($csDb -ceq $csDbAUpper -or $csDb -ceq $csDbBUpper) {
+                    $csToUser = "dbatoolsci_CsUser"
+                    $csBackUser = "dbatoolsci_csuser"
+                } else {
+                    $csToUser = "dbatoolsci_csuser"
+                    $csBackUser = "dbatoolsci_CsUser"
+                }
+                $csUserSql = @"
+CREATE USER [$csToUser] FOR LOGIN [$csToLogin];
+CREATE USER [$csBackUser] FOR LOGIN [$csBackLogin];
+GRANT CREATE PROCEDURE TO [$csToUser];
+CREATE ROLE [dbatoolsci_csrole];
+ALTER ROLE [dbatoolsci_csrole] ADD MEMBER [$csBackUser];
+"@
+                $splatCsUser = @{
+                    SqlInstance = $csInstance
+                    Database    = $csDb
+                    Query       = $csUserSql
+                }
+                $null = Invoke-DbaQuery @splatCsUser
+            }
+
+            # On the other instance, the source user of the first login has CONTROL and is a member of the role. The user of
+            # the second login has the permission that only the users of the first login have on the case sensitive instance.
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1 -Name $ciDatabases
+            $ciUserSql = @"
+CREATE USER [dbatoolsci_cstouser] FOR LOGIN [$csToLogin];
+GRANT CONTROL TO [dbatoolsci_cstouser];
+CREATE ROLE [dbatoolsci_csrole];
+ALTER ROLE [dbatoolsci_csrole] ADD MEMBER [dbatoolsci_cstouser];
+CREATE USER [dbatoolsci_csbackuser] FOR LOGIN [$csBackLogin];
+GRANT CREATE PROCEDURE TO [dbatoolsci_csbackuser];
+"@
+            foreach ($ciDb in $ciDatabases) {
+                $splatCiUser = @{
+                    SqlInstance = $TestConfig.InstanceMulti1
+                    Database    = $ciDb
+                    Query       = $ciUserSql
+                }
+                $null = Invoke-DbaQuery @splatCiUser
+            }
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The second login first: the sync of the first one revokes the permission of its users that the second one
+            # needs, because the other instance knows each pair as one database.
+            $splatSyncBack = @{
+                Source      = $csInstance
+                Destination = $TestConfig.InstanceMulti1
+                Login       = $csBackLogin
+            }
+            $csBackResult = Sync-DbaLoginPermission @splatSyncBack
+            $csBackWarnings = $WarnVar
+            $splatSyncTo = @{
+                Source      = $TestConfig.InstanceMulti1
+                Destination = $csInstance
+                Login       = $csToLogin
+            }
+            $csToResult = Sync-DbaLoginPermission @splatSyncTo
+            $csToWarnings = $WarnVar
+
+            $csPermissionSql = @"
+SELECT DB_NAME() AS DatabaseName, grantee.name AS Grantee, SUSER_SNAME(grantee.sid) AS LoginName, perm.permission_name AS Permission
+FROM sys.database_permissions AS perm
+INNER JOIN sys.database_principals AS grantee ON grantee.principal_id = perm.grantee_principal_id
+WHERE perm.class = 0
+"@
+            $csRoleMemberSql = @"
+SELECT DB_NAME() AS DatabaseName, dbrole.name AS RoleName, dbmember.name AS MemberName, SUSER_SNAME(dbmember.sid) AS LoginName
+FROM sys.database_role_members AS rolemember
+INNER JOIN sys.database_principals AS dbrole ON dbrole.principal_id = rolemember.role_principal_id
+INNER JOIN sys.database_principals AS dbmember ON dbmember.principal_id = rolemember.member_principal_id
+"@
+            $csPermissions = foreach ($csDb in $csDatabases) {
+                $splatCsPermission = @{
+                    SqlInstance = $csInstance
+                    Database    = $csDb
+                    Query       = $csPermissionSql
+                }
+                Invoke-DbaQuery @splatCsPermission
+            }
+            $csRoleMembers = foreach ($csDb in $csDatabases) {
+                $splatCsRoleMember = @{
+                    SqlInstance = $csInstance
+                    Database    = $csDb
+                    Query       = $csRoleMemberSql
+                }
+                Invoke-DbaQuery @splatCsRoleMember
+            }
+            $ciPermissions = foreach ($ciDb in $ciDatabases) {
+                $splatCiPermission = @{
+                    SqlInstance = $TestConfig.InstanceMulti1
+                    Database    = $ciDb
+                    Query       = $csPermissionSql
+                }
+                Invoke-DbaQuery @splatCiPermission
+            }
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatCsCleanup = @{
+                SqlInstance = $csInstance
+                Database    = $csDatabases
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaDatabase @splatCsCleanup
+            $splatCiCleanup = @{
+                SqlInstance = $TestConfig.InstanceMulti1
+                Database    = $ciDatabases
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaDatabase @splatCiCleanup
+            $splatCsLoginCleanup = @{
+                SqlInstance = $TestConfig.InstanceMulti1, $csInstance
+                Login       = $csToLogin, $csBackLogin
+                Force       = $true
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatCsLoginCleanup
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Syncs both logins without a warning" {
+            $csBackWarnings | Should -BeNullOrEmpty
+            $csToWarnings | Should -BeNullOrEmpty
+            @($csBackResult).Count | Should -Be 1
+            @($csToResult).Count | Should -Be 1
+            $csBackResult.Status | Should -Be "Successful"
+            $csToResult.Status | Should -Be "Successful"
+        }
+
+        It "Grants the permissions of the source user to the user of the login in the database of the same name" {
+            $csToControl = @($csPermissions | Where-Object { $PSItem.Permission -eq "CONTROL" -and $PSItem.LoginName -eq $csToLogin })
+            $csToControl.Count | Should -Be 2
+            $csToControl.DatabaseName -ccontains $csDbAUpper | Should -BeTrue
+            $csToControl.DatabaseName -ccontains $csDbBLower | Should -BeTrue
+        }
+
+        It "Grants nothing to the user of another login whose name differs only in case" {
+            $csPermissions | Where-Object { $PSItem.Permission -eq "CONTROL" -and $PSItem.LoginName -eq $csBackLogin } | Should -BeNullOrEmpty
+        }
+
+        It "Adds the user of the login to a role of which a user whose name differs only in case is a member" {
+            $csToMembers = @($csRoleMembers | Where-Object { $PSItem.RoleName -eq "dbatoolsci_csrole" -and $PSItem.LoginName -eq $csToLogin })
+            $csToMembers.Count | Should -Be 2
+            $csToMembers.DatabaseName -ccontains $csDbAUpper | Should -BeTrue
+            $csToMembers.DatabaseName -ccontains $csDbBLower | Should -BeTrue
+        }
+
+        It "Compares the permissions with the source user of the login in the database of the same name" {
+            # The source users of the second login do not have the permission, the users of the same name of the first login do.
+            @($ciPermissions | Where-Object { $PSItem.Permission -eq "CONNECT" -and $PSItem.LoginName -eq $csBackLogin }).Count | Should -Be 2
+            $ciPermissions | Where-Object { $PSItem.Permission -eq "CREATE PROCEDURE" -and $PSItem.LoginName -eq $csBackLogin } | Should -BeNullOrEmpty
+        }
+    }
+
     Context "When the pipeline ends at the first login" {
         BeforeAll {
             # The command runs in a runspace of its own, created by the PowerShell API without a host. There
