@@ -26,8 +26,9 @@ Describe $CommandName -Tag UnitTests {
     }
 }
 
-Describe $CommandName -Tag IntegrationTests -Skip:($PSVersionTable.PSVersion.Major -gt 5) {
+Describe $CommandName -Tag IntegrationTests {
     # Skip IntegrationTests on pwsh because we need code changes (X509Certificate is immutable on this platform. Use the equivalent constructor instead.)
+    # That was Add-DbaComputerCertificate, which called Import() on the certificate. It imports into a collection since #9924, so the tests run on pwsh as well.
 
     Context "tests a certificate" {
         AfterAll {
