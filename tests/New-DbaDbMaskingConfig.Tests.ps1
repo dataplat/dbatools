@@ -37,7 +37,9 @@ Describe $CommandName -Tag UnitTests {
             BeforeAll {
                 function New-MockMaskingDatabase {
                     param(
-                        [string]$ColumnName
+                        [string]$ColumnName,
+                        [string]$DataTypeName = "nvarchar",
+                        [int]$MaximumLength = 20
                     )
 
                     $mockServer = [PSCustomObject]@{
@@ -65,9 +67,9 @@ Describe $CommandName -Tag UnitTests {
                                         InPrimaryKey        = $false
                                         Nullable            = $true
                                         DataType            = [PSCustomObject]@{
-                                            Name          = "nvarchar"
-                                            SqlDataType   = "NVarChar"
-                                            MaximumLength = 20
+                                            Name          = $DataTypeName
+                                            SqlDataType   = $DataTypeName
+                                            MaximumLength = $MaximumLength
                                             NumericScale  = 0
                                         }
                                     }
@@ -127,6 +129,34 @@ Describe $CommandName -Tag UnitTests {
                 $column.Name | Should -Be $ColumnName
                 $column.SubType | Should -Be $ExpectedSubType
             }
+
+            It "masks the <DataTypeName> column <ColumnName> as <ExpectedType>/<ExpectedSubType>" -ForEach @(
+                # Person/Gender, Phone/PhoneNumber and Person/DateOfBirth do not produce numbers, so the data type decides
+                @{ ColumnName = "Kon"; DataTypeName = "tinyint"; MaximumLength = 1; ExpectedType = "Random"; ExpectedSubType = "Number" }
+                @{ ColumnName = "K$([char]0x00F6)n"; DataTypeName = "tinyint"; MaximumLength = 1; ExpectedType = "Random"; ExpectedSubType = "Number" }
+                @{ ColumnName = "Gender"; DataTypeName = "bit"; MaximumLength = 1; ExpectedType = "Random"; ExpectedSubType = "Bool" }
+                @{ ColumnName = "Telefon"; DataTypeName = "bigint"; MaximumLength = 8; ExpectedType = "Random"; ExpectedSubType = "Number" }
+                @{ ColumnName = "Fodelsedatum"; DataTypeName = "int"; MaximumLength = 4; ExpectedType = "Random"; ExpectedSubType = "Number" }
+                # Random/Int produces numbers, so the National ID recommendation stays
+                @{ ColumnName = "Personnummer"; DataTypeName = "bigint"; MaximumLength = 8; ExpectedType = "Random"; ExpectedSubType = "Int" }
+            ) {
+                $mockDatabase = New-MockMaskingDatabase -ColumnName $ColumnName -DataTypeName $DataTypeName -MaximumLength $MaximumLength
+                Mock Get-DbaDatabase { $mockDatabase }
+
+                $splatConfig = @{
+                    SqlInstance           = "sql1"
+                    Database              = "db1"
+                    Path                  = $TestDrive
+                    ExcludeDefaultPattern = $true
+                }
+                $file = New-DbaDbMaskingConfig @splatConfig
+                $column = Get-MockMaskingColumn -File $file
+
+                $column.Name | Should -Be $ColumnName
+                $column.ColumnType | Should -Be $DataTypeName
+                $column.MaskingType | Should -Be $ExpectedType
+                $column.SubType | Should -Be $ExpectedSubType
+            }
         }
     }
 }
@@ -168,6 +198,16 @@ Describe $CommandName -Tag IntegrationTests {
                 (1, '127.0.0.1', '123 Fake Street', '123 Fake Street', '123 Fake Street'),
                 (2, '', '123 Fake Street', '123 Fake Street', '123 Fake Street'),
                 (3, 'fe80::7df3:7015:89e9:fbed%15', '123 Fake Street', '123 Fake Street', '123 Fake Street')")
+
+        # A gender code in a numeric column with a Nordic name, which matches the Gender known name
+        $testDatabase.Query("
+                CREATE TABLE dbo.Person
+                (
+                    Id  INT IDENTITY PRIMARY KEY,
+                    Kon TINYINT NOT NULL
+                );
+                INSERT INTO dbo.Person (Kon)
+                SELECT 1 + (n % 2) FROM (SELECT TOP (20) ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n FROM sys.all_objects) AS numbers;")
 
         # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
         $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
@@ -224,6 +264,51 @@ Describe $CommandName -Tag IntegrationTests {
             $jsonOutput.Tables.Columns[4].Name | Should -Be "Street"
             $jsonOutput.Tables.Columns[4].MaskingType | Should -Be "Address"
             $jsonOutput.Tables.Columns[4].SubType | Should -Be "StreetAddress"
+        }
+
+        It "Generates a configuration that masks a gender code in a tinyint column" {
+            $splatQuery = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $maskingDbName
+                Query       = "SELECT Id, Kon FROM dbo.Person ORDER BY Id"
+            }
+            $before = @(Invoke-DbaQuery @splatQuery)
+
+            $splatMaskingConfig = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $maskingDbName
+                Table       = "Person"
+                Path        = $backupPath
+            }
+            $configResults = New-DbaDbMaskingConfig @splatMaskingConfig
+            $jsonOutput = Get-Content $configResults.FullName | ConvertFrom-Json
+            $konColumn = $jsonOutput.Tables.Columns | Where-Object Name -eq "Kon"
+
+            # Person/Gender would generate Male or Female, which cannot be written to a tinyint
+            $konColumn.MaskingType | Should -Be "Random"
+            $konColumn.SubType | Should -Be "Number"
+
+            $splatMasking = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $maskingDbName
+                FilePath    = $configResults.FullName
+            }
+            $maskingResults = @(Invoke-DbaDbDataMasking @splatMasking)
+
+            # Only the conversion warnings matter here. A table whose only unique index is on an identity column
+            # also gets "The table does not have any indexes", which does not stop the masking.
+            $WarnVar | Where-Object { "$PSItem" -match "convert" } | Should -BeNullOrEmpty
+            $maskingResults.Count | Should -Be 1
+            $maskingResults[0].Rows | Should -Be 20
+
+            # Each of the 20 values stays the same by chance with a probability of 1 in 255
+            $after = @(Invoke-DbaQuery @splatQuery)
+            $changed = @(for ($i = 0; $i -lt $before.Count; $i++) {
+                    if ($after[$i].Kon -ne $before[$i].Kon) {
+                        $after[$i].Id
+                    }
+                })
+            $changed.Count | Should -BeGreaterThan 0
         }
     }
 }

@@ -245,6 +245,20 @@ function New-DbaDbMaskingConfig {
             'varchar'
         )
 
+        # Invoke-DbaDbDataMasking can only write a number to these data types. A known name or pattern that
+        # generates anything else, such as Person/Gender (Male/Female) for a tinyint gender code, fails the
+        # conversion and leaves the column unmasked.
+        $numericDataTypes = @(
+            'bigint', 'decimal', 'float', 'int', 'money',
+            'numeric', 'smallint', 'tinyint'
+        )
+        $booleanDataTypes = @('bit', 'bool')
+        $numericRandomSubTypes = @(
+            'Byte', 'Decimal', 'Double', 'Even', 'Float',
+            'Int', 'Long', 'Number', 'Odd', 'SByte',
+            'Short', 'UInt', 'ULong', 'UShort'
+        )
+
         $maskingconfig = @()
     }
     process {
@@ -520,6 +534,22 @@ function New-DbaDbMaskingConfig {
                             } else {
                                 Write-Message -Level Verbose -Message "No patterns found to perform check on"
                             }
+                        }
+                    }
+
+                    # The column still is PII, but its masking follows the data type when the recommendation
+                    # cannot produce a value of that type
+                    if ($result) {
+                        $isCompatible = $true
+                        if ($columnType -in $numericDataTypes) {
+                            $isCompatible = $result.MaskingType -eq "Random" -and $result.MaskingSubType -in $numericRandomSubTypes
+                        } elseif ($columnType -in $booleanDataTypes) {
+                            $isCompatible = $result.MaskingType -eq "Random" -and $result.MaskingSubType -eq "Bool"
+                        }
+
+                        if (-not $isCompatible) {
+                            Write-Message -Level Verbose -Message "Column [$($columnobject.Name)] matches $($result.'PII-Name') ($($result.MaskingType)/$($result.MaskingSubType)), which does not produce $columnType values. Using the masking for its data type instead."
+                            $result = $null
                         }
                     }
 
