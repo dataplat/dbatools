@@ -486,7 +486,20 @@ function Update-SqlPermission {
                 Write-Message -Level Verbose -Message "Database [$dbName] is not updateable on destination. Skipping."
                 continue
             }
-            if ($null -eq $destDb.Users[$newDbUsername]) {
+            # Only the user of the destination login gets permissions and roles. When that login has no user in this database,
+            # its user is created under the name of the source user, see above, and a user of that name that exists already is
+            # not its user: it belongs to another login or to none, and it got the permissions and roles of the source user.
+            # dbo is the user of the owner, which the part below changes, and gets no permissions or roles.
+            $destUser = $destDb.Users[$newDbUsername]
+            if ($null -ne $destUser -and -not $destDbUsers[$destDb.Name] -and $newDbUsername -ne "dbo") {
+                if ($destUser.Login) {
+                    $destUserOwner = "the login $($destUser.Login)"
+                } else {
+                    $destUserOwner = "no login"
+                }
+                Stop-Function -Message "Database $dbName on $destination has a user $newDbUsername of $destUserOwner, but the login $newLoginName has no user there. Skipping $dbName for $newLoginName, so that $newDbUsername gets no permissions or roles of $loginName." -Target $destUser -Continue
+            }
+            if ($null -eq $destUser) {
                 if ($Pscmdlet.ShouldProcess($destination, "Adding $newDbUsername to $dbName.")) {
                     $sql = $SourceServer.Databases[$dbName].Users[$dbUsername].Script() | Out-String
                     try {

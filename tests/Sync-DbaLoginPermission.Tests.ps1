@@ -448,6 +448,112 @@ INNER JOIN sys.database_principals AS dbmember ON dbmember.principal_id = roleme
         }
     }
 
+    Context "When a user of the name of the source user belongs to another login" {
+        BeforeAll {
+            # We want to run all commands in the BeforeAll block with EnableException to ensure that the test fails if the setup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The login has no user in the database on the destination, so it gets one under the name of the source user. A
+            # user of that name existed already and belongs to another login, and it got the permissions and roles of the
+            # source user.
+            $takenRandom = Get-Random
+            $takenDbName = "dbatoolsci_takendb_$takenRandom"
+            $takenLoginName = "dbatoolsci_takenlogin_$takenRandom"
+            $takenOtherLoginName = "dbatoolsci_takenother_$takenRandom"
+            $takenPassword = ConvertTo-SecureString -String "dbatools.IO!$takenRandom" -AsPlainText -Force
+            $splatTakenLogin = @{
+                SqlInstance    = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
+                Login          = $takenLoginName, $takenOtherLoginName
+                SecurePassword = $takenPassword
+            }
+            $null = New-DbaLogin @splatTakenLogin
+            $null = New-DbaDatabase -SqlInstance $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2 -Name $takenDbName
+
+            $takenSourceSql = @"
+CREATE USER [dbatoolsci_taken] FOR LOGIN [$takenLoginName];
+GRANT CREATE TABLE TO [dbatoolsci_taken];
+ALTER ROLE [db_datareader] ADD MEMBER [dbatoolsci_taken];
+"@
+            $splatTakenSource = @{
+                SqlInstance = $TestConfig.InstanceMulti1
+                Database    = $takenDbName
+                Query       = $takenSourceSql
+            }
+            $null = Invoke-DbaQuery @splatTakenSource
+            $splatTakenDest = @{
+                SqlInstance = $TestConfig.InstanceMulti2
+                Database    = $takenDbName
+                Query       = "CREATE USER [dbatoolsci_taken] FOR LOGIN [$takenOtherLoginName]"
+            }
+            $null = Invoke-DbaQuery @splatTakenDest
+
+            # We want to run all commands outside of the BeforeAll block without EnableException to be able to test for specific warnings.
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # The command warns that it could not sync the login, which the tests below assert.
+            $splatTakenSync = @{
+                Source        = $TestConfig.InstanceMulti1
+                Destination   = $TestConfig.InstanceMulti2
+                Login         = $takenLoginName
+                WarningAction = "SilentlyContinue"
+            }
+            $takenResult = Sync-DbaLoginPermission @splatTakenSync
+            $takenWarnings = $WarnVar
+
+            $takenPermissionSql = @"
+SELECT grantee.name AS Grantee, SUSER_SNAME(grantee.sid) AS LoginName, perm.permission_name AS Permission
+FROM sys.database_permissions AS perm
+INNER JOIN sys.database_principals AS grantee ON grantee.principal_id = perm.grantee_principal_id
+WHERE perm.class = 0
+"@
+            $splatTakenPermission = @{
+                SqlInstance = $TestConfig.InstanceMulti2
+                Database    = $takenDbName
+                Query       = $takenPermissionSql
+            }
+            $takenPermissions = Invoke-DbaQuery @splatTakenPermission
+            $splatTakenMember = @{
+                SqlInstance = $TestConfig.InstanceMulti2
+                Database    = $takenDbName
+                Role        = "db_datareader"
+            }
+            $takenReaders = Get-DbaDbRoleMember @splatTakenMember
+        }
+
+        AfterAll {
+            # We want to run all commands in the AfterAll block with EnableException to ensure that the test fails if the cleanup fails.
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $splatTakenDbCleanup = @{
+                SqlInstance = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
+                Database    = $takenDbName
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaDatabase @splatTakenDbCleanup
+            $splatTakenLoginCleanup = @{
+                SqlInstance = $TestConfig.InstanceMulti1, $TestConfig.InstanceMulti2
+                Login       = $takenLoginName, $takenOtherLoginName
+                Force       = $true
+                ErrorAction = "SilentlyContinue"
+            }
+            $null = Remove-DbaLogin @splatTakenLoginCleanup
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Grants nothing to the user of the other login" {
+            $takenPermissions | Where-Object { $PSItem.Grantee -eq "dbatoolsci_taken" -and $PSItem.Permission -eq "CREATE TABLE" } | Should -BeNullOrEmpty
+            $takenReaders.UserName | Should -Not -Contain "dbatoolsci_taken"
+        }
+
+        It "Reports the login as failed and names the user and its login" {
+            @($takenResult).Count | Should -Be 1
+            $takenResult.Status | Should -Be "Failed"
+            $takenResult.Notes | Should -Match "user dbatoolsci_taken of the login $takenOtherLoginName"
+            $takenWarnings | Should -Not -BeNullOrEmpty
+        }
+    }
+
     Context "When the pipeline ends at the first login" {
         BeforeAll {
             # The command runs in a runspace of its own, created by the PowerShell API without a host. There
