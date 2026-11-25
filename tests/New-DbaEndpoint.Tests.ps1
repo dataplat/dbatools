@@ -113,5 +113,11 @@ Describe $CommandName -Tag IntegrationTests {
             $authentication = $certServer.Query("SELECT c.name FROM sys.database_mirroring_endpoints AS e JOIN master.sys.certificates AS c ON c.certificate_id = e.certificate_id WHERE e.name = N'$endpointName'")
             $authentication.name | Should -Be $certificateName
         }
+
+        It "gives it the same owner as an endpoint without a certificate" {
+            # Read from the instance itself, like the certificate above, so that it does not depend on the output.
+            $owner = $certServer.Query("SELECT SUSER_NAME(e.principal_id) AS owner FROM sys.endpoints AS e WHERE e.name = N'$endpointName'")
+            $owner.owner | Should -Be (Get-SaLoginName -SqlInstance $TestConfig.InstanceMulti2)
+        }
     }
 }
