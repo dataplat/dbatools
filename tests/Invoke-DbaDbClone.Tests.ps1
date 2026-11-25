@@ -63,12 +63,13 @@ Describe $CommandName -Tag IntegrationTests {
         BeforeAll {
             $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
 
-            # A quote and a closing bracket break a name that is not escaped, and the omega is missing from the code
-            # page of the usual collations, so a name that is not passed as Unicode loses it.
+            # A closing bracket breaks a name that is not escaped, and the omega is missing from the code page of the
+            # usual collations, so a name that is not passed as Unicode loses it. There is no quote in the names:
+            # SQL Server 2022 RTM breaks on a quote inside DBCC CLONEDATABASE itself, however the command passes it.
             $random = Get-Random
             $omega = [char]0x03A9
-            $quotedDbName = "dbatoolsci_clone'source]$($omega)_$random"
-            $quotedCloneName = "dbatoolsci_clone'target]$($omega)_$random"
+            $quotedDbName = "dbatoolsci_clone]source$($omega)_$random"
+            $quotedCloneName = "dbatoolsci_clone]target$($omega)_$random"
             $quotedServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle
             $null = $quotedServer.Query("CREATE DATABASE [$($quotedDbName.Replace("]", "]]"))]")
 
