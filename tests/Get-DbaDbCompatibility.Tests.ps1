@@ -20,6 +20,23 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Without an instance or a database" {
+        It "refuses and lets the loop of the caller go on" {
+            $rounds = 0
+            $resultsNoInput = foreach ($round in 1..3) {
+                Get-DbaDbCompatibility -WarningAction SilentlyContinue
+                $rounds++
+            }
+            $rounds | Should -Be 3
+            $resultsNoInput | Should -BeNullOrEmpty
+            $WarnVar | Should -Match "You must specify either a SQL instance or pipe a database collection"
+        }
+
+        It "throws with EnableException" {
+            { Get-DbaDbCompatibility -EnableException } | Should -Throw "*You must specify either a SQL instance or pipe a database collection*"
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {

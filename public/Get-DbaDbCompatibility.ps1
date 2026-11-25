@@ -17,22 +17,12 @@ function Get-DbaDbCompatibility {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        Specifies which databases to check for compatibility levels. Accepts wildcards for pattern matching.
+        Specifies which databases to check for compatibility levels.
         Use this when you need to focus on specific databases rather than reviewing all databases on the instance.
 
     .PARAMETER InputObject
         Accepts database objects from the pipeline to check their compatibility levels directly.
         Use this when you already have database objects from Get-DbaDatabase or other dbatools commands and want to avoid additional server queries.
-
-    .PARAMETER WhatIf
-        Shows what would happen if the command were to run
-
-    .PARAMETER Confirm
-        Prompts for confirmation of every step. For example:
-
-        Are you sure you want to perform this action?
-        Performing the operation "Update database" on target "pubs on SQL2016\VNEXT".
-        [Y] Yes  [A] Yes to All  [N] No  [L] No to All  [S] Suspend  [?] Help (default is "Y"):
 
     .PARAMETER EnableException
         By default, when something goes wrong we try to catch it, interpret it and give you a friendly warning message.
@@ -65,7 +55,7 @@ function Get-DbaDbCompatibility {
     .EXAMPLE
         PS C:\> Get-DbaDbCompatibility -SqlInstance localhost\sql2017
 
-        Displays database compatibility level for all user databases on server localhost\sql2017
+        Displays database compatibility level for all databases on server localhost\sql2017
 
     .EXAMPLE
         PS C:\> Get-DbaDbCompatibility -SqlInstance localhost\sql2017 -Database Test
@@ -83,9 +73,9 @@ function Get-DbaDbCompatibility {
         [switch]$EnableException
     )
     process {
-        if (Test-Bound -not 'SqlInstance', 'InputObject') {
-            Write-Message -Level Warning -Message "You must specify either a SQL instance or pipe a database collection"
-            continue
+        if (Test-Bound -not "SqlInstance", "InputObject") {
+            Stop-Function -Message "You must specify either a SQL instance or pipe a database collection"
+            return
         }
 
         if ($SqlInstance) {
