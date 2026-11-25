@@ -40,7 +40,9 @@ Describe $CommandName -Tag IntegrationTests {
             )
             $deadline = (Get-Date).AddSeconds(30)
             while ((Get-Date) -lt $deadline) {
-                $match = Get-ChildItem -Path $logPath -Filter $logFilter -ErrorAction SilentlyContinue | Select-String -Pattern $Marker -SimpleMatch | Select-Object -First 1
+                # A file that the cleanup of the logging runspace removes between the two commands is skipped, the next
+                # round reads the files again.
+                $match = Get-ChildItem -Path $logPath -Filter $logFilter -ErrorAction SilentlyContinue | Select-String -Pattern $Marker -SimpleMatch -ErrorAction SilentlyContinue | Select-Object -First 1
                 if ($match) {
                     return $match
                 }
@@ -83,6 +85,43 @@ Describe $CommandName -Tag IntegrationTests {
             }
 
             $fileNames | Select-Object -Unique | Should -HaveCount 3
+        }
+
+        It "Writes a message that arrives while the file refuses writers once the file is free again" {
+            # A limit far above the size of the file, so that no new file is started while the current one is held.
+            Set-DbatoolsConfig -FullName "Logging.MaxMessagefileBytes" -Value 100MB
+
+            $firstMarker = "dbatoolsci_logfree_$(Get-Random)"
+            Write-Message -Level Verbose -Message $firstMarker -FunctionName $CommandName
+            $firstMatch = Wait-MessageLogLine -Marker $firstMarker
+            $firstMatch | Should -Not -BeNullOrEmpty
+
+            # A reader that shares only reading keeps every writer out of the file, like a program that reads the log while
+            # the logging runspace wants to write it. Twelve seconds cover two passes of the logging runspace.
+            $heldMarker = "dbatoolsci_logheld_$(Get-Random)"
+            $holder = [System.IO.File]::Open($firstMatch.Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+            try {
+                Write-Message -Level Verbose -Message $heldMarker -FunctionName $CommandName
+                Start-Sleep -Seconds 12
+            } finally {
+                $holder.Dispose()
+            }
+
+            Wait-MessageLogLine -Marker $heldMarker | Should -Not -BeNullOrEmpty
+        }
+
+        It "Keeps writing into one file when the size of a file is not limited" {
+            Set-DbatoolsConfig -FullName "Logging.MaxMessagefileBytes" -Value 0
+
+            $fileNames = foreach ($number in 1..2) {
+                $marker = "dbatoolsci_lognolimit_$(Get-Random)"
+                Write-Message -Level Verbose -Message $marker -FunctionName $CommandName
+                $match = Wait-MessageLogLine -Marker $marker
+                $match | Should -Not -BeNullOrEmpty
+                $match.Filename
+            }
+
+            $fileNames | Select-Object -Unique | Should -HaveCount 1
         }
     }
 }
