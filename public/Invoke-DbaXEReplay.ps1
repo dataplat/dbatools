@@ -8,7 +8,7 @@ function Invoke-DbaXEReplay {
 
         The function works by collecting SQL queries from the Extended Event stream, writing them to a temporary SQL file with proper batch separators, then executing the file using sqlcmd to ensure batches run correctly. This approach allows you to replay production workloads in test environments to validate performance changes, test capacity, or troubleshoot query behavior under realistic conditions.
 
-        By default, it processes sql_batch_completed and rcp_completed events, but you can filter to specific event types. The replay maintains the original SQL structure while allowing you to redirect the workload to different databases or instances as needed.
+        By default, it processes sql_batch_completed and rpc_completed events, but you can filter to specific event types. The replay maintains the original SQL structure while allowing you to redirect the workload to different databases or instances as needed.
 
     .PARAMETER SqlInstance
         Target SQL Server(s)
@@ -25,7 +25,7 @@ function Invoke-DbaXEReplay {
         Use this when you need to replay workloads in a specific database context, especially when the captured queries don't include explicit database references.
 
     .PARAMETER Event
-        Filters which Extended Event types to replay from the input stream. Defaults to sql_batch_completed and rcp_completed events.
+        Filters which Extended Event types to replay from the input stream. Defaults to sql_batch_completed and rpc_completed events.
         Use this to replay only specific event types when you want to test particular workload patterns or exclude certain query types from the replay.
 
     .PARAMETER Raw
@@ -66,7 +66,7 @@ function Invoke-DbaXEReplay {
     .EXAMPLE
         PS C:\> Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXEReplay -SqlInstance sql2017
 
-        Runs all batch_text for sql_batch_completed against tempdb on sql2017.
+        Replays the sql_batch_completed and rpc_completed events of sample.xel on sql2017, in the default database of the login.
 
     .EXAMPLE
         PS C:\> Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXEReplay -SqlInstance sql2017 -Database planning -Event sql_batch_completed
@@ -76,7 +76,7 @@ function Invoke-DbaXEReplay {
     .EXAMPLE
         PS C:\> Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXEReplay -SqlInstance sql2017, sql2016
 
-        Runs all batch_text for sql_batch_completed against tempdb on sql2017 and sql2016.
+        Replays the sql_batch_completed and rpc_completed events of sample.xel on sql2017 and on sql2016, in the default database of the login.
 
 
     #>
@@ -87,7 +87,7 @@ function Invoke-DbaXEReplay {
         [DbaInstance[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [string[]]$Database,
-        [string[]]$Event = @('sql_batch_completed', 'rcp_completed'),
+        [string[]]$Event = @("sql_batch_completed", "rpc_completed"),
         [Parameter(Mandatory, ValueFromPipeline)]
         [object]$InputObject,
         [switch]$Raw,
@@ -95,79 +95,99 @@ function Invoke-DbaXEReplay {
     )
 
     begin {
+        # Set before anything can stop, so that the cleanup in the end block never sees a variable of the caller.
+        $filename = $null
         #Variable marked as unused by PSScriptAnalyzer
         #$querycolumns = 'statement', 'batch_text'
-        $timestamp = (Get-Date -Format yyyyMMddHHmm)
-        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
-        $filename = "$temp\dbatools-replay-$timestamp.sql"
-        Set-Content $filename -Value $null
 
         if (-not (Get-Command sqlcmd -ErrorAction Ignore)) {
             Stop-Function -Message "sqlcmd is not installed. Please install the SQL Server Command Line Utilities."
             return
         }
+
+        # The random part keeps two replays that start in the same minute from sharing one file.
+        $timestamp = (Get-Date -Format yyyyMMddHHmm)
+        $temp = ([System.IO.Path]::GetTempPath()).TrimEnd("\")
+        $filename = "$temp\dbatools-replay-$timestamp-$(Get-Random).sql"
+
+        # The file starts with the byte order mark of UTF-8. Without a mark every sqlcmd reads the file in an encoding
+        # of its own: the ODBC sqlcmd in the ANSI code page, the Go sqlcmd as UTF-8. Add-Content writes the ANSI code page
+        # in Windows PowerShell and UTF-8 without a mark in PowerShell 7, so one of the two would break the characters
+        # outside ASCII. With the mark the ODBC sqlcmd 17 and 18 and the Go sqlcmd all read the file as UTF-8. The Go
+        # sqlcmd does not know the -f option, so the code page cannot be passed instead.
+        $fileEncoding = New-Object System.Text.UTF8Encoding($false)
+        [System.IO.File]::WriteAllBytes($filename, (New-Object System.Text.UTF8Encoding($true)).GetPreamble())
     }
     process {
         if (Test-FunctionInterrupt) { return }
+        # return, not continue: the process block is no loop, so a continue would leave the command and end the pipeline
+        # of the caller at the first event that is not in -Event, before the end block replays anything.
         if ($InputObject.Name -notin $Event) {
-            continue
+            return
         }
 
         if ($InputObject.statement) {
             if ($InputObject.statement -notmatch "ALTER EVENT SESSION") {
-                Add-Content -Path $filename -Value $InputObject.statement
-                Add-Content -Path $filename -Value "GO"
+                [System.IO.File]::AppendAllText($filename, "$($InputObject.statement)`r`nGO`r`n", $fileEncoding)
             }
         } else {
             if ($InputObject.batch_text -notmatch "ALTER EVENT SESSION") {
-                Add-Content -Path $filename -Value $InputObject.batch_text
-                Add-Content -Path $filename -Value "GO"
+                [System.IO.File]::AppendAllText($filename, "$($InputObject.batch_text)`r`nGO`r`n", $fileEncoding)
             }
         }
     }
     end {
-        if (Test-FunctionInterrupt) { return }
-        foreach ($instance in $SqlInstance) {
-            try {
-                $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
-            } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
-            }
-
-
-            # The file is replayed once per database context. Without -Database, sqlcmd runs it once in the
-            # default database of the login, which is what the command always did.
-            $databaseContexts = $Database
-            if (-not $databaseContexts) {
-                $databaseContexts = @($null)
-            }
-
-            foreach ($databaseContext in $databaseContexts) {
-                $sqlcmdArguments = @("-S", "$instance", "-i", $filename)
-                if ($databaseContext) {
-                    $sqlcmdArguments += "-d", $databaseContext
-                }
-                if (Test-Bound -ParameterName SqlCredential) {
-                    $sqlcmdArguments += "-U", $SqlCredential.UserName, "-P", $SqlCredential.GetNetworkCredential().Password
+        # The replay file holds the captured statements, so it is removed in the finally, also when the replay stops
+        # early or throws under -EnableException.
+        try {
+            if (Test-FunctionInterrupt) { return }
+            foreach ($instance in $SqlInstance) {
+                try {
+                    $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
+                } catch {
+                    Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
                 }
 
-                if ($Raw) {
-                    Write-Message -Message "Invoking XEReplay against $instance running on $($server.name) with raw output" -Level Verbose
-                    & sqlcmd @sqlcmdArguments
-                    continue
+
+                # The file is replayed once per database context. Without -Database, sqlcmd runs it once in the
+                # default database of the login, which is what the command always did.
+                $databaseContexts = $Database
+                if (-not $databaseContexts) {
+                    $databaseContexts = @($null)
                 }
 
-                Write-Message -Message "Invoking XEReplay against $instance running on $($server.name)" -Level Verbose
-                $output = & sqlcmd @sqlcmdArguments
+                foreach ($databaseContext in $databaseContexts) {
+                    $sqlcmdArguments = @("-S", "$instance", "-i", $filename)
+                    if ($databaseContext) {
+                        $sqlcmdArguments += "-d", $databaseContext
+                    }
+                    if (Test-Bound -ParameterName SqlCredential) {
+                        $sqlcmdArguments += "-U", $SqlCredential.UserName, "-P", $SqlCredential.GetNetworkCredential().Password
+                    }
 
-                foreach ($line in $output) {
-                    $newline = $line.Trim()
-                    if ($newline -and $newline -notmatch "------------------------------------------------------------------------------------") {
-                        "$newline"
+                    if ($Raw) {
+                        Write-Message -Message "Invoking XEReplay against $instance running on $($server.name) with raw output" -Level Verbose
+                        & sqlcmd @sqlcmdArguments
+                        continue
+                    }
+
+                    Write-Message -Message "Invoking XEReplay against $instance running on $($server.name)" -Level Verbose
+                    $output = & sqlcmd @sqlcmdArguments
+
+                    # sqlcmd underlines every column header with dashes as wide as the column, and several columns
+                    # give one line of dash runs with spaces in between, so the whole line is tested.
+                    foreach ($line in $output) {
+                        $newline = $line.Trim()
+                        if ($newline -and $newline -notmatch "^[-\s]+$") {
+                            "$newline"
+                        }
                     }
                 }
             }
+        } finally {
+            if ($filename) {
+                Remove-Item -Path $filename -ErrorAction Ignore
+            }
         }
-        Remove-Item -Path $filename -ErrorAction Ignore
     }
 }
