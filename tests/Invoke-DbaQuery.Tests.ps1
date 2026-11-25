@@ -497,29 +497,55 @@ CREATE INDEX IX_Filtered ON dbo.$tableName(Name) WHERE IsDeleted = 0;
             # would open connections of its own, and only the sessions of this process, so a second test
             # run on the same instance cannot disturb the count.
             $countServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceMulti1 -NonPooledConnection
-            $countQuery = @"
+            # Only the sessions that logged in after the start of a round are counted. In a full run this process
+            # holds pooled sessions of earlier tests, and the pool closes idle ones at any time, so a count of all
+            # sessions of the process, or of the sleeping ones, also moves while the command does nothing wrong.
+            # A session the command closed can take a moment to go away on the server, so the count is retried for
+            # up to ten seconds; a session it left behind stays.
+            $getNewSessionCount = {
+                param($Since)
+                $newSessionQuery = @"
 SELECT COUNT(*)
 FROM sys.dm_exec_sessions
-WHERE program_name LIKE N'dbatools%'
-  AND host_process_id = $PID
-  AND status = N'sleeping'
+WHERE host_process_id = $PID
   AND session_id <> @@spid
+  AND login_time > CONVERT(datetime2, '$Since', 121)
 "@
+                $waitUntil = (Get-Date).AddSeconds(10)
+                do {
+                    $newSessionCount = $countServer.ConnectionContext.ExecuteScalar($newSessionQuery)
+                    if ($newSessionCount -eq 0) {
+                        break
+                    }
+                    Start-Sleep -Milliseconds 500
+                } while ((Get-Date) -lt $waitUntil)
+                $newSessionCount
+            }
+            $serverTimeQuery = "SELECT CONVERT(varchar(27), SYSDATETIME(), 121)"
             # A division by zero fails the batch with severity 16, so the execution throws.
             $failingQuery = "SELECT 1 / 0 AS DbatoolsciFails"
 
             # One warm-up call so the background connections of the tab expansion exist before the baseline.
             $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query "SELECT 1 AS Warmup"
-            $sleepingBefore = $countServer.ConnectionContext.ExecuteScalar($countQuery)
 
             $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
 
+            # And one call of each failing form, so that a connection either form opens on first use is older than the rounds.
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query $failingQuery -WarningAction SilentlyContinue
+            try {
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query $failingQuery -EnableException
+            } catch {
+                $null = $PSItem
+            }
+
+            $roundStart = $countServer.ConnectionContext.ExecuteScalar($serverTimeQuery)
             foreach ($i in 1..3) {
                 $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query $failingQuery -WarningAction SilentlyContinue
             }
             $warningsAfterWarn = $WarnVar
-            $sleepingAfterWarn = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+            $newSessionsAfterWarn = & $getNewSessionCount $roundStart
 
+            $roundStart = $countServer.ConnectionContext.ExecuteScalar($serverTimeQuery)
             foreach ($i in 1..3) {
                 try {
                     $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceMulti1 -Query $failingQuery -EnableException
@@ -527,7 +553,7 @@ WHERE program_name LIKE N'dbatools%'
                     $null = $PSItem
                 }
             }
-            $sleepingAfterThrow = $countServer.ConnectionContext.ExecuteScalar($countQuery)
+            $newSessionsAfterThrow = & $getNewSessionCount $roundStart
         }
 
         AfterAll {
@@ -543,12 +569,12 @@ WHERE program_name LIKE N'dbatools%'
             @($warningsAfterWarn) -join " " | Should -BeLike "*Failed during execution*"
         }
 
-        It "leaves no sleeping session behind when the failure is a warning" {
-            $sleepingAfterWarn | Should -Be $sleepingBefore
+        It "leaves no session behind when the failure is a warning" {
+            $newSessionsAfterWarn | Should -Be 0
         }
 
-        It "leaves no sleeping session behind when the failure is thrown" {
-            $sleepingAfterThrow | Should -Be $sleepingBefore
+        It "leaves no session behind when the failure is thrown" {
+            $newSessionsAfterThrow | Should -Be 0
         }
     }
 }
