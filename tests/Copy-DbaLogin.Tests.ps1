@@ -2782,4 +2782,77 @@ SELECT CONVERT(VARCHAR(514), CAST(LOGINPROPERTY(N'$cu12LoginName', 'PasswordHash
             $cu12DestHashAfterUpdateForce | Should -Be $cu12DestHashBefore
         }
     }
+
+    Context "Syncing the name of sa" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $saNameQuery = "SELECT name FROM sys.server_principals WHERE principal_id = 1"
+            $sourceSaName = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1 -Query $saNameQuery).name
+            $destSaName = (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $saNameQuery).name
+            $renamedSaName = "dbatoolsci_sa_$(Get-Random)"
+
+            # The login exists on both instances, so without -Force the copy skips it.
+            $skippedLoginName = "dbatoolsci_saskip_$(Get-Random)"
+            $createSkippedLogin = @"
+CREATE LOGIN [$skippedLoginName] WITH PASSWORD = N'dbatools.IO_$(Get-Random)', CHECK_POLICY = OFF
+"@
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Query $createSkippedLogin
+
+            # Puts the sa of the destination back under its name and drops a login that only stands in its way.
+            $restoreSaQuery = @"
+IF EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'$sourceSaName' AND principal_id <> 1) DROP LOGIN [$sourceSaName];
+DECLARE @saName sysname = (SELECT name FROM sys.server_principals WHERE principal_id = 1);
+DECLARE @renameSa nvarchar(max) = N'ALTER LOGIN ' + QUOTENAME(@saName) + N' WITH NAME = [$destSaName]';
+IF @saName <> N'$destSaName' EXEC (@renameSa);
+"@
+            $splatSaSync = @{
+                Source      = $TestConfig.InstanceCopy1
+                Destination = $TestConfig.InstanceCopy2
+                Login       = $skippedLoginName
+                SyncSaName  = $true
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $restoreSaQuery
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceCopy1, $TestConfig.InstanceCopy2 -Login $skippedLoginName -Force
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "renames sa on the destination also when every login is skipped" {
+            try {
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query "ALTER LOGIN [$destSaName] WITH NAME = [$renamedSaName]" -EnableException
+
+                $resultsSaSync = Copy-DbaLogin @splatSaSync
+                $resultsSaSync.Status | Should -Be "Skipped"
+                $WarnVar | Should -BeNullOrEmpty
+                (Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $saNameQuery).name | Should -Be $sourceSaName
+            } finally {
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $restoreSaQuery -EnableException
+            }
+        }
+
+        It "warns when sa cannot be renamed" {
+            try {
+                # A login with the name of the source sa on the destination makes the rename fail.
+                $blockSaQuery = @"
+ALTER LOGIN [$destSaName] WITH NAME = [$renamedSaName];
+CREATE LOGIN [$sourceSaName] WITH PASSWORD = N'dbatools.IO_$(Get-Random)', CHECK_POLICY = OFF;
+"@
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $blockSaQuery -EnableException
+
+                $resultsSaBlocked = Copy-DbaLogin @splatSaSync -WarningAction SilentlyContinue
+                $resultsSaBlocked.Status | Should -Be "Skipped"
+                $WarnVar | Should -Match "Could not change sa username to match source"
+            } finally {
+                $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Query $restoreSaQuery -EnableException
+            }
+        }
+    }
 }
