@@ -27,6 +27,48 @@ Describe $CommandName -Tag UnitTests {
             Compare-Object -ReferenceObject $expectedParameters -DifferenceObject $hasParameters | Should -BeNullOrEmpty
         }
     }
+
+    Context "Without an instance or a database" {
+        It "refuses a call without input and lets the loop of the caller go on" {
+            $rounds = 0
+            $resultsNoInput = foreach ($round in 1..3) {
+                Invoke-DbaDbUpgrade -WarningAction SilentlyContinue
+                $rounds++
+            }
+            $rounds | Should -Be 3
+            $resultsNoInput | Should -BeNullOrEmpty
+            $WarnVar | Should -Match "You must specify either a SQL instance or pipe a database collection"
+        }
+
+        It "refuses an instance without a database and lets the loop of the caller go on" {
+            $rounds = 0
+            $resultsNoDatabase = foreach ($round in 1..3) {
+                Invoke-DbaDbUpgrade -SqlInstance $TestConfig.InstanceSingle -WarningAction SilentlyContinue
+                $rounds++
+            }
+            $rounds | Should -Be 3
+            $resultsNoDatabase | Should -BeNullOrEmpty
+            $WarnVar | Should -Match "You must explicitly specify a database"
+        }
+
+        It "does not take -AllUserDatabases:`$false as a choice of databases" {
+            # -WhatIf keeps every database unchanged if the command takes it as one.
+            $splatNoChoice = @{
+                SqlInstance      = $TestConfig.InstanceSingle
+                AllUserDatabases = $false
+                WhatIf           = $true
+                WarningAction    = "SilentlyContinue"
+            }
+            $resultsNoChoice = Invoke-DbaDbUpgrade @splatNoChoice
+            $resultsNoChoice | Should -BeNullOrEmpty
+            $WarnVar | Should -Match "You must explicitly specify a database"
+        }
+
+        It "throws with EnableException" {
+            { Invoke-DbaDbUpgrade -EnableException } | Should -Throw "*You must specify either a SQL instance or pipe a database collection*"
+            { Invoke-DbaDbUpgrade -SqlInstance $TestConfig.InstanceSingle -EnableException } | Should -Throw "*You must explicitly specify a database*"
+        }
+    }
 }
 
 Describe $CommandName -Tag IntegrationTests {
@@ -187,6 +229,53 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "leaves the connection in the database it was in" {
             $statementContextAfter | Should -Be $statementContextBefore
+        }
+    }
+
+    Context "Names that need quoting" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The omega is missing from the code page of the usual collations, so a database name in a string
+            # literal loses it. A dot, a closing bracket or a quote breaks a view name that is not delimited.
+            $quotedUpgradeDbName = "dbatoolsci_upgrade]$([char]0x03A9)_$(Get-Random)"
+            $quotedIdentifier = "[$($quotedUpgradeDbName.Replace("]", "]]"))]"
+            $previousLevel = $previousCompatibility.ToString().Replace("Version", "")
+            $null = $setupServer.Query("CREATE DATABASE $quotedIdentifier; ALTER DATABASE $quotedIdentifier SET COMPATIBILITY_LEVEL = $previousLevel")
+
+            $quotedViewQuery = @"
+CREATE TABLE dbo.dbatoolsci_table (id INT);
+EXEC ('CREATE VIEW [dbo].[dbatoolsci.dot] AS SELECT id FROM dbo.dbatoolsci_table');
+EXEC ('CREATE VIEW [dbo].[dbatoolsci]]bracket] AS SELECT id FROM dbo.dbatoolsci_table');
+EXEC ('CREATE VIEW [dbo].[dbatoolsci''quote] AS SELECT id FROM dbo.dbatoolsci_table');
+"@
+            $splatQuotedViews = @{
+                SqlInstance = $TestConfig.InstanceSingle
+                Database    = $quotedUpgradeDbName
+                Query       = $quotedViewQuery
+            }
+            $null = Invoke-DbaQuery @splatQuotedViews
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Remove-DbaDatabase -SqlInstance $TestConfig.InstanceSingle -Database $quotedUpgradeDbName -ErrorAction SilentlyContinue
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "runs every step on the database and on its views" {
+            $quotedResult = Invoke-DbaDbUpgrade -SqlInstance $TestConfig.InstanceSingle -Database $quotedUpgradeDbName
+            $WarnVar | Should -BeNullOrEmpty
+            $quotedResult.Database | Should -BeExactly $quotedUpgradeDbName
+            $quotedResult.Compatibility | Should -Be $instanceCompatibility.ToString().Replace("Version", "")
+            $quotedResult.DataPurity | Should -Be "Success"
+            $quotedResult.UpdateUsage | Should -Be "Success"
+            $quotedResult.UpdateStats | Should -Be "Success"
+            $quotedResult.RefreshViews | Should -Be "Success"
         }
     }
 }

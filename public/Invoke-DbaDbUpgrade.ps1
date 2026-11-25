@@ -21,11 +21,11 @@ function Invoke-DbaDbUpgrade {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        Specifies which databases to upgrade and run post-upgrade maintenance tasks on. Accepts wildcards for pattern matching.
+        Specifies which databases to upgrade and run post-upgrade maintenance tasks on. The names have to match exactly.
         Use this when you need to target specific databases rather than processing all user databases on the instance.
 
     .PARAMETER ExcludeDatabase
-        Excludes specific databases from the upgrade process when using -AllUserDatabases. Accepts wildcards for pattern matching.
+        Excludes specific databases from the upgrade process when using -AllUserDatabases. The names have to match exactly.
         Useful for skipping system-critical databases or those with special maintenance windows during bulk upgrade operations.
 
     .PARAMETER AllUserDatabases
@@ -150,14 +150,15 @@ function Invoke-DbaDbUpgrade {
     }
     process {
 
-        if (Test-Bound -not 'SqlInstance', 'InputObject') {
-            Write-Message -Level Warning -Message "You must specify either a SQL instance or pipe a database collection"
-            continue
+        if (Test-Bound -not "SqlInstance", "InputObject") {
+            Stop-Function -Message "You must specify either a SQL instance or pipe a database collection"
+            return
         }
 
-        if (Test-Bound -not 'Database', 'InputObject', 'ExcludeDatabase', 'AllUserDatabases') {
-            Write-Message -Level Warning -Message "You must explicitly specify a database. Use -Database, -ExcludeDatabase, -AllUserDatabases or pipe a database collection"
-            continue
+        # -AllUserDatabases is read by value, so that -AllUserDatabases:$false does not select every user database.
+        if ((Test-Bound -not "Database", "InputObject", "ExcludeDatabase") -and -not $AllUserDatabases) {
+            Stop-Function -Message "You must explicitly specify a database. Use -Database, -ExcludeDatabase, -AllUserDatabases or pipe a database collection"
+            return
         }
 
         foreach ($instance in $SqlInstance) {
@@ -180,6 +181,18 @@ function Invoke-DbaDbUpgrade {
         foreach ($db in $InputObject) {
             # create objects to use in updates
             $server = $db.Parent
+
+            # A step that is skipped or declined must not report the result of the previous database.
+            $CompatibilityResult = $null
+            $targetRecoveryTimeResult = $null
+            $DataPurityResult = $null
+            $UpdateUsageResult = $null
+            $UpdateStatsResult = $null
+            $RefreshViewResult = $null
+
+            # The names go into the statements as delimited identifiers, so that a quote, a closing bracket or
+            # a character outside the code page of the instance cannot break or change them.
+            $quotedDbName = "[$($db.Name.Replace("]", "]]"))]"
 
             # Read before anything else runs, so that this is the database the caller was in and not one
             # that a statement of this command left behind.
@@ -208,7 +221,7 @@ function Invoke-DbaDbUpgrade {
                         $db.Alter()
                         $CompatibilityResult = $serverLevel.ToString().Replace('Version', '')
                     } catch {
-                        Write-Message -Level Warning -Message "Failed run Compatibility Upgrade" -ErrorRecord $_ -Target $instance
+                        Write-Message -Level Warning -Message "Failed run Compatibility Upgrade" -ErrorRecord $_ -Target $db
                         $CompatibilityResult = "Fail"
                     }
                 }
@@ -224,7 +237,7 @@ function Invoke-DbaDbUpgrade {
                         $db.Alter()
                         $targetRecoveryTimeResult = 60
                     } catch {
-                        Write-Message -Level Warning -Message "Failed to change target recovery time" -ErrorRecord $_ -Target $instance
+                        Write-Message -Level Warning -Message "Failed to change target recovery time" -ErrorRecord $_ -Target $db
                         $targetRecoveryTimeResult = "Fail"
                     }
                 }
@@ -240,12 +253,12 @@ function Invoke-DbaDbUpgrade {
             if (!($NoCheckDb)) {
                 Write-Message -Level Verbose -Message "Updating $db with DBCC CHECKDB DATA_PURITY"
                 If ($Pscmdlet.ShouldProcess($server, "Updating $db with DBCC CHECKDB DATA_PURITY")) {
-                    $tsqlCheckDB = "DBCC CHECKDB ('$($db.Name)') WITH DATA_PURITY, NO_INFOMSGS"
+                    $tsqlCheckDB = "DBCC CHECKDB ($quotedDbName) WITH DATA_PURITY, NO_INFOMSGS"
                     try {
                         $db.Invoke($tsqlCheckDB)
                         $DataPurityResult = "Success"
                     } catch {
-                        Write-Message -Level Warning -Message "Failed run DBCC CHECKDB with DATA_PURITY on $db" -ErrorRecord $_ -Target $instance
+                        Write-Message -Level Warning -Message "Failed run DBCC CHECKDB with DATA_PURITY on $db" -ErrorRecord $_ -Target $db
                         $DataPurityResult = "Fail"
                     }
                 }
@@ -256,12 +269,12 @@ function Invoke-DbaDbUpgrade {
             if (!($NoUpdateUsage)) {
                 Write-Message -Level Verbose -Message "Updating $db with DBCC UPDATEUSAGE"
                 If ($Pscmdlet.ShouldProcess($server, "Updating $db with DBCC UPDATEUSAGE")) {
-                    $tsqlUpdateUsage = "DBCC UPDATEUSAGE ($db) WITH NO_INFOMSGS;"
+                    $tsqlUpdateUsage = "DBCC UPDATEUSAGE ($quotedDbName) WITH NO_INFOMSGS;"
                     try {
                         $db.Invoke($tsqlUpdateUsage)
                         $UpdateUsageResult = "Success"
                     } catch {
-                        Write-Message -Level Warning -Message "Failed to run DBCC UPDATEUSAGE on $db" -ErrorRecord $_ -Target $instance
+                        Write-Message -Level Warning -Message "Failed to run DBCC UPDATEUSAGE on $db" -ErrorRecord $_ -Target $db
                         $UpdateUsageResult = "Fail"
                     }
                 }
@@ -278,7 +291,7 @@ function Invoke-DbaDbUpgrade {
                         $db.Invoke($tsqlStats)
                         $UpdateStatsResult = "Success"
                     } catch {
-                        Write-Message -Level Warning -Message "Failed to run sp_updatestats on $db" -ErrorRecord $_ -Target $instance
+                        Write-Message -Level Warning -Message "Failed to run sp_updatestats on $db" -ErrorRecord $_ -Target $db
                         $UpdateStatsResult = "Fail"
                     }
                 }
@@ -301,13 +314,17 @@ function Invoke-DbaDbUpgrade {
                         $viewSchema = $dbView.Schema
                         $fullName = $viewSchema + "." + $viewName
 
-                        $tsqlupdateView = "EXECUTE sp_refreshview N'$fullName';  "
+                        # sp_refreshview parses the name, so a dot, a bracket or a quote in it needs the delimited
+                        # form, and a quote is doubled again for the string literal.
+                        $quotedViewName = "[$($viewSchema.Replace("]", "]]"))].[$($viewName.Replace("]", "]]"))]"
+                        $literalViewName = $quotedViewName.Replace("'", "''")
+                        $tsqlupdateView = "EXECUTE sp_refreshview N'$literalViewName';"
 
                         If ($Pscmdlet.ShouldProcess($server, "Refreshing view $fullName on $db")) {
                             try {
                                 $db.Invoke($tsqlupdateView)
                             } catch {
-                                Write-Message -Level Warning -Message "Failed update view $fullName on $db" -ErrorRecord $_ -Target $instance
+                                Write-Message -Level Warning -Message "Failed update view $fullName on $db" -ErrorRecord $_ -Target $db
                                 $RefreshViewResult = "Fail"
                             }
                         }
