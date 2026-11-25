@@ -138,7 +138,7 @@ function Copy-DbaRegServer {
                             $copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Destination group $groupName exists at destination. Use -Force to drop and migrate."
                         }
-                        continue
+                        return
                     }
                     if ($Pscmdlet.ShouldProcess($destinstance, "Dropping group $groupName")) {
                         try {
@@ -149,7 +149,7 @@ function Copy-DbaRegServer {
                             $copyDestinationGroupStatus.Notes = $_.Exception.Message
                             $copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                             Write-Message -Level Verbose -Message "Issue dropping group $groupName on $destinstance | $PSItem"
-                            continue
+                            return
                         }
                     }
                 }
@@ -166,7 +166,7 @@ function Copy-DbaRegServer {
                         $copyDestinationGroupStatus.Notes = $_.Exception.Message
                         $copyDestinationGroupStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Write-Message -Level Verbose -Message "Issue creating group $groupName on $destinstance | $PSItem"
-                        continue
+                        return
                     }
                 }
             }
@@ -259,18 +259,17 @@ function Copy-DbaRegServer {
             # Add Groups
             foreach ($fromSubGroup in $sourceGroup.ServerGroups) {
                 $fromSubGroupName = $fromSubGroup.Name
-                if ($Pscmdlet.ShouldProcess($destinstance, "Copying group $fromSubGroupName")) {
-                    $toSubGroup = $destinationGroup.ServerGroups[$fromSubGroupName]
+                # Only reads, so outside of any ShouldProcess: under -WhatIf the checks below need them as well.
+                $toSubGroup = $destinationGroup.ServerGroups[$fromSubGroupName]
 
-                    $copyGroupStatus = [PSCustomObject]@{
-                        SourceServer      = $sourceServer.Name
-                        DestinationServer = $destServer.Name
-                        Name              = $fromSubGroupName
-                        Type              = "CMS Group"
-                        Status            = $null
-                        Notes             = $null
-                        DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
-                    }
+                $copyGroupStatus = [PSCustomObject]@{
+                    SourceServer      = $sourceServer.Name
+                    DestinationServer = $destServer.Name
+                    Name              = $fromSubGroupName
+                    Type              = "CMS Group"
+                    Status            = $null
+                    Notes             = $null
+                    DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
                 }
 
                 if ($null -ne $toSubGroup) {
@@ -317,36 +316,52 @@ function Copy-DbaRegServer {
                 Invoke-ParseServerGroup -sourceGroup $fromSubGroup -destinationgroup $toSubGroup -SwitchServerName $SwitchServerName
             }
         }
-
-        try {
-            $sourceServer = Connect-DbaInstance -SqlInstance $Source -SqlCredential $SourceSqlCredential -MinimumVersion 10
-            $fromCmStore = Get-DbaRegServerStore -SqlInstance $sourceServer
-        } catch {
-            Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
-            return
-        }
     }
 
     process {
         if (Test-FunctionInterrupt) { return }
-        foreach ($destinstance in $Destination) {
+        # The stores come from Get-DbaRegServerStore with the instances as given, so that they record whether this
+        # command opened their connection, and Disconnect-RegServer closes only those in the finally blocks. A store
+        # keeps its connection open after it was read. The command takes no pipeline input, so process runs once.
+        try {
             try {
-                $destServer = Connect-DbaInstance -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -MinimumVersion 10
+                $fromCmStore = Get-DbaRegServerStore -SqlInstance $Source -SqlCredential $SourceSqlCredential -EnableException
+                $sourceServer = $fromCmStore.ParentServer
             } catch {
-                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $Source
+                return
             }
-            $toCmStore = Get-DbaRegServerStore -SqlInstance $destServer
 
-            $stores = $fromCmStore.DatabaseEngineServerGroup
-            if ($Group) {
-                $stores = @();
-                foreach ($groupName in $Group) {
-                    $stores += $fromCmStore.DatabaseEngineServerGroup.ServerGroups[$groupName]
+            foreach ($destinstance in $Destination) {
+                $toCmStore = $null
+                try {
+                    try {
+                        $toCmStore = Get-DbaRegServerStore -SqlInstance $destinstance -SqlCredential $DestinationSqlCredential -EnableException
+                        $destServer = $toCmStore.ParentServer
+                    } catch {
+                        Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $destinstance -Continue
+                    }
+
+                    $stores = $fromCmStore.DatabaseEngineServerGroup
+                    if ($Group) {
+                        $stores = @();
+                        foreach ($groupName in $Group) {
+                            $stores += $fromCmStore.DatabaseEngineServerGroup.ServerGroups[$groupName]
+                        }
+                    }
+
+                    foreach ($store in $stores) {
+                        Invoke-ParseServerGroup -sourceGroup $store -destinationgroup $toCmStore.DatabaseEngineServerGroup -SwitchServerName $SwitchServerName
+                    }
+                } finally {
+                    if ($toCmStore) {
+                        Disconnect-RegServer -Server $toCmStore
+                    }
                 }
             }
-
-            foreach ($store in $stores) {
-                Invoke-ParseServerGroup -sourceGroup $store -destinationgroup $toCmStore.DatabaseEngineServerGroup -SwitchServerName $SwitchServerName
+        } finally {
+            if ($fromCmStore) {
+                Disconnect-RegServer -Server $fromCmStore
             }
         }
     }
