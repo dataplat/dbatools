@@ -118,7 +118,10 @@ function Get-DbaManagementObject {
 
             if (-not $remote) {
                 <# DO NOT use Write-Message as this is inside of a script block #>
-                $liblocation = ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" -or $_.Fullname -like "*.smo.*" -or $_.Fullname -like "*SqlClient*" -or $_.Fullname -like "*sqlclient*sni*" } | Select-Object -First 1).Location
+                # The SMO assembly itself: the first SQL related assembly of the AppDomain can as well be SqlClient,
+                # whose version would then be reported as the version of SMO.
+                $liblocation = ([AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.Fullname -like "Microsoft.SqlServer.SMO,*" } | Select-Object -First 1).Location
+                $loadedversionPath = $liblocation
 
                 Write-Verbose -Message "Looking for included smo library at $liblocation"
                 $initialversion = (Get-ChildItem -Path $liblocation).VersionInfo.ProductVersion -split "\+" | Select-Object -First 1
@@ -148,8 +151,6 @@ function Get-DbaManagementObject {
                         <# DO NOT use Write-Message as this is inside of a script block #>
                         Write-Verbose -Message "Passed version $VersionNumber, looking for that specific version"
                         if ($localversion.ToString().StartsWith("$VersionNumber.")) {
-
-                            $loadedversionPath = $loadedversion.Location
                             <# DO NOT use Write-Message as this is inside of a script block #>
                             Write-Verbose -Message "Found the Version $VersionNumber"
                             # Check if any loaded version matches this local version (compare major.minor versions)
@@ -188,8 +189,8 @@ function Get-DbaManagementObject {
                         }
                     }
 
-                    # Only output if not already covered by local file detection
-                    if (-not $alreadyCovered -and $assemblyVersion) {
+                    # Only output if not already covered by local file detection, and only the version asked for
+                    if (-not $alreadyCovered -and $assemblyVersion -and ($VersionNumber -eq 0 -or $assemblyVersion.StartsWith("$VersionNumber."))) {
                         [PSCustomObject]@{
                             ComputerName = [string]$env:COMPUTERNAME
                             Version      = [string]$assemblyVersion
@@ -207,13 +208,13 @@ function Get-DbaManagementObject {
                 $second = $false
 
                 if (-not $smoList) {
-                    $smoList = (Get-ChildItem -Path "$($env:SystemRoot)\Microsoft.NET\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" -Filter "*$number.*" -ErrorAction Ignore | Where-Object FullName -match "_$number" | Sort-Object Name -Descending).Name
+                    $smoList = (Get-ChildItem -Path "$($env:SystemRoot)\Microsoft.NET\assembly\GAC_MSIL\Microsoft.SqlServer.Smo" -ErrorAction Ignore | Sort-Object Name -Descending).Name
                     $second = $true
                 }
 
+                # The loop below does nothing for an empty list, and the SNI modules after it are reported either way.
                 if (-not $smolist) {
                     Write-Verbose -Message "No SMO versions found in GAC"
-                    continue
                 }
 
                 foreach ($version in $smolist) {
@@ -290,29 +291,40 @@ function Get-DbaManagementObject {
                     $sqlClientPath = $sqlClientAssembly.Location
                 }
 
-                [PSCustomObject]@{
-                    ComputerName = [string]$env:COMPUTERNAME
-                    Version      = [string]$moduleVersion
-                    Loaded       = $true
-                    Path         = [string]$sniModule.FileName
-                    LoadTemplate = if ($sqlClientPath) { [string]("Add-Type -Path `"" + [string]$sqlClientPath + "`" -ReferencedAssemblies `"" + [string]$sniModule.FileName + "`"") } else { "" }
+                if ($VersionNumber -eq 0 -or $moduleVersion.StartsWith("$VersionNumber.")) {
+                    [PSCustomObject]@{
+                        ComputerName = [string]$env:COMPUTERNAME
+                        Version      = [string]$moduleVersion
+                        Loaded       = $true
+                        Path         = [string]$sniModule.FileName
+                        LoadTemplate = if ($sqlClientPath) { [string]("Add-Type -Path `"" + [string]$sqlClientPath + "`" -ReferencedAssemblies `"" + [string]$sniModule.FileName + "`"") } else { "" }
+                    }
                 }
             }
         }
     }
 
     process {
-        foreach ($computer in $ComputerName.ComputerName) {
+        foreach ($computer in $ComputerName) {
             try {
-                if ($computer -eq $env:COMPUTERNAME -or $computer -eq "localhost") {
+                # IsLocalHost also knows the FQDN and the addresses of this computer, which remoting would answer
+                # from a session without the assemblies of this one.
+                if ($computer.IsLocalHost) {
                     Write-Message -Level Verbose -Message "Executing scriptblock against $computer"
-                    Invoke-Command -Scriptblock $scriptBlock -ErrorAction Stop
+                    Invoke-Command -Scriptblock $scriptBlock -ArgumentList $VersionNumber, $false -ErrorAction Stop
                 } else {
                     Write-Message -Level Verbose -Message "Executing scriptblock against $computer"
-                    Invoke-Command2 -ComputerName $computer -ScriptBlock $scriptBlock -Credential $Credential -ArgumentList $VersionNumber, $true -ErrorAction Stop
+                    $splatRemote = @{
+                        ComputerName = $computer.ComputerName
+                        ScriptBlock  = $scriptBlock
+                        Credential   = $Credential
+                        ArgumentList = $VersionNumber, $true
+                        ErrorAction  = "Stop"
+                    }
+                    Invoke-Command2 @splatRemote
                 }
             } catch {
-                Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $ComputerName
+                Stop-Function -Continue -Message "Failure" -ErrorRecord $_ -Target $computer
             }
         }
     }
