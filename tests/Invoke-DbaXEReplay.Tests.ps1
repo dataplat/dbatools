@@ -180,4 +180,110 @@ Describe $CommandName -Tag IntegrationTests -Skip:(-not (Get-Command -Name sqlcm
             $replayFilesLeft | Should -BeNullOrEmpty
         }
     }
+
+    Context "Reporting a replay that sqlcmd cannot run" {
+        BeforeAll {
+            # Connect-DbaInstance does not open the database, sqlcmd does, so a database that does not exist lets the
+            # connection of dbatools succeed and sqlcmd exit with a code other than 0 without replaying anything.
+            $missingDatabase = "dbatoolsci_nodb_$(Get-Random)"
+            $batch = [PSCustomObject]@{
+                Name       = "sql_batch_completed"
+                batch_text = "SELECT 1 AS dbatoolsci_replay_nodb"
+            }
+            $null = $batch | Invoke-DbaXEReplay -SqlInstance $TestConfig.InstanceSingle -Database $missingDatabase -WarningAction SilentlyContinue
+            $replayWarning = $WarnVar
+            $replayException = $null
+            try {
+                $null = $batch | Invoke-DbaXEReplay -SqlInstance $TestConfig.InstanceSingle -Database $missingDatabase -EnableException
+            } catch {
+                $replayException = $PSItem
+            }
+        }
+
+        It "warns that sqlcmd could not replay the file" {
+            ($replayWarning -join " ") | Should -BeLike "*sqlcmd could not replay the file*$missingDatabase*exit code*"
+        }
+
+        It "throws the same with -EnableException" {
+            $replayException.Exception.Message | Should -BeLike "*sqlcmd could not replay the file*$missingDatabase*exit code*"
+        }
+    }
+
+    Context "Replaying as a SQL login" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # sqlcmd gets the password through the environment variable SQLCMDPASSWORD, so it never shows on the command
+            # line of sqlcmd, where every user of the computer can read it. A second runspace collects the command lines of
+            # the sqlcmd processes that this process starts, while the replayed batch waits for three seconds.
+            $replayLogin = "dbatoolsci_replay_$(Get-Random)"
+            $replayPassword = "P@ssw0rd$(Get-Random)!"
+            $securePassword = ConvertTo-SecureString -String $replayPassword -AsPlainText -Force
+            $null = New-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $replayLogin -SecurePassword $securePassword
+            $replayCredential = New-Object System.Management.Automation.PSCredential($replayLogin, $securePassword)
+            $trustsCertificate = (Connect-DbaInstance -SqlInstance $TestConfig.InstanceSingle).ConnectionContext.TrustServerCertificate
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # A value of the caller, which the command has to put back.
+            $callerPassword = "dbatoolsci_caller_value"
+            [Environment]::SetEnvironmentVariable("SQLCMDPASSWORD", $callerPassword)
+
+            $watcher = [powershell]::Create()
+            $null = $watcher.AddScript( {
+                    param($ParentId)
+                    $commandLines = @()
+                    $waitUntil = (Get-Date).AddSeconds(30)
+                    while ((Get-Date) -lt $waitUntil) {
+                        $running = @(Get-CimInstance -ClassName Win32_Process -Filter "ParentProcessId = $ParentId" | Where-Object Name -eq "sqlcmd.exe")
+                        foreach ($process in $running) {
+                            $commandLines += $process.CommandLine
+                        }
+                        if ($commandLines.Count -gt 0 -and $running.Count -eq 0) {
+                            break
+                        }
+                        Start-Sleep -Milliseconds 100
+                    }
+                    $commandLines | Select-Object -Unique
+                }).AddArgument($PID)
+            $watcherHandle = $watcher.BeginInvoke()
+
+            $batch = [PSCustomObject]@{
+                Name       = "sql_batch_completed"
+                batch_text = "DECLARE @delay datetime = DATEADD(SECOND, 3, 0); WAITFOR DELAY @delay; SELECT SUSER_SNAME() AS dbatoolsci_login;"
+            }
+            $results = $batch | Invoke-DbaXEReplay -SqlInstance $TestConfig.InstanceSingle -SqlCredential $replayCredential
+            $passwordAfter = [Environment]::GetEnvironmentVariable("SQLCMDPASSWORD")
+            $sqlcmdCommandLines = @($watcher.EndInvoke($watcherHandle))
+            $watcher.Dispose()
+        }
+
+        AfterAll {
+            [Environment]::SetEnvironmentVariable("SQLCMDPASSWORD", $null)
+
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # The command connected as the login through the connection pool, so -Force ends that session first.
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $replayLogin -Force
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "replays as the login" {
+            ($results -join " ") | Should -BeLike "*$replayLogin*"
+        }
+
+        It "does not put the password on the command line of sqlcmd" {
+            $sqlcmdCommandLines | Should -Not -BeNullOrEmpty
+            ($sqlcmdCommandLines -join " ") | Should -Not -Match ([regex]::Escape($replayPassword))
+        }
+
+        It "lets sqlcmd trust the server certificate exactly when the connection of dbatools does" {
+            ($sqlcmdCommandLines -join " ") -match "\s-C(\s|$)" | Should -Be $trustsCertificate
+        }
+
+        It "puts back the value of SQLCMDPASSWORD that the caller had" {
+            $passwordAfter | Should -BeExactly $callerPassword
+        }
+    }
 }

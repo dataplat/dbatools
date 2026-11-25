@@ -20,6 +20,8 @@ function Invoke-DbaXEReplay {
 
         For MFA support, please use Connect-DbaInstance.
 
+        The replay itself runs in sqlcmd, which logs in with the user name of the credential (-U) and gets the password through the environment variable SQLCMDPASSWORD, so that it never shows on the command line of sqlcmd. That is SQL Server Authentication.
+
     .PARAMETER Database
         Sets the initial database context for the replayed SQL statements. This determines which database sqlcmd connects to before executing the captured queries.
         Use this when you need to replay workloads in a specific database context, especially when the captured queries don't include explicit database references.
@@ -61,7 +63,9 @@ function Invoke-DbaXEReplay {
 
         When -Raw is not specified, output is filtered to remove sqlcmd formatting lines and column headers (lines containing only dashes), but query results and messages remain intact.
 
-        If an error occurs during replay, the error message from sqlcmd is returned as a string. If no output is produced by the queries, nothing is returned.
+        If a replayed batch fails, the error message from sqlcmd is returned as a string. If no output is produced by the queries, nothing is returned.
+
+        If sqlcmd cannot run the replay at all and exits with a code other than 0, for example because it cannot connect to the instance or open the database, the command writes a warning with the exit code and the error output of sqlcmd, or throws with -EnableException.
 
     .EXAMPLE
         PS C:\> Read-DbaXEFile -Path C:\temp\sample.xel | Invoke-DbaXEReplay -SqlInstance sql2017
@@ -139,8 +143,19 @@ function Invoke-DbaXEReplay {
     end {
         # The replay file holds the captured statements, so it is removed in the finally, also when the replay stops
         # early or throws under -EnableException.
+        $restoreSqlcmdPassword = $false
         try {
             if (Test-FunctionInterrupt) { return }
+
+            # sqlcmd reads the password for -U from the environment variable SQLCMDPASSWORD. With -P on the command line
+            # every user of the computer could read it from the process list while sqlcmd runs. The value the variable had
+            # before is put back in the finally.
+            $callerSqlcmdPassword = [Environment]::GetEnvironmentVariable("SQLCMDPASSWORD")
+            $restoreSqlcmdPassword = $true
+            if (Test-Bound -ParameterName SqlCredential) {
+                [Environment]::SetEnvironmentVariable("SQLCMDPASSWORD", $SqlCredential.GetNetworkCredential().Password)
+            }
+
             foreach ($instance in $SqlInstance) {
                 try {
                     $server = Connect-DbaInstance -SqlInstance $instance -SqlCredential $SqlCredential
@@ -162,29 +177,65 @@ function Invoke-DbaXEReplay {
                         $sqlcmdArguments += "-d", $databaseContext
                     }
                     if (Test-Bound -ParameterName SqlCredential) {
-                        $sqlcmdArguments += "-U", $SqlCredential.UserName, "-P", $SqlCredential.GetNetworkCredential().Password
+                        $sqlcmdArguments += "-U", $SqlCredential.UserName
+                    }
+                    # The ODBC sqlcmd 18 encrypts and validates the certificate of the server by default, so it refuses a
+                    # server whose certificate the connection of dbatools trusts, for example by sql.connection.trustcert.
+                    # -C makes sqlcmd trust it as well; the ODBC sqlcmd 17 and the Go sqlcmd know -C too.
+                    if ($server.ConnectionContext.TrustServerCertificate) {
+                        $sqlcmdArguments += "-C"
                     }
 
+                    $replayTarget = "$instance"
+                    if ($databaseContext) {
+                        $replayTarget += " in database $databaseContext"
+                    }
+
+                    # Errors of the replayed batches come back as messages in the output and leave the exit code at 0.
+                    # An exit code other than 0 means sqlcmd could not run the replay at all, for example because it could
+                    # not log in. The ODBC sqlcmd writes the reason to its error output only.
                     if ($Raw) {
                         Write-Message -Message "Invoking XEReplay against $instance running on $($server.name) with raw output" -Level Verbose
                         & sqlcmd @sqlcmdArguments
+                        if ($LASTEXITCODE -ne 0) {
+                            Stop-Function -Message "sqlcmd could not replay the file on $replayTarget, exit code $LASTEXITCODE." -Target $instance -Continue
+                        }
                         continue
                     }
 
                     Write-Message -Message "Invoking XEReplay against $instance running on $($server.name)" -Level Verbose
-                    $output = & sqlcmd @sqlcmdArguments
+                    # The error output is collected with the output, in a scope of its own: Windows PowerShell turns every
+                    # line a native command writes to its error output into an error, and with an ErrorActionPreference
+                    # of Stop in the caller the first such line would end the command.
+                    $output = & {
+                        $ErrorActionPreference = "Continue"
+                        & sqlcmd @sqlcmdArguments 2>&1
+                    }
+                    $exitCode = $LASTEXITCODE
+                    $sqlcmdErrors = @()
 
                     # sqlcmd underlines every column header with dashes as wide as the column, and several columns
                     # give one line of dash runs with spaces in between, so the whole line is tested.
                     foreach ($line in $output) {
+                        if ($line -is [System.Management.Automation.ErrorRecord]) {
+                            $sqlcmdErrors += "$line".Trim()
+                            continue
+                        }
                         $newline = $line.Trim()
                         if ($newline -and $newline -notmatch "^[-\s]+$") {
                             "$newline"
                         }
                     }
+
+                    if ($exitCode -ne 0) {
+                        Stop-Function -Message "sqlcmd could not replay the file on $replayTarget, exit code $exitCode. $($sqlcmdErrors -join " ")" -Target $instance -Continue
+                    }
                 }
             }
         } finally {
+            if ($restoreSqlcmdPassword) {
+                [Environment]::SetEnvironmentVariable("SQLCMDPASSWORD", $callerSqlcmdPassword)
+            }
             if ($filename) {
                 Remove-Item -Path $filename -ErrorAction Ignore
             }
