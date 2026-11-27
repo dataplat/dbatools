@@ -224,7 +224,13 @@ GRANT $dmvGrant TO [$restrictedLogin];
         }
 
         AfterAll {
-            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceSingle -Database master -Query "DROP LOGIN [$restrictedLogin];" -ErrorAction SilentlyContinue
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # Find-DbaDbMissingIndex connected as the login through the connection pool, so the session of the login
+            # is still open and a plain DROP LOGIN fails. -Force ends the sessions of the login before the drop.
+            $null = Remove-DbaLogin -SqlInstance $TestConfig.InstanceSingle -Login $restrictedLogin -Force
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
         }
 
         It "Returns at least one row for the restricted login" {
