@@ -1,0 +1,46 @@
+name: Runner fleet tests
+
+# The runner fleet (janitor runbook, reconcile policy, controller) is tested apart from
+# the module: its suite in .github/runners/tests is outside the module test discovery,
+# and part of it calls the live GitHub API.
+on:
+  pull_request:
+    paths:
+      - ".github/runners/**"
+      - ".github/workflows/runner-tests.yml"
+  push:
+    branches:
+      - development
+    paths:
+      - ".github/runners/**"
+      - ".github/workflows/runner-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pester:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Pester 6
+        shell: pwsh
+        run: |
+          Install-Module -Name Pester -RequiredVersion 6.0.0 -Force -Scope CurrentUser -SkipPublisherCheck
+
+      - name: Run runner fleet tests
+        shell: pwsh
+        env:
+          # authenticated GitHub API calls, so the shared runner IP stays clear of the
+          # anonymous rate limit
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Import-Module Pester -RequiredVersion 6.0.0 -Force
+          $config = New-PesterConfiguration
+          $config.Run.Path = ".github/runners/tests"
+          $config.Run.Exit = $true
+          $config.Output.Verbosity = "Detailed"
+          Invoke-Pester -Configuration $config

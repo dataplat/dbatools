@@ -16,6 +16,7 @@ Describe "janitor runner protection" {
         $script:ResourceCreatedAt = @{ }
         $script:CommitMessages = @{ }
         $script:CommitLookups = @()
+        $script:RunsUnavailable = $false
 
         function Connect-AzAccount {
             param([switch]$Identity, [string]$WarningAction)
@@ -38,6 +39,9 @@ Describe "janitor runner protection" {
                     throw "404 Not Found: commit $sha"
                 }
                 return [pscustomobject]@{ commit = [pscustomobject]@{ message = $script:CommitMessages[$sha] } }
+            }
+            if ($script:RunsUnavailable) {
+                throw "503 Service Unavailable"
             }
             [pscustomobject]@{ workflow_runs = $script:Runs }
         }
@@ -161,10 +165,10 @@ Describe "janitor runner protection" {
         $script:RemovedVms | Should -BeNullOrEmpty
     }
 
-    It "protects no lane when the activity check fails after it marked one active" {
-        # The live runs mark andreasjordan and community active before the unreadable
-        # timestamp of the last run aborts the check; the runners are past every
-        # fallback age cap.
+    It "keeps live lanes protected when a run carries an unreadable timestamp" {
+        # The completed niphlod run cannot be dated; it only stops counting as recent,
+        # while the live andreasjordan and community lanes keep their runners past the
+        # 4h cap for excess capacity.
         $script:Runs = @(
             [pscustomobject]@{
                 actor         = [pscustomobject]@{ login = "andreasjordan" }
@@ -184,8 +188,46 @@ Describe "janitor runner protection" {
                 actor         = [pscustomobject]@{ login = "niphlod" }
                 display_title = "ci-azure"
                 event         = "pull_request"
-                status        = "in_progress"
+                status        = "completed"
                 updated_at    = "not a timestamp"
+            }
+        )
+        $andreasVms = @(1..10 | ForEach-Object {
+                [pscustomobject]@{
+                    Name        = "dbatools-runners_andreas-$PSItem"
+                    TimeCreated = $script:Now.AddHours(-6)
+                    Tags        = @{ runnerPool = "andreasjordan" }
+                }
+            })
+        $communityVms = @(1..5 | ForEach-Object {
+                [pscustomobject]@{
+                    Name        = "dbatools-runners_community-$PSItem"
+                    TimeCreated = $script:Now.AddHours(-6)
+                    Tags        = @{ runnerPool = "community" }
+                }
+            })
+        $script:Vms = @($andreasVms + $communityVms)
+
+        $warnings = . $script:JanitorPath 3>&1 | Where-Object { $PSItem -is [System.Management.Automation.WarningRecord] }
+
+        @($warnings | Where-Object { $PSItem.Message -like "unreadable GitHub timestamp*" }).Count | Should -BeGreaterThan 0
+        $mode | Should -Be "active"
+        $activeMaintainers | Should -Be @("andreasjordan")
+        $communityLive | Should -BeTrue
+        $script:RemovedVms | Should -BeNullOrEmpty
+    }
+
+    It "applies the age caps to every lane when GitHub cannot be read" {
+        # The runs request fails after the events arrived; the runners are past every
+        # fallback age cap, community included.
+        $script:RunsUnavailable = $true
+        $script:Runs = @(
+            [pscustomobject]@{
+                actor         = [pscustomobject]@{ login = "andreasjordan" }
+                display_title = "ci-azure"
+                event         = "pull_request"
+                status        = "in_progress"
+                updated_at    = $script:Now.ToString("o")
             }
         )
         $andreasVms = @(1..10 | ForEach-Object {

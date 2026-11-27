@@ -67,23 +67,35 @@ $communityLive = $false
 # PowerShell 7 hands the GitHub timestamps over as DateTime, PowerShell 5.1 as ISO
 # strings. Reparsing a DateTime goes through its culture-formatted string, which a
 # day-first culture rejects after the 12th of a month, so neither form is reparsed
-# with the culture of the worker.
+# with the culture of the worker. An unreadable timestamp only makes its own event or
+# run old news; failing the whole check would also drop the lanes a live run proves.
 function ConvertTo-JanitorUtc {
-    param([Parameter(Mandatory)]$Value)
+    param($Value)
 
     if ($Value -is [datetime]) {
         return $Value.ToUniversalTime()
     }
     $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
-    return [datetime]::Parse([string]$Value, [System.Globalization.CultureInfo]::InvariantCulture, $styles)
+    $parsed = [datetime]::MinValue
+    if ([datetime]::TryParse([string]$Value, [System.Globalization.CultureInfo]::InvariantCulture, $styles, [ref]$parsed)) {
+        return $parsed
+    }
+    Write-Warning "unreadable GitHub timestamp '$Value'; treating it as long past"
+    return [datetime]::MinValue
 }
 
 function Invoke-GitHubGet {
     param([Parameter(Mandatory)][string]$Uri)
 
+    $headers = @{ "User-Agent" = "dbatools-ci-janitor" }
+    # Automation calls anonymously; a GitHub Actions run of the tests passes its token
+    # so the shared runner IP does not hit the anonymous rate limit.
+    if ($env:GITHUB_TOKEN) {
+        $headers["Authorization"] = "Bearer $env:GITHUB_TOKEN"
+    }
     $splatRequest = @{
         Uri        = $Uri
-        Headers    = @{ "User-Agent" = "dbatools-ci-janitor" }
+        Headers    = $headers
         TimeoutSec = 30
     }
     foreach ($attempt in 1..3) {
@@ -230,6 +242,8 @@ try {
     Write-Warning "GitHub activity check failed ($($PSItem.Exception.Message)) -- falling back to age caps"
     # A check that failed partway has already filled in some lanes. Protecting them
     # would exempt every runner from the age caps, the opposite of this fallback.
+    # The caps outlast the longest legitimate runner life (~2.6h), so a runner that
+    # still serves a job survives them.
     $mode = "github-unreachable"
     $activeMaintainers = @( )
     $liveMaintainers = @( )
