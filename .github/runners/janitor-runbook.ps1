@@ -88,7 +88,10 @@ function Invoke-GitHubGet {
     }
     foreach ($attempt in 1..3) {
         try {
-            return Invoke-RestMethod @splatRequest
+            # Invoke-RestMethod emits a top-level JSON array (the events feed) as a
+            # single Object[]; returning it from a variable unrolls it into its items.
+            $response = Invoke-RestMethod @splatRequest
+            return $response
         } catch {
             if ($attempt -eq 3) {
                 throw

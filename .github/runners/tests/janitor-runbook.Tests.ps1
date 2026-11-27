@@ -26,7 +26,8 @@ Describe "janitor runner protection" {
                 [int]$TimeoutSec
             )
             if ($Uri -like "*/events?*") {
-                return $script:Events
+                # like the real cmdlet, emit the top-level JSON array as one Object[]
+                return , @($script:Events)
             }
             [pscustomobject]@{ workflow_runs = $script:Runs }
         }
@@ -216,6 +217,36 @@ Describe "janitor runner protection" {
         }
 
         $mode | Should -Be "active"
+        $script:RemovedVms | Should -BeNullOrEmpty
+    }
+
+    It "counts a maintainer push from the events feed as activity" {
+        $script:Events = @(
+            [pscustomobject]@{
+                actor      = [pscustomobject]@{ login = "niphlod" }
+                type       = "PushEvent"
+                created_at = $script:Now.AddMinutes(-5).ToString("o")
+                payload    = [pscustomobject]@{ head = "abc"; commits = @() }
+            }
+            [pscustomobject]@{
+                actor      = [pscustomobject]@{ login = "someone-else" }
+                type       = "WatchEvent"
+                created_at = $script:Now.AddMinutes(-90).ToString("o")
+                payload    = [pscustomobject]@{ }
+            }
+        )
+        $script:Vms = @(1..10 | ForEach-Object {
+                [pscustomobject]@{
+                    Name        = "dbatools-runners_niph-$PSItem"
+                    TimeCreated = $script:Now.AddHours(-6)
+                    Tags        = @{ runnerPool = "niphlod" }
+                }
+            })
+
+        . $script:JanitorPath | Out-Null
+
+        $mode | Should -Be "active"
+        $activeMaintainers | Should -Be @("niphlod")
         $script:RemovedVms | Should -BeNullOrEmpty
     }
 
