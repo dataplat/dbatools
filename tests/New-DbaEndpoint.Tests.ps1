@@ -105,13 +105,22 @@ Describe $CommandName -Tag IntegrationTests {
 
         It "returns only the new endpoint" {
             # Counts the output itself, $certResults.Name would skip a $null written by the command
-            @($certResults).Count | Should -Be 1
+            # The reason names what the instance had and what the command said, so that a failure that only happens in a
+            # full run explains itself.
+            $mirroringEndpoints = @($certServer.Query("SELECT name FROM sys.database_mirroring_endpoints")).name -join ", "
+            @($certResults).Count | Should -Be 1 -Because "the instance has the mirroring endpoints [$mirroringEndpoints] and the command warned [$WarnVar]"
             $certResults.Name | Should -Be $endpointName
         }
 
         It "authenticates with the certificate" {
             $authentication = $certServer.Query("SELECT c.name FROM sys.database_mirroring_endpoints AS e JOIN master.sys.certificates AS c ON c.certificate_id = e.certificate_id WHERE e.name = N'$endpointName'")
             $authentication.name | Should -Be $certificateName
+        }
+
+        It "gives it the same owner as an endpoint without a certificate" {
+            # Read from the instance itself, like the certificate above, so that it does not depend on the output.
+            $owner = $certServer.Query("SELECT SUSER_NAME(e.principal_id) AS owner FROM sys.endpoints AS e WHERE e.name = N'$endpointName'")
+            $owner.owner | Should -Be (Get-SaLoginName -SqlInstance $TestConfig.InstanceMulti2)
         }
     }
 }

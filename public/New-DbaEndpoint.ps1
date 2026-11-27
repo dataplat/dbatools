@@ -221,7 +221,11 @@ function New-DbaEndpoint {
                         }
                     }
                     if ($Certificate) {
-                        $outscript = $endpoint.Script()
+                        # Create() puts the owner into its script, Script() only when asked to. Without it the endpoint
+                        # belonged to the login of the connection instead of -Owner.
+                        $scriptingOptions = New-Object Microsoft.SqlServer.Management.Smo.ScriptingOptions
+                        $scriptingOptions.ScriptOwner = $true
+                        $outscript = $endpoint.Script($scriptingOptions)
                         # The script names the role of -Role, so the authentication goes behind whichever role it is
                         # The text comes from a match evaluator: in a replacement string, a $ in the name of the
                         # certificate would be taken for a group of the regex.
