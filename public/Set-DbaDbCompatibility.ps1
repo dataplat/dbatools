@@ -17,7 +17,7 @@ function Set-DbaDbCompatibility {
         For MFA support, please use Connect-DbaInstance..
 
     .PARAMETER Database
-        Specifies which databases to update compatibility levels for. Accepts wildcards for pattern matching.
+        Specifies which databases to update compatibility levels for. A system database is changed only when it is named here or piped in.
         When omitted, processes all user databases on the target instance, excluding system databases.
 
     .PARAMETER Compatibility
@@ -94,13 +94,21 @@ function Set-DbaDbCompatibility {
         [switch]$EnableException
     )
     process {
-        if (Test-Bound -not 'SqlInstance', 'InputObject') {
-            Write-Message -Level Warning -Message 'You must specify either a SQL instance or pipe a database collection'
-            continue
+        if (Test-Bound -not "SqlInstance", "InputObject") {
+            Stop-Function -Message "You must specify either a SQL instance or pipe a database collection"
+            return
         }
 
         if ($SqlInstance) {
-            $InputObject += Get-DbaDatabase -SqlInstance $SqlInstance -SqlCredential $SqlCredential -Database $Database
+            $splatDatabase = @{
+                SqlInstance   = $SqlInstance
+                SqlCredential = $SqlCredential
+                Database      = $Database
+                # Without -Database only the user databases change, as the help says. A system database
+                # changes only when it is named or piped.
+                ExcludeSystem = (-not $Database)
+            }
+            $InputObject += Get-DbaDatabase @splatDatabase
         }
 
         foreach ($db in $InputObject) {
