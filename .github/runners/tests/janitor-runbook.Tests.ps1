@@ -737,7 +737,9 @@ Describe "janitor against the live GitHub API" {
         $warnings = . $script:JanitorPath 3>&1 | Where-Object { $PSItem -is [System.Management.Automation.WarningRecord] }
 
         @($warnings | Where-Object { $PSItem.Message -like "GitHub activity check failed*" }) | Should -BeNullOrEmpty
-        $mode | Should -BeIn @("active", "stale")
+        # activity-unknown is a correct outcome too: the commit of a recent push to a
+        # since force-pushed or deleted branch answers 404
+        $mode | Should -BeIn @("active", "stale", "activity-unknown")
         $events.Count | Should -BeGreaterThan 1
         $parsed = @($events | ForEach-Object { ConvertTo-JanitorUtc -Value $PSItem.created_at } | Where-Object { $null -ne $PSItem -and $PSItem -gt $utcNow.AddDays(-120) -and $PSItem -le $utcNow.AddMinutes(5) })
         $parsed.Count | Should -Be $events.Count
