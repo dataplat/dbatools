@@ -23,6 +23,9 @@
       - GITHUB UNREACHABLE: we cannot know activity, so conservative age caps
         apply to all capacity -- 3 hours on nights and weekends, 13 hours on
         weekday daytime (06-17 UTC).
+      - ACTIVITY UNKNOWN: no lane is proven active, but a recent push whose
+        commit could not be read may have started CI; the conservative caps of
+        GITHUB UNREACHABLE apply instead of the 1-hour stale cap.
 
     Always, regardless of mode:
       - ps3smoke-* VMs older than 2 hours are deleted (nightly job caps at 55m).
@@ -63,6 +66,7 @@ $activeMaintainers = @( )
 $liveMaintainers = @( )
 $communityActive = $false
 $communityLive = $false
+$activityUnknown = $false
 
 # PowerShell 7 hands the GitHub timestamps over as DateTime, PowerShell 5.1 as ISO
 # strings. Reparsing a DateTime goes through its culture-formatted string, which a
@@ -123,15 +127,16 @@ function Get-JanitorPushMessage {
         return [string]$headCommit[0].message
     }
     # The events API no longer lists the commits of a push, only its head SHA, so the
-    # message comes from the commit itself. A push that cannot be read does not count:
-    # the CI run it starts proves the lane active anyway, while failing the whole check
-    # would drop the protection of every other lane.
+    # message comes from the commit itself. A push that cannot be read returns $null:
+    # its activity is unknown, which must neither fail the whole check (dropping the
+    # protection of every other lane) nor count as no activity (the 1h stale cap).
     if ($head) {
         try {
             $commit = Invoke-GitHubGet -Uri "https://api.github.com/repos/$repo/commits/$head"
             return [string]$commit.commit.message
         } catch {
-            Write-Warning "commit lookup for push $head failed; the push does not count as activity. $($PSItem.Exception.Message)"
+            Write-Warning "commit lookup for push $head failed; its activity is unknown. $($PSItem.Exception.Message)"
+            return $null
         }
     }
     return ""
@@ -178,6 +183,10 @@ function Test-JanitorMaintainerEvent {
         return $true
     }
     $message = Get-JanitorPushMessage -ActivityEvent $ActivityEvent
+    if ($null -eq $message) {
+        # unknown: the caller tells this $null apart from $false
+        return $null
+    }
     return $message.IndexOf($ciMarker, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
 }
 
@@ -201,9 +210,13 @@ try {
         $recentActivity = $false
         if (-not ($liveCi -or $recentlyCompletedCi)) {
             foreach ($activityEvent in $events) {
-                if (Test-JanitorMaintainerEvent -ActivityEvent $activityEvent -Maintainer $maintainer -Cutoff $maintainerCutoff) {
+                $qualifies = Test-JanitorMaintainerEvent -ActivityEvent $activityEvent -Maintainer $maintainer -Cutoff $maintainerCutoff
+                if ($qualifies) {
                     $recentActivity = $true
                     break
+                }
+                if ($null -eq $qualifies) {
+                    $activityUnknown = $true
                 }
             }
         }
@@ -235,6 +248,10 @@ try {
     }
     if ($activeMaintainers.Count -gt 0 -or $communityActive) {
         $mode = "active"
+    } elseif ($activityUnknown) {
+        # a push that may have started CI could not be read; with no lane proven
+        # active, the conservative caps apply instead of the 1h stale cap
+        $mode = "activity-unknown"
     } else {
         $mode = "stale"
     }
@@ -293,7 +310,7 @@ switch ($mode) {
         } else {
             $runnerMaxHours = 3
         }
-        Write-Output "mode=github-unreachable: conservative age cap ${runnerMaxHours}h"
+        Write-Output "mode=${mode}: conservative age cap ${runnerMaxHours}h"
     }
 }
 

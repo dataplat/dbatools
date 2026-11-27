@@ -385,6 +385,32 @@ Describe "janitor runner protection" {
         $script:RemovedVms | Should -BeNullOrEmpty
     }
 
+    It "applies the conservative caps when an unreadable push is the only possible activity" {
+        # No workflow run lists the push yet. The runners are 2h old: past the 1h stale
+        # cap, within the 3h and 13h conservative caps.
+        $script:Events = @(
+            [pscustomobject]@{
+                actor      = [pscustomobject]@{ login = "potatoqualitee" }
+                type       = "PushEvent"
+                created_at = $script:Now.AddMinutes(-5).ToString("o")
+                payload    = [pscustomobject]@{ head = "unreadable"; ref = "refs/heads/feature" }
+            }
+        )
+        $script:Vms = @(1..10 | ForEach-Object {
+                [pscustomobject]@{
+                    Name        = "dbatools-runners_potato-$PSItem"
+                    TimeCreated = $script:Now.AddHours(-2)
+                    Tags        = @{ runnerPool = "potatoqualitee" }
+                }
+            })
+
+        . $script:JanitorPath 3>$null | Out-Null
+
+        $mode | Should -Be "activity-unknown"
+        $runnerMaxHours | Should -BeIn @(3, 13)
+        $script:RemovedVms | Should -BeNullOrEmpty
+    }
+
     It "does not count a push whose head commit lacks the [do ci] marker" {
         $script:Events = @(
             [pscustomobject]@{
