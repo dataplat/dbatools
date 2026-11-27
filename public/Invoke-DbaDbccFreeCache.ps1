@@ -31,6 +31,7 @@ function Invoke-DbaDbccFreeCache {
     .PARAMETER Operation
         Specifies which cache clearing operation to perform: FreeProcCache, FreeSessionCache, or FreeSystemCache.
         Use FreeProcCache to resolve parameter sniffing or clear inefficient query plans, FreeSessionCache to clear linked server connections, or FreeSystemCache to clear authentication tokens and system-level caches.
+        There is no default. Without an operation the command refuses to run.
 
     .PARAMETER InputValue
         Specifies a target value to limit the cache clearing operation instead of clearing all cache entries.
@@ -103,17 +104,17 @@ function Invoke-DbaDbccFreeCache {
     .EXAMPLE
         PS C:\> Invoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREEPROCCACHE -InputValue default
 
-        Runs the command DBCC FREEPROCCACHE('default') against the instance SqlServer2017 using Windows Authentication. This clears all cache entries associated with a resource pool 'default'.
+        Runs the command DBCC FREEPROCCACHE(N'default') against the instance SqlServer2017 using Windows Authentication. This clears all cache entries associated with a resource pool 'default'.
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREESYSTEMCACHE -InputValue default
 
-        Runs the command DBCC FREESYSTEMCACHE ('ALL', default) against the instance SqlServer2017 using Windows Authentication. This will clean all the caches with entries specific to the resource pool named "default".
+        Runs the command DBCC FREESYSTEMCACHE('ALL', N'default') against the instance SqlServer2017 using Windows Authentication. This will clean all the caches with entries specific to the resource pool named "default".
 
     .EXAMPLE
         PS C:\> Invoke-DbaDbccFreeCache -SqlInstance SqlServer2017 -Operation FREESYSTEMCACHE -InputValue default -MarkInUseForRemoval
 
-        Runs the command DBCC FREESYSTEMCACHE ('ALL', default) WITH MARK_IN_USE_FOR_REMOVAL against the instance SqlServer2017 using Windows Authentication. This will to release entries once the entries become unused for all the caches with entries specific to the resource pool named "default".
+        Runs the command DBCC FREESYSTEMCACHE('ALL', N'default') WITH MARK_IN_USE_FOR_REMOVAL against the instance SqlServer2017 using Windows Authentication. This will to release entries once the entries become unused for all the caches with entries specific to the resource pool named "default".
 
     #>
     [CmdletBinding(DefaultParameterSetName = "Default", SupportsShouldProcess, ConfirmImpact = 'High')]
@@ -122,7 +123,7 @@ function Invoke-DbaDbccFreeCache {
         [DbaInstanceParameter[]]$SqlInstance,
         [PSCredential]$SqlCredential,
         [ValidateSet('FreeProcCache', 'FreeSessionCache', 'FreeSystemCache')]
-        [string]$Operation = "FreeProcCache",
+        [string]$Operation,
         [string]$InputValue,
         [switch]$NoInformationalMessages,
         [switch]$MarkInUseForRemoval,
@@ -130,55 +131,60 @@ function Invoke-DbaDbccFreeCache {
     )
     begin {
 
-        if (Test-Bound -ParameterName Operation) {
-            $Operation = $Operation.ToUpper()
-        } else {
-            Write-Message -Level Warning -Message "You must specify an operation "
-            continue
+        if (-not $Operation) {
+            Stop-Function -Message "You must specify an operation"
+            return
         }
+        $Operation = $Operation.ToUpper()
+
+        # A resource pool goes to DBCC as a Unicode string literal: DBCC does not take the keyword DEFAULT as a
+        # pool, and a name with a space or a quote would break the statement. Only a hexadecimal value is a handle.
+        $escapedInputValue = $InputValue.Replace("'", "''")
 
         $stringBuilder = New-Object System.Text.StringBuilder
-        if ($Operation -eq 'FREESESSIONCACHE') {
+        if ($Operation -eq "FREESESSIONCACHE") {
             $null = $stringBuilder.Append("DBCC $Operation")
-            if (Test-Bound -ParameterName NoInformationalMessages) {
+            if ($NoInformationalMessages) {
                 $null = $stringBuilder.Append(" WITH NO_INFOMSGS")
             }
         }
-        if ($Operation -eq 'FREEPROCCACHE') {
-            if (Test-Bound -ParameterName InputValue) {
-                if ($InputValue.StartsWith('0x')) {
+        if ($Operation -eq "FREEPROCCACHE") {
+            if ($InputValue) {
+                if ($InputValue -match "^0x[0-9a-f]+$") {
                     $null = $stringBuilder.Append("DBCC $Operation($InputValue)")
                 } else {
-                    $null = $stringBuilder.Append("DBCC $Operation('$InputValue')")
+                    $null = $stringBuilder.Append("DBCC $Operation(N'$escapedInputValue')")
                 }
-                if (Test-Bound -ParameterName NoInformationalMessages) {
+                if ($NoInformationalMessages) {
                     $null = $stringBuilder.Append(" WITH NO_INFOMSGS")
                 }
             } else {
                 $null = $stringBuilder.Append("DBCC $Operation")
-                if (Test-Bound -ParameterName NoInformationalMessages) {
+                if ($NoInformationalMessages) {
                     $null = $stringBuilder.Append(" WITH NO_INFOMSGS")
                 }
             }
         }
-        if ($Operation -eq 'FREESYSTEMCACHE') {
-            if (Test-Bound -ParameterName InputValue) {
-                $null = $stringBuilder.Append("DBCC FREESYSTEMCACHE('ALL', $InputValue)")
+        if ($Operation -eq "FREESYSTEMCACHE") {
+            if ($InputValue) {
+                $null = $stringBuilder.Append("DBCC FREESYSTEMCACHE('ALL', N'$escapedInputValue')")
             } else {
                 $null = $stringBuilder.Append("DBCC FREESYSTEMCACHE('ALL')")
             }
-            if (Test-Bound -ParameterName NoInformationalMessages) {
-                if (Test-Bound -ParameterName MarkInUseForRemoval) {
+            if ($NoInformationalMessages) {
+                if ($MarkInUseForRemoval) {
                     $null = $stringBuilder.Append(" WITH NO_INFOMSGS, MARK_IN_USE_FOR_REMOVAL")
                 } else {
                     $null = $stringBuilder.Append(" WITH NO_INFOMSGS")
                 }
-            } elseif (Test-Bound -ParameterName MarkInUseForRemoval) {
+            } elseif ($MarkInUseForRemoval) {
                 $null = $stringBuilder.Append(" WITH MARK_IN_USE_FOR_REMOVAL")
             }
         }
     }
     process {
+        if (Test-FunctionInterrupt) { return }
+
         $query = $StringBuilder.ToString()
 
         foreach ($instance in $SqlInstance) {
@@ -189,15 +195,21 @@ function Invoke-DbaDbccFreeCache {
                 Stop-Function -Message "Failure" -Category ConnectionError -ErrorRecord $_ -Target $instance -Continue
             }
 
-            try {
-                if ($Pscmdlet.ShouldProcess($server.Name, "Execute the command $query against $instance")) {
+            if ($Pscmdlet.ShouldProcess($server.Name, "Execute the command $query against $instance")) {
+                try {
                     Write-Message -Message "Query to run: $query" -Level Verbose
-                    $results = $server | Invoke-DbaQuery  -Query $query -MessagesToOutput
+                    # Without EnableException a DBCC error ends as a warning of Invoke-DbaQuery and never reaches the catch.
+                    $splatQuery = @{
+                        SqlInstance      = $server
+                        Query            = $query
+                        MessagesToOutput = $true
+                        EnableException  = $true
+                    }
+                    $results = Invoke-DbaQuery @splatQuery
+                } catch {
+                    Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
                 }
-            } catch {
-                Stop-Function -Message "Failure" -ErrorRecord $_ -Target $server -Continue
-            }
-            if ($Pscmdlet.ShouldProcess("console", "Outputting object")) {
+
                 [PSCustomObject]@{
                     ComputerName = $server.ComputerName
                     InstanceName = $server.ServiceName
