@@ -351,8 +351,27 @@ function Update-SqlPermission {
         return
     }
 
+    # A database principal is a user, and a user can have another name than its login, on each server another one. So the
+    # permissions and role memberships below are read and changed by the name of the user, and the users of the two logins
+    # are paired per database by their logins, not by their names. With the name of the login, the user kept permissions
+    # the source user does not have and did not get the ones it has, a user that only had the name of the login lost its
+    # permissions, and a user of another name than on the source was created a second time, which SQL Server refuses.
+    # The databases are keys by their exact names: on a case sensitive instance AppDb and appdb are two databases with
+    # users of their own, and keys that ignore case gave both databases the user of one of them, in one of them the user
+    # of another login. The database of the other server is the one SMO finds by the name with the collation of that
+    # server, so it is looked up by its own name.
+    $sourceDbUsers = New-Object -TypeName System.Collections.Hashtable -ArgumentList ([System.StringComparer]::Ordinal)
+    foreach ($sourceMapping in $SourceLogin.EnumDatabaseMappings()) {
+        $sourceDbUsers[$sourceMapping.DbName] = $sourceMapping.Username
+    }
+    $destDbMappings = $DestLogin.EnumDatabaseMappings()
+    $destDbUsers = New-Object -TypeName System.Collections.Hashtable -ArgumentList ([System.StringComparer]::Ordinal)
+    foreach ($destMapping in $destDbMappings) {
+        $destDbUsers[$destMapping.DbName] = $destMapping.Username
+    }
+
     # For Sync, if info doesn't exist in EnumDatabaseMappings, then no big deal.
-    foreach ($db in $DestLogin.EnumDatabaseMappings()) {
+    foreach ($db in $destDbMappings) {
         $dbName = $db.DbName
         $destDb = $DestServer.Databases[$dbName]
         $sourceDb = $SourceServer.Databases[$dbName]
@@ -384,11 +403,12 @@ function Update-SqlPermission {
 
             # Remove user from role. Role removal not currently supported for Syncs.
             # TODO: reassign if dbo, application roles
+            # The members are users and compared exactly, see the database roles in the part that grants.
             foreach ($destRole in $destDb.Roles) {
                 $destRoleName = $destRole.Name
                 $sourceRole = $sourceDb.Roles[$destRoleName]
                 if ($null -eq $sourceRole) {
-                    if ($destRole.EnumMembers() -contains $newDbUsername) {
+                    if ($destRole.EnumMembers() -ccontains $newDbUsername) {
                         if ($newDbUsername -ne "dbo") {
                             if ($Pscmdlet.ShouldProcess($destination, "Dropping user $newDbUsername from $destRoleName database role in $dbName.")) {
                                 try {
@@ -405,14 +425,25 @@ function Update-SqlPermission {
             }
 
             # Remove Connect, Alter Any Assembly, etc
-            $destPerms = $destDb.EnumDatabasePermissions($newLoginName)
-            $perms = $sourceDb.EnumDatabasePermissions($loginName)
+            # By the users, see above. A source login without a user in this database has no permission here that could stay.
+            # The owner of a database is dbo there, who has every permission and to whom SQL Server grants and revokes none.
+            $sourceDbUsername = $sourceDbUsers[$sourceDb.Name]
+            if ($newDbUsername -eq "dbo" -or $sourceDbUsername -eq "dbo") {
+                $destPerms = @()
+            } else {
+                $destPerms = $destDb.EnumDatabasePermissions($newDbUsername)
+            }
+            if ($sourceDbUsername) {
+                $perms = $sourceDb.EnumDatabasePermissions($sourceDbUsername)
+            } else {
+                $perms = @()
+            }
             # for Syncs
             foreach ($perm in $destPerms) {
                 $permState = $perm.PermissionState
                 $sourcePerm = $perms | Where-Object { $_.PermissionType -eq $perm.PermissionType -and $_.PermissionState -eq $permState }
                 if ($null -eq $sourcePerm) {
-                    if ($Pscmdlet.ShouldProcess($destination, "Revoking $($perm.PermissionType) from $newLoginName in $dbName.")) {
+                    if ($Pscmdlet.ShouldProcess($destination, "Revoking $($perm.PermissionType) from $newDbUsername in $dbName.")) {
                         try {
                             $permSet = New-Object Microsoft.SqlServer.Management.Smo.DatabasePermissionSet($perm.PermissionType)
 
@@ -423,10 +454,12 @@ function Update-SqlPermission {
                                 $grantWithGrant = $false
                             }
 
-                            $destDb.PSObject.Methods["Revoke"].Invoke($permSet, $newLoginName, $false, $grantWithGrant)
-                            Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) from $newLoginName in $dbName on $destination successfully performed."
+                            # As the grantor of the permission, as for the server permissions: a user has the same permission
+                            # from several grantors as one row each, and a REVOKE without AS takes back only the grant of dbo.
+                            $destDb.PSObject.Methods["Revoke"].Invoke($permSet, $newDbUsername, $false, $grantWithGrant, $perm.Grantor)
+                            Write-Message -Level Verbose -Message "Revoking $($perm.PermissionType) from $newDbUsername in $dbName on $destination successfully performed."
                         } catch {
-                            Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $newLoginName in $dbName on $destination." -Target $perm -ErrorRecord $_
+                            Stop-Function -Message "Failed to revoke $($perm.PermissionType) from $newDbUsername in $dbName on $destination." -Target $perm -ErrorRecord $_
                         }
                     }
                 }
@@ -442,13 +475,31 @@ function Update-SqlPermission {
         $dbUsername = $db.Username;
         # Adjust renamed database usernames for new server
         if ($newLoginName -eq $loginName) { $newDbUsername = $dbUsername } else { $newDbUsername = $newLoginName }
+        # A user that the destination login already has in this database is its user, whatever its name, see above. A
+        # login can have only one user per database, so a second one under the name of the source user was refused.
+        if ($null -ne $destDb -and $destDbUsers[$destDb.Name]) {
+            $newDbUsername = $destDbUsers[$destDb.Name]
+        }
 
         if ($null -ne $destDb) {
             if (-not $destDb.IsUpdateable) {
                 Write-Message -Level Verbose -Message "Database [$dbName] is not updateable on destination. Skipping."
                 continue
             }
-            if ($null -eq $destDb.Users[$newDbUsername]) {
+            # Only the user of the destination login gets permissions and roles. When that login has no user in this database,
+            # its user is created under the name of the source user, see above, and a user of that name that exists already is
+            # not its user: it belongs to another login or to none, and it got the permissions and roles of the source user.
+            # dbo is the user of the owner, which the part below changes, and gets no permissions or roles.
+            $destUser = $destDb.Users[$newDbUsername]
+            if ($null -ne $destUser -and -not $destDbUsers[$destDb.Name] -and $newDbUsername -ne "dbo") {
+                if ($destUser.Login) {
+                    $destUserOwner = "the login $($destUser.Login)"
+                } else {
+                    $destUserOwner = "no login"
+                }
+                Stop-Function -Message "Database $dbName on $destination has a user $newDbUsername of $destUserOwner, but the login $newLoginName has no user there. Skipping $dbName for $newLoginName, so that $newDbUsername gets no permissions or roles of $loginName." -Target $destUser -Continue
+            }
+            if ($null -eq $destUser) {
                 if ($Pscmdlet.ShouldProcess($destination, "Adding $newDbUsername to $dbName.")) {
                     $sql = $SourceServer.Databases[$dbName].Users[$dbUsername].Script() | Out-String
                     try {
@@ -482,7 +533,7 @@ function Update-SqlPermission {
             }
 
             if ($ObjectLevel) {
-                if ($dbUsername -ne "dbo") {
+                if ($dbUsername -ne "dbo" -and $newDbUsername -ne "dbo") {
                     $scriptOptions = New-DbaScriptingOption
                     $scriptVersion = $destDb.CompatibilityLevel
                     $scriptOptions.TargetServerVersion = [Microsoft.SqlServer.Management.Smo.SqlServerVersion]::$scriptVersion
@@ -498,12 +549,15 @@ function Update-SqlPermission {
                 }
             } else {
                 # Database Roles: db_owner, db_datareader, etc
+                # The members are users, see above. Both names come from the source database, so they are compared exactly.
+                # On the destination as well: on a case sensitive database a user whose name differs only in case is another
+                # user, and its membership made the user of the login look like a member, so it was never added.
                 foreach ($role in $sourceDb.Roles) {
-                    if ($role.EnumMembers() -contains $loginName) {
+                    if ($role.EnumMembers() -ccontains $dbUsername) {
                         $roleName = $role.Name
                         $destDbRole = $destDb.Roles[$roleName]
 
-                        if ($null -ne $destDbRole -and $dbUsername -ne "dbo" -and $destDbRole.EnumMembers() -notcontains $newDbUsername) {
+                        if ($null -ne $destDbRole -and $dbUsername -ne "dbo" -and $newDbUsername -ne "dbo" -and $destDbRole.EnumMembers() -cnotcontains $newDbUsername) {
                             if ($Pscmdlet.ShouldProcess($destination, "Adding $newDbUsername to $roleName database role in $dbName.")) {
                                 try {
                                     $destDbRole.AddMember($newDbUsername)
@@ -517,7 +571,12 @@ function Update-SqlPermission {
                     }
                 }
                 # Connect, Alter Any Assembly, etc
-                $perms = $sourceDb.EnumDatabasePermissions($loginName)
+                # Of the source user, see above, and none to dbo, see the revoke part.
+                if ($dbUsername -eq "dbo" -or $newDbUsername -eq "dbo") {
+                    $perms = @()
+                } else {
+                    $perms = $sourceDb.EnumDatabasePermissions($dbUsername)
+                }
                 foreach ($perm in $perms) {
                     $permState = $perm.PermissionState
                     if ($permState -eq "GrantWithGrant") {
