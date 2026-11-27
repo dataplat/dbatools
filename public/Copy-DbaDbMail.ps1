@@ -162,7 +162,7 @@ function Copy-DbaDbMail {
                     $copyMailConfigStatus.Status = "Failed"
                     $copyMailConfigStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     Write-Message -Level Verbose -Message "Unable to update mail server configuration on $destinstance | $PSItem"
-                    continue
+                    return
                 }
             }
         }
@@ -185,10 +185,6 @@ function Copy-DbaDbMail {
                     Status            = $null
                     Notes             = $null
                     DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
-                }
-
-                if ($accounts.count -gt 0 -and $accounts -notcontains $newAccountName) {
-                    continue
                 }
 
                 if ($destAccounts.name -contains $newAccountName) {
@@ -254,10 +250,6 @@ function Copy-DbaDbMail {
                     Status            = $null
                     Notes             = $null
                     DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
-                }
-
-                if ($profiles.count -gt 0 -and $profiles -notcontains $newProfileName) {
-                    continue
                 }
 
                 if ($destProfiles.name -contains $newProfileName) {
@@ -331,9 +323,6 @@ function Copy-DbaDbMail {
                     Status            = $null
                     Notes             = $null
                     DateTime          = [Dataplat.Dbatools.Utility.DbaDateTime](Get-Date)
-                }
-                if ($mailServers.count -gt 0 -and $mailServers -notcontains $mailServerName) {
-                    continue
                 }
 
                 if ($destMailServers.name -contains $mailServerName) {
@@ -459,25 +448,6 @@ function Copy-DbaDbMail {
                         "mailServers" {
                             Copy-DbaDbMailServer
                         }
-                    }
-
-                    continue
-                }
-
-                if (($profiles.count + $accounts.count + $mailServers.count) -gt 0) {
-
-                    if ($profiles.count -gt 0) {
-                        Copy-DbaDbMailProfile -Profiles $profiles
-                        $destServer.Mail.Profiles.Refresh()
-                    }
-
-                    if ($accounts.count -gt 0) {
-                        Copy-DbaDatabaseAccount -Accounts $accounts
-                        $destServer.Mail.Accounts.Refresh()
-                    }
-
-                    if ($mailServers.count -gt 0) {
-                        Copy-DbaDbMailServer -mailServers $mailServers
                     }
 
                     continue

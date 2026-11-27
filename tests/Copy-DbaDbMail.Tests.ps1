@@ -186,4 +186,66 @@ Describe $CommandName -Tag IntegrationTests {
             $dacSessions | Should -Be 0
         }
     }
+
+    Context "When the configuration values fail on the destination" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # sysmail_configure_sp updates this table, so the trigger makes the copy of the configuration values fail.
+            $failTriggerQuery = @"
+CREATE TRIGGER dbo.dbatoolsci_mailconfig_fail ON dbo.sysmail_configuration AFTER UPDATE AS
+RAISERROR (N'dbatoolsci: the configuration cannot be changed', 16, 1);
+"@
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Database msdb -Query $failTriggerQuery
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            $resultsConfigFailed = Copy-DbaDbMail -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Force
+        }
+
+        AfterAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            $null = Invoke-DbaQuery -SqlInstance $TestConfig.InstanceCopy2 -Database msdb -Query "DROP TRIGGER dbo.dbatoolsci_mailconfig_fail"
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+        }
+
+        It "Should report the configuration values as failed" {
+            $result = $resultsConfigFailed | Where-Object Name -eq "Server Configuration"
+            $result.Status | Should -Be "Failed"
+        }
+
+        It "Should still copy the account, the profile and the mail server" {
+            ($resultsConfigFailed | Where-Object Type -eq "Mail Account").Status | Should -Be "Successful"
+            ($resultsConfigFailed | Where-Object Type -eq "Mail Profile").Status | Should -Be "Successful"
+            ($resultsConfigFailed | Where-Object Type -eq "Mail Server").Status | Should -Be "Successful"
+        }
+
+        It "Should still report Database Mail XPs" {
+            $resultsConfigFailed | Where-Object Name -eq "Database Mail XPs" | Should -Not -BeNullOrEmpty
+        }
+    }
+
+    Context "When the session has variables named like the mail objects" {
+        BeforeAll {
+            # A command in a module sees the global variables of the session.
+            $global:accounts = "dbatoolsci_unrelated"
+            $global:profiles = "dbatoolsci_unrelated"
+            $global:mailServers = "dbatoolsci_unrelated"
+
+            $resultsWithGlobals = Copy-DbaDbMail -Source $TestConfig.InstanceCopy1 -Destination $TestConfig.InstanceCopy2 -Force
+        }
+
+        AfterAll {
+            Remove-Variable -Name accounts, profiles, mailServers -Scope Global -ErrorAction SilentlyContinue
+        }
+
+        It "Should copy every mail object" {
+            ($resultsWithGlobals | Where-Object Name -eq "Server Configuration").Status | Should -Be "Successful"
+            ($resultsWithGlobals | Where-Object Type -eq "Mail Account").Status | Should -Be "Successful"
+            ($resultsWithGlobals | Where-Object Type -eq "Mail Profile").Status | Should -Be "Successful"
+            ($resultsWithGlobals | Where-Object Type -eq "Mail Server").Status | Should -Be "Successful"
+        }
+    }
 }
