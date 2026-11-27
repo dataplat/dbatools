@@ -266,9 +266,10 @@ Describe "janitor runner protection" {
     }
 
     It "drops the lanes it marked when the check fails after classifying them" {
-        # The live runs mark andreasjordan and community active. The created_at of a
-        # stranger's event is first read when the activity times are collected, after
-        # every lane is classified, and it cannot even be turned into a string.
+        # The live runs mark andreasjordan and community active. The updated_at of a
+        # stranger's completed run is first read by the community classification, after
+        # the maintainer lanes and the live community lane are marked, and it cannot even
+        # be turned into a string.
         $unconvertible = [pscustomobject]@{ }
         $splatThrowingToString = @{
             MemberType = "ScriptMethod"
@@ -277,14 +278,6 @@ Describe "janitor runner protection" {
             Force      = $true
         }
         $unconvertible | Add-Member @splatThrowingToString
-        $script:Events = @(
-            [pscustomobject]@{
-                actor      = [pscustomobject]@{ login = "a-stranger" }
-                type       = "WatchEvent"
-                created_at = $unconvertible
-                payload    = [pscustomobject]@{ }
-            }
-        )
         $script:Runs = @(
             [pscustomobject]@{
                 actor         = [pscustomobject]@{ login = "andreasjordan" }
@@ -299,6 +292,13 @@ Describe "janitor runner protection" {
                 event         = "pull_request"
                 status        = "in_progress"
                 updated_at    = $script:Now.ToString("o")
+            }
+            [pscustomobject]@{
+                actor         = [pscustomobject]@{ login = "a-stranger" }
+                display_title = "ci-azure"
+                event         = "pull_request"
+                status        = "completed"
+                updated_at    = $unconvertible
             }
         )
         $andreasVms = @(1..10 | ForEach-Object {
@@ -323,6 +323,32 @@ Describe "janitor runner protection" {
         $mode | Should -Be "github-unreachable"
         @($script:RemovedVms | Where-Object { $PSItem -like "*andreas*" }).Count | Should -Be 10
         @($script:RemovedVms | Where-Object { $PSItem -like "*community*" }).Count | Should -Be 5
+    }
+
+    It "keeps the stale mode when the last activity cannot be dated for the log" {
+        # The created_at of a stranger's event is read only for the stale log line.
+        $unconvertible = [pscustomobject]@{ }
+        $splatThrowingToString = @{
+            MemberType = "ScriptMethod"
+            Name       = "ToString"
+            Value      = { throw "unexpected failure" }
+            Force      = $true
+        }
+        $unconvertible | Add-Member @splatThrowingToString
+        $script:Events = @(
+            [pscustomobject]@{
+                actor      = [pscustomobject]@{ login = "a-stranger" }
+                type       = "WatchEvent"
+                created_at = $unconvertible
+                payload    = [pscustomobject]@{ }
+            }
+        )
+
+        $warnings = . $script:JanitorPath 3>&1 | Where-Object { $PSItem -is [System.Management.Automation.WarningRecord] }
+
+        @($warnings | Where-Object { $PSItem.Message -like "GitHub activity check failed*" }) | Should -BeNullOrEmpty
+        @($warnings | Where-Object { $PSItem.Message -like "could not date the last activity*" }).Count | Should -Be 1
+        $mode | Should -Be "stale"
     }
 
     It "applies the conservative caps when an unreadable completed run is the only possible activity" {
