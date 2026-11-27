@@ -8,7 +8,8 @@
             "(\\w*)(?i)(vorname|vname|vor_name)(\\w*)",
             "(\\w*)(?i)(prenom|pnom)(\\w*)",
             "(\\w*)(?i)(nombredepila|npila|apellido)(\\w*)",
-            "(\\w*)(?i)(voornaam|vnaam)(\\w*)"
+            "(\\w*)(?i)(voornaam|vnaam)(\\w*)",
+            "(\\w*)(?i)(fornamn|förnamn|tilltalsnamn|fornavn|etunimi)(\\w*)"
         ],
         "MaskingType": "Name",
         "MaskingSubType": "FirstName"
@@ -32,7 +33,8 @@
             "(\\w*)(?i)(nachname|nname)(\\w*)",
             "(\\w*)(?i)(nomdefamille|nomfamille)(\\w*)",
             "(\\w*)(?i)(nombredepila|npila|apellido)(\\w*)",
-            "(\\w*)(?i)(achternaam|anaam)(\\w*)"
+            "(\\w*)(?i)(achternaam|anaam)(\\w*)",
+            "(\\w*)(?i)(efternamn|etternavn|efternavn|sukunimi)(\\w*)"
         ],
         "MaskingType": "Name",
         "MaskingSubType": "LastName"
@@ -69,7 +71,8 @@
             "(?>b_?(date?\\|day))(?!\\w*ID)",
             "(\\w*)(?i)(Geburtsdatum|Geburtsjahr)(\\w*)",
             "(\\w*)(?i)(datedenaissance|date_de_naissance)(\\w*)",
-            "(\\w*)(?i)(geboortedatum)(\\w*)"
+            "(\\w*)(?i)(geboortedatum)(\\w*)",
+            "(\\w*)(?i)(fodelsedatum|födelsedatum|fodselsdato|fødselsdato|fodselsdag|fødselsdag|syntymaaika|syntymäaika|syntymapaiva|syntymäpäivä)(\\w*)"
         ],
         "MaskingType": "Person",
         "MaskingSubType": "DateOfBirth"
@@ -82,7 +85,9 @@
             "(\\w*)(?i)(Geschlecht)(\\w*)",
             "(\\w*)(?i)(sexe)(\\w*)",
             "(\\w*)(?i)(sexo)(\\w*)",
-            "(\\w*)(?i)(geslacht)(\\w*)"
+            "(\\w*)(?i)(geslacht)(\\w*)",
+            "(\\w*)(?i)(kön|køn|kjønn|kjonn|sukupuoli)(\\w*)",
+            "^(?i)(kon|koen)$"
         ],
         "MaskingType": "Person",
         "MaskingSubType": "Gender"
@@ -101,7 +106,8 @@
         "Category": "Communication",
         "Pattern": [
             "(\\w*)(?i)(email|e-mail|mail)(\\w*)",
-            "^(?:(?!invalid).)*email(?!\\w*ID)"
+            "^(?:(?!invalid).)*email(?!\\w*ID)",
+            "(\\w*)(?i)((?<!r)epost|e_post|sahkoposti|sähköposti)(\\w*)"
         ],
         "MaskingType": "Internet",
         "MaskingSubType": "Email"
@@ -114,7 +120,18 @@
             "(\\w*)(?i)(Staatsangehörigkeit|Staatsangehorigkeit)(\\w*)",
             "(\\w*)(?i)(nationalité|nationalite)(\\w*)",
             "(\\w*)(?i)(nacionalidad)(\\w*)",
-            "(\\w*)(?i)(nationaliteit)(\\w*)"
+            "(\\w*)(?i)(nationaliteit)(\\w*)",
+            "(\\w*)(?i)(nationalitet|medborgarskap|statsborgerskap|statsborgerskab|kansalaisuus)(\\w*)"
+        ],
+        "MaskingType": "Random",
+        "MaskingSubType": "Int"
+    },
+    {
+        "Name": "National ID",
+        "Category": "Personal",
+        "Pattern": [
+            "(\\w*)(?i)(personnummer|personnr|samordningsnummer|fodselsnummer|fødselsnummer|cprnr|cpr_nr|cprnummer|henkilotunnus|henkilötunnus)(\\w*)",
+            "^(?i)(cpr|hetu)$"
         ],
         "MaskingType": "Random",
         "MaskingSubType": "Int"
@@ -127,7 +144,8 @@
             "(?>(str(eet)?_?addre?s?s?\\|street))(?!\\w*(ID\\|type))",
             "(\\w*)(?i)adresse(\\w*)",
             "(\\w*)(?i)direccion(\\w*)",
-            "(\\w*)(?i)adres(\\w*)"
+            "(\\w*)(?i)adres(\\w*)",
+            "(\\w*)(?i)osoite(\\w*)"
         ],
         "MaskingType": "Address",
         "MaskingSubType": "StreetAddress"
@@ -141,7 +159,8 @@
             "(\\w*)(?i)stadt(\\w*)",
             "(\\w*)(?i)ville(\\w*)",
             "(\\w*)(?i)ciudad(\\w*)",
-            "(\\w*)(?i)stad(\\w*)"
+            "(\\w*)(?i)stad(\\w*)",
+            "(\\w*)(?i)(postort|poststed|kaupunki|paikkakunta)(\\w*)"
         ],
         "MaskingType": "Address",
         "MaskingSubType": "City"
@@ -196,7 +215,8 @@
         "Category": "Communication",
         "Pattern": [
             "(\\w*)(?i)(phone|phonenumber)(\\w*)",
-            "(?>((tele?)?phone)\\|(co?nta?ct\\|tel)_?(num(ber)?\\|nbr\\|no))(?!\\w*(ID\\|type))"
+            "(?>((tele?)?phone)\\|(co?nta?ct\\|tel)_?(num(ber)?\\|nbr\\|no))(?!\\w*(ID\\|type))",
+            "(\\w*)(?i)(telefon|mobilnummer|mobiltelefon|puhelin)(\\w*)"
         ],
         "MaskingType": "Phone",
         "MaskingSubType": "PhoneNumber"
@@ -263,7 +283,8 @@
             "(?>(zip\\|post(al)?)_?((co?de?)?4?))(?!\\w*ID)",
             "(\\w*)(?i)postal(\\w*)",
             "(\\w*)(?i)postleitzahl(\\w*)",
-            "(\\w*)(?i)postcode(\\w*)"
+            "(\\w*)(?i)postcode(\\w*)",
+            "(\\w*)(?i)(postnummer|postnr|postinumero)(\\w*)"
         ],
         "MaskingType": "Address",
         "MaskingSubType": "Zipcode"

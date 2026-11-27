@@ -112,6 +112,184 @@ Describe $CommandName -Tag UnitTests {
                 $results[0].Column | Should -Be "GeoDbo"
             }
         }
+
+        Context "Reading the default known names" {
+            It "finds the column name <ColumnName> with a non-ASCII letter as <Expected>" -ForEach @(
+                # Built from code points, so that the test file itself stays ASCII for Windows PowerShell
+                @{ ColumnName = "K$([char]0x00F6)n"; Expected = "Gender" }
+                @{ ColumnName = "F$([char]0x00F6)rnamn"; Expected = "First name" }
+                @{ ColumnName = "F$([char]0x00F8)dselsnummer"; Expected = "National ID" }
+            ) {
+                $mockServer = [PSCustomObject]@{
+                    ComputerName       = "sql1"
+                    ServiceName        = "MSSQLSERVER"
+                    DomainInstanceName = "sql1"
+                }
+                $mockDatabase = [PSCustomObject]@{
+                    Name   = "db1"
+                    Parent = $mockServer
+                    Tables = @(
+                        [PSCustomObject]@{
+                            Name    = "Customer"
+                            Schema  = "dbo"
+                            Columns = @(
+                                [PSCustomObject]@{
+                                    Name     = $ColumnName
+                                    DataType = [PSCustomObject]@{
+                                        Name = "nvarchar"
+                                    }
+                                }
+                            )
+                        }
+                    )
+                }
+                $mockServer | Add-Member -Force -MemberType NoteProperty -Name Databases -Value @{
+                    db1 = $mockDatabase
+                }
+
+                Mock Connect-DbaInstance { $mockServer }
+
+                # -ExcludeDefaultPattern, so that no rows are read
+                $results = @(Invoke-DbaDbPiiScan -SqlInstance "sql1" -Database "db1" -ExcludeDefaultPattern)
+
+                $results.Count | Should -Be 1
+                $results[0].Column | Should -Be $ColumnName
+                $results[0].FoundWith | Should -Be "KnownName"
+                $results[0]."PII-Name" | Should -Be $Expected
+            }
+        }
+    }
+
+    Context "Default rule files" {
+        # The scan matches column names with -match against every known-name pattern, and sampled values against
+        # every data pattern. These tests do the same on synthetic values only.
+        BeforeAll {
+            $moduleBase = (Get-Module -Name $ModuleName | Where-Object ModuleType -eq "Script" | Select-Object -First 1).ModuleBase
+            $dataMaskingPath = Join-Path -Path $moduleBase -ChildPath "bin\datamasking"
+            $knownNames = Get-Content -Path (Join-Path -Path $dataMaskingPath -ChildPath "pii-knownnames.json") -Encoding UTF8 | ConvertFrom-Json
+            $patterns = Get-Content -Path (Join-Path -Path $dataMaskingPath -ChildPath "pii-patterns.json") -Encoding UTF8 | ConvertFrom-Json
+
+            function Get-KnownNameMatch {
+                param([string]$ColumnName)
+                foreach ($knownName in $knownNames) {
+                    foreach ($pattern in $knownName.Pattern) {
+                        if ($ColumnName -match $pattern) {
+                            $knownName.Name
+                            break
+                        }
+                    }
+                }
+            }
+
+            function Test-PatternMatch {
+                param([string]$CountryCode, [string]$Name, [string]$Value)
+                $matchingPatterns = $patterns | Where-Object { $PSItem.CountryCode -eq $CountryCode -and $PSItem.Name -eq $Name }
+                foreach ($patternObject in $matchingPatterns) {
+                    if ($Value -match $patternObject.Pattern) {
+                        return $true
+                    }
+                }
+                return $false
+            }
+        }
+
+        It "has no duplicate data patterns" {
+            $patterns | Group-Object -Property Name, CountryCode, Pattern | Where-Object Count -gt 1 | Should -BeNullOrEmpty
+        }
+
+        It "has no control characters in data patterns" {
+            $patterns | Where-Object { $PSItem.Pattern -match "[\x00-\x1F]" } | Should -BeNullOrEmpty
+        }
+
+        It "has no commas in character classes of data patterns" {
+            # [0,1] is not a list, it also matches a comma. Website is the exception, a comma is valid in a URL.
+            $patterns | Where-Object { $PSItem.Name -ne "Website" -and $PSItem.Pattern -match "\[[^\]]*,[^\]]*\]" } | Should -BeNullOrEmpty
+        }
+
+        It "uses ISO 3166 country codes" {
+            $patterns | Where-Object { $PSItem.CountryCode -cnotmatch "^([A-Z]{2}|All)$" -and $PSItem.CountryCode -ne "UK" } | Should -BeNullOrEmpty
+        }
+
+        It "finds the Nordic column name <ColumnName> as <Expected>" -ForEach @(
+            @{ ColumnName = "Personnummer"; Expected = "National ID" }
+            @{ ColumnName = "Samordningsnummer"; Expected = "National ID" }
+            @{ ColumnName = "Fodselsnummer"; Expected = "National ID" }
+            @{ ColumnName = "CprNr"; Expected = "National ID" }
+            @{ ColumnName = "Henkilotunnus"; Expected = "National ID" }
+            @{ ColumnName = "Fornamn"; Expected = "First name" }
+            @{ ColumnName = "Fornavn"; Expected = "First name" }
+            @{ ColumnName = "Etunimi"; Expected = "First name" }
+            @{ ColumnName = "Efternamn"; Expected = "Last name" }
+            @{ ColumnName = "Etternavn"; Expected = "Last name" }
+            @{ ColumnName = "Sukunimi"; Expected = "Last name" }
+            @{ ColumnName = "Fodelsedatum"; Expected = "Date" }
+            @{ ColumnName = "Fodselsdato"; Expected = "Date" }
+            @{ ColumnName = "Syntymaaika"; Expected = "Date" }
+            @{ ColumnName = "KundEpost"; Expected = "E-mail" }
+            @{ ColumnName = "Sahkoposti"; Expected = "E-mail" }
+            @{ ColumnName = "Telefon"; Expected = "Phone" }
+            @{ ColumnName = "Puhelin"; Expected = "Phone" }
+            @{ ColumnName = "Postnummer"; Expected = "Zipcode" }
+            @{ ColumnName = "Postinumero"; Expected = "Zipcode" }
+            @{ ColumnName = "Osoite"; Expected = "Address" }
+            @{ ColumnName = "Postort"; Expected = "City" }
+            @{ ColumnName = "Medborgarskap"; Expected = "Nationality" }
+            @{ ColumnName = "Sukupuoli"; Expected = "Gender" }
+            @{ ColumnName = "Kon"; Expected = "Gender" }
+            @{ ColumnName = "Koen"; Expected = "Gender" }
+            @{ ColumnName = "Kjonn"; Expected = "Gender" }
+            # Built from code points, so that the test file itself stays ASCII for Windows PowerShell
+            @{ ColumnName = "K$([char]0x00F6)n"; Expected = "Gender" }
+            @{ ColumnName = "K$([char]0x00F8)n"; Expected = "Gender" }
+            @{ ColumnName = "F$([char]0x00F6)rnamn"; Expected = "First name" }
+            @{ ColumnName = "F$([char]0x00F8)dselsnummer"; Expected = "National ID" }
+            @{ ColumnName = "Henkil$([char]0x00F6)tunnus"; Expected = "National ID" }
+            @{ ColumnName = "S$([char]0x00E4)hk$([char]0x00F6)posti"; Expected = "E-mail" }
+        ) {
+            Get-KnownNameMatch -ColumnName $ColumnName | Should -Contain $Expected
+        }
+
+        It "does not find <ColumnName> as <NotExpected>" -ForEach @(
+            @{ ColumnName = "Reposted"; NotExpected = "E-mail" }
+            @{ ColumnName = "Konto"; NotExpected = "Gender" }
+            @{ ColumnName = "Ikon"; NotExpected = "Gender" }
+            @{ ColumnName = "CprStatus"; NotExpected = "National ID" }
+            @{ ColumnName = "Hetupdate"; NotExpected = "National ID" }
+            @{ ColumnName = "Kontakt"; NotExpected = "Gender" }
+            @{ ColumnName = "KonId"; NotExpected = "Gender" }
+        ) {
+            Get-KnownNameMatch -ColumnName $ColumnName | Should -Not -Contain $NotExpected
+        }
+
+        It "matches <Value> with the <CountryCode> <Name> pattern: <Expected>" -ForEach @(
+            @{ CountryCode = "SE"; Name = "National ID"; Value = "121212-1212"; Expected = $true }
+            @{ CountryCode = "SE"; Name = "National ID"; Value = "19121212-1212"; Expected = $true }
+            @{ CountryCode = "SE"; Name = "National ID"; Value = "191212121212"; Expected = $true }
+            @{ CountryCode = "SE"; Name = "National ID"; Value = "121272-1219"; Expected = $true }
+            @{ CountryCode = "SE"; Name = "National ID"; Value = "0701234567"; Expected = $false }
+            @{ CountryCode = "SE"; Name = "National ID"; Value = "20231301-1234"; Expected = $false }
+            @{ CountryCode = "FI"; Name = "National ID"; Value = "131052-308T"; Expected = $true }
+            @{ CountryCode = "FI"; Name = "National ID"; Value = "010594Y9032"; Expected = $true }
+            @{ CountryCode = "FI"; Name = "National ID"; Value = "01,594-9032"; Expected = $false }
+            @{ CountryCode = "US"; Name = "National ID"; Value = "123-45-6789"; Expected = $true }
+            @{ CountryCode = "US"; Name = "National ID"; Value = "123456789"; Expected = $false }
+            @{ CountryCode = "FR"; Name = "National ID"; Value = "1 85 05 78 006 084 36"; Expected = $true }
+            @{ CountryCode = "FR"; Name = "National ID"; Value = "185057800608436"; Expected = $true }
+            @{ CountryCode = "FR"; Name = "National ID"; Value = "123456789012345678"; Expected = $false }
+            @{ CountryCode = "PL"; Name = "National ID"; Value = "44051401359"; Expected = $true }
+            @{ CountryCode = "PL"; Name = "National ID"; Value = "02270803628"; Expected = $true }
+            @{ CountryCode = "PL"; Name = "National ID"; Value = "44135401359"; Expected = $false }
+            @{ CountryCode = "PL"; Name = "National ID"; Value = "12340567890123"; Expected = $false }
+            @{ CountryCode = "DE"; Name = "Zipcode"; Value = "10115"; Expected = $true }
+            @{ CountryCode = "DE"; Name = "Zipcode"; Value = "Order 12345 shipped"; Expected = $false }
+            @{ CountryCode = "All"; Name = "Creditcard"; Value = "4111111111111111"; Expected = $true }
+            @{ CountryCode = "All"; Name = "Creditcard"; Value = "5555555555554444"; Expected = $true }
+            @{ CountryCode = "All"; Name = "Creditcard"; Value = "30569309025904"; Expected = $true }
+            @{ CountryCode = "All"; Name = "IBAN Number"; Value = "SE45 5000 0000 0583 9825 7466"; Expected = $true }
+            @{ CountryCode = "All"; Name = "Website"; Value = "https://example.com/page"; Expected = $true }
+        ) {
+            Test-PatternMatch -CountryCode $CountryCode -Name $Name -Value $Value | Should -Be $Expected
+        }
     }
 }
 

@@ -183,7 +183,8 @@ function Invoke-DbaDbPiiScan {
         if (-not $ExcludeDefaultKnownName) {
             try {
                 $defaultKnownNameFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
-                $knownNames = Get-Content -Path $defaultKnownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                # The default files are UTF-8 without a BOM, which Windows PowerShell would otherwise read as ANSI
+                $knownNames = Get-Content -Path $defaultKnownNameFilePath -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Couldn't parse known names file" -ErrorRecord $_
                 return
@@ -194,7 +195,7 @@ function Invoke-DbaDbPiiScan {
         if (-not $ExcludeDefaultPattern) {
             try {
                 $defaultPatternFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
-                $patterns = Get-Content -Path $defaultPatternFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                $patterns = Get-Content -Path $defaultPatternFilePath -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Couldn't parse pattern file" -ErrorRecord $_
                 return

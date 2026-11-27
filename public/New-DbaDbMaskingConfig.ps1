@@ -169,8 +169,10 @@ function New-DbaDbMaskingConfig {
         # Get the known names
         if (-not $ExcludeDefaultKnownName) {
             try {
-                $knownNameFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
-                $knownNames += Get-Content -Path $knownNameFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                # Not $knownNameFilePath: variable names are case insensitive, so that name overwrote -KnownNameFilePath
+                $defaultKnownNameFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-knownnames.json"
+                # The default files are UTF-8 without a BOM, which Windows PowerShell would otherwise read as ANSI
+                $knownNames += Get-Content -Path $defaultKnownNameFilePath -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Couldn't parse known names file" -ErrorRecord $_
                 return
@@ -180,8 +182,8 @@ function New-DbaDbMaskingConfig {
         # Get the patterns
         if (-not $ExcludeDefaultPattern) {
             try {
-                $patternFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
-                $patterns = Get-Content -Path $patternFilePath -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                $defaultPatternFilePath = Resolve-Path -Path "$script:PSModuleRoot\bin\datamasking\pii-patterns.json"
+                $patterns = Get-Content -Path $defaultPatternFilePath -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
             } catch {
                 Stop-Function -Message "Couldn't parse pattern file" -ErrorRecord $_
                 return
@@ -241,6 +243,20 @@ function New-DbaDbMaskingConfig {
             'text', 'time', 'tinyint',
             'uniqueidentifier', 'userdefineddatatype',
             'varchar'
+        )
+
+        # Invoke-DbaDbDataMasking can only write a number to these data types. A known name or pattern that
+        # generates anything else, such as Person/Gender (Male/Female) for a tinyint gender code, fails the
+        # conversion and leaves the column unmasked.
+        $numericDataTypes = @(
+            'bigint', 'decimal', 'float', 'int', 'money',
+            'numeric', 'smallint', 'tinyint'
+        )
+        $booleanDataTypes = @('bit', 'bool')
+        $numericRandomSubTypes = @(
+            'Byte', 'Decimal', 'Double', 'Even', 'Float',
+            'Int', 'Long', 'Number', 'Odd', 'SByte',
+            'Short', 'UInt', 'ULong', 'UShort'
         )
 
         $maskingconfig = @()
@@ -518,6 +534,22 @@ function New-DbaDbMaskingConfig {
                             } else {
                                 Write-Message -Level Verbose -Message "No patterns found to perform check on"
                             }
+                        }
+                    }
+
+                    # The column still is PII, but its masking follows the data type when the recommendation
+                    # cannot produce a value of that type
+                    if ($result) {
+                        $isCompatible = $true
+                        if ($columnType -in $numericDataTypes) {
+                            $isCompatible = $result.MaskingType -eq "Random" -and $result.MaskingSubType -in $numericRandomSubTypes
+                        } elseif ($columnType -in $booleanDataTypes) {
+                            $isCompatible = $result.MaskingType -eq "Random" -and $result.MaskingSubType -eq "Bool"
+                        }
+
+                        if (-not $isCompatible) {
+                            Write-Message -Level Verbose -Message "Column [$($columnobject.Name)] matches $($result.'PII-Name') ($($result.MaskingType)/$($result.MaskingSubType)), which does not produce $columnType values. Using the masking for its data type instead."
+                            $result = $null
                         }
                     }
 
