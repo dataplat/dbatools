@@ -81,4 +81,60 @@ Describe $CommandName -Tag IntegrationTests {
             $results.Status | Should -Be @("Successful", "Successful")
         }
     }
+
+    Context "When copying registered servers repeatedly" {
+        BeforeAll {
+            $PSDefaultParameterValues["*-Dba*:EnableException"] = $true
+
+            # A store keeps its connection open after it was read. Count the sleeping sessions of this process through
+            # server objects opened once, because a counting command would open connections of its own.
+            $countSourceServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy2 -NonPooledConnection
+            $countDestServer = Connect-DbaInstance -SqlInstance $TestConfig.InstanceCopy1 -NonPooledConnection
+            $countQuery = @"
+SELECT COUNT(*)
+FROM sys.dm_exec_sessions
+WHERE host_process_id = $PID
+  AND status = N'sleeping'
+  AND session_id <> @@SPID
+"@
+            $splatRepeat = @{
+                Source      = $TestConfig.InstanceCopy2
+                Destination = $TestConfig.InstanceCopy1
+                CMSGroup    = $groupName
+                Force       = $true
+            }
+
+            $PSDefaultParameterValues.Remove("*-Dba*:EnableException")
+
+            # One warm-up call so the shared pooled connections exist before the baseline is taken.
+            $null = Copy-DbaRegServer @splatRepeat
+            $sourceSleepingBefore = $countSourceServer.ConnectionContext.ExecuteScalar($countQuery)
+            $destSleepingBefore = $countDestServer.ConnectionContext.ExecuteScalar($countQuery)
+
+            $repeatResults = foreach ($round in 1..3) {
+                Copy-DbaRegServer @splatRepeat
+            }
+            $sourceSleepingAfter = $countSourceServer.ConnectionContext.ExecuteScalar($countQuery)
+            $destSleepingAfter = $countDestServer.ConnectionContext.ExecuteScalar($countQuery)
+        }
+
+        AfterAll {
+            $countSourceServer.ConnectionContext.Disconnect()
+            $countDestServer.ConnectionContext.Disconnect()
+        }
+
+        It "Copies in every round" {
+            $repeatResults | Where-Object Status -ne "Successful" | Should -BeNullOrEmpty
+            $WarnVar | Should -BeNullOrEmpty
+        }
+
+        It "Leaves no sleeping session behind on the source" {
+            # A pooled session can end while the test runs, but a leak adds one per round.
+            $sourceSleepingAfter | Should -BeLessOrEqual $sourceSleepingBefore
+        }
+
+        It "Leaves no sleeping session behind on the destination" {
+            $destSleepingAfter | Should -BeLessOrEqual $destSleepingBefore
+        }
+    }
 }
