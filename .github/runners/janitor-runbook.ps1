@@ -111,11 +111,16 @@ function Get-JanitorPushMessage {
         return [string]$headCommit[0].message
     }
     # The events API no longer lists the commits of a push, only its head SHA, so the
-    # message comes from the commit itself. A failed lookup aborts the activity check
-    # into the age-cap fallback rather than declaring the lane stale.
+    # message comes from the commit itself. A push that cannot be read does not count:
+    # the CI run it starts proves the lane active anyway, while failing the whole check
+    # would drop the protection of every other lane.
     if ($head) {
-        $commit = Invoke-GitHubGet -Uri "https://api.github.com/repos/$repo/commits/$head"
-        return [string]$commit.commit.message
+        try {
+            $commit = Invoke-GitHubGet -Uri "https://api.github.com/repos/$repo/commits/$head"
+            return [string]$commit.commit.message
+        } catch {
+            Write-Warning "commit lookup for push $head failed; the push does not count as activity. $($PSItem.Exception.Message)"
+        }
     }
     return ""
 }
@@ -173,15 +178,23 @@ try {
     $communityCutoff = $utcNow.AddMinutes(-$communityGraceMinutes)
 
     foreach ($maintainer in $maintainers) {
-        $recentActivity = @($events | Where-Object {
-                Test-JanitorMaintainerEvent -ActivityEvent $PSItem -Maintainer $maintainer -Cutoff $maintainerCutoff
-            }).Count -gt 0
         $liveCi = @($liveRuns | Where-Object { (Get-JanitorRunActor -Run $PSItem) -eq $maintainer }).Count -gt 0
         $recentlyCompletedCi = @($runs | Where-Object {
                 (Get-JanitorRunActor -Run $PSItem) -eq $maintainer -and
                 [string]$PSItem.status -eq "completed" -and
                 (ConvertTo-JanitorUtc -Value $PSItem.updated_at) -gt $maintainerCutoff
             }).Count -gt 0
+        # Pushes only matter when no run proves the lane active, and the first one that
+        # qualifies is enough: each push of the marker maintainer costs a commit lookup.
+        $recentActivity = $false
+        if (-not ($liveCi -or $recentlyCompletedCi)) {
+            foreach ($activityEvent in $events) {
+                if (Test-JanitorMaintainerEvent -ActivityEvent $activityEvent -Maintainer $maintainer -Cutoff $maintainerCutoff) {
+                    $recentActivity = $true
+                    break
+                }
+            }
+        }
         if ($liveCi) {
             $liveMaintainers += $maintainer
         }

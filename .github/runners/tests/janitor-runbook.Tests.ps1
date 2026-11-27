@@ -15,6 +15,7 @@ Describe "janitor runner protection" {
         $script:Pips = @()
         $script:ResourceCreatedAt = @{ }
         $script:CommitMessages = @{ }
+        $script:CommitLookups = @()
 
         function Connect-AzAccount {
             param([switch]$Identity, [string]$WarningAction)
@@ -31,9 +32,18 @@ Describe "janitor runner protection" {
                 return , @($script:Events)
             }
             if ($Uri -match "/commits/([^/?]+)$") {
-                return [pscustomobject]@{ commit = [pscustomobject]@{ message = $script:CommitMessages[$Matches[1]] } }
+                $sha = $Matches[1]
+                $script:CommitLookups += $sha
+                if (-not $script:CommitMessages.ContainsKey($sha)) {
+                    throw "404 Not Found: commit $sha"
+                }
+                return [pscustomobject]@{ commit = [pscustomobject]@{ message = $script:CommitMessages[$sha] } }
             }
             [pscustomobject]@{ workflow_runs = $script:Runs }
+        }
+
+        function Start-Sleep {
+            param([int]$Seconds)
         }
 
         function Get-AzVM {
@@ -264,6 +274,75 @@ Describe "janitor runner protection" {
         $script:RemovedVms | Should -BeNullOrEmpty
     }
 
+    It "does not look up pushes of a lane a live run already proves active" {
+        $script:Runs = @(
+            [pscustomobject]@{
+                actor         = [pscustomobject]@{ login = "potatoqualitee" }
+                display_title = "ci-azure [do ci]"
+                event         = "push"
+                status        = "in_progress"
+                head_commit   = [pscustomobject]@{ message = "Fix a thing [do ci]" }
+                updated_at    = $script:Now.ToString("o")
+            }
+        )
+        $script:Events = @(
+            [pscustomobject]@{
+                actor      = [pscustomobject]@{ login = "potatoqualitee" }
+                type       = "PushEvent"
+                created_at = $script:Now.AddMinutes(-5).ToString("o")
+                payload    = [pscustomobject]@{ head = "unreadable"; ref = "refs/heads/feature" }
+            }
+        )
+        $script:Vms = @(1..10 | ForEach-Object {
+                [pscustomobject]@{
+                    Name        = "dbatools-runners_potato-$PSItem"
+                    TimeCreated = $script:Now.AddHours(-6)
+                    Tags        = @{ runnerPool = "potatoqualitee" }
+                }
+            })
+
+        . $script:JanitorPath 3>$null | Out-Null
+
+        $script:CommitLookups | Should -BeNullOrEmpty
+        $mode | Should -Be "active"
+        $script:RemovedVms | Should -BeNullOrEmpty
+    }
+
+    It "keeps protecting other lanes when a push cannot be read" {
+        $script:Runs = @(
+            [pscustomobject]@{
+                actor         = [pscustomobject]@{ login = "andreasjordan" }
+                display_title = "ci-azure"
+                event         = "pull_request"
+                status        = "in_progress"
+                updated_at    = $script:Now.ToString("o")
+            }
+        )
+        $script:Events = @(
+            [pscustomobject]@{
+                actor      = [pscustomobject]@{ login = "potatoqualitee" }
+                type       = "PushEvent"
+                created_at = $script:Now.AddMinutes(-5).ToString("o")
+                payload    = [pscustomobject]@{ head = "unreadable"; ref = "refs/heads/feature" }
+            }
+        )
+        $script:Vms = @(1..10 | ForEach-Object {
+                [pscustomobject]@{
+                    Name        = "dbatools-runners_andreas-$PSItem"
+                    TimeCreated = $script:Now.AddHours(-6)
+                    Tags        = @{ runnerPool = "andreasjordan" }
+                }
+            })
+
+        $warnings = . $script:JanitorPath 3>&1 | Where-Object { $PSItem -is [System.Management.Automation.WarningRecord] }
+
+        $script:CommitLookups | Should -Be @("unreadable", "unreadable", "unreadable")
+        @($warnings | Where-Object { $PSItem.Message -like "commit lookup for push unreadable failed*" }).Count | Should -Be 1
+        $mode | Should -Be "active"
+        $activeMaintainers | Should -Be @("andreasjordan")
+        $script:RemovedVms | Should -BeNullOrEmpty
+    }
+
     It "does not count a push whose head commit lacks the [do ci] marker" {
         $script:Events = @(
             [pscustomobject]@{
@@ -351,5 +430,66 @@ Describe "janitor runner protection" {
 
         $script:RemovedNics | Should -Be @("old-Nic-1")
         $script:RemovedPips | Should -Be @("instancepublicip-old")
+    }
+}
+
+Describe "janitor against the live GitHub API" {
+    # The real Invoke-RestMethod talks to api.github.com, the boundary whose response
+    # shape hid the unrolled events feed; only Azure stays stubbed, with an empty
+    # resource group so nothing can be deleted.
+    BeforeEach {
+        $script:RemovedVms = @()
+
+        function Connect-AzAccount {
+            param([switch]$Identity, [string]$WarningAction)
+        }
+
+        function Get-AzVM {
+            param([string]$ResourceGroupName)
+        }
+
+        function Remove-AzVM {
+            param(
+                [string]$ResourceGroupName,
+                [string]$Name,
+                [switch]$Force
+            )
+            $script:RemovedVms += $Name
+        }
+
+        function Get-AzNetworkInterface {
+            param([string]$ResourceGroupName)
+        }
+
+        function Get-AzPublicIpAddress {
+            param([string]$ResourceGroupName)
+        }
+
+        function Get-AzVmss {
+            param(
+                [string]$ResourceGroupName,
+                [string]$VMScaleSetName,
+                [string]$ErrorAction
+            )
+        }
+    }
+
+    It "reads the events feed and the workflow runs without falling back" {
+        $warnings = . $script:JanitorPath 3>&1 | Where-Object { $PSItem -is [System.Management.Automation.WarningRecord] }
+
+        @($warnings | Where-Object { $PSItem.Message -like "GitHub activity check failed*" }) | Should -BeNullOrEmpty
+        $mode | Should -BeIn @("active", "stale")
+        $events.Count | Should -BeGreaterThan 1
+        @($events | ForEach-Object { ConvertTo-JanitorUtc -Value $PSItem.created_at }).Count | Should -Be $events.Count
+        $script:RemovedVms | Should -BeNullOrEmpty
+    }
+
+    It "reads the message of a pushed commit from its head SHA" {
+        . $script:JanitorPath 3>$null | Out-Null
+        $pushEvent = [pscustomobject]@{
+            payload = [pscustomobject]@{ head = "f60caabe92c95a1baa0bd35c1ed546dfa4b345ff" }
+        }
+
+        Get-JanitorPushMessage -ActivityEvent $pushEvent | Should -BeLike "Get-DbaUptime - Let the instance measure its uptime*"
     }
 }
