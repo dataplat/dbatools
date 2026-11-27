@@ -47,6 +47,7 @@ function Invoke-DbaDbClone {
     .PARAMETER UpdateStatistics
         Updates column store index statistics in the source database before cloning using Microsoft Tiger Team methodology.
         Use this when working with column store indexes to ensure the clone contains current statistical information for accurate query plan generation.
+        Starting with SQL Server 2019, DBCC CLONEDATABASE captures the statistics of column store indexes itself, so the switch leaves the source database untouched there.
 
     .PARAMETER WhatIf
         Shows what would happen if the command were to run. No actions are actually performed.
@@ -203,7 +204,7 @@ function Invoke-DbaDbClone {
                 $CloneDatabase = "$($db.Name)_clone"
             }
 
-            if ($server.VersionMajor -eq 11 -and $server.Version -lt $sql2012min) {
+            if ($server.VersionMajor -lt 11 -or ($server.VersionMajor -eq 11 -and $server.Version -lt $sql2012min)) {
                 Stop-Function -Message "Unsupported version for $instance. SQL Server 2012 SP4 and above required." -Target $server -Continue
             }
 
@@ -215,17 +216,14 @@ function Invoke-DbaDbClone {
                 Stop-Function -Message "Unsupported version for $instance. SQL Server 2016 SP1 and above required." -Target $server -Continue
             }
 
-            if (Test-Bound -ParameterName 'ExcludeStatistics') {
+            if ($ExcludeStatistics) {
                 if ($server.VersionMajor -eq 12 -and $server.Version -lt $sql2014CuMin) {
-                    Stop-Function -Message "Unsupported version for $instance. SQL Server 2014 SP1 + CU3 and above required." -Target $server -Continue
-                }
-                if ($server.VersionMajor -eq 13 -and $server.Version -lt $sql2016min) {
-                    Stop-Function -Message "Unsupported version for $instance. SQL Server 2016 SP1 and above required." -Target $server -Continue
+                    Stop-Function -Message "Unsupported version for $instance. SQL Server 2014 SP2 + CU3 and above required." -Target $server -Continue
                 }
             }
 
-            if (Test-Bound -ParameterName 'ExcludeQueryStore') {
-                if ($server.VersionMajor -lt 13 - ($server.VersionMajor -eq 13 -and $server.Version -lt $sql2016min)) {
+            if ($ExcludeQueryStore) {
+                if ($server.VersionMajor -lt 13) {
                     Stop-Function -Message "Unsupported version for $instance. SQL Server 2016 SP1 and above required." -Target $server -Continue
                 }
             }
@@ -234,8 +232,12 @@ function Invoke-DbaDbClone {
                 Stop-Function -Message "Only user databases are supported" -Target $instance -Continue
             }
 
-            if ( (Test-Bound -ParameterName 'UpdateStatistics') -and (Test-Bound -ParameterName 'ExcludeStatistics' -Not) ) {
-                if ($Pscmdlet.ShouldProcess($instance, "Update statistics in $($db.Name)")) {
+            if ($UpdateStatistics -and -not $ExcludeStatistics) {
+                if ($server.VersionMajor -ge 15) {
+                    # Writing the statistics back with their row count changes the row count of the source tables
+                    # whose rows are in the delta store, and the optimizer of the source then estimates with it.
+                    Write-Message -Level Verbose -Message "Not updating statistics in $($db.Name), DBCC CLONEDATABASE captures the statistics of column store indexes itself starting with SQL Server 2019"
+                } elseif ($Pscmdlet.ShouldProcess($instance, "Update statistics in $($db.Name)")) {
                     try {
                         Write-Message -Level Verbose -Message "Updating statistics"
                         $null = $db.Invoke($sqlStats)
@@ -254,7 +256,9 @@ function Invoke-DbaDbClone {
                 } else {
                     if ($Pscmdlet.ShouldProcess($instance, "Execute DBCC CloneDatabase($dbName, $clonedb)")) {
                         try {
-                            $sql = "DBCC CLONEDATABASE('$dbName','$clonedb') $sqlWith"
+                            # Delimited identifiers keep every character of the names. A string literal would break
+                            # on a quote and lose the characters that the code page of the instance does not have.
+                            $sql = "DBCC CLONEDATABASE([$($dbName.Replace("]", "]]"))], [$($clonedb.Replace("]", "]]"))]) $sqlWith"
                             Write-Message -Level Debug -Message "Sql Statement: $sql"
                             $null = $db.Invoke($sql)
                             $server.Databases.Refresh()
