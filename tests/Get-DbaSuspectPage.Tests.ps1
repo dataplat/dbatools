@@ -37,10 +37,12 @@ Describe $CommandName -Tag IntegrationTests {
                 # Only a checksum makes the read of the corrupted page fail; model may carry another setting.
                 $null = $Server.Query("ALTER DATABASE [$dbname] SET PAGE_VERIFY CHECKSUM")
                 $db = Get-DbaDatabase -SqlInstance $Server -Database $dbname
+                # A unique name, passed to Invoke-DbaDbCorruption, so a table the database inherits from model is never the one corrupted.
+                $tableName = "dbatoolsci_SuspectPageTable"
 
                 $null = $db.Query("
-                CREATE TABLE dbo.[Example] (id int);
-                INSERT dbo.[Example]
+                CREATE TABLE dbo.[$tableName] (id int);
+                INSERT dbo.[$tableName]
                 SELECT top 1000 1
                 FROM sys.objects")
 
@@ -50,7 +52,12 @@ Describe $CommandName -Tag IntegrationTests {
                 # must neither be served from memory nor be written back over the corruption.
                 # Write the dirty pages of the table to disk first, so no later checkpoint overwrites the corruption.
                 $null = $db.Query("CHECKPOINT")
-                $null = Invoke-DbaDbCorruption -SqlInstance $TestConfig.InstanceSingle -Database $dbname
+                $splatCorruption = @{
+                    SqlInstance = $TestConfig.InstanceSingle
+                    Database    = $dbname
+                    Table       = $tableName
+                }
+                $null = Invoke-DbaDbCorruption @splatCorruption
                 # Taking the database offline drops its pages from the buffer pool, so the next read comes from disk.
                 # Set-DbaDbState reports a failed transition in Notes instead of throwing, so check both.
                 foreach ($transition in "Offline", "Online") {
@@ -69,7 +76,7 @@ Describe $CommandName -Tag IntegrationTests {
                 $splatReadCorruptedPage = @{
                     SqlInstance = $Server
                     Database    = $dbname
-                    Query       = "SELECT COUNT(*) FROM dbo.[Example]"
+                    Query       = "SELECT COUNT(*) FROM dbo.[$tableName]"
                 }
                 $readError = $null
                 try {
