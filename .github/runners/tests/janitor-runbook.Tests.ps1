@@ -258,7 +258,13 @@ Describe "janitor runner protection" {
         # stranger's event is first read when the activity times are collected, after
         # every lane is classified, and it cannot even be turned into a string.
         $unconvertible = [pscustomobject]@{ }
-        $unconvertible | Add-Member -MemberType ScriptMethod -Name ToString -Value { throw "unexpected failure" } -Force
+        $splatThrowingToString = @{
+            MemberType = "ScriptMethod"
+            Name       = "ToString"
+            Value      = { throw "unexpected failure" }
+            Force      = $true
+        }
+        $unconvertible | Add-Member @splatThrowingToString
         $script:Events = @(
             [pscustomobject]@{
                 actor      = [pscustomobject]@{ login = "a-stranger" }
@@ -330,6 +336,58 @@ Describe "janitor runner protection" {
 
         $mode | Should -Be "activity-unknown"
         $runnerMaxHours | Should -BeIn @(3, 13)
+        $script:RemovedVms | Should -BeNullOrEmpty
+    }
+
+    It "does not read a date-only timestamp as midnight" {
+        # Read as midnight, today's completed run would look expired and the lane stale.
+        $script:Runs = @(
+            [pscustomobject]@{
+                actor         = [pscustomobject]@{ login = "niphlod" }
+                display_title = "ci-azure"
+                event         = "pull_request"
+                status        = "completed"
+                updated_at    = $script:Now.ToString("yyyy-MM-dd")
+            }
+        )
+        $script:Vms = @(1..10 | ForEach-Object {
+                [pscustomobject]@{
+                    Name        = "dbatools-runners_niph-$PSItem"
+                    TimeCreated = $script:Now.AddHours(-2)
+                    Tags        = @{ runnerPool = "niphlod" }
+                }
+            })
+
+        . $script:JanitorPath 3>$null | Out-Null
+
+        $mode | Should -Be "activity-unknown"
+        $script:RemovedVms | Should -BeNullOrEmpty
+    }
+
+    It "treats a [do ci] candidate push as unknown when <Case>" -ForEach @(
+        @{ Case = "the commit comes back without a message"; Payload = @{ head = "nomessage" }; Messages = @{ "nomessage" = $null } }
+        @{ Case = "the push has no head SHA"; Payload = @{ ref = "refs/heads/feature" }; Messages = @{ } }
+    ) {
+        $script:Events = @(
+            [pscustomobject]@{
+                actor      = [pscustomobject]@{ login = "potatoqualitee" }
+                type       = "PushEvent"
+                created_at = $script:Now.AddMinutes(-5).ToString("o")
+                payload    = [pscustomobject]$Payload
+            }
+        )
+        $script:CommitMessages = $Messages
+        $script:Vms = @(1..10 | ForEach-Object {
+                [pscustomobject]@{
+                    Name        = "dbatools-runners_potato-$PSItem"
+                    TimeCreated = $script:Now.AddHours(-2)
+                    Tags        = @{ runnerPool = "potatoqualitee" }
+                }
+            })
+
+        . $script:JanitorPath 3>$null | Out-Null
+
+        $mode | Should -Be "activity-unknown"
         $script:RemovedVms | Should -BeNullOrEmpty
     }
 
@@ -653,6 +711,10 @@ Describe "janitor against the live GitHub API" {
         $events.Count | Should -BeGreaterThan 1
         $parsed = @($events | ForEach-Object { ConvertTo-JanitorUtc -Value $PSItem.created_at } | Where-Object { $null -ne $PSItem -and $PSItem -gt $utcNow.AddDays(-120) -and $PSItem -le $utcNow.AddMinutes(5) })
         $parsed.Count | Should -Be $events.Count
+        $workflowRuns = @($runResponse.workflow_runs)
+        $workflowRuns.Count | Should -BeGreaterThan 1
+        $parsedRuns = @($workflowRuns | ForEach-Object { ConvertTo-JanitorUtc -Value $PSItem.updated_at } | Where-Object { $null -ne $PSItem -and $PSItem -gt $utcNow.AddDays(-365) -and $PSItem -le $utcNow.AddMinutes(5) })
+        $parsedRuns.Count | Should -Be $workflowRuns.Count
         $script:RemovedVms | Should -BeNullOrEmpty
     }
 

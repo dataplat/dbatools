@@ -74,16 +74,21 @@ $activityUnknown = $false
 # day-first culture rejects after the 12th of a month, so neither form is reparsed
 # with the culture of the worker. An unreadable timestamp returns $null: the activity
 # behind it is unknown, which must neither fail the whole check (dropping the lanes a
-# live run proves) nor count as expired (the 1h stale cap).
+# live run proves) nor count as expired (the 1h stale cap). Only a complete ISO 8601
+# timestamp is read: a bare date would parse as midnight and look expired.
 function ConvertTo-JanitorUtc {
     param($Value)
 
     if ($Value -is [datetime]) {
         return $Value.ToUniversalTime()
     }
+    $formats = [string[]]@(
+        "yyyy-MM-ddTHH:mm:ssK",
+        "yyyy-MM-ddTHH:mm:ss.FFFFFFFK"
+    )
     $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
     $parsed = [datetime]::MinValue
-    if ([datetime]::TryParse([string]$Value, [System.Globalization.CultureInfo]::InvariantCulture, $styles, [ref]$parsed)) {
+    if ([datetime]::TryParseExact([string]$Value, $formats, [System.Globalization.CultureInfo]::InvariantCulture, $styles, [ref]$parsed)) {
         return $parsed
     }
     Write-Warning "unreadable GitHub timestamp '$Value'; the activity behind it is unknown"
@@ -132,16 +137,22 @@ function Get-JanitorPushMessage {
     # message comes from the commit itself. A push that cannot be read returns $null:
     # its activity is unknown, which must neither fail the whole check (dropping the
     # protection of every other lane) nor count as no activity (the 1h stale cap).
-    if ($head) {
-        try {
-            $commit = Invoke-GitHubGet -Uri "https://api.github.com/repos/$repo/commits/$head"
-            return [string]$commit.commit.message
-        } catch {
-            Write-Warning "commit lookup for push $head failed; its activity is unknown. $($PSItem.Exception.Message)"
-            return $null
-        }
+    if (-not $head) {
+        Write-Warning "push event without a head SHA; its activity is unknown"
+        return $null
     }
-    return ""
+    try {
+        $commit = Invoke-GitHubGet -Uri "https://api.github.com/repos/$repo/commits/$head"
+    } catch {
+        Write-Warning "commit lookup for push $head failed; its activity is unknown. $($PSItem.Exception.Message)"
+        return $null
+    }
+    $message = $commit.commit.message
+    if ($null -eq $message) {
+        Write-Warning "commit $head came back without a message; its activity is unknown"
+        return $null
+    }
+    return [string]$message
 }
 
 function Get-JanitorRunActor {
