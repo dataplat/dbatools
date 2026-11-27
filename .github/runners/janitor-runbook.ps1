@@ -110,6 +110,13 @@ function Get-JanitorPushMessage {
     if ($headCommit) {
         return [string]$headCommit[0].message
     }
+    # The events API no longer lists the commits of a push, only its head SHA, so the
+    # message comes from the commit itself. A failed lookup aborts the activity check
+    # into the age-cap fallback rather than declaring the lane stale.
+    if ($head) {
+        $commit = Invoke-GitHubGet -Uri "https://api.github.com/repos/$repo/commits/$head"
+        return [string]$commit.commit.message
+    }
     return ""
 }
 
