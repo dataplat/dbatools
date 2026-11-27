@@ -23,6 +23,10 @@
       - GITHUB UNREACHABLE: we cannot know activity, so conservative age caps
         apply to all capacity -- 3 hours on nights and weekends, 13 hours on
         weekday daytime (06-17 UTC).
+      - ACTIVITY UNKNOWN: no lane is proven active, but a push whose commit
+        could not be read, or an eligible event or completed run whose timestamp
+        could not be read, may be recent; the conservative caps of GITHUB
+        UNREACHABLE apply instead of the 1-hour stale cap.
 
     Always, regardless of mode:
       - ps3smoke-* VMs older than 2 hours are deleted (nightly job caps at 55m).
@@ -62,18 +66,63 @@ $lastActivityAgeHours = $null
 $activeMaintainers = @( )
 $liveMaintainers = @( )
 $communityActive = $false
+$communityLive = $false
+$activityUnknown = $false
+
+# PowerShell 7 hands the GitHub timestamps over as DateTime, PowerShell 5.1 as ISO
+# strings. Reparsing a DateTime goes through its culture-formatted string, which a
+# day-first culture rejects after the 12th of a month, so neither form is reparsed
+# with the culture of the worker. An unreadable timestamp returns $null: the activity
+# behind it is unknown, which must neither fail the whole check (dropping the lanes a
+# live run proves) nor count as expired (the 1h stale cap). Only a complete ISO 8601
+# timestamp with an explicit zone is read: a bare date would parse as midnight, and a
+# time without a zone is local as a DateTime but UTC as a string, so either can make
+# recent activity look expired.
+function ConvertTo-JanitorUtc {
+    param($Value)
+
+    if ($Value -is [datetime]) {
+        if ($Value.Kind -eq [DateTimeKind]::Unspecified) {
+            Write-Warning "GitHub timestamp '$($Value.ToString("o"))' carries no zone; the activity behind it is unknown"
+            return $null
+        }
+        return $Value.ToUniversalTime()
+    }
+    $formats = [string[]]@(
+        "yyyy-MM-ddTHH:mm:ss'Z'",
+        "yyyy-MM-ddTHH:mm:ss.FFFFFFF'Z'",
+        "yyyy-MM-ddTHH:mm:sszzz",
+        "yyyy-MM-ddTHH:mm:ss.FFFFFFFzzz"
+    )
+    $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
+    $parsed = [datetime]::MinValue
+    if ([datetime]::TryParseExact([string]$Value, $formats, [System.Globalization.CultureInfo]::InvariantCulture, $styles, [ref]$parsed)) {
+        return $parsed
+    }
+    Write-Warning "unreadable GitHub timestamp '$Value'; the activity behind it is unknown"
+    return $null
+}
 
 function Invoke-GitHubGet {
     param([Parameter(Mandatory)][string]$Uri)
 
+    $headers = @{ "User-Agent" = "dbatools-ci-janitor" }
+    # Automation calls anonymously; a GitHub Actions run of the tests passes its token
+    # so the shared runner IP does not hit the anonymous rate limit.
+    if ($env:GITHUB_TOKEN) {
+        $headers["Authorization"] = "Bearer $env:GITHUB_TOKEN"
+    }
     $splatRequest = @{
         Uri        = $Uri
-        Headers    = @{ "User-Agent" = "dbatools-ci-janitor" }
+        Headers    = $headers
         TimeoutSec = 30
     }
     foreach ($attempt in 1..3) {
         try {
-            return Invoke-RestMethod @splatRequest
+            # Invoke-RestMethod emits a top-level JSON array (the events feed) as a
+            # single Object[]; returning it from a variable unrolls it into its items.
+            $response = Invoke-RestMethod @splatRequest
+            return $response
         } catch {
             if ($attempt -eq 3) {
                 throw
@@ -87,12 +136,32 @@ function Invoke-GitHubGet {
 function Get-JanitorPushMessage {
     param([Parameter(Mandatory)]$ActivityEvent)
 
+    # A push that cannot be read returns $null: its activity is unknown, which must
+    # neither fail the whole check (dropping the protection of every other lane) nor
+    # count as no activity (the 1h stale cap).
     $head = [string]$ActivityEvent.payload.head
+    if (-not $head) {
+        Write-Warning "push event without a head SHA; its activity is unknown"
+        return $null
+    }
     $headCommit = @($ActivityEvent.payload.commits | Where-Object { [string]$PSItem.sha -eq $head } | Select-Object -First 1)
-    if ($headCommit) {
+    if ($headCommit -and $null -ne $headCommit[0].message) {
         return [string]$headCommit[0].message
     }
-    return ""
+    # The events API no longer lists the commits of a push, only its head SHA, and a
+    # listed head commit may lack its message, so the message comes from the commit.
+    try {
+        $commit = Invoke-GitHubGet -Uri "https://api.github.com/repos/$repo/commits/$head"
+    } catch {
+        Write-Warning "commit lookup for push $head failed; its activity is unknown. $($PSItem.Exception.Message)"
+        return $null
+    }
+    $message = $commit.commit.message
+    if ($null -eq $message) {
+        Write-Warning "commit $head came back without a message; its activity is unknown"
+        return $null
+    }
+    return [string]$message
 }
 
 function Get-JanitorRunActor {
@@ -122,21 +191,32 @@ function Test-JanitorMaintainerEvent {
         [Parameter(Mandatory)][datetime]$Cutoff
     )
 
-    if ([string]$ActivityEvent.actor.login -ne $Maintainer -or
-        ([datetime]::Parse($ActivityEvent.created_at)).ToUniversalTime() -le $Cutoff) {
+    if ([string]$ActivityEvent.actor.login -ne $Maintainer) {
+        return $false
+    }
+    $createdAt = ConvertTo-JanitorUtc -Value $ActivityEvent.created_at
+    if ($null -ne $createdAt -and $createdAt -le $Cutoff) {
         return $false
     }
     if ([string]$ActivityEvent.type -eq "PullRequestEvent") {
-        return [string]$ActivityEvent.payload.action -in @("opened", "reopened", "synchronize")
-    }
-    if ([string]$ActivityEvent.type -ne "PushEvent") {
+        $qualifies = [string]$ActivityEvent.payload.action -in @("opened", "reopened", "synchronize")
+    } elseif ([string]$ActivityEvent.type -ne "PushEvent") {
         return $false
+    } elseif ($Maintainer -ne "potatoqualitee") {
+        $qualifies = $true
+    } else {
+        $message = Get-JanitorPushMessage -ActivityEvent $ActivityEvent
+        if ($null -eq $message) {
+            # unknown: the caller tells this $null apart from $false
+            return $null
+        }
+        $qualifies = $message.IndexOf($ciMarker, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
     }
-    if ($Maintainer -ne "potatoqualitee") {
-        return $true
+    if ($qualifies -and $null -eq $createdAt) {
+        # an eligible event that cannot be dated may be recent
+        return $null
     }
-    $message = Get-JanitorPushMessage -ActivityEvent $ActivityEvent
-    return $message.IndexOf($ciMarker, [System.StringComparison]::OrdinalIgnoreCase) -ge 0
+    return $qualifies
 }
 
 try {
@@ -148,15 +228,34 @@ try {
     $communityCutoff = $utcNow.AddMinutes(-$communityGraceMinutes)
 
     foreach ($maintainer in $maintainers) {
-        $recentActivity = @($events | Where-Object {
-                Test-JanitorMaintainerEvent -ActivityEvent $PSItem -Maintainer $maintainer -Cutoff $maintainerCutoff
-            }).Count -gt 0
         $liveCi = @($liveRuns | Where-Object { (Get-JanitorRunActor -Run $PSItem) -eq $maintainer }).Count -gt 0
-        $recentlyCompletedCi = @($runs | Where-Object {
-                (Get-JanitorRunActor -Run $PSItem) -eq $maintainer -and
-                [string]$PSItem.status -eq "completed" -and
-                ([datetime]::Parse($PSItem.updated_at)).ToUniversalTime() -gt $maintainerCutoff
-            }).Count -gt 0
+        $recentlyCompletedCi = $false
+        foreach ($run in $runs) {
+            if ((Get-JanitorRunActor -Run $run) -ne $maintainer -or [string]$run.status -ne "completed") {
+                continue
+            }
+            $updatedAt = ConvertTo-JanitorUtc -Value $run.updated_at
+            if ($null -eq $updatedAt) {
+                $activityUnknown = $true
+            } elseif ($updatedAt -gt $maintainerCutoff) {
+                $recentlyCompletedCi = $true
+            }
+        }
+        # Pushes only matter when no run proves the lane active, and the first one that
+        # qualifies is enough: each push of the marker maintainer costs a commit lookup.
+        $recentActivity = $false
+        if (-not ($liveCi -or $recentlyCompletedCi)) {
+            foreach ($activityEvent in $events) {
+                $qualifies = Test-JanitorMaintainerEvent -ActivityEvent $activityEvent -Maintainer $maintainer -Cutoff $maintainerCutoff
+                if ($qualifies) {
+                    $recentActivity = $true
+                    break
+                }
+                if ($null -eq $qualifies) {
+                    $activityUnknown = $true
+                }
+            }
+        }
         if ($liveCi) {
             $liveMaintainers += $maintainer
         }
@@ -168,16 +267,24 @@ try {
     $communityLive = @($liveRuns | Where-Object {
             (Get-JanitorRunActor -Run $PSItem) -notin $maintainers
         }).Count -gt 0
-    $communityRecent = @($runs | Where-Object {
-            (Get-JanitorRunActor -Run $PSItem) -notin $maintainers -and
-            [string]$PSItem.status -eq "completed" -and
-            ([datetime]::Parse($PSItem.updated_at)).ToUniversalTime() -gt $communityCutoff
-        }).Count -gt 0
+    $communityRecent = $false
+    foreach ($run in $runs) {
+        if ((Get-JanitorRunActor -Run $run) -in $maintainers -or [string]$run.status -ne "completed") {
+            continue
+        }
+        $updatedAt = ConvertTo-JanitorUtc -Value $run.updated_at
+        if ($null -eq $updatedAt) {
+            $activityUnknown = $true
+        } elseif ($updatedAt -gt $communityCutoff) {
+            $communityRecent = $true
+        }
+    }
     $communityActive = $communityLive -or $communityRecent
 
+    # only for the stale log line; an unreadable timestamp is left out
     $activityTimes = @(
-        $events | ForEach-Object { ([datetime]::Parse($PSItem.created_at)).ToUniversalTime() }
-        $runs | ForEach-Object { ([datetime]::Parse($PSItem.updated_at)).ToUniversalTime() }
+        $events | ForEach-Object { ConvertTo-JanitorUtc -Value $PSItem.created_at } | Where-Object { $null -ne $PSItem }
+        $runs | ForEach-Object { ConvertTo-JanitorUtc -Value $PSItem.updated_at } | Where-Object { $null -ne $PSItem }
     )
     if ($activityTimes) {
         $lastActivity = @($activityTimes | Sort-Object -Descending)[0]
@@ -185,11 +292,24 @@ try {
     }
     if ($activeMaintainers.Count -gt 0 -or $communityActive) {
         $mode = "active"
+    } elseif ($activityUnknown) {
+        # a push, event or run that may be recent could not be read; with no lane
+        # proven active, the conservative caps apply instead of the 1h stale cap
+        $mode = "activity-unknown"
     } else {
         $mode = "stale"
     }
 } catch {
     Write-Warning "GitHub activity check failed ($($PSItem.Exception.Message)) -- falling back to age caps"
+    # A check that failed partway has already filled in some lanes. Protecting them
+    # would exempt every runner from the age caps, the opposite of this fallback.
+    # The caps outlast the longest legitimate runner life (~2.6h), so a runner that
+    # still serves a job survives them.
+    $mode = "github-unreachable"
+    $activeMaintainers = @( )
+    $liveMaintainers = @( )
+    $communityActive = $false
+    $communityLive = $false
 }
 
 # An active maintainer lane has a fixed ten-runner pool through the 20-minute completion
@@ -234,7 +354,7 @@ switch ($mode) {
         } else {
             $runnerMaxHours = 3
         }
-        Write-Output "mode=github-unreachable: conservative age cap ${runnerMaxHours}h"
+        Write-Output "mode=${mode}: conservative age cap ${runnerMaxHours}h"
     }
 }
 
