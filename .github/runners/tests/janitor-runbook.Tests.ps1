@@ -253,6 +253,109 @@ Describe "janitor runner protection" {
         @($script:RemovedVms | Where-Object { $PSItem -like "*community*" }).Count | Should -Be 5
     }
 
+    It "drops the lanes it marked when the check fails after classifying them" {
+        # The live runs mark andreasjordan and community active. The created_at of a
+        # stranger's event is first read when the activity times are collected, after
+        # every lane is classified, and it cannot even be turned into a string.
+        $unconvertible = [pscustomobject]@{ }
+        $unconvertible | Add-Member -MemberType ScriptMethod -Name ToString -Value { throw "unexpected failure" } -Force
+        $script:Events = @(
+            [pscustomobject]@{
+                actor      = [pscustomobject]@{ login = "a-stranger" }
+                type       = "WatchEvent"
+                created_at = $unconvertible
+                payload    = [pscustomobject]@{ }
+            }
+        )
+        $script:Runs = @(
+            [pscustomobject]@{
+                actor         = [pscustomobject]@{ login = "andreasjordan" }
+                display_title = "ci-azure"
+                event         = "pull_request"
+                status        = "in_progress"
+                updated_at    = $script:Now.ToString("o")
+            }
+            [pscustomobject]@{
+                actor         = [pscustomobject]@{ login = "a-contributor" }
+                display_title = "ci-azure"
+                event         = "pull_request"
+                status        = "in_progress"
+                updated_at    = $script:Now.ToString("o")
+            }
+        )
+        $andreasVms = @(1..10 | ForEach-Object {
+                [pscustomobject]@{
+                    Name        = "dbatools-runners_andreas-$PSItem"
+                    TimeCreated = $script:Now.AddHours(-14)
+                    Tags        = @{ runnerPool = "andreasjordan" }
+                }
+            })
+        $communityVms = @(1..5 | ForEach-Object {
+                [pscustomobject]@{
+                    Name        = "dbatools-runners_community-$PSItem"
+                    TimeCreated = $script:Now.AddHours(-14)
+                    Tags        = @{ runnerPool = "community" }
+                }
+            })
+        $script:Vms = @($andreasVms + $communityVms)
+
+        $warnings = . $script:JanitorPath 3>&1 | Where-Object { $PSItem -is [System.Management.Automation.WarningRecord] }
+
+        @($warnings | Where-Object { $PSItem.Message -like "GitHub activity check failed*" }).Count | Should -Be 1
+        $mode | Should -Be "github-unreachable"
+        @($script:RemovedVms | Where-Object { $PSItem -like "*andreas*" }).Count | Should -Be 10
+        @($script:RemovedVms | Where-Object { $PSItem -like "*community*" }).Count | Should -Be 5
+    }
+
+    It "applies the conservative caps when an unreadable completed run is the only possible activity" {
+        # The runners are 2h old: past the 1h stale cap, within the 3h and 13h caps.
+        $script:Runs = @(
+            [pscustomobject]@{
+                actor         = [pscustomobject]@{ login = "niphlod" }
+                display_title = "ci-azure"
+                event         = "pull_request"
+                status        = "completed"
+                updated_at    = "not a timestamp"
+            }
+        )
+        $script:Vms = @(1..10 | ForEach-Object {
+                [pscustomobject]@{
+                    Name        = "dbatools-runners_niph-$PSItem"
+                    TimeCreated = $script:Now.AddHours(-2)
+                    Tags        = @{ runnerPool = "niphlod" }
+                }
+            })
+
+        . $script:JanitorPath 3>$null | Out-Null
+
+        $mode | Should -Be "activity-unknown"
+        $runnerMaxHours | Should -BeIn @(3, 13)
+        $script:RemovedVms | Should -BeNullOrEmpty
+    }
+
+    It "applies the conservative caps when an undatable push is the only possible activity" {
+        $script:Events = @(
+            [pscustomobject]@{
+                actor      = [pscustomobject]@{ login = "niphlod" }
+                type       = "PushEvent"
+                created_at = "not a timestamp"
+                payload    = [pscustomobject]@{ head = "abc" }
+            }
+        )
+        $script:Vms = @(1..10 | ForEach-Object {
+                [pscustomobject]@{
+                    Name        = "dbatools-runners_niph-$PSItem"
+                    TimeCreated = $script:Now.AddHours(-2)
+                    Tags        = @{ runnerPool = "niphlod" }
+                }
+            })
+
+        . $script:JanitorPath 3>$null | Out-Null
+
+        $mode | Should -Be "activity-unknown"
+        $script:RemovedVms | Should -BeNullOrEmpty
+    }
+
     It "reads DateTime timestamps under a day-first culture" {
         # PowerShell 7 delivers the GitHub timestamps as DateTime; the 13th fails a
         # culture-bound reparse in en-GB. The clock is frozen on the 13th so the recent
@@ -548,7 +651,8 @@ Describe "janitor against the live GitHub API" {
         @($warnings | Where-Object { $PSItem.Message -like "GitHub activity check failed*" }) | Should -BeNullOrEmpty
         $mode | Should -BeIn @("active", "stale")
         $events.Count | Should -BeGreaterThan 1
-        @($events | ForEach-Object { ConvertTo-JanitorUtc -Value $PSItem.created_at }).Count | Should -Be $events.Count
+        $parsed = @($events | ForEach-Object { ConvertTo-JanitorUtc -Value $PSItem.created_at } | Where-Object { $null -ne $PSItem -and $PSItem -gt $utcNow.AddDays(-120) -and $PSItem -le $utcNow.AddMinutes(5) })
+        $parsed.Count | Should -Be $events.Count
         $script:RemovedVms | Should -BeNullOrEmpty
     }
 
