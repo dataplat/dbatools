@@ -62,6 +62,21 @@ $lastActivityAgeHours = $null
 $activeMaintainers = @( )
 $liveMaintainers = @( )
 $communityActive = $false
+$communityLive = $false
+
+# PowerShell 7 hands the GitHub timestamps over as DateTime, PowerShell 5.1 as ISO
+# strings. Reparsing a DateTime goes through its culture-formatted string, which a
+# day-first culture rejects after the 12th of a month, so neither form is reparsed
+# with the culture of the worker.
+function ConvertTo-JanitorUtc {
+    param([Parameter(Mandatory)]$Value)
+
+    if ($Value -is [datetime]) {
+        return $Value.ToUniversalTime()
+    }
+    $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
+    return [datetime]::Parse([string]$Value, [System.Globalization.CultureInfo]::InvariantCulture, $styles)
+}
 
 function Invoke-GitHubGet {
     param([Parameter(Mandatory)][string]$Uri)
@@ -123,7 +138,7 @@ function Test-JanitorMaintainerEvent {
     )
 
     if ([string]$ActivityEvent.actor.login -ne $Maintainer -or
-        ([datetime]::Parse($ActivityEvent.created_at)).ToUniversalTime() -le $Cutoff) {
+        (ConvertTo-JanitorUtc -Value $ActivityEvent.created_at) -le $Cutoff) {
         return $false
     }
     if ([string]$ActivityEvent.type -eq "PullRequestEvent") {
@@ -155,7 +170,7 @@ try {
         $recentlyCompletedCi = @($runs | Where-Object {
                 (Get-JanitorRunActor -Run $PSItem) -eq $maintainer -and
                 [string]$PSItem.status -eq "completed" -and
-                ([datetime]::Parse($PSItem.updated_at)).ToUniversalTime() -gt $maintainerCutoff
+                (ConvertTo-JanitorUtc -Value $PSItem.updated_at) -gt $maintainerCutoff
             }).Count -gt 0
         if ($liveCi) {
             $liveMaintainers += $maintainer
@@ -171,13 +186,13 @@ try {
     $communityRecent = @($runs | Where-Object {
             (Get-JanitorRunActor -Run $PSItem) -notin $maintainers -and
             [string]$PSItem.status -eq "completed" -and
-            ([datetime]::Parse($PSItem.updated_at)).ToUniversalTime() -gt $communityCutoff
+            (ConvertTo-JanitorUtc -Value $PSItem.updated_at) -gt $communityCutoff
         }).Count -gt 0
     $communityActive = $communityLive -or $communityRecent
 
     $activityTimes = @(
-        $events | ForEach-Object { ([datetime]::Parse($PSItem.created_at)).ToUniversalTime() }
-        $runs | ForEach-Object { ([datetime]::Parse($PSItem.updated_at)).ToUniversalTime() }
+        $events | ForEach-Object { ConvertTo-JanitorUtc -Value $PSItem.created_at }
+        $runs | ForEach-Object { ConvertTo-JanitorUtc -Value $PSItem.updated_at }
     )
     if ($activityTimes) {
         $lastActivity = @($activityTimes | Sort-Object -Descending)[0]
@@ -190,6 +205,13 @@ try {
     }
 } catch {
     Write-Warning "GitHub activity check failed ($($PSItem.Exception.Message)) -- falling back to age caps"
+    # A check that failed partway has already filled in some lanes. Protecting them
+    # would exempt every runner from the age caps, the opposite of this fallback.
+    $mode = "github-unreachable"
+    $activeMaintainers = @( )
+    $liveMaintainers = @( )
+    $communityActive = $false
+    $communityLive = $false
 }
 
 # An active maintainer lane has a fixed ten-runner pool through the 20-minute completion

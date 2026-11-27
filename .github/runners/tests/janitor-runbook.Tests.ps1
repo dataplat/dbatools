@@ -146,6 +146,79 @@ Describe "janitor runner protection" {
         $script:RemovedVms | Should -BeNullOrEmpty
     }
 
+    It "protects no lane when the activity check fails after it marked one active" {
+        # The live run marks andreasjordan active before the unreadable timestamp of the
+        # second run aborts the check; the runners are past every fallback age cap.
+        $script:Runs = @(
+            [pscustomobject]@{
+                actor         = [pscustomobject]@{ login = "andreasjordan" }
+                display_title = "ci-azure"
+                event         = "pull_request"
+                status        = "in_progress"
+                updated_at    = $script:Now.ToString("o")
+            }
+            [pscustomobject]@{
+                actor         = [pscustomobject]@{ login = "niphlod" }
+                display_title = "ci-azure"
+                event         = "pull_request"
+                status        = "in_progress"
+                updated_at    = "not a timestamp"
+            }
+        )
+        $script:Vms = @(1..10 | ForEach-Object {
+                [pscustomobject]@{
+                    Name        = "dbatools-runners_andreas-$PSItem"
+                    TimeCreated = $script:Now.AddHours(-14)
+                    Tags        = @{ runnerPool = "andreasjordan" }
+                }
+            })
+
+        . $script:JanitorPath 3>$null | Out-Null
+
+        $mode | Should -Be "github-unreachable"
+        @($script:RemovedVms).Count | Should -Be 10
+    }
+
+    It "reads DateTime timestamps under a day-first culture" {
+        # PowerShell 7 delivers the GitHub timestamps as DateTime; the 13th fails a
+        # culture-bound reparse in en-GB.
+        $script:Events = @(
+            [pscustomobject]@{
+                actor      = [pscustomobject]@{ login = "niphlod" }
+                type       = "PushEvent"
+                created_at = [datetime]::SpecifyKind([datetime]"2026-11-13T03:40:00", [DateTimeKind]::Utc)
+                payload    = [pscustomobject]@{ head = "abc"; commits = @() }
+            }
+        )
+        $script:Runs = @(
+            [pscustomobject]@{
+                actor         = [pscustomobject]@{ login = "andreasjordan" }
+                display_title = "ci-azure"
+                event         = "pull_request"
+                status        = "in_progress"
+                updated_at    = $script:Now
+            }
+        )
+        $script:Vms = @(1..10 | ForEach-Object {
+                [pscustomobject]@{
+                    Name        = "dbatools-runners_andreas-$PSItem"
+                    TimeCreated = $script:Now.AddHours(-6)
+                    Tags        = @{ runnerPool = "andreasjordan" }
+                }
+            })
+
+        $originalCulture = [System.Threading.Thread]::CurrentThread.CurrentCulture
+        try {
+            [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]::GetCultureInfo("en-GB")
+            . $script:JanitorPath | Out-Null
+        } finally {
+            [System.Threading.Thread]::CurrentThread.CurrentCulture = $originalCulture
+        }
+
+        $mode | Should -Be "active"
+        $script:RemovedVms | Should -BeNullOrEmpty
+    }
+
     It "deletes only orphaned networking older than the provisioning grace period" {
         $oldNicId = "/subscriptions/test/resourceGroups/dbatools-ci/providers/Microsoft.Network/networkInterfaces/old-Nic-1"
         $youngNicId = "/subscriptions/test/resourceGroups/dbatools-ci/providers/Microsoft.Network/networkInterfaces/young-Nic-1"
