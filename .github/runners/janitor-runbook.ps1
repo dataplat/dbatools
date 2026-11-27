@@ -246,7 +246,12 @@ try {
         $recentActivity = $false
         if (-not ($liveCi -or $recentlyCompletedCi)) {
             foreach ($activityEvent in $events) {
-                $qualifies = Test-JanitorMaintainerEvent -ActivityEvent $activityEvent -Maintainer $maintainer -Cutoff $maintainerCutoff
+                $splatMaintainerEvent = @{
+                    ActivityEvent = $activityEvent
+                    Maintainer    = $maintainer
+                    Cutoff        = $maintainerCutoff
+                }
+                $qualifies = Test-JanitorMaintainerEvent @splatMaintainerEvent
                 if ($qualifies) {
                     $recentActivity = $true
                     break
@@ -281,15 +286,6 @@ try {
     }
     $communityActive = $communityLive -or $communityRecent
 
-    # only for the stale log line; an unreadable timestamp is left out
-    $activityTimes = @(
-        $events | ForEach-Object { ConvertTo-JanitorUtc -Value $PSItem.created_at } | Where-Object { $null -ne $PSItem }
-        $runs | ForEach-Object { ConvertTo-JanitorUtc -Value $PSItem.updated_at } | Where-Object { $null -ne $PSItem }
-    )
-    if ($activityTimes) {
-        $lastActivity = @($activityTimes | Sort-Object -Descending)[0]
-        $lastActivityAgeHours = ($utcNow - $lastActivity).TotalHours
-    }
     if ($activeMaintainers.Count -gt 0 -or $communityActive) {
         $mode = "active"
     } elseif ($activityUnknown) {
@@ -341,8 +337,20 @@ switch ($mode) {
     "stale" {
         $runnerMaxHours = 1
         $ageText = "not in the latest activity window"
-        if ($null -ne $lastActivityAgeHours) {
-            $ageText = "$([math]::Round($lastActivityAgeHours, 1))h ago"
+        # Only for the log line, so a failure here must not reach the activity check;
+        # an unreadable timestamp is left out.
+        try {
+            $activityTimes = @(
+                $events | ForEach-Object { ConvertTo-JanitorUtc -Value $PSItem.created_at } | Where-Object { $null -ne $PSItem }
+                $runs | ForEach-Object { ConvertTo-JanitorUtc -Value $PSItem.updated_at } | Where-Object { $null -ne $PSItem }
+            )
+            if ($activityTimes) {
+                $lastActivity = @($activityTimes | Sort-Object -Descending)[0]
+                $lastActivityAgeHours = ($utcNow - $lastActivity).TotalHours
+                $ageText = "$([math]::Round($lastActivityAgeHours, 1))h ago"
+            }
+        } catch {
+            Write-Warning "could not date the last activity for the log: $($PSItem.Exception.Message)"
         }
         Write-Output "mode=stale: last activity $ageText -- no capacity preserved; runners past ${runnerMaxHours}h die"
     }
