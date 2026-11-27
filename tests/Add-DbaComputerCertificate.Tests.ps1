@@ -248,13 +248,60 @@ Describe $CommandName -Tag IntegrationTests {
                 "$env:APPDATA\Microsoft\Crypto\Keys"
             )
             $newKeyFiles = @(Get-ChildItem -Path $keyFolders -File -Force -Recurse -ErrorAction SilentlyContinue | Where-Object { $PSItem.LastWriteTime -ge $beforeAdd -and $PSItem.LastWriteTime -le $afterAdd })
-            $usedKeyNames = foreach ($storeCert in (Get-ChildItem -Path Cert:\LocalMachine, Cert:\CurrentUser -Recurse -ErrorAction SilentlyContinue | Where-Object { $PSItem -is [System.Security.Cryptography.X509Certificates.X509Certificate2] -and $PSItem.HasPrivateKey })) {
-                try {
-                    [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($storeCert).Key.UniqueName
-                } catch {
-                    # A key that cannot be opened is no key file of this test.
-                    $null = 1
+
+            # The key of every certificate is opened without any user interface, the same way GetRSAPrivateKey opens it, only
+            # silent. A key that would ask the user for something, such as for the PIN of a smart card that Remote Desktop
+            # forwards into the session, gives no name instead of waiting for an answer that never comes in an unattended run.
+            # Such a key never lives in the folders above, and neither does a key that cannot be opened at all.
+            if (-not ("AddDbaComputerCertificateTest.SilentKey" -as [type])) {
+                Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+
+namespace AddDbaComputerCertificateTest {
+    public static class SilentKey {
+        [DllImport("crypt32.dll", SetLastError = true)]
+        private static extern bool CryptAcquireCertificatePrivateKey(IntPtr pCert, uint dwFlags, IntPtr pvParameters, out IntPtr phCryptProvOrNCryptKey, out uint pdwKeySpec, out bool pfCallerFreeProvOrNCryptKey);
+
+        [DllImport("ncrypt.dll", CharSet = CharSet.Unicode)]
+        private static extern int NCryptGetProperty(IntPtr hObject, string pszProperty, byte[] pbOutput, int cbOutput, out int pcbResult, int dwFlags);
+
+        [DllImport("ncrypt.dll")]
+        private static extern int NCryptFreeObject(IntPtr hObject);
+
+        private const uint CRYPT_ACQUIRE_SILENT_FLAG = 0x40;
+        private const uint CRYPT_ACQUIRE_ONLY_NCRYPT_KEY_FLAG = 0x40000;
+        private const int NCRYPT_SILENT_FLAG = 0x40;
+
+        public static string GetUniqueName(IntPtr certificateContext) {
+            IntPtr key;
+            uint keySpec;
+            bool callerFree;
+            if (!CryptAcquireCertificatePrivateKey(certificateContext, CRYPT_ACQUIRE_SILENT_FLAG | CRYPT_ACQUIRE_ONLY_NCRYPT_KEY_FLAG, IntPtr.Zero, out key, out keySpec, out callerFree)) {
+                return null;
+            }
+            try {
+                int size;
+                if (NCryptGetProperty(key, "Unique Name", null, 0, out size, NCRYPT_SILENT_FLAG) != 0) {
+                    return null;
                 }
+                byte[] buffer = new byte[size];
+                if (NCryptGetProperty(key, "Unique Name", buffer, size, out size, NCRYPT_SILENT_FLAG) != 0) {
+                    return null;
+                }
+                return System.Text.Encoding.Unicode.GetString(buffer, 0, size).TrimEnd(new char[] { (char)0 });
+            } finally {
+                if (callerFree) {
+                    NCryptFreeObject(key);
+                }
+            }
+        }
+    }
+}
+"@
+            }
+            $usedKeyNames = foreach ($storeCert in (Get-ChildItem -Path Cert:\LocalMachine, Cert:\CurrentUser -Recurse -ErrorAction SilentlyContinue | Where-Object { $PSItem -is [System.Security.Cryptography.X509Certificates.X509Certificate2] -and $PSItem.HasPrivateKey })) {
+                [AddDbaComputerCertificateTest.SilentKey]::GetUniqueName($storeCert.Handle)
             }
             $leftKeyFiles = @($newKeyFiles | Where-Object Name -notin $usedKeyNames)
 
