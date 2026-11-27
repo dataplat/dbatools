@@ -243,6 +243,8 @@ function Copy-DbaLogin {
 
     begin {
         if ($Force) { $ConfirmPreference = 'none' }
+        # -SyncSaName renames the sa of a destination once, not once for every login copied to it.
+        $saSyncedDestinations = @{}
         function Copy-Login {
             [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "Medium")]
             Param (
@@ -270,13 +272,13 @@ function Copy-DbaLogin {
                 DateTime          = [DbaDateTime](Get-Date)
             }
 
-            if ($ExcludeLogin -contains $Login.name) { continue }
+            if ($ExcludeLogin -contains $Login.name) { return }
 
-            if ($Login.id -eq 1) { continue }
+            if ($Login.id -eq 1) { return }
 
             if ($newUserName.StartsWith("##") -or $newUserName -eq 'sa') {
                 Write-Message -Level Verbose -Message "Skipping $newUserName."
-                continue
+                return
             }
 
             if ($newUserName -like "BUILTIN\Administrators" -and $sourceServer.HostPlatform -eq "Linux") {
@@ -286,7 +288,7 @@ function Copy-DbaLogin {
                     $copyLoginStatus.Notes = "BUILTIN\Administrators is a critical system login"
                     $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
-                continue
+                return
             }
 
             if ($Login.LoginType -like 'Window*' -and $destServer.DatabaseEngineEdition -eq 'SqlManagedInstance' ) {
@@ -296,7 +298,7 @@ function Copy-DbaLogin {
                     $copyLoginStatus.Notes = "$($Login.name) is a Windows login, not supported on a SQL Managed Instance"
                     $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
-                continue
+                return
             }
 
             # Here we don't need the FullComputerName, but only the machine name to compare to the host part of the login name. So ComputerName should be fine.
@@ -311,7 +313,7 @@ function Copy-DbaLogin {
                     $copyLoginStatus.Notes = "Current login"
                     $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
-                continue
+                return
             }
 
             if (($destServer.LoginMode -ne [Microsoft.SqlServer.Management.Smo.ServerLoginMode]::Mixed) -and ($Login.LoginType -eq [Microsoft.SqlServer.Management.Smo.LoginType]::SqlLogin)) {
@@ -328,7 +330,7 @@ function Copy-DbaLogin {
                         $copyLoginStatus.Notes = "Local machine name"
                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-                    continue
+                    return
                 } else {
                     if ($ExcludeSystemLogins) {
                         if ($Pscmdlet.ShouldProcess($destinstance, "$($Login.Name) was skipped because ExcludeSystemLogins was specified")) {
@@ -337,7 +339,7 @@ function Copy-DbaLogin {
                             $copyLoginStatus.Notes = "System login"
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
-                        continue
+                        return
                     }
                     Write-Message -Level Verbose -Message "Skipping local login $($Login.Name) since the source and destination server reside on the same machine."
                 }
@@ -350,7 +352,7 @@ function Copy-DbaLogin {
                     $copyLoginStatus.Notes = "Already exists on destination"
                     $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                 }
-                continue
+                return
             }
 
             # A SQL login can only be created from a password hash in a format the destination knows. SQL Server 2012
@@ -375,7 +377,7 @@ function Copy-DbaLogin {
                         $copyLoginStatus.Notes = "Could not read the password hash"
                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-                    continue
+                    return
                 }
             }
             # For SQL Server 2022 the build decides. It comes from Version, which says 12.0 on Azure SQL Database and
@@ -396,7 +398,7 @@ function Copy-DbaLogin {
                         $copyLoginStatus.Notes = "Password hash format of $hashFormat not supported by destination"
                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-                    continue
+                    return
                 }
             }
 
@@ -408,7 +410,7 @@ function Copy-DbaLogin {
                         $copyLoginStatus.Notes = "Destination service account"
                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-                    continue
+                    return
                 }
 
                 if ($newUserName -like "BUILTIN\Administrators" -and $destServer.HostPlatform -eq "Linux") {
@@ -418,7 +420,7 @@ function Copy-DbaLogin {
                         $copyLoginStatus.Notes = "BUILTIN\Administrators is a critical system login"
                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     }
-                    continue
+                    return
                 }
 
                 # Check if dropping this Windows group would lock out the current user (Issue #8572)
@@ -476,7 +478,7 @@ function Copy-DbaLogin {
                                         $copyLoginStatus.Notes = "Potential lockout risk - current user may depend on this group for access"
                                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                     }
-                                    continue
+                                    return
                                 }
                             } catch {
                                 # If we cannot enumerate members (permission issues), err on the side of caution
@@ -486,7 +488,7 @@ function Copy-DbaLogin {
                                     $copyLoginStatus.Notes = "Cannot verify group membership - potential lockout risk"
                                     $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 }
-                                continue
+                                return
                             }
                         }
                     }
@@ -514,7 +516,7 @@ function Copy-DbaLogin {
                             $copyLoginStatus.Notes = "Different login type on destination"
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
-                        continue
+                        return
                     }
 
                     # With -NewSid the destination login got a SID of its own, so only then a different SID is expected.
@@ -526,7 +528,7 @@ function Copy-DbaLogin {
                             $copyLoginStatus.Notes = "Different SID on destination, use -Force to drop and recreate"
                             $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         }
-                        continue
+                        return
                     }
 
                     if ($sidDiffers) {
@@ -550,7 +552,7 @@ function Copy-DbaLogin {
                                 $copyLoginStatus.Notes = "Could not read the password hash"
                                 $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                 Write-Message -Level Verbose -Message "Could not read the password hash of $newUserName on both instances. Skipping."
-                                continue
+                                return
                             }
                             if ($sourceHash -ne $destHash) {
                                 $changes += "password"
@@ -660,7 +662,7 @@ function Copy-DbaLogin {
                                     $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_)
                                     $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                                     Write-Message -Level Verbose -Message "Could not update $newUserName on $destinstance | $PSItem"
-                                    continue
+                                    return
                                 }
                                 $resultPending = $true
                             }
@@ -755,7 +757,7 @@ function Copy-DbaLogin {
                         $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_)
                         $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                         Write-Message -Level Verbose -Message "Could not drop $newuserName on $destinstance | $PSItem"
-                        continue
+                        return
                     }
                 }
             }
@@ -782,7 +784,7 @@ function Copy-DbaLogin {
                     $copyLoginStatus.Notes = (Get-ErrorMessage -Record $_)
                     $copyLoginStatus | Select-DefaultView -Property DateTime, SourceServer, DestinationServer, Name, Type, Status, Notes -TypeName MigrationObject
                     Write-Message -Level Verbose -Message "Could not create $newuserName on $destinstance | $PSItem"
-                    continue
+                    return
                 }
 
                 if (-not $ExcludePermissionSync) {
@@ -890,7 +892,8 @@ function Copy-DbaLogin {
                         Write-Message -Level Verbose -Message "Attempting Login Migration."
                         Copy-Login -sourceserver $sourceServer -destserver $destServer -Login $loginObject -Exclude $ExcludeLogin
 
-                        if ($SyncSaName) {
+                        if ($SyncSaName -and -not $saSyncedDestinations[$destServer.DomainInstanceName]) {
+                            $saSyncedDestinations[$destServer.DomainInstanceName] = $true
                             $sa = $sourceServer.Logins | Where-Object id -eq 1
                             $destSa = $destServer.Logins | Where-Object id -eq 1
                             $saName = $sa.Name
@@ -901,7 +904,7 @@ function Copy-DbaLogin {
                                         $destSa.Rename($saName)
                                         $destSa.Alter()
                                     } catch {
-                                        Write-Message -Level Verbose -Message "Could not change sa username to match source ($saName) on $destinstance | $PSItem"
+                                        Write-Message -Level Warning -Message "Could not change sa username to match source ($saName) on $destinstance" -ErrorRecord $PSItem -Target $destinstance
                                     }
                                 }
                             }
