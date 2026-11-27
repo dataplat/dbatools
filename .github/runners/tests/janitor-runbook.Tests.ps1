@@ -4,6 +4,18 @@ BeforeAll {
 }
 
 Describe "janitor runner protection" {
+    BeforeDiscovery {
+        $incompleteTimestampCases = @(
+            @{ Case = "a date without a time"; NewTimestamp = { param($now) $now.ToString("yyyy-MM-dd") } }
+            @{ Case = "a time without a zone"; NewTimestamp = { param($now) $now.AddMinutes(-5).ToString("yyyy-MM-ddTHH:mm:ss") } }
+            @{ Case = "a DateTime of unspecified kind"; NewTimestamp = { param($now) [datetime]::SpecifyKind($now.AddMinutes(-5), [DateTimeKind]::Unspecified) } }
+        )
+        $unreadablePushCases = @(
+            @{ Case = "the commit comes back without a message"; Payload = @{ head = "nomessage" }; Messages = @{ "nomessage" = $null } }
+            @{ Case = "the push has no head SHA"; Payload = @{ ref = "refs/heads/feature" }; Messages = @{ } }
+        )
+    }
+
     BeforeEach {
         $script:RemovedVms = @()
         $script:RemovedNics = @()
@@ -339,15 +351,16 @@ Describe "janitor runner protection" {
         $script:RemovedVms | Should -BeNullOrEmpty
     }
 
-    It "does not read a date-only timestamp as midnight" {
-        # Read as midnight, today's completed run would look expired and the lane stale.
+    It "treats a completed run as unknown activity when its timestamp is <Case>" -ForEach $incompleteTimestampCases {
+        # Read as midnight, or in the wrong zone, today's completed run could look
+        # expired and the lane stale.
         $script:Runs = @(
             [pscustomobject]@{
                 actor         = [pscustomobject]@{ login = "niphlod" }
                 display_title = "ci-azure"
                 event         = "pull_request"
                 status        = "completed"
-                updated_at    = $script:Now.ToString("yyyy-MM-dd")
+                updated_at    = & $NewTimestamp $script:Now
             }
         )
         $script:Vms = @(1..10 | ForEach-Object {
@@ -364,10 +377,27 @@ Describe "janitor runner protection" {
         $script:RemovedVms | Should -BeNullOrEmpty
     }
 
-    It "treats a [do ci] candidate push as unknown when <Case>" -ForEach @(
-        @{ Case = "the commit comes back without a message"; Payload = @{ head = "nomessage" }; Messages = @{ "nomessage" = $null } }
-        @{ Case = "the push has no head SHA"; Payload = @{ ref = "refs/heads/feature" }; Messages = @{ } }
-    ) {
+    It "reads the commit when the listed head commit lacks its message" {
+        $script:Events = @(
+            [pscustomobject]@{
+                actor      = [pscustomobject]@{ login = "potatoqualitee" }
+                type       = "PushEvent"
+                created_at = $script:Now.AddMinutes(-5).ToString("o")
+                payload    = [pscustomobject]@{
+                    head    = "listed"
+                    commits = @([pscustomobject]@{ sha = "listed"; message = $null })
+                }
+            }
+        )
+        $script:CommitMessages = @{ "listed" = "Get-DbaDatabase - Fix a thing [do ci]" }
+
+        . $script:JanitorPath 3>$null | Out-Null
+
+        $script:CommitLookups | Should -Be @("listed")
+        $activeMaintainers | Should -Be @("potatoqualitee")
+    }
+
+    It "treats a [do ci] candidate push as unknown when <Case>" -ForEach $unreadablePushCases {
         $script:Events = @(
             [pscustomobject]@{
                 actor      = [pscustomobject]@{ login = "potatoqualitee" }

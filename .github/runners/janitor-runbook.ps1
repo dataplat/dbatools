@@ -75,16 +75,24 @@ $activityUnknown = $false
 # with the culture of the worker. An unreadable timestamp returns $null: the activity
 # behind it is unknown, which must neither fail the whole check (dropping the lanes a
 # live run proves) nor count as expired (the 1h stale cap). Only a complete ISO 8601
-# timestamp is read: a bare date would parse as midnight and look expired.
+# timestamp with an explicit zone is read: a bare date would parse as midnight, and a
+# time without a zone is local as a DateTime but UTC as a string, so either can make
+# recent activity look expired.
 function ConvertTo-JanitorUtc {
     param($Value)
 
     if ($Value -is [datetime]) {
+        if ($Value.Kind -eq [DateTimeKind]::Unspecified) {
+            Write-Warning "GitHub timestamp '$($Value.ToString("o"))' carries no zone; the activity behind it is unknown"
+            return $null
+        }
         return $Value.ToUniversalTime()
     }
     $formats = [string[]]@(
-        "yyyy-MM-ddTHH:mm:ssK",
-        "yyyy-MM-ddTHH:mm:ss.FFFFFFFK"
+        "yyyy-MM-ddTHH:mm:ss'Z'",
+        "yyyy-MM-ddTHH:mm:ss.FFFFFFF'Z'",
+        "yyyy-MM-ddTHH:mm:sszzz",
+        "yyyy-MM-ddTHH:mm:ss.FFFFFFFzzz"
     )
     $styles = [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal
     $parsed = [datetime]::MinValue
@@ -128,19 +136,20 @@ function Invoke-GitHubGet {
 function Get-JanitorPushMessage {
     param([Parameter(Mandatory)]$ActivityEvent)
 
+    # A push that cannot be read returns $null: its activity is unknown, which must
+    # neither fail the whole check (dropping the protection of every other lane) nor
+    # count as no activity (the 1h stale cap).
     $head = [string]$ActivityEvent.payload.head
-    $headCommit = @($ActivityEvent.payload.commits | Where-Object { [string]$PSItem.sha -eq $head } | Select-Object -First 1)
-    if ($headCommit) {
-        return [string]$headCommit[0].message
-    }
-    # The events API no longer lists the commits of a push, only its head SHA, so the
-    # message comes from the commit itself. A push that cannot be read returns $null:
-    # its activity is unknown, which must neither fail the whole check (dropping the
-    # protection of every other lane) nor count as no activity (the 1h stale cap).
     if (-not $head) {
         Write-Warning "push event without a head SHA; its activity is unknown"
         return $null
     }
+    $headCommit = @($ActivityEvent.payload.commits | Where-Object { [string]$PSItem.sha -eq $head } | Select-Object -First 1)
+    if ($headCommit -and $null -ne $headCommit[0].message) {
+        return [string]$headCommit[0].message
+    }
+    # The events API no longer lists the commits of a push, only its head SHA, and a
+    # listed head commit may lack its message, so the message comes from the commit.
     try {
         $commit = Invoke-GitHubGet -Uri "https://api.github.com/repos/$repo/commits/$head"
     } catch {
